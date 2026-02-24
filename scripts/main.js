@@ -8,7 +8,7 @@ Hooks.once("init", () => {
 
   // Register Keybinding
   game.keybindings.register("fang", "openGraph", {
-    name: "Open Token Graph",
+    name: "Open Ninjo's FANG",
     hint: "Opens the interactive FANG Actor relationship graph.",
     editable: [
       { key: "KeyG", modifiers: [KeyboardManager.MODIFIER_KEYS.SHIFT] }
@@ -92,7 +92,7 @@ Hooks.on("renderActorDirectory", (app, html, data) => {
   // Create the header button
   const button = $(`
     <button id="fang-btn">
-      <i class="fas fa-project-diagram"></i> Token Graph
+      <i class="fas fa-project-diagram"></i> Ninjo's FANG
     </button>
   `);
 
