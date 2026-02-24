@@ -8,8 +8,8 @@ Hooks.once("init", () => {
 
   // Register Keybinding
   game.keybindings.register("fang", "openGraph", {
-    name: "Open Ninjo's FANG",
-    hint: "Opens the interactive FANG Actor relationship graph.",
+    name: "FANG.ButtonOpen",
+    hint: "FANG.KeybindingHint",
     editable: [
       { key: "KeyG", modifiers: [KeyboardManager.MODIFIER_KEYS.SHIFT] }
     ],
@@ -90,9 +90,10 @@ Hooks.on("renderActorDirectory", (app, html, data) => {
   if ($html.find("#fang-btn").length > 0) return;
 
   // Create the header button
+  const buttonTitle = game.i18n.localize("FANG.ButtonOpen");
   const button = $(`
     <button id="fang-btn">
-      <i class="fas fa-project-diagram"></i> Ninjo's FANG
+      <i class="fas fa-project-diagram"></i> ${buttonTitle}
     </button>
   `);
 

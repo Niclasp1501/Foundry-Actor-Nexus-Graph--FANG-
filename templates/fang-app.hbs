@@ -2,53 +2,52 @@
     <!-- Sidebar / Toolbar -->
     <aside class="sidebar glass-panel">
         <header class="sidebar-header">
-            <h1>Ninjo's FANG</h1>
-            <p>Character (PC/NPC) Relationships</p>
+            <h1>{{localize "FANG.Name"}}</h1>
+            <p>{{localize "FANG.Subtitle"}}</p>
         </header>
 
         <div class="control-group">
-            <h3>Verbindung erstellen</h3>
+            <h3>{{localize "FANG.UI.CreateConnection"}}</h3>
             <div class="input-stack">
                 <select id="sourceSelect">
-                    <option value="" disabled selected>Quelle wählen</option>
+                    <option value="" disabled selected>{{localize "FANG.UI.SelectSource"}}</option>
                 </select>
                 <select id="targetSelect">
-                    <option value="" disabled selected>Ziel wählen</option>
+                    <option value="" disabled selected>{{localize "FANG.UI.SelectTarget"}}</option>
                 </select>
-                <input type="text" id="linkLabel" placeholder="Label z.B. 'ist verwandt mit'">
-                <button id="btnAddLink" class="btn secondary-btn">Verbinden</button>
+                <input type="text" id="linkLabel" placeholder="{{localize 'FANG.UI.LabelPlaceholder'}}">
+                <button id="btnAddLink" class="btn secondary-btn">{{localize "FANG.UI.Connect"}}</button>
             </div>
         </div>
 
         <div class="control-group">
-            <h3>Element löschen</h3>
+            <h3>{{localize "FANG.UI.DeleteElement"}}</h3>
             <div class="input-stack">
                 <select id="deleteSelect">
-                    <option value="" disabled selected>Knoten / Link wählen</option>
+                    <option value="" disabled selected>{{localize "FANG.UI.SelectElement"}}</option>
                 </select>
                 <button id="btnDeleteElement" class="btn danger-btn"
-                    style="background: #8b0000; color: white;">Löschen</button>
+                    style="background: #8b0000; color: white;">{{localize "FANG.UI.Delete"}}</button>
             </div>
         </div>
 
         <div class="control-group gm-only">
-            <h3>Präsentation</h3>
+            <h3>{{localize "FANG.UI.Presentation"}}</h3>
             <div class="input-stack">
-                <button id="btnShareGraph" class="btn action-btn"
-                    title="Zeigt den Graphen bei allen Spielern in einem normalen Fenster">
-                    <i class="fas fa-eye"></i> Spielern zeigen
+                <button id="btnShareGraph" class="btn action-btn" title="{{localize 'FANG.UI.ShowPlayersHint'}}">
+                    <i class="fas fa-eye"></i> {{localize "FANG.UI.ShowPlayers"}}
                 </button>
-                <button id="btnShareGraphMonitor" class="btn action-btn"
-                    title="Zeigt den Graphen im Vollbild nur auf dem Monitor" style="margin-top: 5px;">
-                    <i class="fas fa-tv"></i> Monitor zeigen
-                </button>
-                <button id="btnCloseGraphRemote" class="btn action-btn" title="Schließt den Graphen bei allen Spielern"
+                <button id="btnShareGraphMonitor" class="btn action-btn" title="{{localize 'FANG.UI.ShowMonitorHint'}}"
                     style="margin-top: 5px;">
-                    <i class="fas fa-times-circle"></i> Bei Spielern schließen
+                    <i class="fas fa-tv"></i> {{localize "FANG.UI.ShowMonitor"}}
                 </button>
-                <button id="btnCloseGraphMonitor" class="btn action-btn"
-                    title="Schließt den Graphen nur auf dem Monitor" style="margin-top: 5px;">
-                    <i class="fas fa-desktop"></i> Bei Monitor schließen
+                <button id="btnCloseGraphRemote" class="btn action-btn" title="{{localize 'FANG.UI.ClosePlayersHint'}}"
+                    style="margin-top: 5px;">
+                    <i class="fas fa-times-circle"></i> {{localize "FANG.UI.ClosePlayers"}}
+                </button>
+                <button id="btnCloseGraphMonitor" class="btn action-btn" title="{{localize 'FANG.UI.CloseMonitorHint'}}"
+                    style="margin-top: 5px;">
+                    <i class="fas fa-desktop"></i> {{localize "FANG.UI.CloseMonitor"}}
                 </button>
             </div>
         </div>

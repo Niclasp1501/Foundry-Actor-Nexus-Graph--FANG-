@@ -87,10 +87,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     e.preventDefault();
 
                     // Critical Fix: Before sharing, ensure the data is fully synced and saved
-                    // so players loading the app get the exact same state, preventing empty graphs.
                     this.saveData().then(() => {
                         game.socket.emit("module.fang", { action: "showGraph" });
-                        ui.notifications.info("FANG Graph wird jetzt allen Spielern angezeigt!");
+                        ui.notifications.info(game.i18n.localize("FANG.Messages.GraphShown"));
                     });
                 });
             }
@@ -101,7 +100,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     e.preventDefault();
                     this.saveData().then(() => {
                         game.socket.emit("module.fang", { action: "showGraphMonitor" });
-                        ui.notifications.info("FANG Graph wird im Vollbild an den Monitor gesendet!");
+                        ui.notifications.info(game.i18n.localize("FANG.Messages.GraphMonitorShown"));
                     });
                 });
             }
@@ -111,7 +110,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 btnCloseRemote.addEventListener("click", (e) => {
                     e.preventDefault();
                     game.socket.emit("module.fang", { action: "closeGraph" });
-                    ui.notifications.info("Graphen bei allen Spielern geschlossen.");
+                    ui.notifications.info(game.i18n.localize("FANG.Messages.GraphClosed"));
                 });
             }
 
@@ -120,7 +119,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 btnCloseMonitor.addEventListener("click", (e) => {
                     e.preventDefault();
                     game.socket.emit("module.fang", { action: "closeGraphMonitor" });
-                    ui.notifications.info("Graph auf dem Monitor geschlossen.");
+                    ui.notifications.info(game.i18n.localize("FANG.Messages.GraphMonitorClosed"));
                 });
             }
         }
@@ -150,28 +149,27 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     ownership: { default: CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER }
                 });
 
-                // Erstelle eine erklärende Text-Seite im Journal
                 await JournalEntryPage.create({
-                    name: "Über FANG",
+                    name: game.i18n.localize("FANG.Journal.Title"),
                     type: "text",
                     text: {
                         content: `
-                        <h2>Foundry Actor Nexus Graph</h2>
-                        <p>Dieses Journal speichert die Graphen-Daten im Hintergrund.</p>
-                        <p><strong>Um den Graphen zu öffnen, klicke auf den Button unten oder drücke Shift + G auf deiner Tastatur.</strong></p>
+                        <h2>${game.i18n.localize("FANG.Journal.Header")}</h2>
+                        <p>${game.i18n.localize("FANG.Journal.Desc1")}</p>
+                        <p><strong>${game.i18n.localize("FANG.Journal.Desc2")}</strong></p>
                         <hr>
                         <div style="text-align: center; margin-top: 20px;">
                             <a class="content-link fang-open-btn" style="cursor: pointer; font-size: 1.2em; padding: 10px; background: #8b0000; color: white; border: 1px solid #d4af37; border-radius: 5px; display: inline-block;">
-                                <i class="fas fa-project-diagram"></i> FANG Graph Öffnen
+                                <i class="fas fa-project-diagram"></i> ${game.i18n.localize("FANG.Journal.OpenBtn")}
                             </a>
                         </div>
                         `
                     }
                 }, { parent: entry });
 
-                ui.notifications.info("FANG Graph Journal erfolgreich initialisiert.");
+                ui.notifications.info(game.i18n.localize("FANG.Messages.JournalInitSuccess"));
             } else {
-                ui.notifications.warn("Kein FANG Graph Journal gefunden. Ein GM muss dieses Tool zuerst öffnen.");
+                ui.notifications.warn(game.i18n.localize("FANG.Messages.JournalMissing"));
                 return null;
             }
         }
@@ -205,7 +203,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             };
             await entry.setFlag("fang", "graphData", exportData);
         } else {
-            ui.notifications.warn("Keine Berechtigung zum Speichern des FANG Graphen.");
+            ui.notifications.warn(game.i18n.localize("FANG.Messages.SaveNoPermission"));
         }
     }
 
@@ -217,8 +215,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const selectTarget = this.element.querySelector("#targetSelect");
 
         if (selectSource && selectTarget) {
-            selectSource.innerHTML = '<option value="" disabled selected>Quelle wählen</option>';
-            selectTarget.innerHTML = '<option value="" disabled selected>Ziel wählen</option>';
+            selectSource.innerHTML = `<option value="" disabled selected>${game.i18n.localize("FANG.UI.SelectSource")}</option>`;
+            selectTarget.innerHTML = `<option value="" disabled selected>${game.i18n.localize("FANG.UI.SelectTarget")}</option>`;
 
             const actors = game.actors.contents.sort((a, b) => a.name.localeCompare(b.name));
             actors.forEach(actor => {
@@ -233,34 +231,33 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 selectTarget.appendChild(optT);
             });
         }
-
         // Populate Delete Dropdown from current graph data
         const selectDelete = this.element.querySelector("#deleteSelect");
         if (selectDelete) {
-            selectDelete.innerHTML = '<option value="" disabled selected>Knoten / Link wählen</option>';
+            selectDelete.innerHTML = `<option value="" disabled selected>${game.i18n.localize("FANG.UI.SelectElement")}</option>`;
 
             // Add Nodes
             if (this.graphData.nodes.length > 0) {
                 const optGroupN = document.createElement("optgroup");
-                optGroupN.label = "Knoten (Tokens)";
+                optGroupN.label = game.i18n.localize("FANG.Dropdowns.Nodes");
                 this.graphData.nodes.forEach(node => {
                     let opt = document.createElement("option");
                     opt.value = `node|${node.id}`;
-                    opt.textContent = `Token: ${node.name}`;
+                    opt.textContent = `${game.i18n.localize("FANG.Dropdowns.TokenPrefix")} ${node.name}`;
                     optGroupN.appendChild(opt);
                 });
                 selectDelete.appendChild(optGroupN);
             }
 
-            // Add Links
             if (this.graphData.links.length > 0) {
                 const optGroupL = document.createElement("optgroup");
-                optGroupL.label = "Verbindungen";
+                optGroupL.label = game.i18n.localize("FANG.Dropdowns.Links");
                 this.graphData.links.forEach((link, index) => {
                     let opt = document.createElement("option");
                     opt.value = `link|${index}`;
-                    const sourceName = typeof link.source === 'object' ? link.source.name : this.graphData.nodes.find(n => n.id === link.source)?.name || "Unknown";
-                    const targetName = typeof link.target === 'object' ? link.target.name : this.graphData.nodes.find(n => n.id === link.target)?.name || "Unknown";
+                    const unknownLabel = game.i18n.localize("FANG.Dropdowns.Unknown");
+                    const sourceName = typeof link.source === 'object' ? link.source.name : this.graphData.nodes.find(n => n.id === link.source)?.name || unknownLabel;
+                    const targetName = typeof link.target === 'object' ? link.target.name : this.graphData.nodes.find(n => n.id === link.target)?.name || unknownLabel;
                     opt.textContent = `${sourceName} -> ${targetName} (${link.label})`;
                     optGroupL.appendChild(opt);
                 });
@@ -294,9 +291,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
             await this.saveData();
         } else if (sourceId === targetId && sourceId !== "") {
-            ui.notifications.warn("Ein Token kann nicht mit sich selbst verbunden werden!");
+            ui.notifications.warn(game.i18n.localize("FANG.Messages.WarningSelfLink"));
         } else {
-            ui.notifications.warn("Bitte Quelle und Ziel auswählen.");
+            ui.notifications.warn(game.i18n.localize("FANG.Messages.WarningNoSourceTarget"));
         }
     }
 
@@ -305,7 +302,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const val = selectDelete.value;
 
         if (!val) {
-            ui.notifications.warn("Bitte wähle ein Element zum Löschen aus.");
+            ui.notifications.warn(game.i18n.localize("FANG.Messages.WarningNoDeleteSelect"));
             return;
         }
 
@@ -320,12 +317,12 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 const tId = typeof l.target === 'object' ? l.target.id : l.target;
                 return sId !== id && tId !== id;
             });
-            ui.notifications.info("Knoten und zugehörige Verbindungen gelöscht.");
+            ui.notifications.info(game.i18n.localize("FANG.Messages.DeletedNode"));
         } else if (type === "link") {
             // Remove specific link by index
             const lIndex = parseInt(id, 10);
             this.graphData.links.splice(lIndex, 1);
-            ui.notifications.info("Verbindung gelöscht.");
+            ui.notifications.info(game.i18n.localize("FANG.Messages.DeletedLink"));
         }
 
         this.initSimulation();
@@ -365,7 +362,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             if (actor) {
                 actor.sheet.render(true);
             } else {
-                ui.notifications.warn("Actor nicht gefunden.");
+                ui.notifications.warn(game.i18n.localize("FANG.Messages.ActorNotFound"));
             }
         }
     }

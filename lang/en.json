@@ -1,0 +1,55 @@
+{
+    "FANG": {
+        "Name": "Ninjo's FANG",
+        "Subtitle": "Character (PC/NPC) Relationships",
+        "ButtonOpen": "Ninjo's FANG",
+        "KeybindingHint": "Opens the interactive FANG Actor relationship graph.",
+        "UI": {
+            "CreateConnection": "Create Connection",
+            "SelectSource": "Select Source",
+            "SelectTarget": "Select Target",
+            "LabelPlaceholder": "Label e.g. 'is related to'",
+            "Connect": "Connect",
+            "DeleteElement": "Delete Element",
+            "SelectElement": "Select Node / Link",
+            "Delete": "Delete",
+            "Presentation": "Presentation",
+            "ShowPlayers": "Show Players",
+            "ShowPlayersHint": "Shows the graph to all players in a normal window",
+            "ShowMonitor": "Show Monitor",
+            "ShowMonitorHint": "Shows the graph in fullscreen only on the monitor",
+            "ClosePlayers": "Close for Players",
+            "ClosePlayersHint": "Closes the graph for all players",
+            "CloseMonitor": "Close Monitor",
+            "CloseMonitorHint": "Closes the graph only on the monitor"
+        },
+        "Journal": {
+            "Title": "About FANG",
+            "Header": "Foundry Actor Nexus Graph",
+            "Desc1": "This journal saves the graph data in the background.",
+            "Desc2": "To open the graph, click the button below or press Shift + G on your keyboard.",
+            "OpenBtn": "Open FANG Graph"
+        },
+        "Messages": {
+            "GraphShown": "FANG Graph is now shown to all players!",
+            "GraphMonitorShown": "FANG Graph is sent to the monitor in fullscreen!",
+            "GraphClosed": "Graph closed for all players.",
+            "GraphMonitorClosed": "Graph closed on the monitor.",
+            "JournalInitSuccess": "FANG Graph Journal successfully initialized.",
+            "JournalMissing": "No FANG Graph Journal found. A GM must open this tool first.",
+            "SaveNoPermission": "No permission to save the FANG Graph.",
+            "WarningSelfLink": "A token cannot be connected to itself!",
+            "WarningNoSourceTarget": "Please select source and target.",
+            "WarningNoDeleteSelect": "Please select an element to delete.",
+            "DeletedNode": "Node and associated connections deleted.",
+            "DeletedLink": "Connection deleted.",
+            "ActorNotFound": "Actor not found."
+        },
+        "Dropdowns": {
+            "Nodes": "Nodes (Tokens)",
+            "Links": "Connections",
+            "TokenPrefix": "Token:",
+            "Unknown": "Unknown"
+        }
+    }
+}

@@ -1,0 +1,55 @@
+{
+    "FANG": {
+        "Name": "Ninjo's FANG",
+        "Subtitle": "Charakter (PC/NPC) Beziehungen",
+        "ButtonOpen": "Ninjo's FANG",
+        "KeybindingHint": "Öffnet den interaktiven FANG Akteur Beziehungs-Graphen.",
+        "UI": {
+            "CreateConnection": "Verbindung erstellen",
+            "SelectSource": "Quelle wählen",
+            "SelectTarget": "Ziel wählen",
+            "LabelPlaceholder": "Label z.B. 'ist verwandt mit'",
+            "Connect": "Verbinden",
+            "DeleteElement": "Element löschen",
+            "SelectElement": "Knoten / Link wählen",
+            "Delete": "Löschen",
+            "Presentation": "Präsentation",
+            "ShowPlayers": "Spielern zeigen",
+            "ShowPlayersHint": "Zeigt den Graphen bei allen Spielern in einem normalen Fenster",
+            "ShowMonitor": "Monitor zeigen",
+            "ShowMonitorHint": "Zeigt den Graphen im Vollbild nur auf dem Monitor",
+            "ClosePlayers": "Bei Spielern schließen",
+            "ClosePlayersHint": "Schließt den Graphen bei allen Spielern",
+            "CloseMonitor": "Bei Monitor schließen",
+            "CloseMonitorHint": "Schließt den Graphen nur auf dem Monitor"
+        },
+        "Journal": {
+            "Title": "Über FANG",
+            "Header": "Foundry Actor Nexus Graph",
+            "Desc1": "Dieses Journal speichert die Graphen-Daten im Hintergrund.",
+            "Desc2": "Um den Graphen zu öffnen, klicke auf den Button unten oder drücke Shift + G auf deiner Tastatur.",
+            "OpenBtn": "FANG Graph Öffnen"
+        },
+        "Messages": {
+            "GraphShown": "FANG Graph wird jetzt allen Spielern angezeigt!",
+            "GraphMonitorShown": "FANG Graph wird im Vollbild an den Monitor gesendet!",
+            "GraphClosed": "Graphen bei allen Spielern geschlossen.",
+            "GraphMonitorClosed": "Graph auf dem Monitor geschlossen.",
+            "JournalInitSuccess": "FANG Graph Journal erfolgreich initialisiert.",
+            "JournalMissing": "Kein FANG Graph Journal gefunden. Ein GM muss dieses Tool zuerst öffnen.",
+            "SaveNoPermission": "Keine Berechtigung zum Speichern des FANG Graphen.",
+            "WarningSelfLink": "Ein Token kann nicht mit sich selbst verbunden werden!",
+            "WarningNoSourceTarget": "Bitte Quelle und Ziel auswählen.",
+            "WarningNoDeleteSelect": "Bitte wähle ein Element zum Löschen aus.",
+            "DeletedNode": "Knoten und zugehörige Verbindungen gelöscht.",
+            "DeletedLink": "Verbindung gelöscht.",
+            "ActorNotFound": "Actor nicht gefunden."
+        },
+        "Dropdowns": {
+            "Nodes": "Knoten (Tokens)",
+            "Links": "Verbindungen",
+            "TokenPrefix": "Token:",
+            "Unknown": "Unbekannt"
+        }
+    }
+}
