@@ -1,0 +1,30 @@
+name: Release Creation
+
+on:
+  push:
+    tags:
+      - 'v*' # Löst aus, wenn ein Tag wie v1.0.0 gepusht wird
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Create Module Archive
+        run: zip -r ./module.zip . -x ".git/*" ".github/*" "README.md" "CHANGELOG.md"
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            module.json
+            module.zip
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
