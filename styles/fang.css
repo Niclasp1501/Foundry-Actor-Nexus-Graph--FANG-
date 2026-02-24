@@ -1,0 +1,300 @@
+:root {
+    /* D&D Reference Design - Strict Red/Gold Theme */
+    --fang-bg-color: #fdfbf7;
+    /* Parchment Light */
+    --fang-text-color: #1a1a1a;
+    --fang-card-bg: #ffffff;
+    --fang-nav-bg: #f4f1ea;
+    --fang-border-color: #dcd6cc;
+
+    /* Strict Theme Colors */
+    --fang-primary-red: #8B0000;
+    /* Dark D&D Red */
+    --fang-accent-gold: #D4AF37;
+    /* Metallic Gold */
+    --fang-header-text: #ffffff;
+    --fang-canvas-bg: #fbf9f4;
+    /* Slightly darker parchment for canvas */
+
+    --fang-font-main: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    --fang-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+    --fang-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.fang-app-window .window-content {
+    padding: 0;
+    overflow: hidden;
+    background: var(--fang-bg-color);
+}
+
+.fang-app-container {
+    display: flex;
+    height: 100%;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    background: var(--fang-bg-color);
+    font-family: var(--fang-font-main);
+    color: var(--fang-text-color);
+}
+
+.fang-app-container * {
+    box-sizing: border-box;
+}
+
+/* Sidebar Styling */
+.fang-app-container .sidebar {
+    width: 340px;
+    background-color: var(--fang-nav-bg);
+    border-right: 2px solid var(--fang-primary-red);
+    box-shadow: var(--fang-shadow-sm);
+    display: flex;
+    flex-direction: column;
+    z-index: 10;
+    overflow-y: auto;
+}
+
+.fang-app-container .sidebar-header {
+    background-color: var(--fang-primary-red);
+    color: var(--fang-header-text);
+    padding: 15px 20px;
+    border-bottom: 2px solid var(--fang-accent-gold);
+}
+
+.fang-app-container .sidebar-header h1 {
+    font-size: 1.4rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--fang-header-text);
+    border: none;
+}
+
+/* Add a gold accent line */
+.fang-app-container .sidebar-header h1::before {
+    content: "";
+    display: block;
+    width: 12px;
+    height: 24px;
+    background-color: var(--fang-accent-gold);
+    border-radius: 4px;
+}
+
+.fang-app-container .sidebar-header p {
+    font-size: 0.85rem;
+    color: #ffd;
+    font-style: italic;
+    margin-top: 5px;
+    margin-bottom: 0;
+}
+
+.fang-app-container .control-group {
+    display: flex;
+    flex-direction: column;
+    padding: 15px 20px;
+    background-color: var(--fang-card-bg);
+    border-bottom: 1px solid var(--fang-border-color);
+    gap: 12px;
+}
+
+.fang-app-container .control-group h3 {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--fang-primary-red);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+    border: none;
+}
+
+/* Inputs & Selects */
+.fang-app-container input[type="text"],
+.fang-app-container select {
+    width: 100%;
+    padding: 10px 12px;
+    background-color: #fff;
+    border: 1px solid var(--fang-border-color);
+    border-radius: 2px;
+    color: var(--fang-text-color);
+    font-family: var(--fang-font-main);
+    font-size: 0.95rem;
+    transition: all 0.2s;
+    outline: none;
+    height: auto;
+}
+
+.fang-app-container input[type="text"]:focus,
+.fang-app-container select:focus {
+    border-color: var(--fang-accent-gold);
+    box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.2);
+}
+
+.fang-app-container .input-row {
+    display: flex;
+    gap: 8px;
+    align-items: stretch;
+}
+
+.fang-app-container .input-row input {
+    flex: 1;
+}
+
+.fang-app-container .input-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* Buttons */
+.fang-app-container .btn {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 2px;
+    font-family: var(--fang-font-main);
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    box-shadow: var(--fang-shadow-sm);
+    border-bottom: 2px solid rgba(0, 0, 0, 0.2);
+    line-height: normal;
+}
+
+.fang-app-container .btn:active {
+    transform: translateY(2px);
+    border-bottom-width: 0px;
+    margin-top: 2px;
+}
+
+/* Filled Button */
+.fang-app-container .primary-btn {
+    background-color: var(--fang-primary-red);
+    color: var(--fang-header-text);
+}
+
+.fang-app-container .primary-btn:hover {
+    background-color: #600000;
+    box-shadow: none;
+}
+
+/* Base Buttons */
+.fang-app-container .secondary-btn {
+    background-color: var(--fang-nav-bg);
+    color: var(--fang-text-color);
+    border: 1px solid var(--fang-border-color);
+    border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+    width: 100%;
+    margin-top: 4px;
+}
+
+.fang-app-container .secondary-btn:hover {
+    background-color: #ebe5dc;
+    color: var(--fang-primary-red);
+    box-shadow: none;
+}
+
+.fang-app-container .button-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 4px;
+}
+
+/* Elevated Action Buttons */
+.fang-app-container .action-btn {
+    flex: 1;
+    background-color: var(--fang-nav-bg);
+    color: var(--fang-text-color);
+    border: 1px solid var(--fang-border-color);
+    border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+}
+
+.fang-app-container .action-btn:hover {
+    background-color: #ebe5dc;
+    box-shadow: none;
+}
+
+.fang-app-container .file-label {
+    display: flex;
+}
+
+/* Canvas Area */
+.fang-app-container .canvas-container {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    background-color: #fdfbf7;
+    /* Soft antique paper texture */
+    background-image:
+        radial-gradient(at 0% 0%, rgba(212, 175, 55, 0.03) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(139, 0, 0, 0.02) 0px, transparent 50%),
+        radial-gradient(at 50% 50%, rgba(0, 0, 0, 0.01) 0px, transparent 100%);
+    box-shadow: inset 0 0 50px rgba(220, 214, 204, 0.3);
+}
+
+.fang-app-container #graphCanvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    cursor: grab;
+}
+
+.fang-app-container #graphCanvas:active {
+    cursor: grabbing;
+}
+
+/* Custom Scrollbar */
+.fang-app-container .sidebar::-webkit-scrollbar {
+    width: 8px;
+}
+
+.fang-app-container .sidebar::-webkit-scrollbar-track {
+    background: var(--fang-nav-bg);
+}
+
+.fang-app-container .sidebar::-webkit-scrollbar-thumb {
+    background-color: var(--fang-border-color);
+    border-radius: 4px;
+}
+
+.fang-app-container .sidebar::-webkit-scrollbar-thumb:hover {
+    background-color: #aaa;
+}
+
+/* Fullscreen Override for Players */
+body #fang-app.fang-app-window.fang-fullscreen-player {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    z-index: 2147483647 !important;
+    /* Maximum possible z-index to cover Monk's Display */
+}
+
+/* Hide the Foundry Window Header when in fullscreen mode */
+body #fang-app.fang-app-window.fang-fullscreen-player .window-header {
+    display: none !important;
+}
+
+body #fang-app.fang-app-window.fang-fullscreen-player .window-content {
+    background: var(--fang-bg-color) !important;
+    border-radius: 0 !important;
+    flex: 1;
+    display: flex;
+}

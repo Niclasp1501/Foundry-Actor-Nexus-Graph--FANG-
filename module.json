@@ -1,0 +1,22 @@
+{
+  "id": "fang",
+  "title": "Foundry Actor Nexus Graph (FANG)",
+  "description": "Interactive Force-Simulation Graph for Actors in Foundry VTT V13.",
+  "version": "1.0.0",
+  "compatibility": {
+    "minimum": "13",
+    "verified": "13"
+  },
+  "authors": [
+    {
+      "name": "Antigravity"
+    }
+  ],
+  "esmodules": [
+    "scripts/main.js"
+  ],
+  "styles": [
+    "styles/fang.css"
+  ],
+  "socket": true
+}
