@@ -5,9 +5,19 @@ All notable changes to the **Foundry Actor Nexus Graph (FANG)** module will be d
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.2] - 2026-02-25
+### Added
+- **Multi-Language Support (I18n):** FANG now natively translates into German or English based on your Foundry VTT settings. Included complete translations for the entire UI, popups, and Journal entries.
+- **GitHub Automation:** Implemented `release.yml` GitHub action for automatically packaging `module.zip` directly on GitHub releases.
+- **Enhanced Documentation:** Completely rewrote the `README.md` to be fully bilingual (ENG/GER) with detailed GM guides, Player instructions, and a Future Roadmap.
+
+### Changed
+- Refined UI wording: The main app is now named "Ninjo's FANG". Subtitle now generically describes "Character (PC/NPC) Relationships". 
+- **Module ID & Metadata:** Officially authored by Ninjo in `module.json`.
+
 ## [1.0.0] - 2026-02-24
 ### Added
-- **Interactive Force-Simulation Graph:** Visual representation of Actors and their relationships.
+- **Self-Arranging Actor Graph:** Visual representation of Actors and their relationships in a self-building system.
 - **Node Management:** Add and represent actor tokens as interactive nodes.
 - **Link Creation:** Support for linking nodes together with both straight lines and visually pleasing curved Bezier connections.
 - **GM Toolkit Integration:**
