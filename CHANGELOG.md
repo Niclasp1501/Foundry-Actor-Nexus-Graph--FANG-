@@ -5,6 +5,10 @@ All notable changes to the **Foundry Actor Nexus Graph (FANG)** module will be d
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.6] - 2026-02-25
+### Added
+- **Legal & Dependencies Audit:** Added a `Credits & Third-Party Libraries` section to the README and appended a third-party disclaimer to the LICENSE file, ensuring full compliance for the upcoming Foundry Store release.
+
 ## [1.0.5] - 2026-02-25
 ### Added
 - **License & Store Prep:** Added MIT License to the base repository to prepare the module for the official Foundry VTT Store.

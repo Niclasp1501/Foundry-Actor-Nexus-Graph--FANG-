@@ -23,3 +23,5 @@ SOFTWARE.
 ---
 
 Note: This license applies only to the core "Foundry Actor Nexus Graph (FANG)" module. Future add-ons, premium themes, or extended feature packs may be released under separate, proprietary licenses.
+
+This software may include third-party libraries (e.g., D3.js) which are subject to their own respective licenses. The original license notices of these libraries are maintained within the source files.

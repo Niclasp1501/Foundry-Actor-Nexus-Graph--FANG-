@@ -80,6 +80,12 @@ An interactive, self-arranging Actor Graph module for visualizing Character & NP
 
 ---
 
+## Credits & Third-Party Libraries
+This module leverages the following open-source libraries:
+* [D3.js](https://d3js.org/) - Licensed under the ISC License.
+
+---
+
 ## License / Lizenz
 This base module is licensed under the MIT License. 
 **Note:** This license applies only to the core "Foundry Actor Nexus Graph (FANG)" module. Future add-ons, premium themes, or extended feature packs may be released under separate, proprietary licenses.
