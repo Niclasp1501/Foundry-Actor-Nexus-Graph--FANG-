@@ -50,7 +50,17 @@
             "Nodes": "Nodes (Tokens)",
             "Links": "Connections",
             "TokenPrefix": "Token:",
-            "Unknown": "Unknown"
+            "Unknown": "Unknown",
+            "GroupCanvas": "On Canvas",
+            "GroupDirectory": "Other Actors"
+        },
+        "Dialogs": {
+            "FastLinkTitle": "Create Connection",
+            "FastLinkContent": "Relationship from {source} to {target}",
+            "LabelInput": "Connection Label",
+            "DirectionalInput": "Directional (Arrow)",
+            "BtnConnect": "Connect",
+            "BtnCancel": "Cancel"
         }
     }
 }

@@ -9,8 +9,16 @@ An interactive, self-arranging Actor Graph module for visualizing Character & NP
 ## 🇬🇧 English
 
 ### Features
+<p align="center">
+  <img src="assets/fang_ui_1.png" width="32%" title="Empty Graph UI" />
+  <img src="assets/fang_ui_2.png" width="32%" title="Directional and Normal Links" />
+  <img src="assets/fang_ui_3.png" width="32%" title="Smart Actor Dropdowns" />
+</p>
+
 - **Self-Arranging Actor Graph:** View actors and their relationships as nodes and links in a dynamic system that automatically organizes itself for clarity.
+- **Interactive Drag & Drop:** Seamlessly drag Actors directly from your Foundry sidebar onto the FANG canvas. Drop them into empty space to instantly spawn a node, or drop them onto an existing node to quickly build a new connection!
 - **Directional Links:** Optionally add arrows to connections to clearly denote relationship direction.
+- **Smart Connection Menus:** The source and target dropdowns are intelligently split into "On Canvas" and "Other Actors", completely eliminating tedious scrolling in larger campaigns.
 - **Node & Link Management:** GMs can effortlessly add tokens, create links, and remove connections as the story progresses.
 - **Player Sharing:** GMs can push the current graph view to all connected players, ensuring everyone is on the same page.
 - **GM Controls:** Includes dedicated "Close for Players", "Show Monitor", and "Close Monitor" buttons for seamless presentation management.
@@ -46,8 +54,16 @@ An interactive, self-arranging Actor Graph module for visualizing Character & NP
 ## 🇩🇪 Deutsch
 
 ### Features
+<p align="center">
+  <img src="assets/fang_ui_1.png" width="32%" title="Leerer Graph UI" />
+  <img src="assets/fang_ui_2.png" width="32%" title="Gerichtete und normale Verbindungen" />
+  <img src="assets/fang_ui_3.png" width="32%" title="Smarte Akteur Dropdowns" />
+</p>
+
 - **Selbstanordnender Akteur-Graph:** Betrachte Akteure und ihre Verbindungen in einem dynamischen System, das sich für maximale Übersichtlichkeit automatisch selbst aufbaut und strukturiert.
+- **Intuitives Drag & Drop:** Ziehe Foundry Akteure einfach per Drag & Drop direkt aus der Sidebar auf die FANG Zeichenfläche! Ein Wurf ins Leere erstellt sofort einen neuen Knoten, ein Wurf exakt auf einen bestehenden Knoten generiert direkt eine neue Verbindung.
 - **Pfeilrichtungen:** Setze optional Pfeile an Verbindungslinien, um anzuzeigen, von wem die Beziehung ausgeht.
+- **Smarte Verbindungsmenüs:** Die Quelle- und Ziel-Dropdowns sind in "Auf dem Canvas" und "Alle anderen Akteure" gegliedert. Das verhindert endloses Scrollen bei Spielwelten mit riesigen NPC-Listen!
 - **Knoten & Verbindungen Verwalten:** GMs können mühelos Tokens hinzufügen, miteinander verbinden und veraltete Elemente löschen.
 - **Mit Spielern Teilen:** Der GM kann die aktuelle Graphen-Ansicht mit einem Klick an alle Spieler schicken.
 - **GM Kontroll-Panel:** Dedizierte Knöpfe wie "Bei Spielern schließen", "Monitor zeigen" und "Bei Monitor schließen" erleichtern die Spielpräsentation.

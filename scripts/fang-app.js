@@ -62,6 +62,10 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const canvas = this.element.querySelector("#graphCanvas");
         canvas.addEventListener("dblclick", this._onCanvasDoubleClick.bind(this));
 
+        // Drag & Drop Listeners
+        canvasContainer.addEventListener("dragover", this._onDragOver.bind(this));
+        canvasContainer.addEventListener("drop", this._onDrop.bind(this));
+
         // Fullscreen and Sidebar hide for players
         if (!game.user.isGM) {
             const sidebar = this.element.querySelector(".sidebar");
@@ -219,18 +223,45 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             selectSource.innerHTML = `<option value="" disabled selected>${game.i18n.localize("FANG.UI.SelectSource")}</option>`;
             selectTarget.innerHTML = `<option value="" disabled selected>${game.i18n.localize("FANG.UI.SelectTarget")}</option>`;
 
-            const actors = game.actors.contents.sort((a, b) => a.name.localeCompare(b.name));
-            actors.forEach(actor => {
-                let optS = document.createElement("option");
-                optS.value = actor.id;
-                optS.textContent = actor.name;
-                selectSource.appendChild(optS);
+            // Partition actors into two groups: On Canvas vs Others
+            const canvasActorIds = new Set(this.graphData.nodes.map(n => n.id));
+            const onCanvasActors = [];
+            const otherActors = [];
 
-                let optT = document.createElement("option");
-                optT.value = actor.id;
-                optT.textContent = actor.name;
-                selectTarget.appendChild(optT);
+            game.actors.contents.forEach(actor => {
+                if (canvasActorIds.has(actor.id)) {
+                    onCanvasActors.push(actor);
+                } else {
+                    otherActors.push(actor);
+                }
             });
+
+            const sortByString = (a, b) => a.name.localeCompare(b.name);
+            onCanvasActors.sort(sortByString);
+            otherActors.sort(sortByString);
+
+            // Populate Helper
+            const appendOptGroup = (selectElem, label, actors) => {
+                if (actors.length === 0) return;
+                const optgroup = document.createElement("optgroup");
+                optgroup.label = label;
+                actors.forEach(actor => {
+                    let opt = document.createElement("option");
+                    opt.value = actor.id;
+                    opt.textContent = actor.name;
+                    optgroup.appendChild(opt);
+                });
+                selectElem.appendChild(optgroup);
+            };
+
+            const lblCanvas = game.i18n.localize("FANG.Dropdowns.GroupCanvas");
+            const lblDirectory = game.i18n.localize("FANG.Dropdowns.GroupDirectory");
+
+            appendOptGroup(selectSource, lblCanvas, onCanvasActors);
+            appendOptGroup(selectSource, lblDirectory, otherActors);
+
+            appendOptGroup(selectTarget, lblCanvas, onCanvasActors);
+            appendOptGroup(selectTarget, lblDirectory, otherActors);
         }
         // Populate Delete Dropdown from current graph data
         const selectDelete = this.element.querySelector("#deleteSelect");
@@ -332,6 +363,146 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         this.simulation.alpha(0.3).restart();
         this._populateActors(); // Update dropdown
         await this.saveData();
+    }
+
+    _onDragOver(event) {
+        event.preventDefault(); // Necessary to allow dropping
+    }
+
+    async _onDrop(event) {
+        event.preventDefault();
+        let data;
+        try {
+            data = JSON.parse(event.dataTransfer.getData("text/plain"));
+        } catch (err) {
+            return; // Not valid JSON, ignore
+        }
+
+        if (data.type !== "Actor" || !data.uuid) return;
+
+        const actor = await fromUuid(data.uuid);
+        if (!actor) return;
+
+        if (!this.transform) return;
+
+        // Convert mouse coordinates to canvas coordinate space
+        const bounds = this.canvas.getBoundingClientRect();
+        const mouseX = event.clientX - bounds.left;
+        const mouseY = event.clientY - bounds.top;
+
+        const x = this.transform.invertX(mouseX);
+        const y = this.transform.invertY(mouseY);
+
+        // Check if dropped ON an existing node
+        const s2 = (30 * 30); // Base radius squared
+        let targetNode = null;
+        let minD2 = s2;
+
+        for (let node of this.graphData.nodes) {
+            const dx = x - node.x;
+            const dy = y - node.y;
+            const d2 = dx * dx + dy * dy;
+            if (d2 < minD2) {
+                targetNode = node;
+                minD2 = d2;
+            }
+        }
+
+        if (targetNode) {
+            // Scenario 2: Dropped on an existing node -> Ask for link details natively
+            if (targetNode.id === actor.id) {
+                ui.notifications.warn(game.i18n.localize("FANG.Messages.WarningSelfLink"));
+                return;
+            }
+
+            const title = game.i18n.localize("FANG.Dialogs.FastLinkTitle");
+            const contentString = game.i18n.localize("FANG.Dialogs.FastLinkContent")
+                .replace("{source}", actor.name)
+                .replace("{target}", targetNode.name);
+            const lblLabel = game.i18n.localize("FANG.Dialogs.LabelInput");
+            const lblDir = game.i18n.localize("FANG.Dialogs.DirectionalInput");
+            const btnConn = game.i18n.localize("FANG.Dialogs.BtnConnect");
+            const btnCancel = game.i18n.localize("FANG.Dialogs.BtnCancel");
+
+            const dialogContent = `
+                <p><strong>${contentString}</strong></p>
+                <div class="form-group">
+                    <label>${lblLabel}:</label>
+                    <div class="form-fields">
+                        <input type="text" id="fang-fast-label" style="width: 100%;">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>${lblDir}:</label>
+                    <div class="form-fields">
+                        <input type="checkbox" id="fang-fast-dir">
+                    </div>
+                </div>
+            `;
+
+            new Dialog({
+                title: title,
+                content: dialogContent,
+                buttons: {
+                    connect: {
+                        icon: '<i class="fas fa-link"></i>',
+                        label: btnConn,
+                        callback: async (html) => {
+                            const labelStr = html.find("#fang-fast-label").val().trim();
+                            const isDir = html.find("#fang-fast-dir").is(":checked");
+
+                            // Find or create the source node
+                            let sourceNode = this.graphData.nodes.find(n => n.id === actor.id);
+                            if (!sourceNode) {
+                                // Add near target to make the simulation look nice
+                                sourceNode = { id: actor.id, name: actor.name, x: x - 20, y: y - 20 };
+                                this.graphData.nodes.push(sourceNode);
+                            }
+
+                            this.graphData.links.push({
+                                source: sourceNode.id,
+                                target: targetNode.id,
+                                label: labelStr,
+                                directional: isDir
+                            });
+
+                            this.initSimulation();
+                            this.simulation.alpha(0.3).restart();
+                            this._populateActors();
+                            await this.saveData();
+                        }
+                    },
+                    cancel: {
+                        icon: '<i class="fas fa-times"></i>',
+                        label: btnCancel
+                    }
+                },
+                default: "connect"
+            }, {
+                classes: ["dialog", "fang-dialog"],
+                width: 400
+            }).render(true);
+
+        } else {
+            // Scenario 1: Dropped on empty canvas -> Silent Drop
+            let existingNode = this.graphData.nodes.find(n => n.id === actor.id);
+            if (existingNode) {
+                // If it already exists, just move it to the new mouse location
+                existingNode.x = x;
+                existingNode.y = y;
+                existingNode.fx = null;
+                existingNode.fy = null;
+            } else {
+                // Add new node at precise location
+                this.graphData.nodes.push({ id: actor.id, name: actor.name, x: x, y: y });
+            }
+
+            this.initSimulation();
+            // Start simulation to apply forces immediately
+            this.simulation.alpha(0.3).restart();
+            this._populateActors();
+            await this.saveData();
+        }
     }
 
     _onCanvasDoubleClick(event) {

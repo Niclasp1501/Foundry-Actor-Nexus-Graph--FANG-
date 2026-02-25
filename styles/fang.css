@@ -298,3 +298,69 @@ body #fang-app.fang-app-window.fang-fullscreen-player .window-content {
     flex: 1;
     display: flex;
 }
+
+/* Custom D&D Dialog Styling */
+.fang-dialog.window-app {
+    font-family: var(--fang-font-main);
+}
+
+.fang-dialog .window-header {
+    background-color: var(--fang-primary-red);
+    color: var(--fang-header-text);
+    border-bottom: 2px solid var(--fang-accent-gold);
+    border-radius: 4px 4px 0 0;
+}
+
+.fang-dialog .window-content {
+    background: var(--fang-bg-color);
+    color: var(--fang-text-color);
+    padding: 15px;
+    font-size: 0.95rem;
+}
+
+.fang-dialog input[type="text"] {
+    width: 100%;
+    padding: 8px 10px;
+    background-color: #fff;
+    border: 1px solid var(--fang-border-color);
+    border-radius: 2px;
+    color: var(--fang-text-color);
+    font-family: var(--fang-font-main);
+    outline: none;
+    transition: all 0.2s;
+    height: auto;
+}
+
+.fang-dialog input[type="text"]:focus {
+    border-color: var(--fang-accent-gold);
+    box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.2);
+}
+
+.fang-dialog .dialog-buttons button {
+    background-color: var(--fang-primary-red);
+    color: var(--fang-header-text);
+    border: none;
+    border-bottom: 2px solid rgba(0,0,0,0.2);
+    border-radius: 2px;
+    font-family: var(--fang-font-main);
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    line-height: normal;
+}
+
+.fang-dialog .dialog-buttons button:hover {
+    background-color: #600000;
+    box-shadow: none;
+}
+
+.fang-dialog .dialog-buttons button.cancel {
+    background-color: var(--fang-nav-bg);
+    color: var(--fang-primary-red);
+    border: 1px solid var(--fang-border-color);
+    border-bottom: 2px solid rgba(0,0,0,0.1);
+}
+
+.fang-dialog .dialog-buttons button.cancel:hover {
+    background-color: #ebe5dc;
+}

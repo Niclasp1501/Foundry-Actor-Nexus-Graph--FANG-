@@ -50,7 +50,17 @@
             "Nodes": "Knoten (Tokens)",
             "Links": "Verbindungen",
             "TokenPrefix": "Token:",
-            "Unknown": "Unbekannt"
+            "Unknown": "Unbekannt",
+            "GroupCanvas": "Auf dem Canvas",
+            "GroupDirectory": "Alle anderen Akteure"
+        },
+        "Dialogs": {
+            "FastLinkTitle": "Verbindung herstellen",
+            "FastLinkContent": "Beziehung von {source} zu {target}",
+            "LabelInput": "Label der Verbindung",
+            "DirectionalInput": "Gerichtet (Pfeil)",
+            "BtnConnect": "Verbinden",
+            "BtnCancel": "Abbrechen"
         }
     }
 }

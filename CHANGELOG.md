@@ -5,6 +5,11 @@ All notable changes to the **Foundry Actor Nexus Graph (FANG)** module will be d
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.7] - 2026-02-25
+### Added
+- **Drag & Drop Workflow:** GMs can now seamlessly drag Actors from the sidebar directly onto the FANG canvas. Dropping an actor onto a blank space silently creates a new node automatically positioned under the cursor. Dropping an actor precisely onto an existing node opens a quick-link dialog asking for a label and direction immediately establishing the relationship.
+- **Smart Sidebar Sorting:** The "Source" and "Target" dropdown menus in the UI have been vastly improved. The lists are now grouped into "Nodes on Canvas" (prioritized at the top) and "Other Actors", instantly solving scrolling fatigue in larger worlds!
+
 ## [1.0.6] - 2026-02-25
 ### Added
 - **Legal & Dependencies Audit:** Added a `Credits & Third-Party Libraries` section to the README and appended a third-party disclaimer to the LICENSE file, ensuring full compliance for the upcoming Foundry Store release.
