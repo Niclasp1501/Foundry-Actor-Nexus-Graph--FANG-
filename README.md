@@ -77,3 +77,13 @@ An interactive, self-arranging Actor Graph module for visualizing Character & NP
 - **Zentrierung:** Bestimmte Akteure (z.B. den Haupt-Bösewicht) in der Mitte des Bildschirms fixieren/ankern.
 - **Monitor-Sichtfeld:** Sicherstellen, dass die Akteure immer im sichtbaren Bereich des Monitors/GMs bleiben.
 - **Weitere Sprachen:** Bei Bedarf werden auf Wunsch gern weitere Übersetzungen integriert.
+
+---
+
+## License / Lizenz
+This base module is licensed under the MIT License. 
+**Note:** This license applies only to the core "Foundry Actor Nexus Graph (FANG)" module. Future add-ons, premium themes, or extended feature packs may be released under separate, proprietary licenses.
+
+Dieses Basis-Modul steht unter der MIT-Lizenz. 
+**Hinweis:** Diese Lizenz gilt nur für das Kernmodul "Foundry Actor Nexus Graph (FANG)". Zukünftige Premium-Erweiterungen, Themes oder Content-Pakete können unter separaten, proprietären Lizenzen veröffentlicht werden.
+
