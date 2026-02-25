@@ -2,7 +2,7 @@
   "id": "fang",
   "title": "Foundry Actor Nexus Graph (FANG)",
   "description": "An interactive, self-arranging Actor Graph tool for visualizing Character & NPC Relationships natively in Foundry VTT V13.",
-  "version": "1.0.2",
+  "version": "1.0.4",
   "compatibility": {
     "minimum": "13",
     "verified": "13"

@@ -9,6 +9,7 @@
             "SelectSource": "Select Source",
             "SelectTarget": "Select Target",
             "LabelPlaceholder": "Label e.g. 'is related to'",
+            "Directional": "Directional (Arrow)",
             "Connect": "Connect",
             "DeleteElement": "Delete Element",
             "SelectElement": "Select Node / Link",

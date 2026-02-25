@@ -198,7 +198,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 links: this.graphData.links.map(l => ({
                     source: typeof l.source === 'object' ? l.source.id : l.source,
                     target: typeof l.target === 'object' ? l.target.id : l.target,
-                    label: l.label
+                    label: l.label,
+                    directional: l.directional
                 }))
             };
             await entry.setFlag("fang", "graphData", exportData);
@@ -270,6 +271,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const sourceId = this.element.querySelector("#sourceSelect").value;
         const targetId = this.element.querySelector("#targetSelect").value;
         const label = this.element.querySelector("#linkLabel").value.trim();
+        const directional = this.element.querySelector("#linkDirectional").checked;
 
         if (sourceId && targetId && sourceId !== targetId) {
             // Check if nodes exist, else create them from Actors
@@ -282,8 +284,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 }
             });
 
-            this.graphData.links.push({ source: sourceId, target: targetId, label: label });
+            this.graphData.links.push({ source: sourceId, target: targetId, label: label, directional: directional });
             this.element.querySelector("#linkLabel").value = "";
+            this.element.querySelector("#linkDirectional").checked = false;
 
             this.initSimulation();
             this.simulation.alpha(0.3).restart();
@@ -491,16 +494,48 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             this.context.lineWidth = 2;
             this.context.strokeStyle = "#888";
 
+            const nodeRadius = 30; // Radius of token
+            const arrowSize = 10;   // Size of the arrowhead
+
+            // Helper function to draw arrowhead
+            const drawArrowhead = (context, x, y, angle) => {
+                context.save();
+                context.translate(x, y);
+                context.rotate(angle);
+                context.beginPath();
+                context.moveTo(0, 0);
+                context.lineTo(-arrowSize, arrowSize / 2);
+                context.lineTo(-arrowSize, -arrowSize / 2);
+                context.closePath();
+                context.fillStyle = "#888";
+                context.fill();
+                context.restore();
+            };
+
             if (totalParams === 1) {
                 ctrlX = midX;
                 ctrlY = midY;
                 labelX = midX;
                 labelY = midY;
 
+                let targetX = link.target.x;
+                let targetY = link.target.y;
+                let angle = Math.atan2(dy, dx);
+
+                if (link.directional) {
+                    // Shorten line to edge of token
+                    targetX = link.target.x - Math.cos(angle) * (nodeRadius + 2); // +2 for slight padding
+                    targetY = link.target.y - Math.sin(angle) * (nodeRadius + 2);
+                }
+
                 this.context.beginPath();
                 this.context.moveTo(link.source.x, link.source.y);
-                this.context.lineTo(link.target.x, link.target.y);
+                this.context.lineTo(targetX, targetY);
                 this.context.stroke();
+
+                if (link.directional) {
+                    drawArrowhead(this.context, targetX, targetY, angle);
+                }
             } else {
                 let offsetMultiplier = 0;
                 if (totalParams % 2 === 0) {
@@ -523,10 +558,23 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 labelX = midX + nx * finalOffset;
                 labelY = midY + ny * finalOffset;
 
+                let targetX = link.target.x;
+                let targetY = link.target.y;
+                let angle = Math.atan2(link.target.y - ctrlY, link.target.x - ctrlX);
+
+                if (link.directional) {
+                    targetX = link.target.x - Math.cos(angle) * (nodeRadius + 2);
+                    targetY = link.target.y - Math.sin(angle) * (nodeRadius + 2);
+                }
+
                 this.context.beginPath();
                 this.context.moveTo(link.source.x, link.source.y);
-                this.context.quadraticCurveTo(ctrlX, ctrlY, link.target.x, link.target.y);
+                this.context.quadraticCurveTo(ctrlX, ctrlY, targetX, targetY);
                 this.context.stroke();
+
+                if (link.directional) {
+                    drawArrowhead(this.context, targetX, targetY, angle);
+                }
             }
 
             if (link.label) {

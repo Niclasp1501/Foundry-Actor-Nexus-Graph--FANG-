@@ -10,6 +10,7 @@ An interactive, self-arranging Actor Graph module for visualizing Character & NP
 
 ### Features
 - **Self-Arranging Actor Graph:** View actors and their relationships as nodes and links in a dynamic system that automatically organizes itself for clarity.
+- **Directional Links:** Optionally add arrows to connections to clearly denote relationship direction.
 - **Node & Link Management:** GMs can effortlessly add tokens, create links, and remove connections as the story progresses.
 - **Player Sharing:** GMs can push the current graph view to all connected players, ensuring everyone is on the same page.
 - **GM Controls:** Includes dedicated "Close for Players", "Show Monitor", and "Close Monitor" buttons for seamless presentation management.
@@ -36,7 +37,6 @@ An interactive, self-arranging Actor Graph module for visualizing Character & NP
 - **Manual Access:** If a player accidentally closes the window, they can re-open it via the **"FANG Graph" Journal Entry** (a link inside the journal text opens the tool) or simply by pressing `Shift + G`.
 
 ### Future Roadmap
-- **Directional Links:** Adding arrows to clearly denote relationship direction.
 - **Center Pinning:** Anchor important actors (e.g. the main villain) to the center of the graph.
 - **Viewport Locking:** Ensure actors remain visible inside the GM's and Monitor's screens.
 - **More Languages:** Community translation support (e.g. Spanish, French).
@@ -47,6 +47,7 @@ An interactive, self-arranging Actor Graph module for visualizing Character & NP
 
 ### Features
 - **Selbstanordnender Akteur-Graph:** Betrachte Akteure und ihre Verbindungen in einem dynamischen System, das sich für maximale Übersichtlichkeit automatisch selbst aufbaut und strukturiert.
+- **Pfeilrichtungen:** Setze optional Pfeile an Verbindungslinien, um anzuzeigen, von wem die Beziehung ausgeht.
 - **Knoten & Verbindungen Verwalten:** GMs können mühelos Tokens hinzufügen, miteinander verbinden und veraltete Elemente löschen.
 - **Mit Spielern Teilen:** Der GM kann die aktuelle Graphen-Ansicht mit einem Klick an alle Spieler schicken.
 - **GM Kontroll-Panel:** Dedizierte Knöpfe wie "Bei Spielern schließen", "Monitor zeigen" und "Bei Monitor schließen" erleichtern die Spielpräsentation.
@@ -73,7 +74,6 @@ An interactive, self-arranging Actor Graph module for visualizing Character & NP
 - **Manuell Öffnen:** Falls du das Fenster versehentlich schließt, kannst du es über das **Journal "FANG Graph"** wieder öffnen (Klick auf den Link im Text) oder einfach `Shift + G` drücken.
 
 ### Zukünftige Pläne (Roadmap)
-- **Pfeilrichtungen:** Pfeile an den Linien sollen anzeigen, von wem die Beziehung ausgeht.
 - **Zentrierung:** Bestimmte Akteure (z.B. den Haupt-Bösewicht) in der Mitte des Bildschirms fixieren/ankern.
 - **Monitor-Sichtfeld:** Sicherstellen, dass die Akteure immer im sichtbaren Bereich des Monitors/GMs bleiben.
 - **Weitere Sprachen:** Bei Bedarf werden auf Wunsch gern weitere Übersetzungen integriert.

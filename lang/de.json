@@ -9,6 +9,7 @@
             "SelectSource": "Quelle wählen",
             "SelectTarget": "Ziel wählen",
             "LabelPlaceholder": "Label z.B. 'ist verwandt mit'",
+            "Directional": "Gerichtet (Pfeil)",
             "Connect": "Verbinden",
             "DeleteElement": "Element löschen",
             "SelectElement": "Knoten / Link wählen",
