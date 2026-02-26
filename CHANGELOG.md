@@ -5,6 +5,17 @@ All notable changes to the **Foundry Actor Nexus Graph (FANG)** module will be d
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.9] - 2026-02-26
+### Fixed
+- **Link Overlap and Arrowheads**: Perfected the math ensuring directional arrowheads correctly stop at the edge of the target token's name box, and centered link labels precisely on the remaining visible line segment.
+
+## [1.0.8] - 2026-02-26
+### Added
+- **Cosmic Wind Animation**: Added a subtle "breathing" and drifting animation to tokens when the graph is at rest. Includes a toggle checkbox and a strength slider in the module settings.
+### Fixed
+- **Canvas Scrollbar Fix**: Forced absolute positioning on the canvas to eliminate flexbox expansion feedback loops causing scrollbars.
+- **Window Size**: Increased default initial window size to 1400x900 for a better out-of-the-box experience.
+
 ## [1.0.7] - 2026-02-25
 ### Added
 - **Drag & Drop Workflow:** GMs can now seamlessly drag Actors from the sidebar directly onto the FANG canvas. Dropping an actor onto a blank space silently creates a new node automatically positioned under the cursor. Dropping an actor precisely onto an existing node opens a quick-link dialog asking for a label and direction immediately establishing the relationship.

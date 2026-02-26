@@ -819,8 +819,6 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             if (totalParams === 1) {
                 ctrlX = midX;
                 ctrlY = midY;
-                labelX = midX;
-                labelY = midY;
 
                 let targetX = tPos.x;
                 let targetY = tPos.y;
@@ -832,9 +830,22 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     targetY = tPos.y - Math.sin(angle) * offsetR;
                 }
 
+                // Place label perfectly in the middle of the VISIBLE line (between source center and arrowhead tip)
+                labelX = sPos.x + (targetX - sPos.x) * 0.5;
+                labelY = sPos.y + (targetY - sPos.y) * 0.5;
+
                 this.context.beginPath();
                 this.context.moveTo(sPos.x, sPos.y);
-                this.context.lineTo(targetX, targetY);
+
+                // Draw the line segment itself slightly short so the flat butt doesn't poke out of the arrowhead
+                let drawTargetX = targetX;
+                let drawTargetY = targetY;
+                if (link.directional) {
+                    drawTargetX -= Math.cos(angle) * (arrowSize - 3);
+                    drawTargetY -= Math.sin(angle) * (arrowSize - 3);
+                }
+
+                this.context.lineTo(drawTargetX, drawTargetY);
                 this.context.stroke();
 
                 if (link.directional) {
@@ -859,9 +870,6 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 ctrlX = midX + nx * finalOffset * 2;
                 ctrlY = midY + ny * finalOffset * 2;
 
-                labelX = midX + nx * finalOffset;
-                labelY = midY + ny * finalOffset;
-
                 let targetX = tPos.x;
                 let targetY = tPos.y;
                 let angle = Math.atan2(tPos.y - ctrlY, tPos.x - ctrlX);
@@ -872,9 +880,22 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     targetY = tPos.y - Math.sin(angle) * offsetR;
                 }
 
+                // Place label perfectly in the middle of the curve using Bezier t=0.5 formula
+                labelX = 0.25 * sPos.x + 0.5 * ctrlX + 0.25 * targetX;
+                labelY = 0.25 * sPos.y + 0.5 * ctrlY + 0.25 * targetY;
+
                 this.context.beginPath();
                 this.context.moveTo(sPos.x, sPos.y);
-                this.context.quadraticCurveTo(ctrlX, ctrlY, targetX, targetY);
+
+                // Draw the line segment itself slightly short so the flat butt doesn't poke out of the arrowhead
+                let drawTargetX = targetX;
+                let drawTargetY = targetY;
+                if (link.directional) {
+                    drawTargetX -= Math.cos(angle) * (arrowSize - 3);
+                    drawTargetY -= Math.sin(angle) * (arrowSize - 3);
+                }
+
+                this.context.quadraticCurveTo(ctrlX, ctrlY, drawTargetX, drawTargetY);
                 this.context.stroke();
 
                 if (link.directional) {

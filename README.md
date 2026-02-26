@@ -108,4 +108,3 @@ This base module is licensed under the MIT License.
 
 Dieses Basis-Modul steht unter der MIT-Lizenz. 
 **Hinweis:** Diese Lizenz gilt nur für das Kernmodul "Foundry Actor Nexus Graph (FANG)". Zukünftige Premium-Erweiterungen, Themes oder Content-Pakete können unter separaten, proprietären Lizenzen veröffentlicht werden.
-
