@@ -5,8 +5,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         id: "fang-app",
         classes: ["fang-app-window", "common-display"],
         position: {
-            width: 1200,
-            height: 800
+            width: 1400,
+            height: 900
         },
         window: {
             title: "Foundry Actor Nexus Graph (FANG)",
@@ -493,13 +493,15 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 existingNode.fx = null;
                 existingNode.fy = null;
             } else {
-                // Add new node at precise location
-                this.graphData.nodes.push({ id: actor.id, name: actor.name, x: x, y: y });
+                // Add new node at precise location with a tiny random offset to prevent perfect stacking
+                const jitterX = x + (Math.random() - 0.5) * 5;
+                const jitterY = y + (Math.random() - 0.5) * 5;
+                this.graphData.nodes.push({ id: actor.id, name: actor.name, x: jitterX, y: jitterY });
             }
 
             this.initSimulation();
-            // Start simulation to apply forces immediately
-            this.simulation.alpha(0.3).restart();
+            // Start simulation with high heat (alpha > 0.5) to forcefully push overlapping nodes out of the way
+            this.simulation.alpha(0.8).restart();
             this._populateActors();
             await this.saveData();
         }
@@ -610,19 +612,118 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             return nInfo;
         });
 
+        const cosmicWindEnabled = game.settings.get("fang", "enableCosmicWind");
+
         this.simulation = d3.forceSimulation(nodes)
-            .force("charge", d3.forceManyBody().strength(-400))
+            .force("charge", d3.forceManyBody().strength(-800))
             .force("link", d3.forceLink(links).id(d => d.id).distance(200))
             .force("center", d3.forceCenter(this.width / 2, this.height / 2))
-            .force("collide", d3.forceCollide().radius(40))
+            .force("x", d3.forceX(this.width / 2).strength(0.05))
+            .force("y", d3.forceY(this.height / 2).strength(0.05))
+            .force("collide", d3.forceCollide().radius(60))
+            .force("link-avoidance", this._createLinkRepulsionForce())
             .on("tick", this.ticked.bind(this));
+
+        // Start a pure visual render loop that triggers ticked() 60fps unconditionally
+        if (this._animationFrameId) cancelAnimationFrame(this._animationFrameId);
+        const renderLoop = () => {
+            if (this.context && cosmicWindEnabled) {
+                // Force an update when D3 is asleep (alpha below threshold)
+                if (this.simulation && this.simulation.alpha() < 0.05) {
+                    this.ticked();
+                }
+            }
+            this._animationFrameId = requestAnimationFrame(renderLoop);
+        };
+        renderLoop();
 
         this.graphData.nodes = nodes;
         this.graphData.links = links;
     }
 
+    _createLinkRepulsionForce() {
+        let nodes;
+        const force = (alpha) => {
+            const links = this.graphData.links;
+            const repulsionRadius = 50; // The distance nodes must keep from lines
+            const strength = 1.0 * alpha; // Push strength
+
+            for (let i = 0; i < nodes.length; i++) {
+                const node = nodes[i];
+                for (let j = 0; j < links.length; j++) {
+                    const link = links[j];
+                    if (!link.source || !link.target) continue;
+                    // Don't repel from lines the node is directly attached to
+                    if (link.source.id === node.id || link.target.id === node.id) continue;
+
+                    const x1 = link.source.x, y1 = link.source.y;
+                    const x2 = link.target.x, y2 = link.target.y;
+                    const x0 = node.x, y0 = node.y;
+
+                    // Mathematics for point-to-line-segment distance
+                    const l2 = (x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1);
+                    if (l2 === 0) continue;
+
+                    let t = ((x0 - x1) * (x2 - x1) + (y0 - y1) * (y2 - y1)) / l2;
+                    t = Math.max(0, Math.min(1, t)); // Constrain to segment
+
+                    const projX = x1 + t * (x2 - x1);
+                    const projY = y1 + t * (y2 - y1);
+
+                    const dx = x0 - projX;
+                    const dy = y0 - projY;
+                    let dist = Math.sqrt(dx * dx + dy * dy);
+
+                    if (dist < repulsionRadius) {
+                        // Node is too close to line, repel perpendicularly
+                        if (dist === 0) {
+                            dist = 1;
+                            node.vx += (Math.random() - 0.5) * strength * 10;
+                            node.vy += (Math.random() - 0.5) * strength * 10;
+                        } else {
+                            const pushFactor = ((repulsionRadius - dist) / dist) * strength;
+                            node.vx += dx * pushFactor;
+                            node.vy += dy * pushFactor;
+                        }
+                    }
+                }
+            }
+        };
+
+        force.initialize = (_) => { nodes = _; };
+        return force;
+    }
+
     ticked() {
         if (!this.context) return;
+
+        // Visual Cosmic Wind Calculation (Does NOT affect D3 math)
+        const cosmicWindEnabled = game.settings.get("fang", "enableCosmicWind");
+        const amplitude = game.settings.get("fang", "cosmicWindStrength") || 4.0;
+        const time = Date.now() * 0.001;
+        const speed = 1.0;
+
+        // Create a lookup for rendered positions
+        const renderPos = {};
+        this.graphData.nodes.forEach(node => {
+            let rx = node.x;
+            let ry = node.y;
+
+            if (cosmicWindEnabled && (node.fx === undefined || node.fx === null)) {
+                let hash = 0;
+                for (let i = 0; i < node.id.length; i++) {
+                    hash = node.id.charCodeAt(i) + ((hash << 5) - hash);
+                }
+                const phaseX = (hash % 100) / 100.0 * Math.PI * 2;
+                const phaseY = ((hash >> 2) % 100) / 100.0 * Math.PI * 2;
+
+                // Set X/Y drifting effect
+                rx += Math.sin(time * speed + phaseX) * amplitude;
+                ry += Math.cos(time * speed * 0.8 + phaseY) * amplitude;
+            }
+            renderPos[node.id] = { x: rx, y: ry };
+        });
+
         this.context.save();
         this.context.clearRect(0, 0, this.width, this.height);
         this.context.translate(this.transform.x, this.transform.y);
@@ -654,11 +755,15 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             const linkIndex = pairInfo.links.indexOf(i);
             const totalParams = pairInfo.total;
 
-            const dx = link.target.x - link.source.x;
-            const dy = link.target.y - link.source.y;
+            // Use virtual positions
+            const sPos = renderPos[link.source.id];
+            const tPos = renderPos[link.target.id];
+
+            const dx = tPos.x - sPos.x;
+            const dy = tPos.y - sPos.y;
             const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-            const midX = (link.source.x + link.target.x) / 2;
-            const midY = (link.source.y + link.target.y) / 2;
+            const midX = (sPos.x + tPos.x) / 2;
+            const midY = (sPos.y + tPos.y) / 2;
 
             let ctrlX, ctrlY, labelX, labelY;
 
@@ -683,24 +788,52 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 context.restore();
             };
 
+            const getTargetOffset = (targetNode, incomingAngle) => {
+                let R = nodeRadius + 2;
+                this.context.font = "bold 15px 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
+                const tWidth = Math.max(this.context.measureText(targetNode.name).width, 40);
+                const halfW = (tWidth / 2) + 12; // Label width + padding
+                const topY = 25; // Label start Y relative to center
+                const bottomY = 58; // Label end Y relative to center
+
+                // Ray vector going from target center backwards to the source
+                const vx = -Math.cos(incomingAngle);
+                const vy = -Math.sin(incomingAngle);
+
+                if (vy > 0) {
+                    const t_bottom = bottomY / vy;
+                    if (Math.abs(t_bottom * vx) <= halfW) {
+                        return Math.max(R, t_bottom);
+                    }
+                }
+                if (vx !== 0) {
+                    const t_side = halfW / Math.abs(vx);
+                    const y_hit = t_side * vy;
+                    if (y_hit >= topY && y_hit <= bottomY) {
+                        return Math.max(R, t_side);
+                    }
+                }
+                return R;
+            };
+
             if (totalParams === 1) {
                 ctrlX = midX;
                 ctrlY = midY;
                 labelX = midX;
                 labelY = midY;
 
-                let targetX = link.target.x;
-                let targetY = link.target.y;
+                let targetX = tPos.x;
+                let targetY = tPos.y;
                 let angle = Math.atan2(dy, dx);
 
                 if (link.directional) {
-                    // Shorten line to edge of token
-                    targetX = link.target.x - Math.cos(angle) * (nodeRadius + 2); // +2 for slight padding
-                    targetY = link.target.y - Math.sin(angle) * (nodeRadius + 2);
+                    const offsetR = getTargetOffset(link.target, angle);
+                    targetX = tPos.x - Math.cos(angle) * offsetR;
+                    targetY = tPos.y - Math.sin(angle) * offsetR;
                 }
 
                 this.context.beginPath();
-                this.context.moveTo(link.source.x, link.source.y);
+                this.context.moveTo(sPos.x, sPos.y);
                 this.context.lineTo(targetX, targetY);
                 this.context.stroke();
 
@@ -729,17 +862,18 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 labelX = midX + nx * finalOffset;
                 labelY = midY + ny * finalOffset;
 
-                let targetX = link.target.x;
-                let targetY = link.target.y;
-                let angle = Math.atan2(link.target.y - ctrlY, link.target.x - ctrlX);
+                let targetX = tPos.x;
+                let targetY = tPos.y;
+                let angle = Math.atan2(tPos.y - ctrlY, tPos.x - ctrlX);
 
                 if (link.directional) {
-                    targetX = link.target.x - Math.cos(angle) * (nodeRadius + 2);
-                    targetY = link.target.y - Math.sin(angle) * (nodeRadius + 2);
+                    const offsetR = getTargetOffset(link.target, angle);
+                    targetX = tPos.x - Math.cos(angle) * offsetR;
+                    targetY = tPos.y - Math.sin(angle) * offsetR;
                 }
 
                 this.context.beginPath();
-                this.context.moveTo(link.source.x, link.source.y);
+                this.context.moveTo(sPos.x, sPos.y);
                 this.context.quadraticCurveTo(ctrlX, ctrlY, targetX, targetY);
                 this.context.stroke();
 
@@ -768,17 +902,18 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
         // Draw Nodes
         this.graphData.nodes.forEach(node => {
-            const radius = 30;
+            const radius = 30; // Fixed radius restored
+            const pos = renderPos[node.id];
 
             this.context.save();
 
             if (node.imgElement && node.imgElement.complete && node.imgElement.naturalWidth !== 0) {
                 // Just draw the raw token image without extra circles/borders
-                this.context.drawImage(node.imgElement, node.x - radius, node.y - radius, radius * 2, radius * 2);
+                this.context.drawImage(node.imgElement, pos.x - radius, pos.y - radius, radius * 2, radius * 2);
             } else {
                 // Fallback fill if not loaded
                 this.context.beginPath();
-                this.context.arc(node.x, node.y, radius, 0, Math.PI * 2, true);
+                this.context.arc(pos.x, pos.y, radius, 0, Math.PI * 2, true);
                 this.context.fillStyle = "#b91c1c";
                 this.context.fill();
                 this.context.lineWidth = 3;
@@ -793,11 +928,12 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             const metrics = this.context.measureText(node.name);
             const textWidth = Math.max(metrics.width, 40);
             const textHeight = 22;
-            const labelYOffset = radius + 11;
+            // Base the label offset on the BASE radius, so the label doesn't jump up and down
+            const labelYOffset = 30 + 11;
 
             this.context.fillStyle = "rgba(0, 0, 0, 0.8)";
             this.context.beginPath();
-            this.context.roundRect(node.x - textWidth / 2 - 6, node.y + labelYOffset - textHeight / 2, textWidth + 12, textHeight, 6);
+            this.context.roundRect(pos.x - textWidth / 2 - 6, pos.y + labelYOffset - textHeight / 2, textWidth + 12, textHeight, 6);
             this.context.fill();
 
             // Gold border for text box
@@ -805,11 +941,11 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             this.context.strokeStyle = "#d4af37";
             this.context.stroke();
 
-            // Draw text
+            // Draw Node Name Text
             this.context.fillStyle = "#ffffff";
             this.context.textAlign = "center";
             this.context.textBaseline = "middle";
-            this.context.fillText(node.name, node.x, node.y + labelYOffset);
+            this.context.fillText(node.name, pos.x, pos.y + labelYOffset);
         });
 
         this.context.restore();

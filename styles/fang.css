@@ -21,6 +21,30 @@
     --fang-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
+.fang-app-window .fang-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    /* Added to prevent canvas overflow */
+}
+
+/* --- Container Frame --- */
+.container {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    height: 100%;
+}
+
+/* Sidebar Styling */
+.sidebar {
+    width: 300px;
+    background: var(--fang-bg-color);
+    font-family: var(--fang-font-main);
+    color: var(--fang-text-color);
+}
+
 .fang-app-window .window-content {
     padding: 0;
     overflow: hidden;
@@ -240,10 +264,14 @@
 }
 
 .fang-app-container #graphCanvas {
-    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
     cursor: grab;
+    display: block;
+    /* Fix inline-block baseline descender gap causing scrollbars */
 }
 
 .fang-app-container #graphCanvas:active {
@@ -340,7 +368,7 @@ body #fang-app.fang-app-window.fang-fullscreen-player .window-content {
     background-color: var(--fang-primary-red);
     color: var(--fang-header-text);
     border: none;
-    border-bottom: 2px solid rgba(0,0,0,0.2);
+    border-bottom: 2px solid rgba(0, 0, 0, 0.2);
     border-radius: 2px;
     font-family: var(--fang-font-main);
     font-weight: bold;
@@ -358,7 +386,7 @@ body #fang-app.fang-app-window.fang-fullscreen-player .window-content {
     background-color: var(--fang-nav-bg);
     color: var(--fang-primary-red);
     border: 1px solid var(--fang-border-color);
-    border-bottom: 2px solid rgba(0,0,0,0.1);
+    border-bottom: 2px solid rgba(0, 0, 0, 0.1);
 }
 
 .fang-dialog .dialog-buttons button.cancel:hover {

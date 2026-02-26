@@ -61,6 +61,16 @@
             "DirectionalInput": "Directional (Arrow)",
             "BtnConnect": "Connect",
             "BtnCancel": "Cancel"
+        },
+        "Settings": {
+            "CosmicWind": {
+                "Name": "Cosmic Wind (Floating Tokens)",
+                "Hint": "When enabled, tokens will gently drift and float on the graph once the initial physics simulation has settled. This gives the graph a dynamic, magical, and breathing feel."
+            },
+            "CosmicWindStrength": {
+                "Name": "Cosmic Wind Strength",
+                "Hint": "Determines how far the tokens drift across the graph. (1 = Barely visible, 10 = Strong swaying)."
+            }
         }
     }
 }

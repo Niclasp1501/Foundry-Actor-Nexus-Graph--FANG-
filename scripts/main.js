@@ -19,6 +19,36 @@ Hooks.once("init", () => {
       return true;
     }
   });
+
+  // Register Module Settings
+  game.settings.register("fang", "enableCosmicWind", {
+    name: "FANG.Settings.CosmicWind.Name",
+    hint: "FANG.Settings.CosmicWind.Hint",
+    scope: "client",     // User-specific preference
+    config: true,        // Shows up in module settings menu
+    type: Boolean,
+    default: true,
+    onChange: value => {
+      // Optional: If graph is open, restart simulation lightly to apply
+      if (fangApp && fangApp.rendered) {
+        fangApp.simulation?.alpha(0.01).restart();
+      }
+    }
+  });
+
+  game.settings.register("fang", "cosmicWindStrength", {
+    name: "FANG.Settings.CosmicWindStrength.Name",
+    hint: "FANG.Settings.CosmicWindStrength.Hint",
+    scope: "client",
+    config: true,
+    type: Number,
+    range: {
+      min: 0.1,    // Minimum value so it doesn't turn off entirely, user should use the checkbox for that
+      max: 10.0,   // Maximum strength pixel drift
+      step: 0.1
+    },
+    default: 4.0
+  });
 });
 
 Hooks.once("ready", () => {

@@ -61,6 +61,16 @@
             "DirectionalInput": "Gerichtet (Pfeil)",
             "BtnConnect": "Verbinden",
             "BtnCancel": "Abbrechen"
+        },
+        "Settings": {
+            "CosmicWind": {
+                "Name": "Kosmischer Wind (Tokens schweben)",
+                "Hint": "Wenn aktiviert, driften die Tokens auf der Karte leicht hin und her (wie Atmen), sobald die initiale Physik-Simulation der Linien zur Ruhe gekommen ist. Das verleiht der Karte ein dynamisches, magisches Gefühl."
+            },
+            "CosmicWindStrength": {
+                "Name": "Stärke des Kosmischen Winds",
+                "Hint": "Bestimmt, wie weit die Tokens auf dem Graphen hin und her driften. (1 = Kaum sichtbar, 10 = Starkes Wanken)."
+            }
         }
     }
 }
