@@ -788,24 +788,26 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 context.restore();
             };
 
-            const getTargetOffset = (targetNode, incomingAngle) => {
+            const getNodeBoundOffset = (node, rayAngle) => {
                 let R = nodeRadius + 2;
                 this.context.font = "bold 15px 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
-                const tWidth = Math.max(this.context.measureText(targetNode.name).width, 40);
+                const tWidth = Math.max(this.context.measureText(node.name).width, 40);
                 const halfW = (tWidth / 2) + 12; // Label width + padding
                 const topY = 25; // Label start Y relative to center
                 const bottomY = 58; // Label end Y relative to center
 
-                // Ray vector going from target center backwards to the source
-                const vx = -Math.cos(incomingAngle);
-                const vy = -Math.sin(incomingAngle);
+                // Ray vector starting from the center of the node outwards
+                const vx = Math.cos(rayAngle);
+                const vy = Math.sin(rayAngle);
 
+                // Check intersection with bottom edge
                 if (vy > 0) {
                     const t_bottom = bottomY / vy;
                     if (Math.abs(t_bottom * vx) <= halfW) {
                         return Math.max(R, t_bottom);
                     }
                 }
+                // Check intersection with side edges
                 if (vx !== 0) {
                     const t_side = halfW / Math.abs(vx);
                     const y_hit = t_side * vy;
@@ -824,15 +826,23 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 let targetY = tPos.y;
                 let angle = Math.atan2(dy, dx);
 
+                const offsetTarget = getNodeBoundOffset(link.target, angle + Math.PI);
+                const offsetSource = getNodeBoundOffset(link.source, angle);
+
+                let boundTargetX = tPos.x - Math.cos(angle) * offsetTarget;
+                let boundTargetY = tPos.y - Math.sin(angle) * offsetTarget;
+
                 if (link.directional) {
-                    const offsetR = getTargetOffset(link.target, angle);
-                    targetX = tPos.x - Math.cos(angle) * offsetR;
-                    targetY = tPos.y - Math.sin(angle) * offsetR;
+                    targetX = boundTargetX;
+                    targetY = boundTargetY;
                 }
 
-                // Place label perfectly in the middle of the VISIBLE line (between source center and arrowhead tip)
-                labelX = sPos.x + (targetX - sPos.x) * 0.5;
-                labelY = sPos.y + (targetY - sPos.y) * 0.5;
+                // Place label perfectly in the middle of the VISIBLE line gap between the two node boundaries
+                const boundSourceX = sPos.x + Math.cos(angle) * offsetSource;
+                const boundSourceY = sPos.y + Math.sin(angle) * offsetSource;
+
+                labelX = boundSourceX + ((link.directional ? targetX : boundTargetX) - boundSourceX) * 0.5;
+                labelY = boundSourceY + ((link.directional ? targetY : boundTargetY) - boundSourceY) * 0.5;
 
                 this.context.beginPath();
                 this.context.moveTo(sPos.x, sPos.y);
@@ -872,17 +882,26 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
                 let targetX = tPos.x;
                 let targetY = tPos.y;
-                let angle = Math.atan2(tPos.y - ctrlY, tPos.x - ctrlX);
+                let angle = Math.atan2(tPos.y - ctrlY, tPos.x - ctrlX); // Ray entering target
+                let angleOut = Math.atan2(ctrlY - sPos.y, ctrlX - sPos.x); // Ray exiting source
+
+                const offsetTarget = getNodeBoundOffset(link.target, angle + Math.PI);
+                const offsetSource = getNodeBoundOffset(link.source, angleOut);
 
                 if (link.directional) {
-                    const offsetR = getTargetOffset(link.target, angle);
-                    targetX = tPos.x - Math.cos(angle) * offsetR;
-                    targetY = tPos.y - Math.sin(angle) * offsetR;
+                    targetX = tPos.x - Math.cos(angle) * offsetTarget;
+                    targetY = tPos.y - Math.sin(angle) * offsetTarget;
                 }
 
-                // Place label perfectly in the middle of the curve using Bezier t=0.5 formula
-                labelX = 0.25 * sPos.x + 0.5 * ctrlX + 0.25 * targetX;
-                labelY = 0.25 * sPos.y + 0.5 * ctrlY + 0.25 * targetY;
+                // Bezier curve approximation to slide the label along the drawn path
+                const t1 = offsetSource / Math.max(dist, 1);
+                const t2 = 1.0 - (offsetTarget / Math.max(dist, 1));
+                const tMid = Math.min(Math.max((t1 + t2) / 2.0, 0.1), 0.9); // Clamp to avoid label sitting too far out
+                const u = 1.0 - tMid;
+
+                // Place label perfectly in the middle of the available curve time
+                labelX = (u * u) * sPos.x + 2 * u * tMid * ctrlX + (tMid * tMid) * tPos.x; // Use original tPos for true curve tracing
+                labelY = (u * u) * sPos.y + 2 * u * tMid * ctrlY + (tMid * tMid) * tPos.y;
 
                 this.context.beginPath();
                 this.context.moveTo(sPos.x, sPos.y);

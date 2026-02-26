@@ -5,6 +5,10 @@ All notable changes to the **Foundry Actor Nexus Graph (FANG)** module will be d
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-02-26
+### Fixed
+- **Label Collision Avoidance**: Completely rewrote the link label rendering math. Link labels now dynamically measure the bounding boxes of both the source and target node names, ensuring they center precisely in the "free" visual space of the line and never overlap with token text again. This applies universally to straight and curved Bezier connections.
+
 ## [1.0.9] - 2026-02-26
 ### Fixed
 - **Link Overlap and Arrowheads**: Perfected the math ensuring directional arrowheads correctly stop at the edge of the target token's name box, and centered link labels precisely on the remaining visible line segment.

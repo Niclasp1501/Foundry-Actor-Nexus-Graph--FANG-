@@ -28,3 +28,9 @@ jobs:
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish Module to FoundryVTT Website
+        uses: cs96and/FoundryVTT-release-package@v1
+        with:
+          package-token: ${{ secrets.PACKAGE_TOKEN }}
+          manifest-url: https://github.com/Niclasp1501/Foundry-Actor-Nexus-Graph--FANG-/releases/download/${{ github.ref_name }}/module.json
