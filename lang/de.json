@@ -12,6 +12,7 @@
             "Directional": "Gerichtet (Pfeil)",
             "Connect": "Verbinden",
             "DeleteElement": "Element löschen",
+            "ManageElements": "Elemente verwalten",
             "SelectElement": "Knoten / Link wählen",
             "Delete": "Löschen",
             "Presentation": "Präsentation",
@@ -22,7 +23,9 @@
             "ClosePlayers": "Bei Spielern schließen",
             "ClosePlayersHint": "Schließt den Graphen bei allen Spielern",
             "CloseMonitor": "Bei Monitor schließen",
-            "CloseMonitorHint": "Schließt den Graphen nur auf dem Monitor"
+            "CloseMonitorHint": "Schließt den Graphen nur auf dem Monitor",
+            "ToggleCenter": "Zentrieren",
+            "ToggleCenterHint": "Fixiert den NPC magnetisch in der Mitte (z.B. für Boss-Gegner)."
         },
         "Journal": {
             "Title": "Über FANG",
@@ -42,8 +45,12 @@
             "WarningSelfLink": "Ein Token kann nicht mit sich selbst verbunden werden!",
             "WarningNoSourceTarget": "Bitte Quelle und Ziel auswählen.",
             "WarningNoDeleteSelect": "Bitte wähle ein Element zum Löschen aus.",
+            "WarningNoSelect": "Bitte wähle ein Element aus.",
+            "WarningNodeOnly": "Bitte wähle einen Knoten (Token), keine Verbindung.",
             "DeletedNode": "Knoten und zugehörige Verbindungen gelöscht.",
             "DeletedLink": "Verbindung gelöscht.",
+            "CenterEnabled": "wird nun vom Zentrum angezogen.",
+            "CenterDisabled": "schwebt nun wieder frei.",
             "ActorNotFound": "Actor nicht gefunden."
         },
         "Dropdowns": {
@@ -77,6 +84,10 @@
             "CosmicWindStrength": {
                 "Name": "Stärke des Kosmischen Winds",
                 "Hint": "Bestimmt, wie weit die Tokens auf dem Graphen hin und her driften. (1 = Kaum sichtbar, 10 = Starkes Wanken)."
+            },
+            "CenterNodeColor": {
+                "Name": "Zentrum-Aura Farbe (Hex)",
+                "Hint": "Die Farbe des magischen Rings um Tokens, die im Zentrum verankert sind. Gib einen Hex-Farbcode ein (z.B. #d4af37 für Gold, #8b0000 für Dunkelrot)."
             }
         }
     }

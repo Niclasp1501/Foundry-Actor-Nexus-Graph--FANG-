@@ -49,6 +49,21 @@ Hooks.once("init", () => {
     },
     default: 4.0
   });
+
+  game.settings.register("fang", "centerNodeColor", {
+    name: "FANG.Settings.CenterNodeColor.Name",
+    hint: "FANG.Settings.CenterNodeColor.Hint",
+    scope: "world",    // Universal setting for all players 
+    config: true,
+    type: new foundry.data.fields.ColorField({ initial: "#d4af37" }), // Native V13 Setting!
+    default: "#d4af37",
+    onChange: value => {
+      // Force an immediate re-render if the graph is open so the GM can see the color change live
+      if (fangApp && fangApp.rendered) {
+        console.log("FANG | Center Node Color updated to", value);
+      }
+    }
+  });
 });
 
 Hooks.once("ready", () => {

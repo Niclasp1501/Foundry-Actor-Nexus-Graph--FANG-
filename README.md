@@ -45,7 +45,9 @@ An interactive, self-arranging Actor Graph module for visualizing Character & NP
 - **Manual Access:** If a player accidentally closes the window, they can re-open it via the **"FANG Graph" Journal Entry** (a link inside the journal text opens the tool) or simply by pressing `Shift + G`.
 
 ### Future Roadmap
-- **Center Pinning:** Anchor important actors (e.g. the main villain) to the center of the graph.
+- **Expandable Lore Cards:** Clicking a character will allow you to expand and collapse its backstory/information panel directly within the graph.
+- **Visual Grouping:** Group certain people together (e.g., by location) with visual bounding boxes or cluster zones to make large graphs much clearer.
+- **Roles & Affiliations:** Assign roles or faction affiliations to individual tokens, possibly generating a secondary map purely for the organizational structure.
 - **Viewport Locking:** Ensure actors remain visible inside the GM's and Monitor's screens.
 - **More Languages:** Community translation support (e.g. Spanish, French).
 
@@ -90,7 +92,9 @@ An interactive, self-arranging Actor Graph module for visualizing Character & NP
 - **Manuell Öffnen:** Falls du das Fenster versehentlich schließt, kannst du es über das **Journal "FANG Graph"** wieder öffnen (Klick auf den Link im Text) oder einfach `Shift + G` drücken.
 
 ### Zukünftige Pläne (Roadmap)
-- **Zentrierung:** Bestimmte Akteure (z.B. den Haupt-Bösewicht) in der Mitte des Bildschirms fixieren/ankern.
+- **Erweiterbare Lore-Karten:** Ein Klick auf einen Charakter klappt eine Info-Karte mit Hintergrundwissen auf, die auch wieder zusammengeklappt werden kann.
+- **Gruppierung nach Orten (Organisation):** Bestimmte Akteure (z.B. nach Standort) optisch in Gruppen zusammenfassen, um bei großen Graphen die Übersichtlichkeit zu wahren.
+- **Rollen & Fraktionen:** Einzelnen Tokens Rollen oder Fraktions-Zugehörigkeiten zuweisen, um eventuell eine zweite Ansicht für eine reine Organisationsstruktur zu generieren.
 - **Monitor-Sichtfeld:** Sicherstellen, dass die Akteure immer im sichtbaren Bereich des Monitors/GMs bleiben.
 - **Weitere Sprachen:** Bei Bedarf werden auf Wunsch gern weitere Übersetzungen integriert.
 
