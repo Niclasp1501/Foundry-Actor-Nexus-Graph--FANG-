@@ -31,10 +31,12 @@
                     <option value="" disabled selected>{{localize "FANG.UI.SelectElement"}}</option>
                 </select>
                 <div style="display: flex; gap: 5px; margin-top: 5px;">
-                    <button id="btnToggleCenter" class="btn action-btn" style="flex: 1;" title="{{localize 'FANG.UI.ToggleCenterHint'}}">
+                    <button id="btnToggleCenter" class="btn action-btn" style="flex: 1;"
+                        title="{{localize 'FANG.UI.ToggleCenterHint'}}">
                         <i class="fas fa-bullseye"></i> {{localize "FANG.UI.ToggleCenter"}}
                     </button>
-                    <button id="btnDeleteElement" class="btn danger-btn" style="flex: 1; background: #8b0000; color: white;">
+                    <button id="btnDeleteElement" class="btn danger-btn"
+                        style="flex: 1; background: #8b0000; color: white;">
                         <i class="fas fa-trash"></i> {{localize "FANG.UI.Delete"}}
                     </button>
                 </div>
@@ -58,6 +60,15 @@
                 <button id="btnCloseGraphMonitor" class="btn action-btn" title="{{localize 'FANG.UI.CloseMonitorHint'}}"
                     style="margin-top: 5px;">
                     <i class="fas fa-desktop"></i> {{localize "FANG.UI.CloseMonitor"}}
+                </button>
+            </div>
+        </div>
+
+        <div class="control-group gm-only">
+            <h3>{{localize "FANG.UI.AdvancedFeatures"}}</h3>
+            <div class="input-stack">
+                <button id="btnOpenAdvancedSettings" class="btn action-btn">
+                    <i class="fas fa-cogs"></i> {{localize "FANG.UI.AdvancedSettings"}}
                 </button>
             </div>
         </div>

@@ -16,6 +16,8 @@
             "SelectElement": "Knoten / Link wählen",
             "Delete": "Löschen",
             "Presentation": "Präsentation",
+            "AdvancedFeatures": "Erweiterte Funktionen",
+            "AdvancedSettings": "Erweiterte Optionen öffnen",
             "ShowPlayers": "Spielern zeigen",
             "ShowPlayersHint": "Zeigt den Graphen bei allen Spielern in einem normalen Fenster",
             "ShowMonitor": "Monitor zeigen",
@@ -24,6 +26,7 @@
             "ClosePlayersHint": "Schließt den Graphen bei allen Spielern",
             "CloseMonitor": "Bei Monitor schließen",
             "CloseMonitorHint": "Schließt den Graphen nur auf dem Monitor",
+            "EnablePlayerEdit": "Spieler-Bearbeitung umschalten",
             "ToggleCenter": "Zentrieren",
             "ToggleCenterHint": "Fixiert den NPC magnetisch in der Mitte (z.B. für Boss-Gegner)."
         },
@@ -39,6 +42,9 @@
             "GraphMonitorShown": "FANG Graph wird im Vollbild an den Monitor gesendet!",
             "GraphClosed": "Graphen bei allen Spielern geschlossen.",
             "GraphMonitorClosed": "Graph auf dem Monitor geschlossen.",
+            "PlayersCanEdit": "Spieler können den Graphen nun bearbeiten.",
+            "PlayersCannotEdit": "Spieler können den Graphen nicht mehr bearbeiten.",
+            "WarnNoGMOnline": "Ein Spielleiter (GM) muss online sein, um Änderungen am Graphen zu speichern.",
             "JournalInitSuccess": "FANG Graph Journal erfolgreich initialisiert.",
             "JournalMissing": "Kein FANG Graph Journal gefunden. Ein GM muss dieses Tool zuerst öffnen.",
             "SaveNoPermission": "Keine Berechtigung zum Speichern des FANG Graphen.",
@@ -88,6 +94,10 @@
             "CenterNodeColor": {
                 "Name": "Zentrum-Aura Farbe (Hex)",
                 "Hint": "Die Farbe des magischen Rings um Tokens, die im Zentrum verankert sind. Gib einen Hex-Farbcode ein (z.B. #d4af37 für Gold, #8b0000 für Dunkelrot)."
+            },
+            "AllowPlayerEditing": {
+                "Name": "Spieler-Bearbeitung erlauben",
+                "Hint": "Wenn aktiviert, können Spieler eigene Verbindungen erstellen und löschen sowie Tokens auf den Graph ziehen."
             }
         }
     }

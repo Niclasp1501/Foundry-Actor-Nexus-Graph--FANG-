@@ -6,7 +6,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         classes: ["fang-app-window", "common-display"],
         position: {
             width: 1400,
-            height: 900
+            height: 950
         },
         window: {
             title: "Foundry Actor Nexus Graph (FANG)",
@@ -73,7 +73,17 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         // Fullscreen and Sidebar hide for players
         if (!game.user.isGM) {
             const sidebar = this.element.querySelector(".sidebar");
-            if (sidebar) sidebar.style.display = "none";
+            const allowPlayerEdit = game.settings.get("fang", "allowPlayerEditing");
+            const isGMOnline = game.users.some(u => u.isGM && u.active);
+
+            if (sidebar) {
+                // Hide sidebar if players shouldn't edit or if no GM is online to receive edits
+                sidebar.style.display = (allowPlayerEdit && isGMOnline) ? "flex" : "none";
+
+                // Hide GM-only controls explicitly
+                const gmControls = sidebar.querySelectorAll(".gm-only");
+                gmControls.forEach(el => el.style.display = "none");
+            }
 
             // Only apply pure fullscreen to players with 'monitor' in their name
             if (game.user.name.toLowerCase().includes("monitor")) {
@@ -99,6 +109,14 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                         game.socket.emit("module.fang", { action: "showGraph" });
                         ui.notifications.info(game.i18n.localize("FANG.Messages.GraphShown"));
                     });
+                });
+            }
+
+            const btnOpenAdvancedSettings = this.element.querySelector("#btnOpenAdvancedSettings");
+            if (btnOpenAdvancedSettings) {
+                btnOpenAdvancedSettings.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    this._renderAdvancedSettingsDialog();
                 });
             }
 
@@ -198,30 +216,53 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         }
     }
 
-    async saveData() {
+    async saveData(triggerSync = true) {
         const entry = await this.getJournalEntry();
+
+        // Prepare the exportable state
+        const exportData = {
+            nodes: this.graphData.nodes.map(n => ({
+                id: n.id,
+                name: n.name,
+                role: n.role,
+                x: n.x,
+                y: n.y,
+                vx: n.vx,
+                vy: n.vy,
+                isCenter: n.isCenter || false
+            })),
+            links: this.graphData.links.map(l => ({
+                source: typeof l.source === 'object' ? l.source.id : l.source,
+                target: typeof l.target === 'object' ? l.target.id : l.target,
+                label: l.label,
+                directional: l.directional
+            }))
+        };
+
         if (entry && entry.isOwner) {
-            const exportData = {
-                nodes: this.graphData.nodes.map(n => ({
-                    id: n.id,
-                    name: n.name,
-                    role: n.role,
-                    x: n.x,
-                    y: n.y,
-                    vx: n.vx,
-                    vy: n.vy,
-                    isCenter: n.isCenter || false
-                })),
-                links: this.graphData.links.map(l => ({
-                    source: typeof l.source === 'object' ? l.source.id : l.source,
-                    target: typeof l.target === 'object' ? l.target.id : l.target,
-                    label: l.label,
-                    directional: l.directional
-                }))
-            };
             await entry.setFlag("fang", "graphData", exportData);
+
+            // If GM is saving, optionally force all players to sync to this new baseline
+            if (triggerSync && game.user.isGM) {
+                game.socket.emit("module.fang", { action: "showGraph" });
+            }
         } else {
-            ui.notifications.warn(game.i18n.localize("FANG.Messages.SaveNoPermission"));
+            // Player Collaborative Edit Relay
+            const allowPlayerEdit = game.settings.get("fang", "allowPlayerEditing");
+            if (allowPlayerEdit) {
+                const isGMOnline = game.users.some(u => u.isGM && u.active);
+                if (isGMOnline) {
+                    console.log("FANG | Sending edit request to GM via socket.");
+                    game.socket.emit("module.fang", {
+                        action: "playerEditGraph",
+                        payload: { newGraphData: exportData }
+                    });
+                } else {
+                    ui.notifications.warn(game.i18n.localize("FANG.Messages.WarnNoGMOnline"));
+                }
+            } else {
+                ui.notifications.warn(game.i18n.localize("FANG.Messages.SaveNoPermission"));
+            }
         }
     }
 
@@ -242,10 +283,15 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             const otherActors = [];
 
             game.actors.contents.forEach(actor => {
+                // If it's already on the canvas, everyone can see it in that optgroup
                 if (canvasActorIds.has(actor.id)) {
                     onCanvasActors.push(actor);
                 } else {
-                    otherActors.push(actor);
+                    // Spoiling Protection: Only GMs see ALL other actors.
+                    // Players only see actors they have at least Observer permission for.
+                    if (game.user.isGM || actor.testUserPermission(game.user, "OBSERVER")) {
+                        otherActors.push(actor);
+                    }
                 }
             });
 
@@ -311,7 +357,23 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         }
     }
 
+    _canEditGraph(silent = false) {
+        if (game.user.isGM) return true;
+        const allowPlayerEdit = game.settings.get("fang", "allowPlayerEditing");
+        if (!allowPlayerEdit) {
+            if (!silent) ui.notifications.warn(game.i18n.localize("FANG.Messages.SaveNoPermission"));
+            return false;
+        }
+        const isGMOnline = game.users.some(u => u.isGM && u.active);
+        if (!isGMOnline) {
+            if (!silent) ui.notifications.warn(game.i18n.localize("FANG.Messages.WarnNoGMOnline"));
+            return false;
+        }
+        return true;
+    }
+
     async _onAddLink() {
+        if (!this._canEditGraph()) return;
         const sourceId = this.element.querySelector("#sourceSelect").value;
         const targetId = this.element.querySelector("#targetSelect").value;
         const label = this.element.querySelector("#linkLabel").value.trim();
@@ -345,6 +407,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     async _onDeleteElement() {
+        if (!this._canEditGraph()) return;
         const selectDelete = this.element.querySelector("#deleteSelect");
         const val = selectDelete.value;
 
@@ -420,6 +483,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
     async _onDrop(event) {
         event.preventDefault();
+        if (!this._canEditGraph()) return;
         let data;
         try {
             data = JSON.parse(event.dataTransfer.getData("text/plain"));
@@ -603,6 +667,55 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 width: 400
             }).render(true);
         }
+    }
+
+    async _renderAdvancedSettingsDialog() {
+        const isEnabled = game.settings.get("fang", "allowPlayerEditing");
+        const title = game.i18n.localize("FANG.UI.AdvancedSettings") || "Advanced Settings";
+        const btnSave = game.i18n.localize("FANG.Dialogs.BtnSave") || "Speichern";
+        const btnCancel = game.i18n.localize("FANG.Dialogs.BtnCancel") || "Abbrechen";
+
+        const content = `
+            <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px;">
+                <label style="font-weight: bold; flex: 1; margin: 0;">${game.i18n.localize("FANG.Settings.AllowPlayerEditing.Name") || "Enable Player Edit"}</label>
+                <div class="form-fields" style="display: flex; justify-content: flex-end; flex: 0 0 50px;">
+                    <input type="checkbox" id="dlgAllowPlayerEdit" ${isEnabled ? "checked" : ""}>
+                </div>
+            </div>
+            <p class="notes" style="font-size: 0.85em; color: gray; margin-top: 5px; margin-bottom: 15px; line-height: 1.3;">
+                ${game.i18n.localize("FANG.Settings.AllowPlayerEditing.Hint") || "If enabled, players can create and delete connections."}
+            </p>
+        `;
+
+        new Dialog({
+            title: title,
+            content: content,
+            buttons: {
+                save: {
+                    icon: '<i class="fas fa-save"></i>',
+                    label: btnSave,
+                    callback: async (html) => {
+                        const newState = html.find("#dlgAllowPlayerEdit").is(":checked");
+                        if (newState !== isEnabled) {
+                            await game.settings.set("fang", "allowPlayerEditing", newState);
+                            if (newState) {
+                                ui.notifications.info(game.i18n.localize("FANG.Messages.PlayersCanEdit"));
+                            } else {
+                                ui.notifications.info(game.i18n.localize("FANG.Messages.PlayersCannotEdit"));
+                            }
+                        }
+                    }
+                },
+                cancel: {
+                    icon: '<i class="fas fa-times"></i>',
+                    label: btnCancel
+                }
+            },
+            default: "save"
+        }, {
+            classes: ["fang-dialog"],
+            width: 400
+        }).render(true);
     }
 
     _onCanvasDoubleClick(event) {
@@ -1273,17 +1386,20 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     dragstarted(event) {
+        if (!this._canEditGraph(false)) return; // Show warning on first click
         if (!event.active) this.simulation.alphaTarget(0.3).restart();
         event.subject.fx = event.subject.x;
         event.subject.fy = event.subject.y;
     }
 
     dragged(event) {
+        if (!this._canEditGraph(true)) return; // Silent during rapid drag events
         event.subject.fx = event.x;
         event.subject.fy = event.y;
     }
 
     dragended(event) {
+        if (!this._canEditGraph(true)) return; // Silent at end
         if (!event.active) this.simulation.alphaTarget(0);
         event.subject.fx = null;
         event.subject.fy = null;

@@ -66,6 +66,11 @@
     box-sizing: border-box;
 }
 
+/* GM Only Elements */
+body.role-player .fang-app-container .gm-only {
+    display: none !important;
+}
+
 /* Sidebar Styling */
 .fang-app-container .sidebar {
     width: 340px;
