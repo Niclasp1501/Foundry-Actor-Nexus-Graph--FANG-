@@ -62,9 +62,6 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const btnToggleCenter = this.element.querySelector("#btnToggleCenter");
         if (btnToggleCenter) btnToggleCenter.addEventListener("click", this._onToggleCenterNode.bind(this));
 
-        const btnManageFactions = this.element.querySelector("#btnManageFactions");
-        if (btnManageFactions) btnManageFactions.addEventListener("click", this._onManageFactions.bind(this));
-
         const canvas = this.element.querySelector("#graphCanvas");
         canvas.addEventListener("dblclick", this._onCanvasDoubleClick.bind(this));
         canvas.addEventListener("contextmenu", this._onCanvasRightClick.bind(this));
@@ -193,46 +190,11 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             const data = entry.getFlag("fang", "graphData");
             if (data) {
                 this.graphData = foundry.utils.duplicate(data);
-
-                // --- Migration Logic ---
-                // Rename 'groups' array to 'factions'
-                if (this.graphData.groups && !this.graphData.factions) {
-                    this.graphData.factions = this.graphData.groups;
-                    delete this.graphData.groups;
-                }
-
-                if (!this.graphData.factions) this.graphData.factions = [];
-
-                // Convert 'groupIds' array or 'groupId' string to 'factionId' string
-                this.graphData.nodes.forEach(node => {
-                    if (node.groupIds && Array.isArray(node.groupIds) && !node.factionId) {
-                        node.factionId = node.groupIds[0] || null;
-                        delete node.groupIds;
-                    } else if (node.groupId && !node.factionId) {
-                        node.factionId = node.groupId;
-                        delete node.groupId;
-                    }
-                });
-
-                // Ensure factions have X/Y positions for drawing hubs
-                this.graphData.factions.forEach(f => {
-                    if (f.x === undefined || f.y === undefined) {
-                        f.x = (this.width || 800) / 2 + (Math.random() - 0.5) * 150;
-                        f.y = (this.height || 600) / 2 + (Math.random() - 0.5) * 150;
-                    }
-                });
-
-                if (this.graphData.showFactionLines === undefined) {
-                    this.graphData.showFactionLines = true;
-                }
-                if (this.graphData.showFactionLegend === undefined) {
-                    this.graphData.showFactionLegend = true;
-                }
             } else {
-                this.graphData = { nodes: [], links: [], factions: [] };
+                this.graphData = { nodes: [], links: [] };
             }
         } else {
-            this.graphData = { nodes: [], links: [], factions: [] };
+            this.graphData = { nodes: [], links: [] };
         }
     }
 
@@ -244,7 +206,6 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     id: n.id,
                     name: n.name,
                     role: n.role,
-                    factionId: n.factionId || null,
                     x: n.x,
                     y: n.y,
                     vx: n.vx,
@@ -255,18 +216,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     source: typeof l.source === 'object' ? l.source.id : l.source,
                     target: typeof l.target === 'object' ? l.target.id : l.target,
                     label: l.label,
-                    directional: l.directional || false
-                })),
-                factions: this.graphData.factions.map(f => ({
-                    id: f.id,
-                    name: f.name,
-                    icon: f.icon,
-                    color: f.color,
-                    x: f.x,
-                    y: f.y
-                })),
-                showFactionLines: this.graphData.showFactionLines !== false,
-                showFactionLegend: this.graphData.showFactionLegend !== false
+                    directional: l.directional
+                }))
             };
             await entry.setFlag("fang", "graphData", exportData);
         } else {
@@ -463,162 +414,6 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         }
     }
 
-    async _onManageFactions() {
-        if (!game.user.isGM) return;
-
-        let factionsHtml = this.graphData.factions.map((f, index) => `
-            <div class="fang-faction-item" style="display: flex; gap: 5px; align-items: center; margin-bottom: 5px;">
-                <input type="hidden" class="faction-id" value="${f.id}">
-                <input type="color" class="faction-color" data-index="${index}" value="${f.color}" title="${game.i18n.localize('FANG.UI.Color') || 'Farbe'}" style="flex: 0 0 30px; height: 30px; padding: 0;">
-                <input type="text" class="faction-name" data-index="${index}" value="${f.name}" placeholder="Fraktionsname" style="flex: 1;">
-                <div class="faction-icon-preview" style="flex: 0 0 30px; height: 30px; border: 1px solid rgba(0,0,0,0.2); border-radius: 3px; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.1); overflow: hidden;">
-                    <img src="${f.icon || ''}" id="preview-icon-${index}" style="max-width: 100%; max-height: 100%; display: ${f.icon ? 'block' : 'none'}; object-fit: contain;">
-                </div>
-                <button type="button" class="btn file-picker" data-type="image" data-target="faction-icon-${index}" title="Icon auswählen" style="flex: 0 0 30px; padding: 0;">
-                    <i class="fas fa-file-image"></i>
-                </button>
-                <input type="hidden" class="faction-icon" id="faction-icon-${index}" data-index="${index}" value="${f.icon || ''}">
-                <button type="button" class="btn danger-btn btn-delete-faction" data-index="${index}" title="Fraktion löschen" style="flex: 0 0 30px; padding: 0;">
-                    <i class="fas fa-trash"></i>
-                </button>
-            </div>
-        `).join("");
-
-        const dialogContent = `
-            <div style="display: flex; flex-direction: column; height: 100%;">
-                <p style="flex: 0 0 auto;">${game.i18n.localize("FANG.UI.ManageFactionsHint")}</p>
-                <div style="flex: 0 0 auto; margin-bottom: 10px; display: flex; align-items: center; gap: 10px;">
-                    <input type="checkbox" id="fang-show-faction-lines" ${this.graphData.showFactionLines !== false ? 'checked' : ''}>
-                    <label for="fang-show-faction-lines">${game.i18n.localize("FANG.Dialogs.ShowFactionLines")}</label>
-                </div>
-                <div style="flex: 0 0 auto; margin-bottom: 10px; display: flex; align-items: center; gap: 10px;">
-                    <input type="checkbox" id="fang-show-faction-legend" ${this.graphData.showFactionLegend !== false ? 'checked' : ''}>
-                    <label for="fang-show-faction-legend">${game.i18n.localize("FANG.Dialogs.ShowFactionLegend")}</label>
-                </div>
-                <div id="fang-factions-list" style="flex: 1 1 auto; overflow-y: auto; overflow-x: hidden; margin-bottom: 10px; min-height: 150px; border: 1px solid rgba(0,0,0,0.2); padding: 5px;">
-                    ${factionsHtml}
-                </div>
-                <button type="button" id="fang-add-faction-btn" class="btn" style="flex: 0 0 auto; width: 100%; margin-bottom: 10px; border: 1px solid #d4af37; background: rgba(139, 0, 0, 0.05); font-weight: bold; color: #4b443c;">
-                    <i class="fas fa-plus"></i> ${game.i18n.localize("FANG.Dialogs.BtnAddFaction") || 'Fraktion hinzufügen'}
-                </button>
-            </div>
-        `;
-        const factionDialog = new Dialog({
-            title: game.i18n.localize("FANG.UI.ManageFactions"),
-            content: dialogContent,
-            render: (html) => {
-                // Add new blank row dynamically
-                html.find("#fang-add-faction-btn").on("click", () => {
-                    const list = html.find("#fang-factions-list");
-                    const newIndex = list.children().length;
-                    const randomColor = '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
-                    list.append(`
-                        <div class="fang-faction-item" style="display: flex; gap: 5px; align-items: center; margin-bottom: 5px;">
-                            <input type="hidden" class="faction-id" value="">
-                            <input type="color" class="faction-color" data-index="${newIndex}" value="${randomColor}" title="Farbe" style="flex: 0 0 30px; height: 30px; padding: 0;">
-                            <input type="text" class="faction-name" data-index="${newIndex}" value="Neue Fraktion" placeholder="Fraktionsname" style="flex: 1;">
-                            <div class="faction-icon-preview" style="flex: 0 0 30px; height: 30px; border: 1px solid rgba(0,0,0,0.2); border-radius: 3px; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.1); overflow: hidden;">
-                                <img src="" id="preview-icon-${newIndex}" style="max-width: 100%; max-height: 100%; display: none; object-fit: contain;">
-                            </div>
-                            <button type="button" class="btn file-picker" data-type="image" data-target="faction-icon-${newIndex}" title="Icon auswählen" style="flex: 0 0 30px; padding: 0;">
-                                <i class="fas fa-file-image"></i>
-                            </button>
-                            <input type="hidden" class="faction-icon" id="faction-icon-${newIndex}" data-index="${newIndex}" value="">
-                            <button type="button" class="btn danger-btn btn-delete-faction" data-index="${newIndex}" title="Fraktion löschen" style="flex: 0 0 30px; padding: 0;">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                    `);
-
-                    // Bind delete specifically to the newly added row
-                    html.find(`.btn-delete-faction[data-index='${newIndex}']`).on("click", (e) => {
-                        $(e.currentTarget).closest('.fang-faction-item').remove();
-                    });
-                });
-
-                // Bind FilePicker
-                html.find(".file-picker").on("click", (event) => {
-                    event.preventDefault();
-                    const button = event.currentTarget;
-                    const targetInput = button.dataset.target;
-                    new FilePicker({
-                        type: "image",
-                        callback: (path) => {
-                            html.find(`#${targetInput}`).val(path);
-                            // Update preview immediately
-                            const index = targetInput.split("-").pop();
-                            const previewImg = html.find(`#preview-icon-${index}`);
-                            previewImg.attr("src", path);
-                            previewImg.show();
-                        }
-                    }).render(true);
-                });
-
-                // Bind delete to existing rows
-                html.find(".btn-delete-faction").on("click", (e) => {
-                    $(e.currentTarget).closest('.fang-faction-item').remove();
-                });
-            },
-            buttons: {
-                save: {
-                    icon: '<i class="fas fa-save"></i>',
-                    label: game.i18n.localize("FANG.Dialogs.BtnSave"),
-                    callback: async (html) => {
-                        this.graphData.showFactionLines = html.find("#fang-show-faction-lines").is(":checked");
-                        this.graphData.showFactionLegend = html.find("#fang-show-faction-legend").is(":checked");
-                        const newFactions = [];
-                        html.find(".fang-faction-item").each((i, el) => {
-                            const factionIdFromInput = $(el).find(".faction-id").val();
-                            const name = $(el).find(".faction-name").val().trim();
-                            const color = $(el).find(".faction-color").val();
-                            const icon = $(el).find(".faction-icon").val().trim();
-
-                            if (name) {
-                                // Find existing faction by ID to maintain stability even if renamed
-                                const existingFaction = factionIdFromInput ? this.graphData.factions.find(f => f.id === factionIdFromInput) : null;
-
-                                newFactions.push({
-                                    id: existingFaction ? existingFaction.id : foundry.utils.randomID(),
-                                    name: name,
-                                    color: color,
-                                    icon: icon !== "" ? icon : null,
-                                    x: existingFaction && existingFaction.x !== undefined ? existingFaction.x : this.width / 2 + (Math.random() - 0.5) * 100,
-                                    y: existingFaction && existingFaction.y !== undefined ? existingFaction.y : this.height / 2 + (Math.random() - 0.5) * 100
-                                });
-                            }
-                        });
-
-                        // Handle faction cleanup
-                        const keptFactionIds = new Set(newFactions.map(f => f.id));
-                        this.graphData.nodes.forEach(node => {
-                            if (node.factionId && !keptFactionIds.has(node.factionId)) {
-                                node.factionId = null;
-                            }
-                        });
-
-                        this.graphData.factions = newFactions;
-
-                        this.initSimulation();
-                        this.simulation.alpha(0.05).restart();
-                        await this.saveData();
-                    }
-                },
-                cancel: {
-                    icon: '<i class="fas fa-times"></i>',
-                    label: game.i18n.localize("FANG.Dialogs.BtnCancel")
-                }
-            },
-            default: "save"
-        }, {
-            classes: ["dialog", "fang-dialog"],
-            width: 450,
-            height: 480,
-            resizable: true
-        });
-
-        factionDialog.render(true);
-    }
-
     _onDragOver(event) {
         event.preventDefault(); // Necessary to allow dropping
     }
@@ -738,7 +533,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             }).render(true);
 
         } else {
-            // Scenario 1: Dropped on empty canvas -> Add the node immediately without prompting
+            // Scenario 1: Dropped on empty canvas -> Ask for optional Role/Organization
             let existingNode = this.graphData.nodes.find(n => n.id === actor.id);
             if (existingNode) {
                 // If it already exists, just move it to the new mouse location
@@ -746,25 +541,67 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 existingNode.y = y;
                 existingNode.fx = null;
                 existingNode.fy = null;
-            } else {
-                // Add new node at precise location with a tiny random offset to prevent perfect stacking
-                const jitterX = x + (Math.random() - 0.5) * 5;
-                const jitterY = y + (Math.random() - 0.5) * 5;
-
-                this.graphData.nodes.push({
-                    id: actor.id,
-                    name: actor.name,
-                    role: null,
-                    factionId: null,
-                    x: jitterX,
-                    y: jitterY
-                });
+                this.initSimulation();
+                this.simulation.alpha(0.8).restart();
+                this._populateActors();
+                await this.saveData();
+                return;
             }
 
-            this.initSimulation();
-            this.simulation.alpha(0.8).restart();
-            this._populateActors();
-            await this.saveData();
+            const title = game.i18n.localize("FANG.Dialogs.RoleTitle") || "Rolle / Organisation";
+            const contentString = (game.i18n.localize("FANG.Dialogs.RoleContent") || "Gib eine Rolle oder Organisation für {actor} ein (optional):").replace("{actor}", actor.name);
+            const lblRole = game.i18n.localize("FANG.Dialogs.RoleInput") || "Rolle / Organisation";
+            const btnAdd = game.i18n.localize("FANG.Dialogs.BtnAdd") || "Hinzufügen";
+            const btnCancel = game.i18n.localize("FANG.Dialogs.BtnCancel") || "Abbrechen";
+
+            const dialogContent = `
+                <p><strong>${contentString}</strong></p>
+                <div class="form-group">
+                    <label>${lblRole}:</label>
+                    <div class="form-fields">
+                        <input type="text" id="fang-node-role" style="width: 100%;">
+                    </div>
+                </div>
+            `;
+
+            new Dialog({
+                title: title,
+                content: dialogContent,
+                buttons: {
+                    add: {
+                        icon: '<i class="fas fa-user-tag"></i>',
+                        label: btnAdd,
+                        callback: async (html) => {
+                            const roleStr = html.find("#fang-node-role").val().trim();
+                            // Add new node at precise location with a tiny random offset to prevent perfect stacking
+                            const jitterX = x + (Math.random() - 0.5) * 5;
+                            const jitterY = y + (Math.random() - 0.5) * 5;
+
+                            this.graphData.nodes.push({
+                                id: actor.id,
+                                name: actor.name,
+                                role: roleStr !== "" ? roleStr : null,
+                                x: jitterX,
+                                y: jitterY
+                            });
+
+                            this.initSimulation();
+                            // Start simulation with high heat (alpha > 0.5) to forcefully push overlapping nodes out of the way
+                            this.simulation.alpha(0.8).restart();
+                            this._populateActors();
+                            await this.saveData();
+                        }
+                    },
+                    cancel: {
+                        icon: '<i class="fas fa-times"></i>',
+                        label: btnCancel
+                    }
+                },
+                default: "add"
+            }, {
+                classes: ["dialog", "fang-dialog"],
+                width: 400
+            }).render(true);
         }
     }
 
@@ -832,20 +669,13 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         }
 
         if (clickedNode && game.user.isGM) {
-            const title = game.i18n.localize("FANG.Dialogs.EditRoleTitle") || "Details bearbeiten";
-            const contentString = (game.i18n.localize("FANG.Dialogs.EditRoleContent") || "Details für {actor}:").replace("{actor}", clickedNode.name);
-            const lblRole = game.i18n.localize("FANG.Dialogs.RoleInput") || "Rolle";
-            const lblGroup = game.i18n.localize("FANG.Dialogs.GroupInput") || "Gruppe / Standort";
+            const title = game.i18n.localize("FANG.Dialogs.EditRoleTitle") || "Rolle bearbeiten";
+            const contentString = (game.i18n.localize("FANG.Dialogs.EditRoleContent") || "Rolle / Organisation für {actor}:").replace("{actor}", clickedNode.name);
+            const lblRole = game.i18n.localize("FANG.Dialogs.RoleInput") || "Rolle / Organisation";
             const btnSave = game.i18n.localize("FANG.Dialogs.BtnSave") || "Speichern";
             const btnCancel = game.i18n.localize("FANG.Dialogs.BtnCancel") || "Abbrechen";
 
             const currentRole = clickedNode.role || "";
-            const currentFactionId = clickedNode.factionId || null;
-
-            const factionOptions = this.graphData.factions.map(f => {
-                const selected = f.id === currentFactionId ? "selected" : "";
-                return `<option value="${f.id}" ${selected}>${f.name}</option>`;
-            }).join("");
 
             const dialogContent = `
                 <p><strong>${contentString}</strong></p>
@@ -855,15 +685,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                         <input type="text" id="fang-edit-role" value="${currentRole}" style="width: 100%;">
                     </div>
                 </div>
-                <div class="form-group">
-                    <label>${game.i18n.localize("FANG.Dialogs.FactionInput") || "Fraktion"}:</label>
-                    <div class="form-fields">
-                        <select id="fang-edit-faction" style="width: 100%;">
-                            <option value="">-- Keine --</option>
-                            ${factionOptions}
-                        </select>
-                    </div>
-                </div>
+                <p style="font-size: 0.8em; color: gray;">Lass das Feld leer, um die Rolle zu entfernen.</p>
             `;
 
             new Dialog({
@@ -875,10 +697,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                         label: btnSave,
                         callback: async (html) => {
                             const newRole = html.find("#fang-edit-role").val().trim();
-                            const newFactionId = html.find("#fang-edit-faction").val();
-
                             clickedNode.role = newRole !== "" ? newRole : null;
-                            clickedNode.factionId = newFactionId !== "" ? newFactionId : null;
 
                             // Force re-render
                             this.initSimulation();
@@ -892,6 +711,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     }
                 },
                 default: "save"
+            }, {
+                classes: ["dialog", "fang-dialog"],
+                width: 400
             }).render(true);
         }
     }
@@ -1068,17 +890,13 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         return force;
     }
 
-
-
-
-
     ticked() {
         if (!this.context) return;
 
         // Visual Cosmic Wind Calculation (Does NOT affect D3 math)
         const cosmicWindEnabled = game.settings.get("fang", "enableCosmicWind");
         const amplitude = game.settings.get("fang", "cosmicWindStrength") || 4.0;
-        const time = Date.now() * 0.003;
+        const time = Date.now() * 0.001;
         const speed = 1.0;
 
         // Fetch Boss Aura Color safely (V13 ColorField returns a Color instance/Number, not a string)
@@ -1094,16 +912,16 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             }
         }
 
-        let auraR = 212, auraG = 175, auraB = 55; // Default Gold RGB
+        let cx = 212, cy = 175, cz = 55; // Default Gold RGB
         if (/^#([A-Fa-f0-9]{3}){1,2}$/.test(centerColorHex)) {
             let c = centerColorHex.substring(1).split('');
             if (c.length === 3) {
                 c = [c[0], c[0], c[1], c[1], c[2], c[2]];
             }
             c = '0x' + c.join('');
-            auraR = (c >> 16) & 255;
-            auraG = (c >> 8) & 255;
-            auraB = c & 255;
+            cx = (c >> 16) & 255;
+            cy = (c >> 8) & 255;
+            cz = c & 255;
         }
 
         // Create a lookup for rendered positions
@@ -1131,73 +949,6 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         this.context.clearRect(0, 0, this.width, this.height);
         this.context.translate(this.transform.x, this.transform.y);
         this.context.scale(this.transform.k, this.transform.k);
-
-        // --- Draw Direct Faction Member Links (Ring Topology + Adaptive Rendering) ---
-        // Drawing these FIRST ensures they are UNDERNEATH regular links and nodes
-        if (this.graphData.showFactionLines !== false && this.graphData.factions && this.graphData.factions.length > 0) {
-            // Build a set of existing regular link pairs for overlap detection
-            const regularLinkPairs = new Set();
-            this.graphData.links.forEach(l => {
-                const sId = typeof l.source === 'object' ? l.source.id : l.source;
-                const tId = typeof l.target === 'object' ? l.target.id : l.target;
-                regularLinkPairs.add(sId < tId ? `${sId}-${tId}` : `${tId}-${sId}`);
-            });
-
-            this.graphData.factions.forEach(faction => {
-                const members = this.graphData.nodes.filter(n => n.factionId === faction.id);
-                if (members.length < 2) return;
-
-                // 1. Calculate Centroid for sorting
-                let cx = 0, cy = 0;
-                members.forEach(m => {
-                    const pos = renderPos[m.id];
-                    cx += pos.x;
-                    cy += pos.y;
-                });
-                cx /= members.length;
-                cy /= members.length;
-
-                // 2. Sort members by angle to create a clean perimeter ring
-                const sortedMembers = [...members].sort((a, b) => {
-                    const posA = renderPos[a.id];
-                    const posB = renderPos[b.id];
-                    return Math.atan2(posA.y - cy, posA.x - cx) - Math.atan2(posB.y - cy, posB.x - cx);
-                });
-
-                this.context.save();
-                this.context.setLineDash([8, 8]);
-                this.context.strokeStyle = faction.color || "#ffffff";
-
-                for (let i = 0; i < sortedMembers.length; i++) {
-                    const node1 = sortedMembers[i];
-                    const node2 = sortedMembers[(i + 1) % sortedMembers.length];
-                    const m1 = renderPos[node1.id];
-                    const m2 = renderPos[node2.id];
-                    if (!m1 || !m2) continue;
-
-                    const pairKey = node1.id < node2.id ? `${node1.id}-${node2.id}` : `${node2.id}-${node1.id}`;
-                    const hasRegularLink = regularLinkPairs.has(pairKey);
-
-                    if (hasRegularLink) {
-                        // Adaptive Glow: Draw a wider, faint background trail behind the regular link
-                        this.context.lineWidth = 6;
-                        this.context.globalAlpha = 0.2;
-                    } else {
-                        // Sharp default: Sharp thin dashed line
-                        this.context.lineWidth = 1.5;
-                        this.context.globalAlpha = 0.5; // Slightly transparent to keep it premium
-                    }
-
-                    this.context.beginPath();
-                    this.context.moveTo(m1.x, m1.y);
-                    this.context.lineTo(m2.x, m2.y);
-                    this.context.stroke();
-                }
-                this.context.restore();
-            });
-        }
-        // ----------------------------------------------------
-        // ----------------------------------------------------
 
         // Draw Links
         this.context.lineWidth = 2;
@@ -1417,25 +1168,30 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
             this.context.save();
 
-            // -----------------------------
-            const faction = node.factionId ? this.graphData.factions.find(f => f.id === node.factionId) : null;
-
-            // --- Draw Center (Boss) Aura ---
+            // --- Boss Aura Rendering ---
             if (node.isCenter) {
-                this.context.beginPath();
-                this.context.arc(pos.x, pos.y, radius + 2, 0, Math.PI * 2);
-                this.context.strokeStyle = `rgba(${auraR}, ${auraG}, ${auraB}, 0.8)`;
-                this.context.lineWidth = 4;
-                this.context.shadowBlur = 15;
-                this.context.shadowColor = `rgba(${auraR}, ${auraG}, ${auraB}, 1)`;
-                this.context.stroke();
-                this.context.shadowBlur = 0; // Reset for token
-            }
-            // -----------------------------
+                const auraTime = Date.now() * 0.003;
+                // Subtle pulsating effect using sine wave for the aura ring
+                const pulseRadius = radius + 6 + Math.sin(auraTime) * 3;
 
-            // -----------------------------
-            // Faction visuals (lines and labels) are handled after the node loop
-            // to ensure they are on top or clearly visible.
+                this.context.beginPath();
+                this.context.arc(pos.x, pos.y, pulseRadius, 0, Math.PI * 2, true);
+
+                // Create a radial gradient for the aura using parsed RGB
+                const gradient = this.context.createRadialGradient(pos.x, pos.y, radius, pos.x, pos.y, pulseRadius);
+                gradient.addColorStop(0, `rgba(${cx}, ${cy}, ${cz}, 0.8)`); // Solid Inner
+                gradient.addColorStop(1, `rgba(${cx}, ${cy}, ${cz}, 0.0)`); // Transparent Outer
+
+                this.context.fillStyle = gradient;
+                this.context.fill();
+
+                // Crisp hard line around the token itself
+                this.context.beginPath();
+                this.context.arc(pos.x, pos.y, radius + 2, 0, Math.PI * 2, true);
+                this.context.lineWidth = 3;
+                this.context.strokeStyle = `rgba(${cx}, ${cy}, ${cz}, 0.9)`;
+                this.context.stroke();
+            }
             // -----------------------------
 
             if (node.imgElement && node.imgElement.complete && node.imgElement.naturalWidth !== 0) {
@@ -1450,24 +1206,6 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 this.context.lineWidth = 3;
                 this.context.strokeStyle = "#d97706";
                 this.context.stroke();
-            }
-
-            // --- Faction Icon (Top-Left corner) ---
-            if (faction && faction.icon) {
-                if (!this._iconCache) this._iconCache = {};
-                let img = this._iconCache[faction.icon];
-                if (!img) {
-                    img = new Image();
-                    img.src = faction.icon;
-                    this._iconCache[faction.icon] = img;
-                }
-
-                if (img.complete && img.naturalWidth > 0) {
-                    const iconSize = 24;
-                    // Calculate position at top-left of circle
-                    const offset = radius * 0.7; // Approx 45 degrees
-                    this.context.drawImage(img, pos.x - offset - iconSize / 2, pos.y - offset - iconSize / 2, iconSize, iconSize);
-                }
             }
 
             this.context.restore();
@@ -1513,128 +1251,42 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             }
         });
 
-
-        // ------------------------------------------
-
         this.context.restore();
-
-        // --- Draw Faction Legend (Bottom-Right) ---
-        if (this.graphData.showFactionLegend !== false && this.graphData.factions && this.graphData.factions.length > 0) {
-            this.context.save();
-            const padding = 10;
-            const itemHeight = 30;
-            const iconSize = 20;
-            const legendWidth = 180;
-            const legendHeight = (this.graphData.factions.length * itemHeight) + (padding * 2);
-
-            const startX = this.width - legendWidth - 20;
-            const startY = this.height - legendHeight - 20;
-
-            // Background Box
-            this.context.fillStyle = "rgba(0, 0, 0, 0.7)";
-            this.context.strokeStyle = "#d4af37";
-            this.context.lineWidth = 1.5;
-            this.context.beginPath();
-            this.context.roundRect(startX, startY, legendWidth, legendHeight, 8);
-            this.context.fill();
-            this.context.stroke();
-
-            // Legend Items
-            this.context.textAlign = "left";
-            this.context.textBaseline = "middle";
-            this.context.font = "bold 13px 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
-
-            this.graphData.factions.forEach((f, i) => {
-                const itemY = startY + padding + (i * itemHeight) + (itemHeight / 2);
-
-                // Draw Icon or Color Circle
-                if (f.icon) {
-                    if (!this._iconCache) this._iconCache = {};
-                    let img = this._iconCache[f.icon];
-                    if (!img) {
-                        img = new Image();
-                        img.src = f.icon;
-                        this._iconCache[f.icon] = img;
-                    }
-                    if (img.complete && img.naturalWidth > 0) {
-                        this.context.drawImage(img, startX + padding, itemY - iconSize / 2, iconSize, iconSize);
-                    } else {
-                        // Temp fallback color dot if image not loaded
-                        this.context.beginPath();
-                        this.context.arc(startX + padding + iconSize / 2, itemY, iconSize / 3, 0, Math.PI * 2);
-                        this.context.fillStyle = f.color || "#ffffff";
-                        this.context.fill();
-                    }
-                } else {
-                    this.context.beginPath();
-                    this.context.arc(startX + padding + iconSize / 2, itemY, iconSize / 3, 0, Math.PI * 2);
-                    this.context.fillStyle = f.color || "#ffffff";
-                    this.context.fill();
-                }
-
-                // Name Text
-                this.context.fillStyle = "#ffffff";
-                const textX = startX + padding + iconSize + 10;
-                // Clip text if it's too long
-                const maxWidth = legendWidth - (padding * 2) - iconSize - 10;
-                let name = f.name;
-                if (this.context.measureText(name).width > maxWidth) {
-                    while (name.length > 0 && this.context.measureText(name + "...").width > maxWidth) {
-                        name = name.slice(0, -1);
-                    }
-                    name += "...";
-                }
-                this.context.fillText(name, textX, itemY);
-            });
-
-            this.context.restore();
-        }
     }
 
     dragSubject(event) {
-        let s2 = 40 * 40 * this.transform.k; // Increased drag target slop 
+        let s2 = 30 * 30 * this.transform.k;
         let subject = null;
         let x = this.transform.invertX(event.x);
         let y = this.transform.invertY(event.y);
 
-        // 1. Check if we clicked a node
         for (let node of this.graphData.nodes) {
             let dx = x - node.x;
             let dy = y - node.y;
             let d2 = dx * dx + dy * dy;
             if (d2 < s2) {
-                subject = { type: 'node', data: node };
+                subject = node;
                 s2 = d2;
             }
         }
-
-
-
         return subject;
     }
 
     dragstarted(event) {
         if (!event.active) this.simulation.alphaTarget(0.3).restart();
-        if (event.subject.type === 'node') {
-            event.subject.data.fx = event.subject.data.x;
-            event.subject.data.fy = event.subject.data.y;
-        }
+        event.subject.fx = event.subject.x;
+        event.subject.fy = event.subject.y;
     }
 
     dragged(event) {
-        if (event.subject.type === 'node') {
-            event.subject.data.fx = event.x;
-            event.subject.data.fy = event.y;
-
-        }
+        event.subject.fx = event.x;
+        event.subject.fy = event.y;
     }
 
     dragended(event) {
         if (!event.active) this.simulation.alphaTarget(0);
-        if (event.subject.type === 'node') {
-            event.subject.data.fx = null;
-            event.subject.data.fy = null;
-        }
+        event.subject.fx = null;
+        event.subject.fy = null;
         // Save position data after drag
         this.saveData();
     }

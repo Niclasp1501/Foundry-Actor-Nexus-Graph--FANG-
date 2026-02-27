@@ -31,19 +31,13 @@
                     <option value="" disabled selected>{{localize "FANG.UI.SelectElement"}}</option>
                 </select>
                 <div style="display: flex; gap: 5px; margin-top: 5px;">
-                    <button id="btnToggleCenter" class="btn action-btn" style="flex: 1;"
-                        title="{{localize 'FANG.UI.ToggleCenterHint'}}">
+                    <button id="btnToggleCenter" class="btn action-btn" style="flex: 1;" title="{{localize 'FANG.UI.ToggleCenterHint'}}">
                         <i class="fas fa-bullseye"></i> {{localize "FANG.UI.ToggleCenter"}}
                     </button>
-                    <button id="btnDeleteElement" class="btn danger-btn"
-                        style="flex: 1; background: #8b0000; color: white;">
+                    <button id="btnDeleteElement" class="btn danger-btn" style="flex: 1; background: #8b0000; color: white;">
                         <i class="fas fa-trash"></i> {{localize "FANG.UI.Delete"}}
                     </button>
                 </div>
-                <button id="btnManageFactions" class="btn action-btn" style="margin-top: 5px; width: 100%;"
-                    title="{{localize 'FANG.UI.ManageFactionsHint'}}">
-                    <i class="fas fa-users-cog"></i> {{localize "FANG.UI.ManageFactions"}}
-                </button>
             </div>
         </div>
 
