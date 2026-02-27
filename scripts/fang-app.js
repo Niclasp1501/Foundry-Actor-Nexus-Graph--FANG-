@@ -61,6 +61,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
         const canvas = this.element.querySelector("#graphCanvas");
         canvas.addEventListener("dblclick", this._onCanvasDoubleClick.bind(this));
+        canvas.addEventListener("contextmenu", this._onCanvasRightClick.bind(this));
 
         // Drag & Drop Listeners
         canvasContainer.addEventListener("dragover", this._onDragOver.bind(this));
@@ -198,7 +199,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const entry = await this.getJournalEntry();
         if (entry && entry.isOwner) {
             const exportData = {
-                nodes: this.graphData.nodes.map(n => ({ id: n.id, name: n.name, x: n.x, y: n.y, vx: n.vx, vy: n.vy })),
+                nodes: this.graphData.nodes.map(n => ({ id: n.id, name: n.name, role: n.role, x: n.x, y: n.y, vx: n.vx, vy: n.vy })),
                 links: this.graphData.links.map(l => ({
                     source: typeof l.source === 'object' ? l.source.id : l.source,
                     target: typeof l.target === 'object' ? l.target.id : l.target,
@@ -484,7 +485,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             }).render(true);
 
         } else {
-            // Scenario 1: Dropped on empty canvas -> Silent Drop
+            // Scenario 1: Dropped on empty canvas -> Ask for optional Role/Organization
             let existingNode = this.graphData.nodes.find(n => n.id === actor.id);
             if (existingNode) {
                 // If it already exists, just move it to the new mouse location
@@ -492,18 +493,67 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 existingNode.y = y;
                 existingNode.fx = null;
                 existingNode.fy = null;
-            } else {
-                // Add new node at precise location with a tiny random offset to prevent perfect stacking
-                const jitterX = x + (Math.random() - 0.5) * 5;
-                const jitterY = y + (Math.random() - 0.5) * 5;
-                this.graphData.nodes.push({ id: actor.id, name: actor.name, x: jitterX, y: jitterY });
+                this.initSimulation();
+                this.simulation.alpha(0.8).restart();
+                this._populateActors();
+                await this.saveData();
+                return;
             }
 
-            this.initSimulation();
-            // Start simulation with high heat (alpha > 0.5) to forcefully push overlapping nodes out of the way
-            this.simulation.alpha(0.8).restart();
-            this._populateActors();
-            await this.saveData();
+            const title = game.i18n.localize("FANG.Dialogs.RoleTitle") || "Rolle / Organisation";
+            const contentString = (game.i18n.localize("FANG.Dialogs.RoleContent") || "Gib eine Rolle oder Organisation für {actor} ein (optional):").replace("{actor}", actor.name);
+            const lblRole = game.i18n.localize("FANG.Dialogs.RoleInput") || "Rolle / Organisation";
+            const btnAdd = game.i18n.localize("FANG.Dialogs.BtnAdd") || "Hinzufügen";
+            const btnCancel = game.i18n.localize("FANG.Dialogs.BtnCancel") || "Abbrechen";
+
+            const dialogContent = `
+                <p><strong>${contentString}</strong></p>
+                <div class="form-group">
+                    <label>${lblRole}:</label>
+                    <div class="form-fields">
+                        <input type="text" id="fang-node-role" style="width: 100%;">
+                    </div>
+                </div>
+            `;
+
+            new Dialog({
+                title: title,
+                content: dialogContent,
+                buttons: {
+                    add: {
+                        icon: '<i class="fas fa-user-tag"></i>',
+                        label: btnAdd,
+                        callback: async (html) => {
+                            const roleStr = html.find("#fang-node-role").val().trim();
+                            // Add new node at precise location with a tiny random offset to prevent perfect stacking
+                            const jitterX = x + (Math.random() - 0.5) * 5;
+                            const jitterY = y + (Math.random() - 0.5) * 5;
+
+                            this.graphData.nodes.push({
+                                id: actor.id,
+                                name: actor.name,
+                                role: roleStr !== "" ? roleStr : null,
+                                x: jitterX,
+                                y: jitterY
+                            });
+
+                            this.initSimulation();
+                            // Start simulation with high heat (alpha > 0.5) to forcefully push overlapping nodes out of the way
+                            this.simulation.alpha(0.8).restart();
+                            this._populateActors();
+                            await this.saveData();
+                        }
+                    },
+                    cancel: {
+                        icon: '<i class="fas fa-times"></i>',
+                        label: btnCancel
+                    }
+                },
+                default: "add"
+            }, {
+                classes: ["dialog", "fang-dialog"],
+                width: 400
+            }).render(true);
         }
     }
 
@@ -540,6 +590,83 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             } else {
                 ui.notifications.warn(game.i18n.localize("FANG.Messages.ActorNotFound"));
             }
+        }
+    }
+
+    _onCanvasRightClick(event) {
+        event.preventDefault();
+        if (!this.transform) return;
+
+        // Convert mouse coordinates to canvas coordinate space
+        const bounds = this.canvas.getBoundingClientRect();
+        const mouseX = event.clientX - bounds.left;
+        const mouseY = event.clientY - bounds.top;
+
+        const x = this.transform.invertX(mouseX);
+        const y = this.transform.invertY(mouseY);
+
+        // Find the clicked node
+        const s2 = (30 * 30); // Base radius squared
+        let clickedNode = null;
+        let minD2 = s2;
+
+        for (let node of this.graphData.nodes) {
+            const dx = x - node.x;
+            const dy = y - node.y;
+            const d2 = dx * dx + dy * dy;
+            if (d2 < minD2) {
+                clickedNode = node;
+                minD2 = d2;
+            }
+        }
+
+        if (clickedNode && game.user.isGM) {
+            const title = game.i18n.localize("FANG.Dialogs.EditRoleTitle") || "Rolle bearbeiten";
+            const contentString = (game.i18n.localize("FANG.Dialogs.EditRoleContent") || "Rolle / Organisation für {actor}:").replace("{actor}", clickedNode.name);
+            const lblRole = game.i18n.localize("FANG.Dialogs.RoleInput") || "Rolle / Organisation";
+            const btnSave = game.i18n.localize("FANG.Dialogs.BtnSave") || "Speichern";
+            const btnCancel = game.i18n.localize("FANG.Dialogs.BtnCancel") || "Abbrechen";
+
+            const currentRole = clickedNode.role || "";
+
+            const dialogContent = `
+                <p><strong>${contentString}</strong></p>
+                <div class="form-group">
+                    <label>${lblRole}:</label>
+                    <div class="form-fields">
+                        <input type="text" id="fang-edit-role" value="${currentRole}" style="width: 100%;">
+                    </div>
+                </div>
+                <p style="font-size: 0.8em; color: gray;">Lass das Feld leer, um die Rolle zu entfernen.</p>
+            `;
+
+            new Dialog({
+                title: title,
+                content: dialogContent,
+                buttons: {
+                    save: {
+                        icon: '<i class="fas fa-save"></i>',
+                        label: btnSave,
+                        callback: async (html) => {
+                            const newRole = html.find("#fang-edit-role").val().trim();
+                            clickedNode.role = newRole !== "" ? newRole : null;
+
+                            // Force re-render
+                            this.initSimulation();
+                            this.simulation.alpha(0.05).restart();
+                            await this.saveData();
+                        }
+                    },
+                    cancel: {
+                        icon: '<i class="fas fa-times"></i>',
+                        label: btnCancel
+                    }
+                },
+                default: "save"
+            }, {
+                classes: ["dialog", "fang-dialog"],
+                width: 400
+            }).render(true);
         }
     }
 
@@ -966,10 +1093,18 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             // Draw Label Background for readability
             this.context.font = "bold 15px 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
             const metrics = this.context.measureText(node.name);
-            const textWidth = Math.max(metrics.width, 40);
-            const textHeight = 22;
+            let textWidth = Math.max(metrics.width, 40);
+
+            let roleTextWidth = 0;
+            if (node.role) {
+                this.context.font = "italic 12px 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
+                roleTextWidth = this.context.measureText(node.role).width;
+                textWidth = Math.max(textWidth, roleTextWidth);
+            }
+
+            const textHeight = node.role ? 36 : 22; // Make background taller if we have a role
             // Base the label offset on the BASE radius, so the label doesn't jump up and down
-            const labelYOffset = 30 + 11;
+            const labelYOffset = 30 + (node.role ? 18 : 11); // Push down slightly further if role exists
 
             this.context.fillStyle = "rgba(0, 0, 0, 0.8)";
             this.context.beginPath();
@@ -982,10 +1117,18 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             this.context.stroke();
 
             // Draw Node Name Text
+            this.context.font = "bold 15px 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
             this.context.fillStyle = "#ffffff";
             this.context.textAlign = "center";
             this.context.textBaseline = "middle";
-            this.context.fillText(node.name, pos.x, pos.y + labelYOffset);
+            this.context.fillText(node.name, pos.x, pos.y + labelYOffset - (node.role ? 7 : 0));
+
+            // Draw Role Text
+            if (node.role) {
+                this.context.font = "italic 12px 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
+                this.context.fillStyle = "#dcd6cc"; // slightly dimmer color
+                this.context.fillText(node.role, pos.x, pos.y + labelYOffset + 8);
+            }
         });
 
         this.context.restore();

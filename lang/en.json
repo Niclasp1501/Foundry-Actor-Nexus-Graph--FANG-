@@ -59,7 +59,14 @@
             "FastLinkContent": "Relationship from {source} to {target}",
             "LabelInput": "Connection Label",
             "DirectionalInput": "Directional (Arrow)",
+            "RoleTitle": "Role / Organization",
+            "RoleContent": "Enter a role or organization for {actor} (optional):",
+            "RoleInput": "Role / Organization",
+            "EditRoleTitle": "Edit Role",
+            "EditRoleContent": "Role / Organization for {actor}:",
             "BtnConnect": "Connect",
+            "BtnAdd": "Add",
+            "BtnSave": "Save",
             "BtnCancel": "Cancel"
         },
         "Settings": {
