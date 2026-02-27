@@ -199,7 +199,16 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const entry = await this.getJournalEntry();
         if (entry && entry.isOwner) {
             const exportData = {
-                nodes: this.graphData.nodes.map(n => ({ id: n.id, name: n.name, role: n.role, x: n.x, y: n.y, vx: n.vx, vy: n.vy })),
+                nodes: this.graphData.nodes.map(n => ({
+                    id: n.id,
+                    name: n.name,
+                    role: n.role,
+                    x: n.x,
+                    y: n.y,
+                    vx: n.vx,
+                    vy: n.vy,
+                    isCenter: n.isCenter || false
+                })),
                 links: this.graphData.links.map(l => ({
                     source: typeof l.source === 'object' ? l.source.id : l.source,
                     target: typeof l.target === 'object' ? l.target.id : l.target,
