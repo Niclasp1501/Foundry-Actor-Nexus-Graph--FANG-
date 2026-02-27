@@ -69,6 +69,7 @@
             "RoleTitle": "Role / Organization",
             "RoleContent": "Enter a role or organization for {actor} (optional):",
             "RoleInput": "Role / Organization",
+            "GroupInput": "Group / Location",
             "EditRoleTitle": "Edit Role",
             "EditRoleContent": "Role / Organization for {actor}:",
             "BtnConnect": "Connect",

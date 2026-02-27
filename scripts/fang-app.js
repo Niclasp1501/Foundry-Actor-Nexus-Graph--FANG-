@@ -206,6 +206,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     id: n.id,
                     name: n.name,
                     role: n.role,
+                    group: n.group,
                     x: n.x,
                     y: n.y,
                     vx: n.vx,
@@ -549,8 +550,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             }
 
             const title = game.i18n.localize("FANG.Dialogs.RoleTitle") || "Rolle / Organisation";
-            const contentString = (game.i18n.localize("FANG.Dialogs.RoleContent") || "Gib eine Rolle oder Organisation für {actor} ein (optional):").replace("{actor}", actor.name);
-            const lblRole = game.i18n.localize("FANG.Dialogs.RoleInput") || "Rolle / Organisation";
+            const contentString = (game.i18n.localize("FANG.Dialogs.RoleContent") || "Gib eine Rolle oder Gruppe für {actor} ein (optional):").replace("{actor}", actor.name);
+            const lblRole = game.i18n.localize("FANG.Dialogs.RoleInput") || "Rolle";
+            const lblGroup = game.i18n.localize("FANG.Dialogs.GroupInput") || "Gruppe / Standort";
             const btnAdd = game.i18n.localize("FANG.Dialogs.BtnAdd") || "Hinzufügen";
             const btnCancel = game.i18n.localize("FANG.Dialogs.BtnCancel") || "Abbrechen";
 
@@ -560,6 +562,12 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     <label>${lblRole}:</label>
                     <div class="form-fields">
                         <input type="text" id="fang-node-role" style="width: 100%;">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>${lblGroup}:</label>
+                    <div class="form-fields">
+                        <input type="text" id="fang-node-group" style="width: 100%;">
                     </div>
                 </div>
             `;
@@ -573,6 +581,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                         label: btnAdd,
                         callback: async (html) => {
                             const roleStr = html.find("#fang-node-role").val().trim();
+                            const groupStr = html.find("#fang-node-group").val().trim();
                             // Add new node at precise location with a tiny random offset to prevent perfect stacking
                             const jitterX = x + (Math.random() - 0.5) * 5;
                             const jitterY = y + (Math.random() - 0.5) * 5;
@@ -581,6 +590,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                                 id: actor.id,
                                 name: actor.name,
                                 role: roleStr !== "" ? roleStr : null,
+                                group: groupStr !== "" ? groupStr : null,
                                 x: jitterX,
                                 y: jitterY
                             });
@@ -669,13 +679,15 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         }
 
         if (clickedNode && game.user.isGM) {
-            const title = game.i18n.localize("FANG.Dialogs.EditRoleTitle") || "Rolle bearbeiten";
-            const contentString = (game.i18n.localize("FANG.Dialogs.EditRoleContent") || "Rolle / Organisation für {actor}:").replace("{actor}", clickedNode.name);
-            const lblRole = game.i18n.localize("FANG.Dialogs.RoleInput") || "Rolle / Organisation";
+            const title = game.i18n.localize("FANG.Dialogs.EditRoleTitle") || "Details bearbeiten";
+            const contentString = (game.i18n.localize("FANG.Dialogs.EditRoleContent") || "Details für {actor}:").replace("{actor}", clickedNode.name);
+            const lblRole = game.i18n.localize("FANG.Dialogs.RoleInput") || "Rolle";
+            const lblGroup = game.i18n.localize("FANG.Dialogs.GroupInput") || "Gruppe / Standort";
             const btnSave = game.i18n.localize("FANG.Dialogs.BtnSave") || "Speichern";
             const btnCancel = game.i18n.localize("FANG.Dialogs.BtnCancel") || "Abbrechen";
 
             const currentRole = clickedNode.role || "";
+            const currentGroup = clickedNode.group || "";
 
             const dialogContent = `
                 <p><strong>${contentString}</strong></p>
@@ -685,7 +697,13 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                         <input type="text" id="fang-edit-role" value="${currentRole}" style="width: 100%;">
                     </div>
                 </div>
-                <p style="font-size: 0.8em; color: gray;">Lass das Feld leer, um die Rolle zu entfernen.</p>
+                <div class="form-group">
+                    <label>${lblGroup}:</label>
+                    <div class="form-fields">
+                        <input type="text" id="fang-edit-group" value="${currentGroup}" style="width: 100%;">
+                    </div>
+                </div>
+                <p style="font-size: 0.8em; color: gray;">Lass ein Feld leer, um den Eintrag zu entfernen.</p>
             `;
 
             new Dialog({
@@ -697,7 +715,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                         label: btnSave,
                         callback: async (html) => {
                             const newRole = html.find("#fang-edit-role").val().trim();
+                            const newGroup = html.find("#fang-edit-group").val().trim();
                             clickedNode.role = newRole !== "" ? newRole : null;
+                            clickedNode.group = newGroup !== "" ? newGroup : null;
 
                             // Force re-render
                             this.initSimulation();
@@ -949,6 +969,124 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         this.context.clearRect(0, 0, this.width, this.height);
         this.context.translate(this.transform.x, this.transform.y);
         this.context.scale(this.transform.k, this.transform.k);
+
+        // --- Draw Group Bounding Boxes (Convex Hulls) ---
+        // Group nodes by their 'group' property
+        const groups = {};
+        this.graphData.nodes.forEach(node => {
+            if (node.group) {
+                if (!groups[node.group]) groups[node.group] = [];
+                groups[node.group].push(node);
+            }
+        });
+
+        // Simple string hash for consistent colors per group
+        const stringToColor = (str) => {
+            let hash = 0;
+            for (let i = 0; i < str.length; i++) {
+                hash = str.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            const c = (hash & 0x00FFFFFF)
+                .toString(16)
+                .toUpperCase();
+            const hex = "00000".substring(0, 6 - c.length) + c;
+
+            // Convert to RGB to add alpha later
+            const r = parseInt(hex.substring(0, 2), 16);
+            const g = parseInt(hex.substring(2, 4), 16);
+            const b = parseInt(hex.substring(4, 6), 16);
+            return { r, g, b };
+        };
+
+        const padding = 65; // Padding around nodes
+
+        Object.entries(groups).forEach(([groupName, nodes]) => {
+            const rgb = stringToColor(groupName);
+            this.context.fillStyle = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.15)`;
+            this.context.strokeStyle = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.6)`;
+            this.context.lineWidth = 4;
+            this.context.lineJoin = "round";
+
+            if (nodes.length === 1) {
+                // Draw a circle for a single node in a group
+                const pos = renderPos[nodes[0].id];
+                this.context.beginPath();
+                this.context.arc(pos.x, pos.y, padding, 0, Math.PI * 2);
+                this.context.fill();
+                this.context.stroke();
+            } else if (nodes.length === 2) {
+                // Draw a "pill" connecting two nodes
+                const p1 = renderPos[nodes[0].id];
+                const p2 = renderPos[nodes[1].id];
+                const dx = p2.x - p1.x;
+                const dy = p2.y - p1.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                const nx = -dy / dist;
+                const ny = dx / dist;
+
+                this.context.beginPath();
+                this.context.arc(p1.x, p1.y, padding, Math.atan2(dy, dx) + Math.PI / 2, Math.atan2(dy, dx) - Math.PI / 2);
+                this.context.lineTo(p2.x + nx * padding, p2.y + ny * padding);
+                this.context.arc(p2.x, p2.y, padding, Math.atan2(dy, dx) - Math.PI / 2, Math.atan2(dy, dx) + Math.PI / 2);
+                this.context.lineTo(p1.x - nx * padding, p1.y - ny * padding);
+                this.context.closePath();
+                this.context.fill();
+                this.context.stroke();
+            } else {
+                // Draw Convex Hull for 3+ nodes
+                const points = nodes.map(n => [renderPos[n.id].x, renderPos[n.id].y]);
+                const hull = d3.polygonHull(points);
+
+                if (hull && hull.length > 0) {
+                    // Expand the hull slightly to enclose the nodes completely
+                    const centroid = d3.polygonCentroid(hull);
+                    const expandedHull = hull.map(p => {
+                        const dx = p[0] - centroid[0];
+                        const dy = p[1] - centroid[1];
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        // Push out by padding
+                        return [
+                            p[0] + (dx / dist) * padding,
+                            p[1] + (dy / dist) * padding
+                        ];
+                    });
+
+                    // We use an even simpler approach to make it look smooth: 
+                    // Draw a thick rounded path connecting the hull points.
+                    this.context.beginPath();
+                    this.context.moveTo(expandedHull[0][0], expandedHull[0][1]);
+                    for (let i = 1; i < expandedHull.length; i++) {
+                        this.context.lineTo(expandedHull[i][0], expandedHull[i][1]);
+                    }
+                    this.context.closePath();
+
+                    // Since lineJoin="round" and lineWidth is large, the hull looks like a cloud
+                    this.context.lineJoin = "round";
+                    this.context.lineWidth = padding;
+                    this.context.stroke();
+                    this.context.fill();
+                    // Reset line width for the actual border
+                    this.context.lineWidth = 4;
+                    this.context.stroke();
+
+                }
+            }
+
+            // Draw group label at the top-left-most point of the hull/circle
+            let minX = Infinity;
+            let minY = Infinity;
+            nodes.forEach(n => {
+                if (renderPos[n.id].x < minX) minX = renderPos[n.id].x;
+                if (renderPos[n.id].y < minY) minY = renderPos[n.id].y;
+            });
+
+            this.context.fillStyle = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.9)`;
+            this.context.font = "bold 18px 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
+            this.context.textAlign = "left";
+            this.context.textBaseline = "middle";
+            this.context.fillText(groupName, minX - padding + 10, minY - padding - 10);
+        });
+        // ------------------------------------------------
 
         // Draw Links
         this.context.lineWidth = 2;
