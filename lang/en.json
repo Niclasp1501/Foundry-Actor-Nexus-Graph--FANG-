@@ -59,6 +59,11 @@
             "CenterDisabled": "now floats freely again.",
             "ActorNotFound": "Actor not found."
         },
+        "ContextMenu": {
+            "EditRole": "Role / Organization",
+            "EditLore": "Edit Information",
+            "DeleteNode": "Delete Actor from Graph"
+        },
         "Dropdowns": {
             "Nodes": "Nodes (Tokens)",
             "Links": "Connections",
@@ -77,6 +82,8 @@
             "RoleInput": "Role / Organization",
             "EditRoleTitle": "Edit Role",
             "EditRoleContent": "Role / Organization for {actor}:",
+            "EditLoreTitle": "Edit Information",
+            "EditLoreContent": "Additional details or notes for {actor}:",
             "BtnConnect": "Connect",
             "BtnAdd": "Add",
             "BtnSave": "Save",

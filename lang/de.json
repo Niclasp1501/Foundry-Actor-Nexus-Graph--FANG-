@@ -59,6 +59,11 @@
             "CenterDisabled": "schwebt nun wieder frei.",
             "ActorNotFound": "Actor nicht gefunden."
         },
+        "ContextMenu": {
+            "EditRole": "Rolle / Organisation",
+            "EditLore": "Informationen bearbeiten",
+            "DeleteNode": "Akteur vom Graphen löschen"
+        },
         "Dropdowns": {
             "Nodes": "Knoten (Tokens)",
             "Links": "Verbindungen",
@@ -77,6 +82,8 @@
             "RoleInput": "Rolle / Organisation",
             "EditRoleTitle": "Rolle bearbeiten",
             "EditRoleContent": "Rolle / Organisation für {actor}:",
+            "EditLoreTitle": "Informationen bearbeiten",
+            "EditLoreContent": "Zusätzliche Details oder Notizen für {actor}:",
             "BtnConnect": "Verbinden",
             "BtnAdd": "Hinzufügen",
             "BtnSave": "Speichern",

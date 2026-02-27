@@ -5,6 +5,15 @@ All notable changes to the **Foundry Actor Nexus Graph (FANG)** module will be d
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.3] - 2026-02-27
+### Added
+- **Radial Context Menu:** Completely overhauled token interactions. Right-clicking (or long-pressing on tablets) a token now summons a custom, theme-styled HTML floating menu directly under the cursor.
+- **Node Lore Editor:** Added an "Edit Information" button to the new context menu, allowing GMs (and permitted players) to write custom multi-line text and notes stored directly on individual tokens.
+- **Hover Lore Tooltips:** Hovering over a token with saved information now smoothly fades in a floating tooltip window, intelligently snapping to the sides of the node to avoid clipping screen edges.
+
+### Changed
+- **Aesthetic Overhaul:** Fully migrated the new menu systems away from standard browser dark-mode defaults to strictly enforce our D&D Light Parchment / Red / Gold UI tokenized design variables (`var(--fang-card-bg)`, etc.).
+
 ## [1.1.2] - 2026-02-27
 ### Added
 - **Player Collaborative Editing:** Added a world-level setting (accessible via the new "Advanced Settings" dialog or native Foundry Module Settings) to allow players to construct the graph! Players can now drop tokens, create connections, and delete elements.

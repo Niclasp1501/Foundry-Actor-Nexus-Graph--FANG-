@@ -65,6 +65,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const canvas = this.element.querySelector("#graphCanvas");
         canvas.addEventListener("dblclick", this._onCanvasDoubleClick.bind(this));
         canvas.addEventListener("contextmenu", this._onCanvasRightClick.bind(this));
+        canvas.addEventListener("mousemove", this._handleCanvasMouseMove.bind(this));
 
         // Drag & Drop Listeners
         canvasContainer.addEventListener("dragover", this._onDragOver.bind(this));
@@ -229,7 +230,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 y: n.y,
                 vx: n.vx,
                 vy: n.vy,
-                isCenter: n.isCenter || false
+                isCenter: n.isCenter || false,
+                lore: n.lore || ""
             })),
             links: this.graphData.links.map(l => ({
                 source: typeof l.source === 'object' ? l.source.id : l.source,
@@ -754,6 +756,119 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         }
     }
 
+    _showContextMenu(node, mouseX, mouseY) {
+        if (!game.user.isGM && !game.settings.get("fang", "allowPlayerEditing")) return;
+
+        const menu = this.element.querySelector("#fang-context-menu");
+        if (!menu) return;
+
+        // Position menu at cursor
+        menu.style.left = `${mouseX}px`;
+        menu.style.top = `${mouseY}px`;
+        menu.classList.remove("hidden");
+
+        const btnRole = menu.querySelector("#ctxEditRole");
+        const btnLore = menu.querySelector("#ctxEditLore");
+        const btnDelete = menu.querySelector("#ctxDeleteNode");
+
+        // Clear previous listeners by cloning nodes
+        const newBtnRole = btnRole.cloneNode(true);
+        const newBtnLore = btnLore.cloneNode(true);
+        const newBtnDelete = btnDelete.cloneNode(true);
+        btnRole.parentNode.replaceChild(newBtnRole, btnRole);
+        btnLore.parentNode.replaceChild(newBtnLore, btnLore);
+        btnDelete.parentNode.replaceChild(newBtnDelete, btnDelete);
+
+        // --- Context Action: Edit Role ---
+        newBtnRole.addEventListener("click", () => {
+            menu.classList.add("hidden");
+            if (!game.user.isGM) return; // Only GM can edit roles (or decide if players can too)
+
+            const title = game.i18n.localize("FANG.Dialogs.EditRoleTitle") || "Edit Role";
+            const contentString = (game.i18n.localize("FANG.Dialogs.EditRoleContent") || "Role / Organization for {actor}:").replace("{actor}", node.name);
+            const lblRole = game.i18n.localize("FANG.Dialogs.RoleInput") || "Role / Organization";
+
+            new Dialog({
+                title: title,
+                content: `
+                    <p><strong>${contentString}</strong></p>
+                    <div class="form-group">
+                        <label>${lblRole}:</label>
+                        <div class="form-fields">
+                            <input type="text" id="fang-edit-role" value="${node.role || ""}" style="width: 100%;">
+                        </div>
+                    </div>
+                `,
+                buttons: {
+                    save: {
+                        icon: '<i class="fas fa-save"></i>',
+                        label: game.i18n.localize("FANG.Dialogs.BtnSave") || "Save",
+                        callback: async (html) => {
+                            const newRole = html.find("#fang-edit-role").val().trim();
+                            node.role = newRole !== "" ? newRole : null;
+                            this.initSimulation();
+                            this.simulation.alpha(0.05).restart();
+                            await this.saveData();
+                        }
+                    },
+                    cancel: { icon: '<i class="fas fa-times"></i>', label: game.i18n.localize("FANG.Dialogs.BtnCancel") || "Cancel" }
+                },
+                default: "save"
+            }, { classes: ["dialog", "fang-dialog"], width: 400 }).render(true);
+        });
+
+        // --- Context Action: Edit Lore ---
+        newBtnLore.addEventListener("click", () => {
+            menu.classList.add("hidden");
+            if (!this._canEditGraph()) return;
+
+            const title = game.i18n.localize("FANG.Dialogs.EditLoreTitle") || "Edit Information";
+            const contentString = (game.i18n.localize("FANG.Dialogs.EditLoreContent") || "Additional details for {actor}:").replace("{actor}", node.name);
+
+            new Dialog({
+                title: title,
+                content: `
+                    <p><strong>${contentString}</strong></p>
+                    <div class="form-group" style="height: 150px;">
+                        <textarea id="fang-edit-lore" style="width: 100%; height: 100%; resize: none; font-family: var(--fang-font-main); padding: 5px;">${node.lore || ""}</textarea>
+                    </div>
+                `,
+                buttons: {
+                    save: {
+                        icon: '<i class="fas fa-save"></i>',
+                        label: game.i18n.localize("FANG.Dialogs.BtnSave") || "Save",
+                        callback: async (html) => {
+                            const newLore = html.find("#fang-edit-lore").val().trim();
+                            node.lore = newLore !== "" ? newLore : null;
+                            await this.saveData();
+                        }
+                    },
+                    cancel: { icon: '<i class="fas fa-times"></i>', label: game.i18n.localize("FANG.Dialogs.BtnCancel") || "Cancel" }
+                },
+                default: "save"
+            }, { classes: ["dialog", "fang-dialog"], width: 450 }).render(true);
+        });
+
+        // --- Context Action: Delete Node ---
+        newBtnDelete.addEventListener("click", async () => {
+            menu.classList.add("hidden");
+            if (!this._canEditGraph()) return;
+
+            this.graphData.nodes = this.graphData.nodes.filter(n => n.id !== node.id);
+            this.graphData.links = this.graphData.links.filter(l => {
+                const sId = typeof l.source === 'object' ? l.source.id : l.source;
+                const tId = typeof l.target === 'object' ? l.target.id : l.target;
+                return sId !== node.id && tId !== node.id;
+            });
+
+            ui.notifications.info(game.i18n.localize("FANG.Messages.DeletedNode"));
+            this.initSimulation();
+            this.simulation.alpha(0.3).restart();
+            this._populateActors();
+            await this.saveData();
+        });
+    }
+
     _onCanvasRightClick(event) {
         event.preventDefault();
         if (!this.transform) return;
@@ -781,53 +896,12 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             }
         }
 
-        if (clickedNode && game.user.isGM) {
-            const title = game.i18n.localize("FANG.Dialogs.EditRoleTitle") || "Rolle bearbeiten";
-            const contentString = (game.i18n.localize("FANG.Dialogs.EditRoleContent") || "Rolle / Organisation für {actor}:").replace("{actor}", clickedNode.name);
-            const lblRole = game.i18n.localize("FANG.Dialogs.RoleInput") || "Rolle / Organisation";
-            const btnSave = game.i18n.localize("FANG.Dialogs.BtnSave") || "Speichern";
-            const btnCancel = game.i18n.localize("FANG.Dialogs.BtnCancel") || "Abbrechen";
-
-            const currentRole = clickedNode.role || "";
-
-            const dialogContent = `
-                <p><strong>${contentString}</strong></p>
-                <div class="form-group">
-                    <label>${lblRole}:</label>
-                    <div class="form-fields">
-                        <input type="text" id="fang-edit-role" value="${currentRole}" style="width: 100%;">
-                    </div>
-                </div>
-                <p style="font-size: 0.8em; color: gray;">Lass das Feld leer, um die Rolle zu entfernen.</p>
-            `;
-
-            new Dialog({
-                title: title,
-                content: dialogContent,
-                buttons: {
-                    save: {
-                        icon: '<i class="fas fa-save"></i>',
-                        label: btnSave,
-                        callback: async (html) => {
-                            const newRole = html.find("#fang-edit-role").val().trim();
-                            clickedNode.role = newRole !== "" ? newRole : null;
-
-                            // Force re-render
-                            this.initSimulation();
-                            this.simulation.alpha(0.05).restart();
-                            await this.saveData();
-                        }
-                    },
-                    cancel: {
-                        icon: '<i class="fas fa-times"></i>',
-                        label: btnCancel
-                    }
-                },
-                default: "save"
-            }, {
-                classes: ["dialog", "fang-dialog"],
-                width: 400
-            }).render(true);
+        if (clickedNode) {
+            this._showContextMenu(clickedNode, mouseX, mouseY);
+        } else {
+            // Hide menu if clicked elsewhere
+            const menu = this.element.querySelector("#fang-context-menu");
+            if (menu) menu.classList.add("hidden");
         }
     }
 
@@ -1410,5 +1484,73 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
     zoomed(event) {
         this.transform = event.transform;
         this.ticked();
+
+        // Hide UI elements on pan/zoom
+        const menu = this.element.querySelector("#fang-context-menu");
+        if (menu) menu.classList.add("hidden");
+        const tooltip = this.element.querySelector("#fang-tooltip");
+        if (tooltip) tooltip.classList.add("hidden");
+    }
+
+    _handleCanvasMouseMove(event) {
+        if (!this.transform) return;
+
+        const bounds = this.canvas.getBoundingClientRect();
+        const mouseX = event.clientX - bounds.left;
+        const mouseY = event.clientY - bounds.top;
+
+        const x = this.transform.invertX(mouseX);
+        const y = this.transform.invertY(mouseY);
+
+        const s2 = (30 * 30); // Node radius squared
+        let hoveredNode = null;
+        let minD2 = s2;
+
+        for (let node of this.graphData.nodes) {
+            const dx = x - node.x;
+            const dy = y - node.y;
+            const d2 = dx * dx + dy * dy;
+            if (d2 < minD2) {
+                hoveredNode = node;
+                minD2 = d2;
+            }
+        }
+
+        const tooltip = this.element.querySelector("#fang-tooltip");
+        if (!tooltip) return;
+
+        if (hoveredNode && hoveredNode.lore) {
+            tooltip.innerHTML = hoveredNode.lore.replace(/\n/g, '<br>');
+
+            // Calculate true screen position of the Node
+            const nodeScreenX = this.transform.applyX(hoveredNode.x);
+            const nodeScreenY = this.transform.applyY(hoveredNode.y);
+            const nodeRadiusScaled = 30 * this.transform.k; // 30 is the base radius
+
+            // Determine side to show tooltip (Default: Right, if space allows. Otherwise Left)
+            // Canvas width
+            const cWidth = this.canvas.parentElement.clientWidth;
+
+            // Estimated Tooltip width (max-width is 320 in CSS)
+            const estimatedTooltipWidth = 340;
+
+            let tooltipX = nodeScreenX + nodeRadiusScaled + 15; // Right of node
+            if (tooltipX + estimatedTooltipWidth > cWidth) {
+                // Not enough space on the right, flip to left
+                tooltipX = nodeScreenX - nodeRadiusScaled - estimatedTooltipWidth - 15;
+            }
+
+            // Align vertically with the node center, but keep slightly low to look nice
+            let tooltipY = nodeScreenY - 10;
+
+            tooltip.style.left = `${tooltipX}px`;
+            tooltip.style.top = `${tooltipY}px`;
+
+            tooltip.classList.remove("hidden");
+            this.canvas.style.cursor = "pointer";
+        } else {
+            tooltip.classList.add("hidden");
+            this.canvas.style.cursor = hoveredNode ? "pointer" : "grab";
+        }
     }
 }

@@ -87,6 +87,23 @@
     <!-- Main Canvas Area -->
     <main class="canvas-container" style="position: relative;">
         <canvas id="graphCanvas"></canvas>
-    </main>
+
+        <!-- Hover Information Tooltip -->
+        <div id="fang-tooltip" class="fang-tooltip hidden"></div>
+
+        <!-- Right-Click Radial Context Menu -->
+        <div id="fang-context-menu" class="fang-context-menu hidden">
+            <ul>
+                <li id="ctxEditRole" class="ctx-item">
+                    <i class="fas fa-theater-masks"></i> {{localize "FANG.ContextMenu.EditRole"}}
+                </li>
+                <li id="ctxEditLore" class="ctx-item">
+                    <i class="fas fa-book-open"></i> {{localize "FANG.ContextMenu.EditLore"}}
+                </li>
+                <li id="ctxDeleteNode" class="ctx-item danger">
+                    <i class="fas fa-trash"></i> {{localize "FANG.ContextMenu.DeleteNode"}}
+                </li>
+            </ul>
+        </div>
     </main>
 </div>

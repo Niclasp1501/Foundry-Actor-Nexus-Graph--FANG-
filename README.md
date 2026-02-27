@@ -17,6 +17,7 @@ An interactive, self-arranging Actor Graph module for visualizing Character & NP
 
 - **Self-Arranging Actor Graph:** View actors and their relationships as nodes and links in a dynamic system that automatically organizes itself for clarity.
 - **Player Collaborative Editing:** GMs can toggle a world setting allowing players to actively construct the graph—dropping tokens, creating links, and deleting elements safely via live socket sync.
+- **Context Menu & Token Lore:** Right-click or long-press any token to reveal a sleek Radial Context menu! Here you can assign roles or enter detailed multi-line text notes for a token. Hover over the token later to reveal these notes in an elegant, fading Tooltip.
 - **Spoiler Protection:** Strict permission checking ensures non-GM players cannot see or link unrevealed secret NPCs in their dropdown lists.
 - **Roles & Organizations:** Thanks to @mcmuffin88, GMs can now assign roles or faction affiliations to individual tokens (via UI and formatting), instantly adding secondary layers of organizational depth to the map.
 - **Gravity Center (Boss Nodes):** Magnetically anchor important actors (e.g., villains) to the very center of the graph, complete with a live-customizable glowing aura.
@@ -50,7 +51,6 @@ An interactive, self-arranging Actor Graph module for visualizing Character & NP
 - **Manual Access:** If a player accidentally closes the window, they can re-open it via the **"FANG Graph" Journal Entry** (a link inside the journal text opens the tool) or simply by pressing `Shift + G`.
 
 ### Future Roadmap
-- **Expandable Lore Cards:** Clicking a character will allow you to expand and collapse its backstory/information panel directly within the graph.
 - **Visual Grouping:** Group certain people together (e.g., by location) with visual bounding boxes or cluster zones to make large graphs much clearer.
 - **Viewport Locking:** Ensure actors remain visible inside the GM's and Monitor's screens.
 - **More Languages:** Community translation support (e.g. Spanish, French).
@@ -68,6 +68,7 @@ An interactive, self-arranging Actor Graph module for visualizing Character & NP
 
 - **Selbstanordnender Akteur-Graph:** Betrachte Akteure und ihre Verbindungen in einem dynamischen System, das sich für maximale Übersichtlichkeit automatisch selbst aufbaut und strukturiert.
 - **Kollaborative Spieler-Bearbeitung:** GMs können eine Einstellung aktivieren, die es Spielern erlaubt, den Graphen aktiv mitzubauen – Tokens ablegen, Verbindungen ziehen und löschen, alles live und sicher über den GM synchronisiert.
+- **Kontextmenü & Token-Lore:** Ein Rechtsklick (oder langes Drücken) auf einen Token öffnet ein modernes, radiales Kontextmenü! Weise Rollen zu oder speichere ausführliche Notizen im Token. Fährst du später mit der Maus darüber, blenden sich diese Notizen weich als Tooltip am Token ein.
 - **Spoiler-Schutz:** Strikte Rechte-Prüfung verhindert, dass Spieler in ihren Auswahllisten geheime, noch unentdeckte NPCs sehen können.
 - **Rollen & Fraktionen:** Dank @mcmuffin88 können GMs einzelnen Tokens nun Rollen oder Fraktions-Zugehörigkeiten zuweisen, was dem Netzwerk eine völlig neue Organisationstiefe verleiht!
 - **Zentrums-Gravitation (Boss-Knoten):** Verankere wichtige Akteure (z.B. Herrscher oder Bösewichte) magnetisch exakt in der Mitte des Graphen, inklusive farblich anpassbarer, leuchtender Aura.
@@ -101,7 +102,6 @@ An interactive, self-arranging Actor Graph module for visualizing Character & NP
 - **Manuell Öffnen:** Falls du das Fenster versehentlich schließt, kannst du es über das **Journal "FANG Graph"** wieder öffnen (Klick auf den Link im Text) oder einfach `Shift + G` drücken.
 
 ### Zukünftige Pläne (Roadmap)
-- **Erweiterbare Lore-Karten:** Ein Klick auf einen Charakter klappt eine Info-Karte mit Hintergrundwissen auf, die auch wieder zusammengeklappt werden kann.
 - **Gruppierung nach Orten (Organisation):** Bestimmte Akteure (z.B. nach Standort) optisch in Gruppen zusammenfassen, um bei großen Graphen die Übersichtlichkeit zu wahren.
 - **Monitor-Sichtfeld:** Sicherstellen, dass die Akteure immer im sichtbaren Bereich des Monitors/GMs bleiben.
 - **Weitere Sprachen:** Bei Bedarf werden auf Wunsch gern weitere Übersetzungen integriert.
