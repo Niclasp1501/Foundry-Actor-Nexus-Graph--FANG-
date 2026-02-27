@@ -5,6 +5,11 @@ All notable changes to the **Foundry Actor Nexus Graph (FANG)** module will be d
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] - 2026-02-27
+### Added
+- **Gravity Center (Boss Nodes):** GMs can now anchor important actors (e.g., a main villain) magnetically to the center of the graph via the new "Center" (Zentrieren) button. Boss nodes are highlighted with a customizable glowing aura and strongly repel standard node clustering.
+- **Center Node Color:** Added a native Foundry V13 ColorPicker to the FANG module settings to customize the glowing aura of centered Boss nodes in real time.
+
 ## [1.1.0] - 2026-02-26
 ### Fixed
 - **Label Collision Avoidance**: Completely rewrote the link label rendering math. Link labels now dynamically measure the bounding boxes of both the source and target node names, ensuring they center precisely in the "free" visual space of the line and never overlap with token text again. This applies universally to straight and curved Bezier connections.

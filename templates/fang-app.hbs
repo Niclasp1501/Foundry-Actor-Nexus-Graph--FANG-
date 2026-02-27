@@ -25,13 +25,19 @@
         </div>
 
         <div class="control-group">
-            <h3>{{localize "FANG.UI.DeleteElement"}}</h3>
+            <h3>{{localize "FANG.UI.ManageElements"}}</h3>
             <div class="input-stack">
                 <select id="deleteSelect">
                     <option value="" disabled selected>{{localize "FANG.UI.SelectElement"}}</option>
                 </select>
-                <button id="btnDeleteElement" class="btn danger-btn"
-                    style="background: #8b0000; color: white;">{{localize "FANG.UI.Delete"}}</button>
+                <div style="display: flex; gap: 5px; margin-top: 5px;">
+                    <button id="btnToggleCenter" class="btn action-btn" style="flex: 1;" title="{{localize 'FANG.UI.ToggleCenterHint'}}">
+                        <i class="fas fa-bullseye"></i> {{localize "FANG.UI.ToggleCenter"}}
+                    </button>
+                    <button id="btnDeleteElement" class="btn danger-btn" style="flex: 1; background: #8b0000; color: white;">
+                        <i class="fas fa-trash"></i> {{localize "FANG.UI.Delete"}}
+                    </button>
+                </div>
             </div>
         </div>
 

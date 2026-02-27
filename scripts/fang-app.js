@@ -59,6 +59,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const btnDelete = this.element.querySelector("#btnDeleteElement");
         if (btnDelete) btnDelete.addEventListener("click", this._onDeleteElement.bind(this));
 
+        const btnToggleCenter = this.element.querySelector("#btnToggleCenter");
+        if (btnToggleCenter) btnToggleCenter.addEventListener("click", this._onToggleCenterNode.bind(this));
+
         const canvas = this.element.querySelector("#graphCanvas");
         canvas.addEventListener("dblclick", this._onCanvasDoubleClick.bind(this));
 
@@ -198,7 +201,15 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const entry = await this.getJournalEntry();
         if (entry && entry.isOwner) {
             const exportData = {
-                nodes: this.graphData.nodes.map(n => ({ id: n.id, name: n.name, x: n.x, y: n.y, vx: n.vx, vy: n.vy })),
+                nodes: this.graphData.nodes.map(n => ({
+                    id: n.id,
+                    name: n.name,
+                    x: n.x,
+                    y: n.y,
+                    vx: n.vx,
+                    vy: n.vy,
+                    isCenter: n.isCenter || false
+                })),
                 links: this.graphData.links.map(l => ({
                     source: typeof l.source === 'object' ? l.source.id : l.source,
                     target: typeof l.target === 'object' ? l.target.id : l.target,
@@ -363,6 +374,42 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         this.simulation.alpha(0.3).restart();
         this._populateActors(); // Update dropdown
         await this.saveData();
+    }
+
+    async _onToggleCenterNode() {
+        const selectDelete = this.element.querySelector("#deleteSelect");
+        const val = selectDelete.value;
+
+        if (!val) {
+            ui.notifications.warn(game.i18n.localize("FANG.Messages.WarningNoSelect"));
+            return;
+        }
+
+        const [type, id] = val.split("|");
+
+        if (type !== "node") {
+            ui.notifications.warn(game.i18n.localize("FANG.Messages.WarningNodeOnly"));
+            return;
+        }
+
+        const node = this.graphData.nodes.find(n => n.id === id);
+        if (node) {
+            node.isCenter = !node.isCenter;
+
+            if (node.isCenter) {
+                ui.notifications.info(`${node.name} ${game.i18n.localize("FANG.Messages.CenterEnabled")}`);
+            } else {
+                ui.notifications.info(`${node.name} ${game.i18n.localize("FANG.Messages.CenterDisabled")}`);
+            }
+
+            this.initSimulation();
+            this.simulation.alpha(0.6).restart(); // High heat to let it fly to center
+            this._populateActors();
+            await this.saveData();
+
+            // Broadcast live update
+            game.socket.emit("module.fang", { action: "showGraph" });
+        }
     }
 
     _onDragOver(event) {
@@ -547,13 +594,22 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
     resizeCanvas() {
         if (!this.canvas) return;
-        this.width = this.canvas.parentElement.clientWidth;
-        this.height = this.canvas.parentElement.clientHeight;
+
+        const newWidth = this.canvas.parentElement.clientWidth;
+        const newHeight = this.canvas.parentElement.clientHeight;
+
+        // Prevent layout engines from triggering physics explosion when sized 0x0 temporarily
+        if (newWidth === 0 || newHeight === 0) return;
+
+        this.width = newWidth;
+        this.height = newHeight;
         this.canvas.width = this.width;
         this.canvas.height = this.height;
         if (this.simulation) {
             this.simulation.force("center", d3.forceCenter(this.width / 2, this.height / 2));
-            this.simulation.alpha(0.3).restart();
+            this.simulation.force("x", d3.forceX(this.width / 2).strength(node => node.isCenter ? 0.4 : 0.025));
+            this.simulation.force("y", d3.forceY(this.height / 2).strength(node => node.isCenter ? 0.4 : 0.025));
+            this.simulation.alpha(0.1).restart(); // Lower alpha bump on resize to prevent wild scattering
         }
     }
 
@@ -592,9 +648,21 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             const oldNode = this.graphData.nodes.find(n => n.id === d.id);
             let nInfo = d;
             if (oldNode && oldNode.x !== undefined) {
-                nInfo = { ...d, x: oldNode.x, y: oldNode.y, vx: oldNode.vx, vy: oldNode.vy };
+                nInfo = {
+                    ...d,
+                    x: oldNode.x,
+                    y: oldNode.y,
+                    vx: 0, // Reset velocity on load to prevent residual explosion
+                    vy: 0, // Reset velocity on load to prevent residual explosion
+                    isCenter: oldNode.isCenter || false
+                };
             } else {
-                nInfo = { ...d, x: this.width / 2 + (Math.random() - 0.5) * 50, y: this.height / 2 + (Math.random() - 0.5) * 50 };
+                nInfo = {
+                    ...d,
+                    x: this.width / 2 + (Math.random() - 0.5) * 50,
+                    y: this.height / 2 + (Math.random() - 0.5) * 50,
+                    isCenter: d.isCenter || false
+                };
             }
 
             // Cache token image
@@ -618,8 +686,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             .force("charge", d3.forceManyBody().strength(-800))
             .force("link", d3.forceLink(links).id(d => d.id).distance(200))
             .force("center", d3.forceCenter(this.width / 2, this.height / 2))
-            .force("x", d3.forceX(this.width / 2).strength(0.05))
-            .force("y", d3.forceY(this.height / 2).strength(0.05))
+            .force("x", d3.forceX(this.width / 2).strength(node => node.isCenter ? 0.4 : 0.025)) // Boss Node Gravity Pull
+            .force("y", d3.forceY(this.height / 2).strength(node => node.isCenter ? 0.4 : 0.025)) // Boss Node Gravity Pull
             .force("collide", d3.forceCollide().radius(60))
             .force("link-avoidance", this._createLinkRepulsionForce())
             .on("tick", this.ticked.bind(this));
@@ -702,6 +770,31 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const amplitude = game.settings.get("fang", "cosmicWindStrength") || 4.0;
         const time = Date.now() * 0.001;
         const speed = 1.0;
+
+        // Fetch Boss Aura Color safely (V13 ColorField returns a Color instance/Number, not a string)
+        let centerColorRaw = game.settings.get("fang", "centerNodeColor");
+        let centerColorHex = "#d4af37";
+        if (centerColorRaw) {
+            if (typeof centerColorRaw === "string") {
+                centerColorHex = centerColorRaw;
+            } else if (centerColorRaw.css) {
+                centerColorHex = centerColorRaw.css;
+            } else if (typeof centerColorRaw === "number") {
+                centerColorHex = "#" + centerColorRaw.toString(16).padStart(6, '0');
+            }
+        }
+
+        let cx = 212, cy = 175, cz = 55; // Default Gold RGB
+        if (/^#([A-Fa-f0-9]{3}){1,2}$/.test(centerColorHex)) {
+            let c = centerColorHex.substring(1).split('');
+            if (c.length === 3) {
+                c = [c[0], c[0], c[1], c[1], c[2], c[2]];
+            }
+            c = '0x' + c.join('');
+            cx = (c >> 16) & 255;
+            cy = (c >> 8) & 255;
+            cz = c & 255;
+        }
 
         // Create a lookup for rendered positions
         const renderPos = {};
@@ -946,6 +1039,32 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             const pos = renderPos[node.id];
 
             this.context.save();
+
+            // --- Boss Aura Rendering ---
+            if (node.isCenter) {
+                const auraTime = Date.now() * 0.003;
+                // Subtle pulsating effect using sine wave for the aura ring
+                const pulseRadius = radius + 6 + Math.sin(auraTime) * 3;
+
+                this.context.beginPath();
+                this.context.arc(pos.x, pos.y, pulseRadius, 0, Math.PI * 2, true);
+
+                // Create a radial gradient for the aura using parsed RGB
+                const gradient = this.context.createRadialGradient(pos.x, pos.y, radius, pos.x, pos.y, pulseRadius);
+                gradient.addColorStop(0, `rgba(${cx}, ${cy}, ${cz}, 0.8)`); // Solid Inner
+                gradient.addColorStop(1, `rgba(${cx}, ${cy}, ${cz}, 0.0)`); // Transparent Outer
+
+                this.context.fillStyle = gradient;
+                this.context.fill();
+
+                // Crisp hard line around the token itself
+                this.context.beginPath();
+                this.context.arc(pos.x, pos.y, radius + 2, 0, Math.PI * 2, true);
+                this.context.lineWidth = 3;
+                this.context.strokeStyle = `rgba(${cx}, ${cy}, ${cz}, 0.9)`;
+                this.context.stroke();
+            }
+            // -----------------------------
 
             if (node.imgElement && node.imgElement.complete && node.imgElement.naturalWidth !== 0) {
                 // Just draw the raw token image without extra circles/borders

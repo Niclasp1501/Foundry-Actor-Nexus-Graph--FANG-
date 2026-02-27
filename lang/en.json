@@ -12,6 +12,7 @@
             "Directional": "Directional (Arrow)",
             "Connect": "Connect",
             "DeleteElement": "Delete Element",
+            "ManageElements": "Manage Elements",
             "SelectElement": "Select Node / Link",
             "Delete": "Delete",
             "Presentation": "Presentation",
@@ -22,7 +23,9 @@
             "ClosePlayers": "Close for Players",
             "ClosePlayersHint": "Closes the graph for all players",
             "CloseMonitor": "Close Monitor",
-            "CloseMonitorHint": "Closes the graph only on the monitor"
+            "CloseMonitorHint": "Closes the graph only on the monitor",
+            "ToggleCenter": "Center",
+            "ToggleCenterHint": "Magnetically pins the NPC to the center (e.g. for Boss enemies)."
         },
         "Journal": {
             "Title": "About FANG",
@@ -42,8 +45,12 @@
             "WarningSelfLink": "A token cannot be connected to itself!",
             "WarningNoSourceTarget": "Please select source and target.",
             "WarningNoDeleteSelect": "Please select an element to delete.",
+            "WarningNoSelect": "Please select an element.",
+            "WarningNodeOnly": "Please select a node (token), not a connection.",
             "DeletedNode": "Node and associated connections deleted.",
             "DeletedLink": "Connection deleted.",
+            "CenterEnabled": "is now magnetically pulled to the center.",
+            "CenterDisabled": "now floats freely again.",
             "ActorNotFound": "Actor not found."
         },
         "Dropdowns": {
@@ -70,6 +77,10 @@
             "CosmicWindStrength": {
                 "Name": "Cosmic Wind Strength",
                 "Hint": "Determines how far the tokens drift across the graph. (1 = Barely visible, 10 = Strong swaying)."
+            },
+            "CenterNodeColor": {
+                "Name": "Center Aura Color (Hex)",
+                "Hint": "The color of the magical ring around tokens pinned to the center. Enter a Hex color code (e.g. #d4af37 for Gold, #8b0000 for Dark Red)."
             }
         }
     }
