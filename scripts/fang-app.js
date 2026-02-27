@@ -62,6 +62,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const btnToggleCenter = this.element.querySelector("#btnToggleCenter");
         if (btnToggleCenter) btnToggleCenter.addEventListener("click", this._onToggleCenterNode.bind(this));
 
+        const btnManageGroups = this.element.querySelector("#btnManageGroups");
+        if (btnManageGroups) btnManageGroups.addEventListener("click", this._onManageGroups.bind(this));
+
         const canvas = this.element.querySelector("#graphCanvas");
         canvas.addEventListener("dblclick", this._onCanvasDoubleClick.bind(this));
         canvas.addEventListener("contextmenu", this._onCanvasRightClick.bind(this));
@@ -190,11 +193,12 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             const data = entry.getFlag("fang", "graphData");
             if (data) {
                 this.graphData = foundry.utils.duplicate(data);
+                if (!this.graphData.groups) this.graphData.groups = []; // Migration for old saves
             } else {
-                this.graphData = { nodes: [], links: [] };
+                this.graphData = { nodes: [], links: [], groups: [] };
             }
         } else {
-            this.graphData = { nodes: [], links: [] };
+            this.graphData = { nodes: [], links: [], groups: [] };
         }
     }
 
@@ -218,7 +222,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     target: typeof l.target === 'object' ? l.target.id : l.target,
                     label: l.label,
                     directional: l.directional
-                }))
+                })),
+                groups: this.graphData.groups
             };
             await entry.setFlag("fang", "graphData", exportData);
         } else {
@@ -415,6 +420,138 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         }
     }
 
+    async _onManageGroups() {
+        if (!game.user.isGM) return;
+
+        let groupsHtml = this.graphData.groups.map((g, index) => `
+            <div class="fang-group-item" style="display: flex; gap: 5px; align-items: center; margin-bottom: 5px;">
+                <input type="color" class="group-color" data-index="${index}" value="${g.color}" title="Zonen-Farbe" style="flex: 0 0 30px; height: 30px; padding: 0;">
+                <input type="text" class="group-name" data-index="${index}" value="${g.name}" placeholder="Gruppenname" style="flex: 1;">
+                <button type="button" class="btn file-picker" data-type="image" data-target="group-icon-${index}" title="Icon auswählen" style="flex: 0 0 30px; padding: 0;">
+                    <i class="fas fa-file-image"></i>
+                </button>
+                <input type="hidden" class="group-icon" id="group-icon-${index}" data-index="${index}" value="${g.icon || ''}">
+                <button type="button" class="btn danger-btn btn-delete-group" data-index="${index}" title="Gruppe löschen" style="flex: 0 0 30px; padding: 0;">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        `).join("");
+
+        const dialogContent = `
+            <div style="display: flex; flex-direction: column; height: 100%;">
+                <p style="flex: 0 0 auto;">Verwalte vordefinierte Gruppen. Jede Gruppe zieht ihr zugewiesene Tokens an (Kreis-Zonen).</p>
+                <div id="fang-groups-list" style="flex: 1 1 auto; overflow-y: auto; overflow-x: hidden; margin-bottom: 10px; min-height: 150px; border: 1px solid rgba(0,0,0,0.2); padding: 5px;">
+                    ${groupsHtml}
+                </div>
+                <button type="button" id="fang-add-group-btn" class="btn secondary-btn" style="flex: 0 0 auto; width: 100%; margin-bottom: 10px;">
+                    <i class="fas fa-plus"></i> Neue Gruppe erstellen
+                </button>
+            </div>
+        `;
+        const groupDialog = new Dialog({
+            title: "Gruppen verwalten",
+            content: dialogContent,
+            render: (html) => {
+                // Add new blank row dynamically
+                html.find("#fang-add-group-btn").on("click", () => {
+                    const list = html.find("#fang-groups-list");
+                    const newIndex = list.children().length;
+                    const randomColor = '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
+                    list.append(`
+                        <div class="fang-group-item" style="display: flex; gap: 5px; align-items: center; margin-bottom: 5px;">
+                            <input type="color" class="group-color" data-index="${newIndex}" value="${randomColor}" title="Zonen-Farbe" style="flex: 0 0 30px; height: 30px; padding: 0;">
+                            <input type="text" class="group-name" data-index="${newIndex}" value="Neue Gruppe" placeholder="Gruppenname" style="flex: 1;">
+                            <button type="button" class="btn file-picker" data-type="image" data-target="group-icon-${newIndex}" title="Icon auswählen" style="flex: 0 0 30px; padding: 0;">
+                                <i class="fas fa-file-image"></i>
+                            </button>
+                            <input type="hidden" class="group-icon" id="group-icon-${newIndex}" data-index="${newIndex}" value="">
+                            <button type="button" class="btn danger-btn btn-delete-group" data-index="${newIndex}" title="Gruppe löschen" style="flex: 0 0 30px; padding: 0;">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    `);
+
+                    // Bind delete specifically to the newly added row
+                    html.find(`.btn-delete-group[data-index='${newIndex}']`).on("click", (e) => {
+                        $(e.currentTarget).closest('.fang-group-item').remove();
+                    });
+                });
+
+                // Bind FilePicker
+                html.find(".file-picker").on("click", (event) => {
+                    event.preventDefault();
+                    const button = event.currentTarget;
+                    const targetInput = button.dataset.target;
+                    new FilePicker({
+                        type: "image",
+                        callback: (path) => {
+                            html.find(`#${targetInput}`).val(path);
+                        }
+                    }).render(true);
+                });
+
+                // Bind delete to existing rows
+                html.find(".btn-delete-group").on("click", (e) => {
+                    $(e.currentTarget).closest('.fang-group-item').remove();
+                });
+            },
+            buttons: {
+                save: {
+                    icon: '<i class="fas fa-save"></i>',
+                    label: "Speichern",
+                    callback: async (html) => {
+                        const newGroups = [];
+                        html.find(".fang-group-item").each((i, el) => {
+                            const name = $(el).find(".group-name").val().trim();
+                            const color = $(el).find(".group-color").val();
+                            const icon = $(el).find(".group-icon").val().trim();
+
+                            if (name) {
+                                // Keep old position if it exists, otherwise put it at the center
+                                const existingGroup = this.graphData.groups.find(g => g.name === name);
+                                newGroups.push({
+                                    id: existingGroup ? existingGroup.id : foundry.utils.randomID(),
+                                    name: name,
+                                    color: color,
+                                    icon: icon !== "" ? icon : null,
+                                    x: existingGroup && existingGroup.x ? existingGroup.x : this.width / 2 + (Math.random() - 0.5) * 100,
+                                    y: existingGroup && existingGroup.y ? existingGroup.y : this.height / 2 + (Math.random() - 0.5) * 100,
+                                });
+                            }
+                        });
+
+                        // Handle multi-group cleanup
+                        const keptGroupIds = new Set(newGroups.map(g => g.id));
+                        this.graphData.nodes.forEach(node => {
+                            if (node.groupIds && node.groupIds.length > 0) {
+                                node.groupIds = node.groupIds.filter(id => keptGroupIds.has(id));
+                            }
+                        });
+
+                        this.graphData.groups = newGroups;
+
+                        // Give simulation a huge hot restart because a new group mass-moves physics nodes!
+                        this.initSimulation();
+                        this.simulation.alpha(0.8).restart();
+                        await this.saveData();
+                    }
+                },
+                cancel: {
+                    icon: '<i class="fas fa-times"></i>',
+                    label: "Abbrechen"
+                }
+            },
+            default: "save"
+        }, {
+            classes: ["dialog", "fang-dialog"],
+            width: 450,
+            height: 480,
+            resizable: true
+        });
+
+        groupDialog.render(true);
+    }
+
     _onDragOver(event) {
         event.preventDefault(); // Necessary to allow dropping
     }
@@ -534,7 +671,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             }).render(true);
 
         } else {
-            // Scenario 1: Dropped on empty canvas -> Ask for optional Role/Organization
+            // Scenario 1: Dropped on empty canvas -> Add the node immediately without prompting
             let existingNode = this.graphData.nodes.find(n => n.id === actor.id);
             if (existingNode) {
                 // If it already exists, just move it to the new mouse location
@@ -542,76 +679,25 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 existingNode.y = y;
                 existingNode.fx = null;
                 existingNode.fy = null;
-                this.initSimulation();
-                this.simulation.alpha(0.8).restart();
-                this._populateActors();
-                await this.saveData();
-                return;
+            } else {
+                // Add new node at precise location with a tiny random offset to prevent perfect stacking
+                const jitterX = x + (Math.random() - 0.5) * 5;
+                const jitterY = y + (Math.random() - 0.5) * 5;
+
+                this.graphData.nodes.push({
+                    id: actor.id,
+                    name: actor.name,
+                    role: null,
+                    groupIds: [],
+                    x: jitterX,
+                    y: jitterY
+                });
             }
 
-            const title = game.i18n.localize("FANG.Dialogs.RoleTitle") || "Rolle / Organisation";
-            const contentString = (game.i18n.localize("FANG.Dialogs.RoleContent") || "Gib eine Rolle oder Gruppe für {actor} ein (optional):").replace("{actor}", actor.name);
-            const lblRole = game.i18n.localize("FANG.Dialogs.RoleInput") || "Rolle";
-            const lblGroup = game.i18n.localize("FANG.Dialogs.GroupInput") || "Gruppe / Standort";
-            const btnAdd = game.i18n.localize("FANG.Dialogs.BtnAdd") || "Hinzufügen";
-            const btnCancel = game.i18n.localize("FANG.Dialogs.BtnCancel") || "Abbrechen";
-
-            const dialogContent = `
-                <p><strong>${contentString}</strong></p>
-                <div class="form-group">
-                    <label>${lblRole}:</label>
-                    <div class="form-fields">
-                        <input type="text" id="fang-node-role" style="width: 100%;">
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label>${lblGroup}:</label>
-                    <div class="form-fields">
-                        <input type="text" id="fang-node-group" style="width: 100%;">
-                    </div>
-                </div>
-            `;
-
-            new Dialog({
-                title: title,
-                content: dialogContent,
-                buttons: {
-                    add: {
-                        icon: '<i class="fas fa-user-tag"></i>',
-                        label: btnAdd,
-                        callback: async (html) => {
-                            const roleStr = html.find("#fang-node-role").val().trim();
-                            const groupStr = html.find("#fang-node-group").val().trim();
-                            // Add new node at precise location with a tiny random offset to prevent perfect stacking
-                            const jitterX = x + (Math.random() - 0.5) * 5;
-                            const jitterY = y + (Math.random() - 0.5) * 5;
-
-                            this.graphData.nodes.push({
-                                id: actor.id,
-                                name: actor.name,
-                                role: roleStr !== "" ? roleStr : null,
-                                group: groupStr !== "" ? groupStr : null,
-                                x: jitterX,
-                                y: jitterY
-                            });
-
-                            this.initSimulation();
-                            // Start simulation with high heat (alpha > 0.5) to forcefully push overlapping nodes out of the way
-                            this.simulation.alpha(0.8).restart();
-                            this._populateActors();
-                            await this.saveData();
-                        }
-                    },
-                    cancel: {
-                        icon: '<i class="fas fa-times"></i>',
-                        label: btnCancel
-                    }
-                },
-                default: "add"
-            }, {
-                classes: ["dialog", "fang-dialog"],
-                width: 400
-            }).render(true);
+            this.initSimulation();
+            this.simulation.alpha(0.8).restart();
+            this._populateActors();
+            await this.saveData();
         }
     }
 
@@ -687,7 +773,18 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             const btnCancel = game.i18n.localize("FANG.Dialogs.BtnCancel") || "Abbrechen";
 
             const currentRole = clickedNode.role || "";
-            const currentGroup = clickedNode.group || "";
+            // Migration for older single-groupId
+            const currentGroupIds = clickedNode.groupIds || (clickedNode.groupId ? [clickedNode.groupId] : []);
+
+            const groupOptions = this.graphData.groups.map(g => {
+                const checked = currentGroupIds.includes(g.id) ? "checked" : "";
+                return `
+                <label style="display: flex; align-items: center; gap: 4px; font-weight: normal; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                    <input type="checkbox" name="fang-edit-group" value="${g.id}" ${checked}> 
+                    ${g.name}
+                </label>
+                `;
+            }).join("");
 
             const dialogContent = `
                 <p><strong>${contentString}</strong></p>
@@ -699,11 +796,10 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 </div>
                 <div class="form-group">
                     <label>${lblGroup}:</label>
-                    <div class="form-fields">
-                        <input type="text" id="fang-edit-group" value="${currentGroup}" style="width: 100%;">
+                    <div class="form-fields fang-checkbox-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px; max-height: 120px; overflow-y: auto; overflow-x: hidden; border: 1px solid rgba(0,0,0,0.2); padding: 5px;">
+                        ${groupOptions}
                     </div>
                 </div>
-                <p style="font-size: 0.8em; color: gray;">Lass ein Feld leer, um den Eintrag zu entfernen.</p>
             `;
 
             new Dialog({
@@ -715,9 +811,15 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                         label: btnSave,
                         callback: async (html) => {
                             const newRole = html.find("#fang-edit-role").val().trim();
-                            const newGroup = html.find("#fang-edit-group").val().trim();
+
+                            const selectedGroups = [];
+                            html.find("input[name='fang-edit-group']:checked").each((_, el) => {
+                                selectedGroups.push($(el).val());
+                            });
+
                             clickedNode.role = newRole !== "" ? newRole : null;
-                            clickedNode.group = newGroup !== "" ? newGroup : null;
+                            clickedNode.groupIds = selectedGroups;
+                            // No longer need to delete groupId as it's replaced by groupIds
 
                             // Force re-render
                             this.initSimulation();
@@ -731,9 +833,6 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     }
                 },
                 default: "save"
-            }, {
-                classes: ["dialog", "fang-dialog"],
-                width: 400
             }).render(true);
         }
     }
@@ -838,6 +937,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             .force("y", d3.forceY(this.height / 2).strength(node => node.isCenter ? 0.4 : 0.025)) // Boss Node Gravity Pull
             .force("collide", d3.forceCollide().radius(60))
             .force("link-avoidance", this._createLinkRepulsionForce())
+            .force("groups", this._createGroupGravityForce())
+            .force("group-repulsion", this._createGroupRepulsionForce())
             .on("tick", this.ticked.bind(this));
 
         // Start a pure visual render loop that triggers ticked() 60fps unconditionally
@@ -855,6 +956,35 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
         this.graphData.nodes = nodes;
         this.graphData.links = links;
+
+        // Calculate dynamic dimensions for groups
+        if (this.graphData.groups) {
+            this.graphData.groups.forEach(g => {
+                g._memberCount = nodes.filter(n => {
+                    const gids = n.groupIds || (n.groupId ? [n.groupId] : []);
+                    return gids.includes(g.id);
+                }).length;
+
+                // Check for overlapping/shared memberships to give extra space
+                let hasSharedMembers = false;
+                for (let otherG of this.graphData.groups) {
+                    if (otherG.id === g.id) continue;
+                    const sharedCount = nodes.filter(n => {
+                        const gids = n.groupIds || (n.groupId ? [n.groupId] : []);
+                        return gids.includes(g.id) && gids.includes(otherG.id);
+                    }).length;
+                    if (sharedCount > 0) {
+                        hasSharedMembers = true;
+                        break;
+                    }
+                }
+
+                // Base radius 120, plus surface area expansion per node. 
+                // Add flat +120 if we need room for overlapping venn-diagrams
+                // This ensures circles are HUGE when they overlap
+                g._computedRadius = Math.max(120, 60 + Math.sqrt(g._memberCount) * 50) + (hasSharedMembers ? 120 : 0);
+            });
+        }
     }
 
     _createLinkRepulsionForce() {
@@ -910,13 +1040,167 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         return force;
     }
 
+    _createGroupGravityForce() {
+        let nodes;
+
+        const force = (alpha) => {
+            if (!this.graphData.groups || this.graphData.groups.length === 0) return;
+
+            const strength = 0.08 * alpha;
+            const boundaryStrength = 0.8 * alpha;
+            const nonMemberRepulsion = 0.4 * alpha;
+
+            for (let i = 0; i < nodes.length; i++) {
+                const node = nodes[i];
+                if (node.isCenter) continue;
+
+                const myGroupIds = node.groupIds || (node.groupId ? [node.groupId] : []);
+
+                for (let group of this.graphData.groups) {
+                    if (group.x === undefined || group.y === undefined) continue;
+
+                    const dx = group.x - node.x;
+                    const dy = group.y - node.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    const padding = group._computedRadius || 200;
+
+                    if (myGroupIds.includes(group.id)) {
+                        // Node is IN this group
+                        // Pull towards center
+                        node.vx += dx * strength;
+                        node.vy += dy * strength;
+
+                        // Hard constraint: Push back if trying to leave circle
+                        if (dist > padding - 40) { // 40 is roughly node radius + margin
+                            const pushDist = dist - (padding - 40);
+                            const nx = dx / dist;
+                            const ny = dy / dist;
+                            node.vx += nx * pushDist * boundaryStrength;
+                            node.vy += ny * pushDist * boundaryStrength;
+                        }
+
+                        // Orbit constraint: Push outward from the absolute center to leave room for the group icon/name
+                        // Keep a massive inner core clear so text/icon isn't covered
+                        const coreRadius = group.icon ? 110 : 90;
+                        if (dist < coreRadius) {
+                            if (dist === 0) continue; // prevent div zero
+                            const pushDist = coreRadius - dist;
+                            const nx = -(dx / dist); // Pointing OUTWARD from center
+                            const ny = -(dy / dist);
+                            // Extremely strong outward push from the center core
+                            node.vx += nx * pushDist * boundaryStrength * 3.0;
+                            node.vy += ny * pushDist * boundaryStrength * 3.0;
+                        }
+                    } else {
+                        // Node is NOT in this group
+                        // Hard constraint: Push out if it entered the circle
+                        // Changed from `padding + 40` to `padding + 5` to let tokens sit closer to the border
+                        if (dist < padding + 5) {
+                            if (dist === 0) continue; // prevent div zero
+                            const pushDist = (padding + 5) - dist;
+                            const nx = dx / dist;
+                            const ny = dy / dist;
+                            // Extremely strong outward push if a non-member is trapped inside
+                            node.vx -= nx * pushDist * nonMemberRepulsion * 4.0;
+                            node.vy -= ny * pushDist * nonMemberRepulsion * 4.0;
+                        }
+                    }
+                }
+            }
+        };
+
+        force.initialize = (_) => { nodes = _; };
+        return force;
+    }
+
+    _createGroupRepulsionForce() {
+        let nodes; // Need nodes to count shared membership at runtime
+        const force = (alpha) => {
+            if (!this.graphData.groups || this.graphData.groups.length < 2) return;
+
+            const groups = this.graphData.groups;
+            const strength = 0.1 * alpha;
+            const attractionStrength = 0.05 * alpha;
+
+            for (let i = 0; i < groups.length; i++) {
+                for (let j = i + 1; j < groups.length; j++) {
+                    const g1 = groups[i];
+                    const g2 = groups[j];
+
+                    if (g1.x !== undefined && g1.y !== undefined && g2.x !== undefined && g2.y !== undefined) {
+                        const dx = g2.x - g1.x;
+                        const dy = g2.y - g1.y;
+                        let dist = Math.sqrt(dx * dx + dy * dy);
+                        if (dist === 0) dist = 1;
+
+                        const r1 = g1._computedRadius || 200;
+                        const r2 = g2._computedRadius || 200;
+
+                        // Check if they share members
+                        let sharedMembers = 0;
+                        if (nodes) {
+                            for (let n of nodes) {
+                                const gids = n.groupIds || (n.groupId ? [n.groupId] : []);
+                                if (gids.includes(g1.id) && gids.includes(g2.id)) {
+                                    sharedMembers++;
+                                }
+                            }
+                        }
+
+                        if (sharedMembers > 0) {
+                            // Groups share members: they should intersect deeply to leave room for shared tokens.
+                            // 45% diameter overlap target distance = (r1 + r2) * 0.55
+                            const idealDist = (r1 + r2) * 0.55;
+
+                            if (dist > idealDist) {
+                                // Pull together (groups too far apart)
+                                const pullAmt = (dist - idealDist) * attractionStrength;
+                                const nx = (dx / dist) * pullAmt;
+                                const ny = (dy / dist) * pullAmt;
+                                g1.x += nx;
+                                g1.y += ny;
+                                g2.x -= nx;
+                                g2.y -= ny;
+                            } else if (dist < idealDist - 30) {
+                                // Don't let them swallow each other completely, leave some non-overlapping rims
+                                const pushAmt = ((idealDist - 30) - dist) * strength;
+                                const nx = (dx / dist) * pushAmt;
+                                const ny = (dy / dist) * pushAmt;
+                                g1.x -= nx;
+                                g1.y -= ny;
+                                g2.x += nx;
+                                g2.y += ny;
+                            }
+                        } else {
+                            // Groups do not share members: they MUST NOT intersect
+                            const safeDistance = r1 + r2 + 60; // Distance to maintain between centers + buffer
+                            if (dist < safeDistance) {
+                                // Push apart
+                                const pushAmt = (safeDistance - dist) * strength;
+                                const nx = (dx / dist) * pushAmt;
+                                const ny = (dy / dist) * pushAmt;
+                                g1.x -= nx;
+                                g1.y -= ny;
+                                g2.x += nx;
+                                g2.y += ny;
+                            }
+                        }
+                    }
+                }
+            }
+        };
+
+        force.initialize = (_) => { nodes = _; };
+        return force;
+    }
+
     ticked() {
         if (!this.context) return;
 
         // Visual Cosmic Wind Calculation (Does NOT affect D3 math)
         const cosmicWindEnabled = game.settings.get("fang", "enableCosmicWind");
         const amplitude = game.settings.get("fang", "cosmicWindStrength") || 4.0;
-        const time = Date.now() * 0.001;
+        const time = Date.now() * 0.003;
         const speed = 1.0;
 
         // Fetch Boss Aura Color safely (V13 ColorField returns a Color instance/Number, not a string)
@@ -970,122 +1254,70 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         this.context.translate(this.transform.x, this.transform.y);
         this.context.scale(this.transform.k, this.transform.k);
 
-        // --- Draw Group Bounding Boxes (Convex Hulls) ---
-        // Group nodes by their 'group' property
-        const groups = {};
-        this.graphData.nodes.forEach(node => {
-            if (node.group) {
-                if (!groups[node.group]) groups[node.group] = [];
-                groups[node.group].push(node);
-            }
-        });
+        // --- Draw Predefined Group Zones (Fixed Circles) ---
+        if (this.graphData.groups && this.graphData.groups.length > 0) {
+            this.graphData.groups.forEach(group => {
+                if (group.x === undefined || group.y === undefined) return;
 
-        // Simple string hash for consistent colors per group
-        const stringToColor = (str) => {
-            let hash = 0;
-            for (let i = 0; i < str.length; i++) {
-                hash = str.charCodeAt(i) + ((hash << 5) - hash);
-            }
-            const c = (hash & 0x00FFFFFF)
-                .toString(16)
-                .toUpperCase();
-            const hex = "00000".substring(0, 6 - c.length) + c;
+                const padding = group._computedRadius || 200;
 
-            // Convert to RGB to add alpha later
-            const r = parseInt(hex.substring(0, 2), 16);
-            const g = parseInt(hex.substring(2, 4), 16);
-            const b = parseInt(hex.substring(4, 6), 16);
-            return { r, g, b };
-        };
-
-        const padding = 65; // Padding around nodes
-
-        Object.entries(groups).forEach(([groupName, nodes]) => {
-            const rgb = stringToColor(groupName);
-            this.context.fillStyle = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.15)`;
-            this.context.strokeStyle = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.6)`;
-            this.context.lineWidth = 4;
-            this.context.lineJoin = "round";
-
-            if (nodes.length === 1) {
-                // Draw a circle for a single node in a group
-                const pos = renderPos[nodes[0].id];
-                this.context.beginPath();
-                this.context.arc(pos.x, pos.y, padding, 0, Math.PI * 2);
-                this.context.fill();
-                this.context.stroke();
-            } else if (nodes.length === 2) {
-                // Draw a "pill" connecting two nodes
-                const p1 = renderPos[nodes[0].id];
-                const p2 = renderPos[nodes[1].id];
-                const dx = p2.x - p1.x;
-                const dy = p2.y - p1.y;
-                const dist = Math.sqrt(dx * dx + dy * dy);
-                const nx = -dy / dist;
-                const ny = dx / dist;
-
-                this.context.beginPath();
-                this.context.arc(p1.x, p1.y, padding, Math.atan2(dy, dx) + Math.PI / 2, Math.atan2(dy, dx) - Math.PI / 2);
-                this.context.lineTo(p2.x + nx * padding, p2.y + ny * padding);
-                this.context.arc(p2.x, p2.y, padding, Math.atan2(dy, dx) - Math.PI / 2, Math.atan2(dy, dx) + Math.PI / 2);
-                this.context.lineTo(p1.x - nx * padding, p1.y - ny * padding);
-                this.context.closePath();
-                this.context.fill();
-                this.context.stroke();
-            } else {
-                // Draw Convex Hull for 3+ nodes
-                const points = nodes.map(n => [renderPos[n.id].x, renderPos[n.id].y]);
-                const hull = d3.polygonHull(points);
-
-                if (hull && hull.length > 0) {
-                    // Expand the hull slightly to enclose the nodes completely
-                    const centroid = d3.polygonCentroid(hull);
-                    const expandedHull = hull.map(p => {
-                        const dx = p[0] - centroid[0];
-                        const dy = p[1] - centroid[1];
-                        const dist = Math.sqrt(dx * dx + dy * dy);
-                        // Push out by padding
-                        return [
-                            p[0] + (dx / dist) * padding,
-                            p[1] + (dy / dist) * padding
-                        ];
-                    });
-
-                    // We use an even simpler approach to make it look smooth: 
-                    // Draw a thick rounded path connecting the hull points.
-                    this.context.beginPath();
-                    this.context.moveTo(expandedHull[0][0], expandedHull[0][1]);
-                    for (let i = 1; i < expandedHull.length; i++) {
-                        this.context.lineTo(expandedHull[i][0], expandedHull[i][1]);
+                // Extract RGB from hex color
+                let r = 200, g = 200, b = 200;
+                if (/^#([A-Fa-f0-9]{3}){1,2}$/.test(group.color)) {
+                    let c = group.color.substring(1).split('');
+                    if (c.length === 3) {
+                        c = [c[0], c[0], c[1], c[1], c[2], c[2]];
                     }
-                    this.context.closePath();
-
-                    // Since lineJoin="round" and lineWidth is large, the hull looks like a cloud
-                    this.context.lineJoin = "round";
-                    this.context.lineWidth = padding;
-                    this.context.stroke();
-                    this.context.fill();
-                    // Reset line width for the actual border
-                    this.context.lineWidth = 4;
-                    this.context.stroke();
-
+                    c = '0x' + c.join('');
+                    r = (c >> 16) & 255;
+                    g = (c >> 8) & 255;
+                    b = c & 255;
                 }
-            }
 
-            // Draw group label at the top-left-most point of the hull/circle
-            let minX = Infinity;
-            let minY = Infinity;
-            nodes.forEach(n => {
-                if (renderPos[n.id].x < minX) minX = renderPos[n.id].x;
-                if (renderPos[n.id].y < minY) minY = renderPos[n.id].y;
+                // Draw the subtle background circle
+                this.context.fillStyle = `rgba(${r}, ${g}, ${b}, 0.08)`;
+                this.context.strokeStyle = `rgba(${r}, ${g}, ${b}, 0.5)`;
+                this.context.lineWidth = 3;
+                this.context.setLineDash([10, 15]); // Dashed border for zones
+
+                this.context.beginPath();
+                this.context.arc(group.x, group.y, padding, 0, Math.PI * 2);
+                this.context.fill();
+                this.context.stroke();
+
+                this.context.setLineDash([]); // Reset line dash
+
+                // Draw the group Image/Icon in the middle (if exists)
+                if (group.icon) {
+                    // Try to fetch image, or draw it if we have it cached
+                    if (!this._iconCache) this._iconCache = {};
+                    let img = this._iconCache[group.icon];
+                    if (!img) {
+                        img = new Image();
+                        img.src = group.icon;
+                        this._iconCache[group.icon] = img;
+                    }
+
+                    if (img.complete && img.naturalWidth > 0) {
+                        const iconSize = 60; // 60x60
+                        this.context.drawImage(img, group.x - iconSize / 2, group.y - iconSize / 2 - 20, iconSize, iconSize);
+                    }
+                }
+
+                // Draw the group label at the center (below the icon)
+                this.context.fillStyle = `rgba(${r}, ${g}, ${b}, 0.9)`;
+                this.context.font = "bold 24px 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
+                this.context.textAlign = "center";
+                this.context.textBaseline = "middle";
+
+                // Add a subtle text shadow/glow for readability
+                this.context.shadowColor = "rgba(0,0,0,0.8)";
+                this.context.shadowBlur = 4;
+                const nameY = group.icon ? group.y + 25 : group.y; // Shift down if there's an icon
+                this.context.fillText(group.name, group.x, nameY);
+                this.context.shadowBlur = 0; // Reset
             });
-
-            this.context.fillStyle = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.9)`;
-            this.context.font = "bold 18px 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
-            this.context.textAlign = "left";
-            this.context.textBaseline = "middle";
-            this.context.fillText(groupName, minX - padding + 10, minY - padding - 10);
-        });
+        }
         // ------------------------------------------------
 
         // Draw Links
@@ -1393,38 +1625,71 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     dragSubject(event) {
-        let s2 = 30 * 30 * this.transform.k;
+        let s2 = 40 * 40 * this.transform.k; // Increased drag target slop 
         let subject = null;
         let x = this.transform.invertX(event.x);
         let y = this.transform.invertY(event.y);
 
+        // 1. Check if we clicked a node
         for (let node of this.graphData.nodes) {
             let dx = x - node.x;
             let dy = y - node.y;
             let d2 = dx * dx + dy * dy;
             if (d2 < s2) {
-                subject = node;
+                subject = { type: 'node', data: node };
                 s2 = d2;
             }
         }
+
+        // 2. If no node clicked, check if we clicked a group's central core to drag the group
+        if (!subject && this.graphData.groups && game.user.isGM) {
+            for (let group of this.graphData.groups) {
+                if (group.x !== undefined && group.y !== undefined) {
+
+                    // Check if clicked near the absolute center
+                    let dx = x - group.x;
+                    let dy = y - group.y;
+                    let d2 = dx * dx + dy * dy;
+
+                    if (d2 < 60 * 60 * this.transform.k) { // Generous hit area around center (60px)
+                        subject = { type: 'group', data: group };
+                        break;
+                    }
+                }
+            }
+        }
+
         return subject;
     }
 
     dragstarted(event) {
         if (!event.active) this.simulation.alphaTarget(0.3).restart();
-        event.subject.fx = event.subject.x;
-        event.subject.fy = event.subject.y;
+        if (event.subject.type === 'node') {
+            event.subject.data.fx = event.subject.data.x;
+            event.subject.data.fy = event.subject.data.y;
+        }
     }
 
     dragged(event) {
-        event.subject.fx = event.x;
-        event.subject.fy = event.y;
+        if (event.subject.type === 'node') {
+            event.subject.data.fx = event.x;
+            event.subject.data.fy = event.y;
+        } else if (event.subject.type === 'group') {
+            // Drag the entire group zone
+            event.subject.data.x = event.x;
+            event.subject.data.y = event.y;
+
+            // Wake up simulation so nodes follow
+            this.simulation.alpha(0.3).restart();
+        }
     }
 
     dragended(event) {
         if (!event.active) this.simulation.alphaTarget(0);
-        event.subject.fx = null;
-        event.subject.fy = null;
+        if (event.subject.type === 'node') {
+            event.subject.data.fx = null;
+            event.subject.data.fy = null;
+        }
         // Save position data after drag
         this.saveData();
     }
