@@ -66,6 +66,11 @@
     box-sizing: border-box;
 }
 
+/* GM Only Elements */
+body.role-player .fang-app-container .gm-only {
+    display: none !important;
+}
+
 /* Sidebar Styling */
 .fang-app-container .sidebar {
     width: 340px;
@@ -391,4 +396,102 @@ body #fang-app.fang-app-window.fang-fullscreen-player .window-content {
 
 .fang-dialog .dialog-buttons button.cancel:hover {
     background-color: #ebe5dc;
+}
+
+/* --- Floating Context Menu --- */
+#fang-context-menu {
+    position: absolute;
+    z-index: 1000;
+    width: 200px;
+    background: var(--fang-card-bg);
+    border: 1px solid var(--fang-border-color);
+    border-radius: 6px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15), 0 0 8px rgba(212, 175, 55, 0.1);
+    font-family: var(--fang-font-main);
+    color: var(--fang-text-color);
+    overflow: hidden;
+    transition: opacity 0.15s ease-in-out, transform 0.1s ease-out;
+    transform: scale(0.95);
+    opacity: 0;
+    pointer-events: none;
+    /* Ignore clicks while fading out */
+}
+
+#fang-context-menu:not(.hidden) {
+    opacity: 1;
+    transform: scale(1);
+    pointer-events: auto;
+}
+
+#fang-context-menu ul {
+    list-style: none;
+    margin: 0;
+    padding: 5px 0;
+}
+
+.ctx-item {
+    padding: 10px 15px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.9rem;
+    transition: background 0.15s, color 0.15s;
+    border-left: 3px solid transparent;
+}
+
+.ctx-item i {
+    width: 16px;
+    text-align: center;
+    color: var(--fang-accent-gold);
+}
+
+.ctx-item:hover {
+    background: var(--fang-nav-bg);
+    border-left-color: var(--fang-primary-red);
+    color: var(--fang-primary-red);
+}
+
+.ctx-item.danger:hover {
+    background: #ffe6e6;
+    border-left-color: var(--fang-primary-red);
+    color: var(--fang-primary-red);
+}
+
+.ctx-item.danger i {
+    color: #ff4d4d;
+}
+
+/* --- Floating Hover Lore Tooltip --- */
+#fang-tooltip {
+    position: absolute;
+    z-index: 999;
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(4px);
+    border: 1px solid var(--fang-accent-gold);
+    border-radius: 4px;
+    padding: 12px 15px;
+    color: var(--fang-text-color);
+    font-family: var(--fang-font-main);
+    font-size: 0.95rem;
+    line-height: 1.4;
+    max-width: 320px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    pointer-events: none;
+    /* Clicks fall through to the canvas */
+    transition: opacity 0.2s ease-in-out, transform 0.2s ease-out;
+    transform: translateY(10px);
+    opacity: 0;
+    /* Optional: A subtle glow */
+    box-shadow: 0 0 15px rgba(212, 175, 55, 0.1);
+}
+
+#fang-tooltip:not(.hidden) {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* When lore is empty, force hidden even if JS gets confused */
+#fang-tooltip:empty {
+    display: none !important;
 }

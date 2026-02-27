@@ -5,6 +5,26 @@ All notable changes to the **Foundry Actor Nexus Graph (FANG)** module will be d
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.3] - 2026-02-27
+### Added
+- **Radial Context Menu:** Completely overhauled token interactions. Right-clicking (or long-pressing on tablets) a token now summons a custom, theme-styled HTML floating menu directly under the cursor.
+- **Node Lore Editor:** Added an "Edit Information" button to the new context menu, allowing GMs (and permitted players) to write custom multi-line text and notes stored directly on individual tokens.
+- **Hover Lore Tooltips:** Hovering over a token with saved information now smoothly fades in a floating tooltip window, intelligently snapping to the sides of the node to avoid clipping screen edges.
+
+### Changed
+- **Aesthetic Overhaul:** Fully migrated the new menu systems away from standard browser dark-mode defaults to strictly enforce our D&D Light Parchment / Red / Gold UI tokenized design variables (`var(--fang-card-bg)`, etc.).
+
+## [1.1.2] - 2026-02-27
+### Added
+- **Player Collaborative Editing:** Added a world-level setting (accessible via the new "Advanced Settings" dialog or native Foundry Module Settings) to allow players to construct the graph! Players can now drop tokens, create connections, and delete elements.
+- **Socket Relay Security:** Player modifications are securely relayed to the active GM, automatically verified, written to the locked GM Journal, and live-synced back to all connected clients. Players are gracefully blocked and warned if no GM is currently online.
+- **Spoiler Protection (Anti-Metagaming):** Re-engineered the relationship dropdown menus. Players can no longer accidentally see the names of unrevealed secret NPCs. The dropdown now exclusively lists tokens already present on the canvas, plus any actors the player inherently has at least "Observer" permission to view in Foundry.
+- **Global Cosmic Wind:** Elevated the "Cosmic Wind" animations and intensity slider to a global `world` setting. Reconfigured the math so physics rendering is perfectly synchronized across all player screens based on the GM's preferred aesthetic.
+
+### Fixed
+- **UI Overflow:** Increased the initial default graph window height slightly to prevent the GM sidebar from generating a cramped vertical scrollbar.
+- **Community Thanks:** A massive thank you to **@mcmuffin88** for their pull request and contribution! They single-handedly built and integrated the **Roles & Organizations** feature, allowing GMs to add organizational subtext to actor nodes via UI, Drag&Drop, and right-click contexts.
+
 ## [1.1.1] - 2026-02-27
 ### Added
 - **Gravity Center (Boss Nodes):** GMs can now anchor important actors (e.g., a main villain) magnetically to the center of the graph via the new "Center" (Zentrieren) button. Boss nodes are highlighted with a customizable glowing aura and strongly repel standard node clustering.

@@ -68,6 +68,15 @@
             </div>
         </div>
 
+        <div class="control-group gm-only">
+            <h3>{{localize "FANG.UI.AdvancedFeatures"}}</h3>
+            <div class="input-stack">
+                <button id="btnOpenAdvancedSettings" class="btn action-btn">
+                    <i class="fas fa-cogs"></i> {{localize "FANG.UI.AdvancedSettings"}}
+                </button>
+            </div>
+        </div>
+
         <div class="control-group actions-group" style="display: none;">
             <!-- Hidden export / import group as Journal Entry storage replaces this. Kept in DOM for potential future use or debugging. -->
             <h3>Export / Import</h3>
@@ -82,6 +91,23 @@
     <!-- Main Canvas Area -->
     <main class="canvas-container" style="position: relative;">
         <canvas id="graphCanvas"></canvas>
-    </main>
+
+        <!-- Hover Information Tooltip -->
+        <div id="fang-tooltip" class="fang-tooltip hidden"></div>
+
+        <!-- Right-Click Radial Context Menu -->
+        <div id="fang-context-menu" class="fang-context-menu hidden">
+            <ul>
+                <li id="ctxEditRole" class="ctx-item">
+                    <i class="fas fa-theater-masks"></i> {{localize "FANG.ContextMenu.EditRole"}}
+                </li>
+                <li id="ctxEditLore" class="ctx-item">
+                    <i class="fas fa-book-open"></i> {{localize "FANG.ContextMenu.EditLore"}}
+                </li>
+                <li id="ctxDeleteNode" class="ctx-item danger">
+                    <i class="fas fa-trash"></i> {{localize "FANG.ContextMenu.DeleteNode"}}
+                </li>
+            </ul>
+        </div>
     </main>
 </div>

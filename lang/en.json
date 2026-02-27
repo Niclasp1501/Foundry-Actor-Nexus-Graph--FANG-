@@ -16,6 +16,8 @@
             "SelectElement": "Select Node / Link",
             "Delete": "Delete",
             "Presentation": "Presentation",
+            "AdvancedFeatures": "Advanced Functions",
+            "AdvancedSettings": "Open Advanced Settings",
             "ShowPlayers": "Show Players",
             "ShowPlayersHint": "Shows the graph to all players in a normal window",
             "ShowMonitor": "Show Monitor",
@@ -26,6 +28,7 @@
             "ManageFactionsHint": "Create and manage factions for tokens.",
             "CloseMonitor": "Close Monitor",
             "CloseMonitorHint": "Closes the graph only on the monitor",
+            "EnablePlayerEdit": "Toggle Player Editing",
             "ToggleCenter": "Center",
             "ToggleCenterHint": "Magnetically pins the NPC to the center (e.g. for Boss enemies)."
         },
@@ -41,6 +44,9 @@
             "GraphMonitorShown": "FANG Graph is sent to the monitor in fullscreen!",
             "GraphClosed": "Graph closed for all players.",
             "GraphMonitorClosed": "Graph closed on the monitor.",
+            "PlayersCanEdit": "Players can now edit the graph.",
+            "PlayersCannotEdit": "Players can no longer edit the graph.",
+            "WarnNoGMOnline": "A Game Master must be online to save changes to the graph.",
             "JournalInitSuccess": "FANG Graph Journal successfully initialized.",
             "JournalMissing": "No FANG Graph Journal found. A GM must open this tool first.",
             "SaveNoPermission": "No permission to save the FANG Graph.",
@@ -54,6 +60,11 @@
             "CenterEnabled": "is now magnetically pulled to the center.",
             "CenterDisabled": "now floats freely again.",
             "ActorNotFound": "Actor not found."
+        },
+        "ContextMenu": {
+            "EditRole": "Role / Organization",
+            "EditLore": "Edit Information",
+            "DeleteNode": "Delete Actor from Graph"
         },
         "Dropdowns": {
             "Nodes": "Nodes (Tokens)",
@@ -76,6 +87,8 @@
             "ShowFactionLegend": "Show Faction Legend",
             "EditRoleTitle": "Edit Details",
             "EditRoleContent": "Faction / Role for {actor}:",
+            "EditLoreTitle": "Edit Information",
+            "EditLoreContent": "Additional details or notes for {actor}:",
             "BtnConnect": "Connect",
             "BtnAdd": "Add",
             "BtnAddFaction": "Add Faction",
@@ -94,6 +107,10 @@
             "CenterNodeColor": {
                 "Name": "Center Aura Color (Hex)",
                 "Hint": "The color of the magical ring around tokens pinned to the center. Enter a Hex color code (e.g. #d4af37 for Gold, #8b0000 for Dark Red)."
+            },
+            "AllowPlayerEditing": {
+                "Name": "Allow Player Editing",
+                "Hint": "If enabled, players can create and delete connections, and drop tokens onto the graph."
             }
         }
     }

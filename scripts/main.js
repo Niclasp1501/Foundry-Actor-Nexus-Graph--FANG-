@@ -24,7 +24,7 @@ Hooks.once("init", () => {
   game.settings.register("fang", "enableCosmicWind", {
     name: "FANG.Settings.CosmicWind.Name",
     hint: "FANG.Settings.CosmicWind.Hint",
-    scope: "client",     // User-specific preference
+    scope: "world",      // Universal setting for all players 
     config: true,        // Shows up in module settings menu
     type: Boolean,
     default: true,
@@ -39,7 +39,7 @@ Hooks.once("init", () => {
   game.settings.register("fang", "cosmicWindStrength", {
     name: "FANG.Settings.CosmicWindStrength.Name",
     hint: "FANG.Settings.CosmicWindStrength.Hint",
-    scope: "client",
+    scope: "world",
     config: true,
     type: Number,
     range: {
@@ -61,6 +61,26 @@ Hooks.once("init", () => {
       // Force an immediate re-render if the graph is open so the GM can see the color change live
       if (fangApp && fangApp.rendered) {
         console.log("FANG | Center Node Color updated to", value);
+      }
+    }
+  });
+
+  game.settings.register("fang", "allowPlayerEditing", {
+    name: "FANG.Settings.AllowPlayerEditing.Name",
+    hint: "FANG.Settings.AllowPlayerEditing.Hint",
+    scope: "world",
+    config: true, // Now shown in the main Foundry Module Settings menu
+    type: Boolean,
+    default: false,
+    onChange: value => {
+      // Sync sidebar visibility live on all clients without closing window
+      if (fangApp && fangApp.rendered && !game.user.isGM) {
+        // Fix for ApplicationV2 where `element` is the HTMLElement itself, not jQuery
+        const sidebar = fangApp.element.querySelector(".sidebar");
+        if (sidebar) {
+          sidebar.style.display = value ? "flex" : "none";
+          fangApp.resizeCanvas();
+        }
       }
     }
   });
@@ -125,6 +145,36 @@ Hooks.once("ready", () => {
           fangApp.close();
         }
       }
+    }
+
+    // --- SOCKET RELAY FOR PLAYER EDITING ---
+    // A player without Journal write-permissions sent an edit request to the GM
+    if (data.action === "playerEditGraph" && game.user.isGM) {
+      console.log("FANG | Received Player Edit Graph Request. Processing as GM...");
+      if (!fangApp) {
+        fangApp = new FangApplication();
+      }
+
+      // Wait briefly to ensure we have the absolute latest baseline
+      setTimeout(async () => {
+        // Apply the player's new graph data onto our GM instance
+        if (data.payload && data.payload.newGraphData) {
+          fangApp.graphData = data.payload.newGraphData;
+          console.log("FANG | GM locally applied player graph data.", fangApp.graphData);
+        }
+
+        // If the GM's UI is open, visually update it so the GM sees the change live
+        if (fangApp.rendered) {
+          fangApp.initSimulation();
+          fangApp.simulation.alpha(0.05).restart(); // Small heat burst
+          fangApp._populateActors(); // Refresh sidebar lists
+        }
+
+        // Save this new state into the GM's Journal
+        // Important: As the GM, we have permissions to do this.
+        // saveData() also automatically triggers a "showGraph" socket back to ALL players
+        await fangApp.saveData(false); // pass 'false' to avoid infinite render loops if already open
+      }, 100);
     }
   });
 });
