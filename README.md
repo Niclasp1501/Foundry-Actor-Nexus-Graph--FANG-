@@ -28,6 +28,7 @@ An interactive, self-arranging Actor Graph module for visualizing Character & NP
 - **Node & Link Management:** GMs can effortlessly add tokens, create links, and remove connections as the story progresses.
 - **Player Sharing:** GMs can push the current graph view to all connected players, ensuring everyone is on the same page.
 - **GM Controls:** Includes dedicated "Close for Players", "Show Monitor", and "Close Monitor" buttons for seamless presentation management.
+- **Visual Grouping:** Group certain people together (e.g., by location) with visual bounding boxes or cluster zones to make large graphs much clearer.
 - **Multi-Language Support (I18n):** Automatically translates to English or German based on your Foundry core language settings.
 
 ### Installation
@@ -51,12 +52,10 @@ An interactive, self-arranging Actor Graph module for visualizing Character & NP
 - **Manual Access:** If a player accidentally closes the window, they can re-open it via the **"FANG Graph" Journal Entry** (a link inside the journal text opens the tool) or simply by pressing `Shift + G`.
 
 ### Future Roadmap
-- **Visual Grouping:** Group certain people together (e.g., by location) with visual bounding boxes or cluster zones to make large graphs much clearer.
 - **Viewport Locking:** Ensure actors remain visible inside the GM's and Monitor's screens.
 - **More Languages:** Community translation support (e.g. Spanish, French).
 
 ### Potential Extensions (Ideas)
-- **Visual Grouping (Zones):** Defining background area "clusters" (e.g., Factions or Locations) that tokens can be snapped into.
 - **Search & Filter:** A search bar that highlights specific actors and dims the rest.
 - **Mini-Map Navigator:** A small radar map in the corner for massive networks.
 - **Custom Link Styles:** Color-coded or dashed lines for different relationships (e.g., Enemies, Family, Master/Apprentice).
@@ -116,7 +115,6 @@ An interactive, self-arranging Actor Graph module for visualizing Character & NP
 - **Weitere Sprachen:** Bei Bedarf werden auf Wunsch gern weitere Übersetzungen integriert.
 
 ### Potenzielle Erweiterungen (Ideen)
-- **Visuelle Zonen (Gruppen):** Farbige Hintergrund-Bereiche (Fraktionen/Orte), an die Akteure magnetisch gebunden werden können.
 - **Suche & Filter:** Eine Suchleiste, die bestimmte Akteure hervorhebt und den Rest des Graphen ausblendet.
 - **Mini-Map / Navigator:** Eine kleine Radar-Übersicht in der Ecke für sehr große, komplexe Netzwerke.
 - **Individuelle Verbindungslinien:** Farbkodierte, gestrichelte oder dicke Linien je nach Beziehungsart (Feinde, Liebespaar, Familie).
