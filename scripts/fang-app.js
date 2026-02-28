@@ -1464,6 +1464,15 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         if (!event.active) this.simulation.alphaTarget(0.3).restart();
         event.subject.fx = event.subject.x;
         event.subject.fy = event.subject.y;
+        
+        // Hide tooltip immediately when dragging starts
+        if (this._hoverTimeout) {
+            clearTimeout(this._hoverTimeout);
+            this._hoverTimeout = null;
+        }
+        this._tooltipVisibleForNode = null;
+        const tooltip = this.element.querySelector("#fang-tooltip");
+        if (tooltip) tooltip.classList.add("hidden");
     }
 
     dragged(event) {
@@ -1490,6 +1499,12 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         if (menu) menu.classList.add("hidden");
         const tooltip = this.element.querySelector("#fang-tooltip");
         if (tooltip) tooltip.classList.add("hidden");
+        
+        if (this._hoverTimeout) {
+            clearTimeout(this._hoverTimeout);
+            this._hoverTimeout = null;
+        }
+        this._tooltipVisibleForNode = null;
     }
 
     _handleCanvasMouseMove(event) {
@@ -1519,38 +1534,60 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const tooltip = this.element.querySelector("#fang-tooltip");
         if (!tooltip) return;
 
-        if (hoveredNode && hoveredNode.lore) {
-            tooltip.innerHTML = hoveredNode.lore.replace(/\n/g, '<br>');
-
-            // Calculate true screen position of the Node
-            const nodeScreenX = this.transform.applyX(hoveredNode.x);
-            const nodeScreenY = this.transform.applyY(hoveredNode.y);
-            const nodeRadiusScaled = 30 * this.transform.k; // 30 is the base radius
-
-            // Determine side to show tooltip (Default: Right, if space allows. Otherwise Left)
-            // Canvas width
-            const cWidth = this.canvas.parentElement.clientWidth;
-
-            // Estimated Tooltip width (max-width is 320 in CSS)
-            const estimatedTooltipWidth = 340;
-
-            let tooltipX = nodeScreenX + nodeRadiusScaled + 15; // Right of node
-            if (tooltipX + estimatedTooltipWidth > cWidth) {
-                // Not enough space on the right, flip to left
-                tooltipX = nodeScreenX - nodeRadiusScaled - estimatedTooltipWidth - 15;
+        // If the hovered node changed or we stopped hovering:
+        if (this._hoveredNodeId !== (hoveredNode ? hoveredNode.id : null)) {
+            // Clear existing timeout
+            if (this._hoverTimeout) {
+                clearTimeout(this._hoverTimeout);
+                this._hoverTimeout = null;
             }
-
-            // Align vertically with the node center, but keep slightly low to look nice
-            let tooltipY = nodeScreenY - 10;
-
-            tooltip.style.left = `${tooltipX}px`;
-            tooltip.style.top = `${tooltipY}px`;
-
-            tooltip.classList.remove("hidden");
-            this.canvas.style.cursor = "pointer";
-        } else {
+            this._hoveredNodeId = hoveredNode ? hoveredNode.id : null;
+            this._tooltipVisibleForNode = null;
+            
+            // Hide tooltip immediately when moving off a node or onto a new one
             tooltip.classList.add("hidden");
             this.canvas.style.cursor = hoveredNode ? "pointer" : "grab";
+
+            // If we are now hovering over a node with lore, start the timer
+            if (hoveredNode && hoveredNode.lore) {
+                this._hoverTimeout = setTimeout(() => {
+                    this._tooltipVisibleForNode = hoveredNode.id;
+                    
+                    // Show it immediately
+                    tooltip.innerHTML = hoveredNode.lore.replace(/\n/g, '<br>');
+                    const nodeScreenX = this.transform.applyX(hoveredNode.x);
+                    const nodeScreenY = this.transform.applyY(hoveredNode.y);
+                    const nodeRadiusScaled = 30 * this.transform.k; // 30 is the base radius
+                    const cWidth = this.canvas.parentElement.clientWidth;
+                    const estimatedTooltipWidth = 340; 
+                    
+                    let tooltipX = nodeScreenX + nodeRadiusScaled + 15;
+                    if (tooltipX + estimatedTooltipWidth > cWidth) {
+                        tooltipX = nodeScreenX - nodeRadiusScaled - estimatedTooltipWidth - 15;
+                    }
+                    
+                    let tooltipY = nodeScreenY - 10;
+                    tooltip.style.left = `${tooltipX}px`;
+                    tooltip.style.top = `${tooltipY}px`;
+                    
+                    tooltip.classList.remove("hidden");
+                }, 450); // 450ms hover delay
+            }
+        } else if (hoveredNode && hoveredNode.lore && this._tooltipVisibleForNode === hoveredNode.id) {
+            // If the tooltip is actively visible for this node, keep it glued exactly to the node's potential bounds during mouse movement
+            const nodeScreenX = this.transform.applyX(hoveredNode.x);
+            const nodeScreenY = this.transform.applyY(hoveredNode.y);
+            const nodeRadiusScaled = 30 * this.transform.k;
+            const cWidth = this.canvas.parentElement.clientWidth;
+            const estimatedTooltipWidth = 340; 
+            
+            let tooltipX = nodeScreenX + nodeRadiusScaled + 15;
+            if (tooltipX + estimatedTooltipWidth > cWidth) {
+                tooltipX = nodeScreenX - nodeRadiusScaled - estimatedTooltipWidth - 15;
+            }
+            let tooltipY = nodeScreenY - 10;
+            tooltip.style.left = `${tooltipX}px`;
+            tooltip.style.top = `${tooltipY}px`;
         }
     }
 }

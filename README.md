@@ -55,6 +55,15 @@ An interactive, self-arranging Actor Graph module for visualizing Character & NP
 - **Viewport Locking:** Ensure actors remain visible inside the GM's and Monitor's screens.
 - **More Languages:** Community translation support (e.g. Spanish, French).
 
+### Potential Extensions (Ideas)
+- **Visual Grouping (Zones):** Defining background area "clusters" (e.g., Factions or Locations) that tokens can be snapped into.
+- **Search & Filter:** A search bar that highlights specific actors and dims the rest.
+- **Mini-Map Navigator:** A small radar map in the corner for massive networks.
+- **Custom Link Styles:** Color-coded or dashed lines for different relationships (e.g., Enemies, Family, Master/Apprentice).
+- **GM-Secret Nodes:** The ability to hide masterminds in the graph from players until the GM chooses to reveal them.
+- **Character Portraits:** Supporting visual token portraits instead of just text/circle nodes.
+- **JSON Export/Import:** Sharing complex relationship webs as templates with the community.
+
 ---
 
 ## 🇩🇪 Deutsch
@@ -105,6 +114,15 @@ An interactive, self-arranging Actor Graph module for visualizing Character & NP
 - **Gruppierung nach Orten (Organisation):** Bestimmte Akteure (z.B. nach Standort) optisch in Gruppen zusammenfassen, um bei großen Graphen die Übersichtlichkeit zu wahren.
 - **Monitor-Sichtfeld:** Sicherstellen, dass die Akteure immer im sichtbaren Bereich des Monitors/GMs bleiben.
 - **Weitere Sprachen:** Bei Bedarf werden auf Wunsch gern weitere Übersetzungen integriert.
+
+### Potenzielle Erweiterungen (Ideen)
+- **Visuelle Zonen (Gruppen):** Farbige Hintergrund-Bereiche (Fraktionen/Orte), an die Akteure magnetisch gebunden werden können.
+- **Suche & Filter:** Eine Suchleiste, die bestimmte Akteure hervorhebt und den Rest des Graphen ausblendet.
+- **Mini-Map / Navigator:** Eine kleine Radar-Übersicht in der Ecke für sehr große, komplexe Netzwerke.
+- **Individuelle Verbindungslinien:** Farbkodierte, gestrichelte oder dicke Linien je nach Beziehungsart (Feinde, Liebespaar, Familie).
+- **Geheim-Knoten für GMs:** Akteure können für Spieler unsichtbar gemacht werden, bis der GM sie dramatisch enthüllt.
+- **Charakter-Portraits:** Die Möglichkeit, kreisrunde Foundry-Bilder der Akteure anstelle von simplen Kreisen darzustellen.
+- **JSON Export/Import:** Graphen oder Abenteuer-Templates speichern und mit der Community austauschen.
 
 ---
 
