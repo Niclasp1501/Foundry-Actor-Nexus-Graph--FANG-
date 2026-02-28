@@ -59,6 +59,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const btnDelete = this.element.querySelector("#btnDeleteElement");
         if (btnDelete) btnDelete.addEventListener("click", this._onDeleteElement.bind(this));
 
+        const btnUpdateLink = this.element.querySelector("#btnUpdateLink");
+        if (btnUpdateLink) btnUpdateLink.addEventListener("click", this._onUpdateLink.bind(this));
+
         const btnToggleCenter = this.element.querySelector("#btnToggleCenter");
         if (btnToggleCenter) btnToggleCenter.addEventListener("click", this._onToggleCenterNode.bind(this));
 
@@ -66,9 +69,29 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         if (btnManageFactions) btnManageFactions.addEventListener("click", this._onManageFactions.bind(this));
 
         const canvas = this.element.querySelector("#graphCanvas");
+        canvas.addEventListener("click", this._onCanvasClick.bind(this));
         canvas.addEventListener("dblclick", this._onCanvasDoubleClick.bind(this));
         canvas.addEventListener("contextmenu", this._onCanvasRightClick.bind(this));
         canvas.addEventListener("mousemove", this._handleCanvasMouseMove.bind(this));
+
+        // Tab Navigation Logic
+        const tabBtns = this.element.querySelectorAll(".tab-btn");
+        const tabContents = this.element.querySelectorAll(".tab-content");
+
+        tabBtns.forEach(btn => {
+            btn.addEventListener("click", (e) => {
+                const targetTab = e.currentTarget.dataset.tab;
+
+                // Remove active classes
+                tabBtns.forEach(b => b.classList.remove("active"));
+                tabContents.forEach(c => c.classList.remove("active"));
+
+                // Add active to correct elements
+                e.currentTarget.classList.add("active");
+                const targetContent = this.element.querySelector(`.tab-content[data-tab="${targetTab}"]`);
+                if (targetContent) targetContent.classList.add("active");
+            });
+        });
 
         // Drag & Drop Listeners
         canvasContainer.addEventListener("dragover", this._onDragOver.bind(this));
@@ -116,11 +139,40 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 });
             }
 
-            const btnOpenAdvancedSettings = this.element.querySelector("#btnOpenAdvancedSettings");
-            if (btnOpenAdvancedSettings) {
-                btnOpenAdvancedSettings.addEventListener("click", (e) => {
-                    e.preventDefault();
-                    this._renderAdvancedSettingsDialog();
+            const deleteSelect = this.element.querySelector("#deleteSelect");
+            if (deleteSelect) {
+                deleteSelect.addEventListener("change", (e) => {
+                    const val = e.target.value;
+                    const [type, id] = val.split("|");
+
+                    if (type === "link") {
+                        this._toggleLinkEditor(parseInt(id));
+                        this._toggleNodeEditor(false);
+                    } else if (type === "node") {
+                        this._toggleNodeEditor(true);
+                        this._toggleLinkEditor(-1);
+                    } else {
+                        this._toggleLinkEditor(-1);
+                        this._toggleNodeEditor(false);
+                    }
+                });
+            }
+
+            const cbAllowPlayerEdit = this.element.querySelector("#cbAllowPlayerEdit");
+            if (cbAllowPlayerEdit) {
+                // Initialize state
+                cbAllowPlayerEdit.checked = game.settings.get("fang", "allowPlayerEditing");
+
+                // Bind change event
+                cbAllowPlayerEdit.addEventListener("change", async (e) => {
+                    const newState = e.target.checked;
+                    await game.settings.set("fang", "allowPlayerEditing", newState);
+
+                    if (newState) {
+                        ui.notifications.info(game.i18n.localize("FANG.Messages.PlayersCanEdit"));
+                    } else {
+                        ui.notifications.info(game.i18n.localize("FANG.Messages.PlayersCannotEdit"));
+                    }
                 });
             }
 
@@ -430,6 +482,11 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const label = this.element.querySelector("#linkLabel").value.trim();
         const directional = this.element.querySelector("#linkDirectional").checked;
 
+        if (!label) {
+            ui.notifications.warn(game.i18n.localize("FANG.Messages.WarningNoLabel"));
+            return;
+        }
+
         if (sourceId && targetId && sourceId !== targetId) {
             // Check if nodes exist, else create them from Actors
             [sourceId, targetId].forEach(id => {
@@ -485,6 +542,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             this.graphData.links.splice(lIndex, 1);
             ui.notifications.info(game.i18n.localize("FANG.Messages.DeletedLink"));
         }
+
+        this._toggleNodeEditor(false);
+        this._toggleLinkEditor(-1);
 
         this.initSimulation();
         this.simulation.alpha(0.3).restart();
@@ -834,54 +894,6 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         }
     }
 
-    async _renderAdvancedSettingsDialog() {
-        const isEnabled = game.settings.get("fang", "allowPlayerEditing");
-        const title = game.i18n.localize("FANG.UI.AdvancedSettings") || "Advanced Settings";
-        const btnSave = game.i18n.localize("FANG.Dialogs.BtnSave") || "Speichern";
-        const btnCancel = game.i18n.localize("FANG.Dialogs.BtnCancel") || "Abbrechen";
-
-        const content = `
-            <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px;">
-                <label style="font-weight: bold; flex: 1; margin: 0;">${game.i18n.localize("FANG.Settings.AllowPlayerEditing.Name") || "Enable Player Edit"}</label>
-                <div class="form-fields" style="display: flex; justify-content: flex-end; flex: 0 0 50px;">
-                    <input type="checkbox" id="dlgAllowPlayerEdit" ${isEnabled ? "checked" : ""}>
-                </div>
-            </div>
-            <p class="notes" style="font-size: 0.85em; color: gray; margin-top: 5px; margin-bottom: 15px; line-height: 1.3;">
-                ${game.i18n.localize("FANG.Settings.AllowPlayerEditing.Hint") || "If enabled, players can create and delete connections."}
-            </p>
-        `;
-
-        new Dialog({
-            title: title,
-            content: content,
-            buttons: {
-                save: {
-                    icon: '<i class="fas fa-save"></i>',
-                    label: btnSave,
-                    callback: async (html) => {
-                        const newState = html.find("#dlgAllowPlayerEdit").is(":checked");
-                        if (newState !== isEnabled) {
-                            await game.settings.set("fang", "allowPlayerEditing", newState);
-                            if (newState) {
-                                ui.notifications.info(game.i18n.localize("FANG.Messages.PlayersCanEdit"));
-                            } else {
-                                ui.notifications.info(game.i18n.localize("FANG.Messages.PlayersCannotEdit"));
-                            }
-                        }
-                    }
-                },
-                cancel: {
-                    icon: '<i class="fas fa-times"></i>',
-                    label: btnCancel
-                }
-            },
-            default: "save"
-        }, {
-            classes: ["fang-dialog"],
-            width: 400
-        }).render(true);
-    }
 
     _onCanvasDoubleClick(event) {
         if (!this.transform) return;
@@ -1081,6 +1093,188 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             // Hide menu if clicked elsewhere
             const menu = this.element.querySelector("#fang-context-menu");
             if (menu) menu.classList.add("hidden");
+        }
+    }
+
+    async _onCanvasClick(event) {
+        // Prevent click logic if we just finished a drag
+        if (Date.now() - (this._lastDragTime || 0) < 200) return;
+
+        if (!this.transform) return;
+
+        // Support both mouse and touch events
+        const rect = event.target.getBoundingClientRect();
+        const mouseX = event.clientX - rect.left;
+        const mouseY = event.clientY - rect.top;
+
+        const x = (mouseX - this.transform.x) / this.transform.k;
+        const y = (mouseY - this.transform.y) / this.transform.k;
+
+        // If d3.zoom or d3.drag already handled this, we might want to check for it
+        // but for now, the 200ms guard handles the collision.
+
+        // 1. Check Nodes (higher priority)
+        let clickedNode = null;
+        let minNDist = 30; // Radius selection threshold
+
+        for (const node of this.graphData.nodes) {
+            const dx = x - node.x;
+            const dy = y - node.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < minNDist) {
+                clickedNode = node;
+                minNDist = dist;
+            }
+        }
+
+        if (clickedNode) {
+            this._syncSidebarSelection("node", clickedNode.id);
+            return;
+        }
+
+        // 2. Check Links (lower priority)
+        let clickedLinkIndex = -1;
+        let minLDist = 12 / this.transform.k; // Threshold scaled by zoom
+
+        this.graphData.links.forEach((link, idx) => {
+            const s = link.source;
+            const t = link.target;
+            if (!s || !t || !s.x || !t.x) return; // Wait for simulation
+
+            const dist = this._pointToSegmentDistance({ x, y }, s, t);
+            if (dist < minLDist) {
+                clickedLinkIndex = idx;
+                minLDist = dist;
+            }
+        });
+
+        if (clickedLinkIndex !== -1) {
+            this._syncSidebarSelection("link", clickedLinkIndex);
+        } else {
+            // Clicked empty space - Reset sidebar selection and hide context menu
+            this._syncSidebarSelection("none", null);
+            const menu = this.element.querySelector("#fang-context-menu");
+            if (menu) menu.classList.add("hidden");
+        }
+    }
+
+    _pointToSegmentDistance(p, a, b) {
+        const dx = b.x - a.x;
+        const dy = b.y - a.y;
+        const l2 = dx * dx + dy * dy;
+        if (l2 === 0) return Math.sqrt((p.x - a.x) ** 2 + (p.y - a.y) ** 2);
+        let t = ((p.x - a.x) * dx + (p.y - a.y) * dy) / l2;
+        t = Math.max(0, Math.min(1, t));
+        return Math.sqrt((p.x - (a.x + t * dx)) ** 2 + (p.y - (a.y + t * dy)) ** 2);
+    }
+
+    _toggleLinkEditor(linkIndex) {
+        const group = this.element.querySelector("#linkEditGroup");
+        if (!group) return;
+
+        if (linkIndex === -1) {
+            group.classList.add("hidden");
+            return;
+        }
+
+        const link = this.graphData.links[linkIndex];
+        if (!link) {
+            group.classList.add("hidden");
+            return;
+        }
+
+        // Populate fields
+        const labelInput = this.element.querySelector("#editLinkLabel");
+        const dirCheckbox = this.element.querySelector("#editLinkDirectional");
+
+        if (labelInput) labelInput.value = link.label || "";
+        if (dirCheckbox) dirCheckbox.checked = !!link.directional;
+
+        group.classList.remove("hidden");
+    }
+
+    _toggleNodeEditor(show) {
+        const group = this.element.querySelector("#nodeEditGroup");
+        if (!group) return;
+        if (show) group.classList.remove("hidden");
+        else group.classList.add("hidden");
+    }
+
+    async _onUpdateLink() {
+        if (!this._canEditGraph()) return;
+
+        const selectDelete = this.element.querySelector("#deleteSelect");
+        const val = selectDelete.value;
+        if (!val || !val.startsWith("link|")) return;
+
+        const linkIndex = parseInt(val.split("|")[1]);
+        const link = this.graphData.links[linkIndex];
+        if (!link) return;
+
+        const newLabel = this.element.querySelector("#editLinkLabel").value.trim();
+        const newDirectional = this.element.querySelector("#editLinkDirectional").checked;
+
+        if (!newLabel) {
+            ui.notifications.warn(game.i18n.localize("FANG.Messages.WarningNoLabel"));
+            return;
+        }
+
+        // Apply changes
+        link.label = newLabel;
+        link.directional = newDirectional;
+
+        // Visual Refresh
+        this.initSimulation();
+        this.simulation.alpha(0.1).restart();
+        this._populateActors(); // Refresh labels in dropdowns
+
+        // Re-select to keep editor open with fresh data
+        const newSelect = this.element.querySelector("#deleteSelect");
+        if (newSelect) newSelect.value = `link|${linkIndex}`;
+
+        await this.saveData();
+        ui.notifications.info(game.i18n.localize("FANG.Messages.SaveSuccess") || "Changes saved.");
+    }
+
+    _syncSidebarSelection(type, id) {
+        // Auto-switch to Editor Tab
+        const editorTab = this.element.querySelector('.tab-btn[data-tab="editor"]');
+        if (editorTab && !editorTab.classList.contains('active')) {
+            editorTab.click();
+        }
+
+        if (type === "node") {
+            const sourceSelect = this.element.querySelector("#sourceSelect");
+            const deleteSelect = this.element.querySelector("#deleteSelect");
+
+            if (sourceSelect) {
+                sourceSelect.value = id;
+                sourceSelect.dispatchEvent(new Event('change'));
+            }
+            if (deleteSelect) {
+                deleteSelect.value = `node|${id}`;
+                deleteSelect.dispatchEvent(new Event('change'));
+            }
+            // Trigger node UI
+            this._toggleNodeEditor(true);
+            this._toggleLinkEditor(-1);
+        } else if (type === "link") {
+            const deleteSelect = this.element.querySelector("#deleteSelect");
+            if (deleteSelect) {
+                deleteSelect.value = `link|${id}`;
+                deleteSelect.dispatchEvent(new Event('change'));
+            }
+            // Trigger link UI
+            this._toggleLinkEditor(id);
+            this._toggleNodeEditor(false);
+        } else if (type === "none") {
+            const sourceSelect = this.element.querySelector("#sourceSelect");
+            const deleteSelect = this.element.querySelector("#deleteSelect");
+            if (sourceSelect) sourceSelect.value = "";
+            if (deleteSelect) deleteSelect.value = "";
+
+            this._toggleNodeEditor(false);
+            this._toggleLinkEditor(-1);
         }
     }
 
@@ -1807,7 +2001,10 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         if (event.subject.type === 'node') {
             event.subject.data.fx = event.subject.data.x;
             event.subject.data.fy = event.subject.data.y;
+            // Immediate selection in sidebar when grabbing a node
+            this._syncSidebarSelection("node", event.subject.data.id);
         }
+        this._hasDragged = false;
 
         // Hide tooltip immediately when dragging starts
         if (this._hoverTimeout) {
@@ -1822,8 +2019,10 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
     dragged(event) {
         if (event.subject.type === 'node') {
             if (!this._canEditGraph(true)) return; // Silent during rapid drag events
-            event.subject.data.fx = event.x;
-            event.subject.data.fy = event.y;
+            // Invert coordinates to account for zoom/pan
+            event.subject.data.fx = this.transform.invertX(event.x);
+            event.subject.data.fy = this.transform.invertY(event.y);
+            this._hasDragged = true;
         }
     }
 
@@ -1833,6 +2032,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         if (event.subject.type === 'node') {
             event.subject.data.fx = null;
             event.subject.data.fy = null;
+        }
+        if (this._hasDragged) {
+            this._lastDragTime = Date.now();
         }
         // Save position data after drag
         this.saveData();

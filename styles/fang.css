@@ -121,6 +121,83 @@ body.role-player .fang-app-container .gm-only {
     margin-bottom: 0;
 }
 
+/* Tabs Navigation */
+.fang-app-container .tabs-nav {
+    display: flex;
+    background-color: var(--fang-card-bg);
+    border-bottom: 2px solid var(--fang-border-color);
+}
+
+.fang-app-container .tab-btn {
+    flex: 1;
+    padding: 10px 5px;
+    text-align: center;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: #666;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+}
+
+.fang-app-container .tab-btn:hover {
+    color: var(--fang-primary-red);
+    background-color: rgba(139, 0, 0, 0.05);
+}
+
+.fang-app-container .tab-btn.active {
+    color: var(--fang-primary-red);
+    border-bottom-color: var(--fang-primary-red);
+    background-color: var(--fang-nav-bg);
+}
+
+.fang-app-container .tab-btn.active i {
+    color: var(--fang-accent-gold);
+    text-shadow: 0 0 8px rgba(212, 175, 55, 0.8), 0 0 15px rgba(212, 175, 55, 0.4);
+    animation: fangPulseGlow 2s infinite;
+}
+
+@keyframes fangPulseGlow {
+    0% {
+        text-shadow: 0 0 5px rgba(212, 175, 55, 0.5);
+    }
+
+    50% {
+        text-shadow: 0 0 10px rgba(212, 175, 55, 0.9), 0 0 20px rgba(212, 175, 55, 0.5);
+    }
+
+    100% {
+        text-shadow: 0 0 5px rgba(212, 175, 55, 0.5);
+    }
+}
+
+.fang-app-container .tabs-container {
+    flex: 1;
+    overflow-y: auto;
+}
+
+.fang-app-container .tab-content {
+    display: none;
+    animation: fangFadeIn 0.3s ease;
+}
+
+.fang-app-container .tab-content.active {
+    display: block;
+}
+
+@keyframes fangFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 .fang-app-container .control-group {
     display: flex;
     flex-direction: column;

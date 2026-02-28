@@ -5,6 +5,9 @@
         "ButtonOpen": "Ninjo's FANG",
         "KeybindingHint": "Opens the interactive FANG Actor relationship graph.",
         "UI": {
+            "TabEditor": "Editor",
+            "TabView": "View",
+            "TabAdvanced": "Advanced",
             "CreateConnection": "Create Connection",
             "SelectSource": "Select Source",
             "SelectTarget": "Select Target",
@@ -29,8 +32,12 @@
             "CloseMonitor": "Close Monitor",
             "CloseMonitorHint": "Closes the graph only on the monitor",
             "EnablePlayerEdit": "Toggle Player Editing",
-            "ToggleCenter": "Center",
-            "ToggleCenterHint": "Magnetically pins the NPC to the center (e.g. for Boss enemies)."
+            "ToggleCenter": "Center Node",
+            "ToggleCenterHint": "Magnetically pins the NPC to the center (e.g. for Boss enemies).",
+            "EditNodeHeader": "Node Details",
+            "EditLinkHeader": "Link Details",
+            "UpdateLink": "Update Link",
+            "EditLinkHint": "Modify the selected connection."
         },
         "Journal": {
             "Title": "About FANG",
@@ -52,6 +59,7 @@
             "SaveNoPermission": "No permission to save the FANG Graph.",
             "WarningSelfLink": "A token cannot be connected to itself!",
             "WarningNoSourceTarget": "Please select source and target.",
+            "WarningNoLabel": "Please enter a label for the connection.",
             "WarningNoDeleteSelect": "Please select an element to delete.",
             "WarningNoSelect": "Please select an element.",
             "WarningNodeOnly": "Please select a node (token), not a connection.",

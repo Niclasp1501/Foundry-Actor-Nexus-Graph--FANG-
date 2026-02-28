@@ -5,6 +5,9 @@
         "ButtonOpen": "Ninjo's FANG",
         "KeybindingHint": "Öffnet den interaktiven FANG Akteur Beziehungs-Graphen.",
         "UI": {
+            "TabEditor": "Editor",
+            "TabView": "Ansicht",
+            "TabAdvanced": "Weitere Funktionen",
             "CreateConnection": "Verbindung erstellen",
             "SelectSource": "Quelle wählen",
             "SelectTarget": "Ziel wählen",
@@ -30,7 +33,11 @@
             "CloseMonitorHint": "Schließt den Graphen nur auf dem Monitor",
             "EnablePlayerEdit": "Spieler-Bearbeitung umschalten",
             "ToggleCenter": "Zentrieren",
-            "ToggleCenterHint": "Fixiert den NPC magnetisch in der Mitte (z.B. für Boss-Gegner)."
+            "ToggleCenterHint": "Fixiert den NPC magnetisch in der Mitte (z.B. für Boss-Gegner).",
+            "EditNodeHeader": "Akteur bearbeiten",
+            "EditLinkHeader": "Verbindung bearbeiten",
+            "UpdateLink": "Aktualisieren",
+            "EditLinkHint": "Ändere die gewählte Verbindung."
         },
         "Journal": {
             "Title": "Über FANG",
@@ -52,6 +59,7 @@
             "SaveNoPermission": "Keine Berechtigung zum Speichern des FANG Graphen.",
             "WarningSelfLink": "Ein Token kann nicht mit sich selbst verbunden werden!",
             "WarningNoSourceTarget": "Bitte Quelle und Ziel auswählen.",
+            "WarningNoLabel": "Bitte gib ein Label für die Verbindung ein.",
             "WarningNoDeleteSelect": "Bitte wähle ein Element zum Löschen aus.",
             "WarningNoSelect": "Bitte wähle ein Element aus.",
             "WarningNodeOnly": "Bitte wähle einen Knoten (Token), keine Verbindung.",
