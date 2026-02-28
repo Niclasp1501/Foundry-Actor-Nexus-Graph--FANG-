@@ -229,7 +229,7 @@ Hooks.on("renderActorDirectory", (app, html, data) => {
     if (fangApp.rendered) {
       fangApp.bringToFront();
     } else {
-      fangApp.render(true);
+      fangApp.render({ force: true });
     }
   });
 

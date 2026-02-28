@@ -27,6 +27,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         this.graphData = { nodes: [], links: [] };
         this.simulation = null;
         this.transform = null;
+        this.zoom = null;
+        this._initialZoomApplied = false;
     }
 
     async _prepareContext(options) {
@@ -60,18 +62,14 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         this._resizeObserver = new ResizeObserver(() => this.resizeCanvas());
         this._resizeObserver.observe(canvasContainer);
 
-        // Re-attach Event Listeners to newly rendered elements
+        // Re-attach Event Listeners (Universal)
         this.element.querySelector("#btnAddLink").addEventListener("click", this._onAddLink.bind(this));
-
         const btnDelete = this.element.querySelector("#btnDeleteElement");
         if (btnDelete) btnDelete.addEventListener("click", this._onDeleteElement.bind(this));
-
         const btnUpdateLink = this.element.querySelector("#btnUpdateLink");
         if (btnUpdateLink) btnUpdateLink.addEventListener("click", this._onUpdateLink.bind(this));
-
         const btnToggleCenter = this.element.querySelector("#btnToggleCenter");
         if (btnToggleCenter) btnToggleCenter.addEventListener("click", this._onToggleCenterNode.bind(this));
-
         const btnManageFactions = this.element.querySelector("#btnManageFactions");
         if (btnManageFactions) btnManageFactions.addEventListener("click", this._onManageFactions.bind(this));
 
@@ -84,7 +82,6 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         // Tab Navigation Logic
         const tabBtns = this.element.querySelectorAll(".tab-btn");
         const tabContents = this.element.querySelectorAll(".tab-content");
-
         tabBtns.forEach(btn => {
             btn.addEventListener("click", (e) => {
                 const targetTab = e.currentTarget.dataset.tab;
@@ -103,121 +100,66 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         // Export / Import Listeners
         const btnExport = this.element.querySelector("#btnExportGraph");
         if (btnExport) btnExport.addEventListener("click", this._onExportGraph.bind(this));
-
         const inputImport = this.element.querySelector("#importFile");
         if (inputImport) inputImport.addEventListener("change", this._onImportGraph.bind(this));
+
+        // Select Changes (Sync Sidebar)
+        const deleteSelect = this.element.querySelector("#deleteSelect");
+        if (deleteSelect) {
+            deleteSelect.addEventListener("change", (e) => {
+                const val = e.target.value;
+                if (!val) return;
+                const [type, id] = val.split("|");
+                this._syncSidebarSelection(type, id);
+            });
+        }
 
         // Fullscreen and Sidebar hide for players
         if (!game.user.isGM) {
             const sidebar = this.element.querySelector(".sidebar");
             const allowPlayerEdit = game.settings.get("fang", "allowPlayerEditing");
             const isGMOnline = game.users.some(u => u.isGM && u.active);
-
             if (sidebar) {
-                // Hide sidebar if players shouldn't edit or if no GM is online to receive edits
                 sidebar.style.display = (allowPlayerEdit && isGMOnline) ? "flex" : "none";
-
-                // Hide GM-only controls explicitly
                 const gmControls = sidebar.querySelectorAll(".gm-only");
                 gmControls.forEach(el => el.style.display = "none");
             }
-
-            // Only apply pure fullscreen to players with 'monitor' in their name
             if (game.user.name.toLowerCase().includes("monitor")) {
                 this.element.classList.add("fang-fullscreen-player");
-
-                // Absolute nuke for Monk's Common Display
                 this.element.style.setProperty("display", "flex", "important");
                 this.element.style.setProperty("visibility", "visible", "important");
                 this.element.style.setProperty("opacity", "1", "important");
             }
-
-            // Force a resize calculation for D3
             setTimeout(() => this.resizeCanvas(), 50);
         } else {
             // GM-only Event Listeners
             const btnShare = this.element.querySelector("#btnShareGraph");
-            if (btnShare) {
-                btnShare.addEventListener("click", (e) => {
-                    e.preventDefault();
+            if (btnShare) btnShare.addEventListener("click", this._onShareGraph.bind(this));
 
-                    // Critical Fix: Before sharing, ensure the data is fully synced and saved
-                    this.saveData().then(() => {
-                        game.socket.emit("module.fang", { action: "showGraph" });
-                        ui.notifications.info(game.i18n.localize("FANG.Messages.GraphShown"));
-                    });
-                });
-            }
+            const btnShareMonitor = this.element.querySelector("#btnShareGraphMonitor");
+            if (btnShareMonitor) btnShareMonitor.addEventListener("click", this._onShareGraphMonitor.bind(this));
 
-            const deleteSelect = this.element.querySelector("#deleteSelect");
-            if (deleteSelect) {
-                deleteSelect.addEventListener("change", (e) => {
-                    const val = e.target.value;
-                    const [type, id] = val.split("|");
+            const btnCloseRemote = this.element.querySelector("#btnCloseGraphRemote");
+            if (btnCloseRemote) btnCloseRemote.addEventListener("click", this._onCloseGraphRemote.bind(this));
 
-                    if (type === "link") {
-                        this._toggleLinkEditor(parseInt(id));
-                        this._toggleNodeEditor(false);
-                    } else if (type === "node") {
-                        this._toggleNodeEditor(true);
-                        this._toggleLinkEditor(-1);
-                    } else {
-                        this._toggleLinkEditor(-1);
-                        this._toggleNodeEditor(false);
-                    }
-                });
-            }
+            const btnCloseMonitor = this.element.querySelector("#btnCloseGraphMonitor");
+            if (btnCloseMonitor) btnCloseMonitor.addEventListener("click", this._onCloseGraphMonitor.bind(this));
+
+            const btnCenter = this.element.querySelector("#btnCenterGraph");
+            if (btnCenter) btnCenter.addEventListener("click", (e) => {
+                e.preventDefault();
+                this.zoomToFit(true);
+            });
 
             const cbAllowPlayerEdit = this.element.querySelector("#cbAllowPlayerEdit");
             if (cbAllowPlayerEdit) {
-                // Initialize state
                 cbAllowPlayerEdit.checked = game.settings.get("fang", "allowPlayerEditing");
-
-                // Bind change event
                 cbAllowPlayerEdit.addEventListener("change", async (e) => {
-                    const newState = e.target.checked;
-                    await game.settings.set("fang", "allowPlayerEditing", newState);
-
-                    if (newState) {
-                        ui.notifications.info(game.i18n.localize("FANG.Messages.PlayersCanEdit"));
-                    } else {
-                        ui.notifications.info(game.i18n.localize("FANG.Messages.PlayersCannotEdit"));
-                    }
-                });
-            }
-
-            const btnShareMonitor = this.element.querySelector("#btnShareGraphMonitor");
-            if (btnShareMonitor) {
-                btnShareMonitor.addEventListener("click", (e) => {
-                    e.preventDefault();
-                    this.saveData().then(() => {
-                        game.socket.emit("module.fang", { action: "showGraphMonitor" });
-                        ui.notifications.info(game.i18n.localize("FANG.Messages.GraphMonitorShown"));
-                    });
-                });
-            }
-
-            const btnCloseRemote = this.element.querySelector("#btnCloseGraphRemote");
-            if (btnCloseRemote) {
-                btnCloseRemote.addEventListener("click", (e) => {
-                    e.preventDefault();
-                    game.socket.emit("module.fang", { action: "closeGraph" });
-                    ui.notifications.info(game.i18n.localize("FANG.Messages.GraphClosed"));
-                });
-            }
-
-            const btnCloseMonitor = this.element.querySelector("#btnCloseGraphMonitor");
-            if (btnCloseMonitor) {
-                btnCloseMonitor.addEventListener("click", (e) => {
-                    e.preventDefault();
-                    game.socket.emit("module.fang", { action: "closeGraphMonitor" });
-                    ui.notifications.info(game.i18n.localize("FANG.Messages.GraphMonitorClosed"));
+                    await game.settings.set("fang", "allowPlayerEditing", e.target.checked);
+                    ui.notifications.info(game.i18n.localize(e.target.checked ? "FANG.Messages.PlayersCanEdit" : "FANG.Messages.PlayersCannotEdit"));
                 });
             }
         }
-
-        // Initially populate all dropdowns (source, target, and the new delete dropdown)
-        this._populateActors();
     }
 
     async #loadD3() {
@@ -1314,7 +1256,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
     _initD3() {
         this.canvas = this.element.querySelector("#graphCanvas");
         this.context = this.canvas.getContext("2d");
-        this.transform = d3.zoomIdentity;
+        if (!this.transform) this.transform = d3.zoomIdentity;
         this.width = this.canvas.parentElement.clientWidth;
         this.height = this.canvas.parentElement.clientHeight;
         this.canvas.width = this.width;
@@ -1324,6 +1266,10 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         this.initSimulation();
 
         // Setup behaviors
+        this.zoom = d3.zoom()
+            .scaleExtent([0.1, 4])
+            .on("zoom", this.zoomed.bind(this));
+
         d3.select(this.canvas)
             .call(d3.drag()
                 .container(this.canvas)
@@ -1331,7 +1277,14 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 .on("start", this.dragstarted.bind(this))
                 .on("drag", this.dragged.bind(this))
                 .on("end", this.dragended.bind(this)))
-            .call(d3.zoom().scaleExtent([0.1, 4]).on("zoom", this.zoomed.bind(this)));
+            .call(this.zoom);
+
+        // Apply initial zoom-to-fit once on window open
+        if (!this._initialZoomApplied && this.graphData.nodes.length > 0) {
+            this._initialZoomApplied = true;
+            // Delay slightly to allow simulation to get initial positions and container to settle
+            setTimeout(() => this.zoomToFit(false), 200);
+        }
     }
 
     initSimulation() {
@@ -2076,6 +2029,55 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         this._tooltipVisibleForNode = null;
     }
 
+    /**
+     * Re-centers the graph and adjusts zoom so all nodes are visible.
+     * @param {boolean} transition - Whether to animate the transition.
+     */
+    zoomToFit(transition = true) {
+        if (!this.canvas || !this.zoom || !this.graphData.nodes.length) return;
+
+        const padding = 60;
+        const width = this.width;
+        const height = this.height;
+
+        let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+        this.graphData.nodes.forEach(d => {
+            if (d.x < x0) x0 = d.x;
+            if (d.y < y0) y0 = d.y;
+            if (d.x > x1) x1 = d.x;
+            if (d.y > y1) y1 = d.y;
+        });
+
+        // Add padding for token size + margin
+        const nodeRadius = game.settings.get("fang", "tokenSize") || 40;
+        const totalPadding = nodeRadius + padding;
+        x0 -= totalPadding;
+        y0 -= totalPadding;
+        x1 += totalPadding;
+        y1 += totalPadding;
+
+        const dx = x1 - x0;
+        const dy = y1 - y0;
+        const midX = (x0 + x1) / 2;
+        const midY = (y0 + y1) / 2;
+
+        let scale = 0.95 / Math.max(dx / width, dy / height);
+
+        // Constrain extreme zoom
+        if (scale > 1.0) scale = 1.0;
+        if (scale < 0.1) scale = 0.1;
+
+        const transform = d3.zoomIdentity
+            .translate(width / 2, height / 2)
+            .scale(scale)
+            .translate(-midX, -midY);
+
+        if (transition) {
+            d3.select(this.canvas).transition().duration(750).call(this.zoom.transform, transform);
+        } else {
+            d3.select(this.canvas).call(this.zoom.transform, transform);
+        }
+    }
     _handleCanvasMouseMove(event) {
         if (!this.transform) return;
 
@@ -2291,5 +2293,39 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             }
         };
         reader.readAsText(file);
+    }
+
+    // --- Share / Remote Controls ---
+
+    async _onShareGraph(event) {
+        if (event) event.preventDefault();
+        await this.saveData();
+        game.socket.emit("module.fang", { action: "showGraph" });
+        ui.notifications.info(game.i18n.localize("FANG.Messages.GraphShown"));
+    }
+
+    async _onShareGraphMonitor(event) {
+        if (event) event.preventDefault();
+        await this.saveData();
+        game.socket.emit("module.fang", { action: "showGraphMonitor" });
+        ui.notifications.info(game.i18n.localize("FANG.Messages.MonitorViewOpened"));
+    }
+
+    _onCloseGraphRemote(event) {
+        if (event) event.preventDefault();
+        game.socket.emit("module.fang", { action: "closeGraph" });
+        ui.notifications.info(game.i18n.localize("FANG.Messages.GraphClosed"));
+    }
+
+    _onCloseGraphMonitor(event) {
+        if (event) event.preventDefault();
+        game.socket.emit("module.fang", { action: "closeGraphMonitor" });
+        ui.notifications.info(game.i18n.localize("FANG.Messages.MonitorViewClosed"));
+    }
+
+    _onClose(options) {
+        super._onClose(options);
+        this._initialZoomApplied = false;
+        this.transform = null;
     }
 }

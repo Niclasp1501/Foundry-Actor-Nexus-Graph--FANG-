@@ -35,6 +35,8 @@
             "ManageFactions": "Fraktionen verwalten",
             "ManageFactionsHint": "Erstelle und verwalte Fraktionen für Tokens.",
             "CloseMonitorHint": "Schließt den Graphen nur auf dem Monitor",
+            "CenterGraph": "Graph zentrieren",
+            "CenterGraphHint": "Zoomt und schiebt den Graphen so, dass alle Token sichtbar sind.",
             "EnablePlayerEdit": "Spieler-Bearbeitung umschalten",
             "ToggleCenter": "Zentrieren",
             "ToggleCenterHint": "Fixiert den NPC magnetisch in der Mitte (z.B. für Boss-Gegner).",
