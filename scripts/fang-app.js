@@ -100,6 +100,13 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         canvasContainer.addEventListener("dragover", this._onDragOver.bind(this));
         canvasContainer.addEventListener("drop", this._onDrop.bind(this));
 
+        // Export / Import Listeners
+        const btnExport = this.element.querySelector("#btnExportGraph");
+        if (btnExport) btnExport.addEventListener("click", this._onExportGraph.bind(this));
+
+        const inputImport = this.element.querySelector("#importFile");
+        if (inputImport) inputImport.addEventListener("change", this._onImportGraph.bind(this));
+
         // Fullscreen and Sidebar hide for players
         if (!game.user.isGM) {
             const sidebar = this.element.querySelector(".sidebar");
@@ -2142,5 +2149,137 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             tooltip.style.left = `${tooltipX}px`;
             tooltip.style.top = `${tooltipY}px`;
         }
+    }
+
+    // --- Export / Import ---
+
+    /**
+     * Export the current graph data as a JSON file.
+     */
+    _onExportGraph(event) {
+        if (event) event.preventDefault();
+
+        // Prepare data (full state including factions and settings)
+        const exportData = {
+            nodes: this.graphData.nodes.map(n => ({
+                id: n.id,
+                name: n.name,
+                isCenter: n.isCenter || false,
+                lore: n.lore || "",
+                factionId: n.factionId || null,
+                role: n.role || "",
+                x: n.x,
+                y: n.y,
+                vx: n.vx || 0,
+                vy: n.vy || 0
+            })),
+            links: this.graphData.links.map(l => ({
+                source: typeof l.source === "object" ? l.source.id : l.source,
+                target: typeof l.target === "object" ? l.target.id : l.target,
+                label: l.label,
+                directional: l.directional || false
+            })),
+            factions: this.graphData.factions.map(f => ({
+                id: f.id,
+                name: f.name,
+                icon: f.icon,
+                color: f.color,
+                x: f.x,
+                y: f.y
+            })),
+            showFactionLines: this.graphData.showFactionLines !== false,
+            showFactionLegend: this.graphData.showFactionLegend !== false
+        };
+
+        const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+        const worldName = game.world.id;
+        const filename = `fang-${worldName}-${timestamp}.json`;
+
+        saveDataToFile(JSON.stringify(exportData, null, 2), "application/json", filename);
+        ui.notifications.info(game.i18n.localize("FANG.Messages.ExportSuccess"));
+    }
+
+    /**
+     * Import graph data from a JSON file.
+     */
+    async _onImportGraph(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        // Confirm overwrite with custom FANG dialog styling
+        const confirm = await new Promise(resolve => {
+            new Dialog({
+                title: game.i18n.localize("FANG.UI.Import"),
+                content: `<p>${game.i18n.localize("FANG.Messages.ConfirmImport")}</p>`,
+                buttons: {
+                    yes: {
+                        icon: '<i class="fas fa-check"></i>',
+                        label: game.i18n.localize("Yes"),
+                        callback: () => resolve(true)
+                    },
+                    no: {
+                        icon: '<i class="fas fa-times"></i>',
+                        label: game.i18n.localize("No"),
+                        callback: () => resolve(false)
+                    }
+                },
+                default: "no",
+                close: () => resolve(false)
+            }, {
+                classes: ["dialog", "fang-dialog"]
+            }).render(true);
+        });
+
+        if (!confirm) {
+            event.target.value = ""; // Reset input
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            try {
+                const content = e.target.result;
+                if (!content) throw new Error("File is empty");
+
+                const importedData = JSON.parse(content);
+
+                // Detailed structure log for debugging
+                console.log("FANG | Debugging Import Data:", importedData);
+
+                // Basic validation
+                if (!importedData.nodes || !Array.isArray(importedData.nodes)) {
+                    throw new Error("Missing or invalid 'nodes' array");
+                }
+                if (!importedData.links || !Array.isArray(importedData.links)) {
+                    throw new Error("Missing or invalid 'links' array");
+                }
+
+                // Ensure all expected properties exist (provide defaults for older/manual exports)
+                if (!importedData.factions || !Array.isArray(importedData.factions)) {
+                    importedData.factions = [];
+                }
+                if (importedData.showFactionLines === undefined) importedData.showFactionLines = true;
+                if (importedData.showFactionLegend === undefined) importedData.showFactionLegend = true;
+
+                // Update internal state
+                this.graphData = importedData;
+
+                // Save to Journal
+                await this.saveData();
+
+                // Re-initialize and render
+                this.initSimulation();
+                this.render({ force: true });
+
+                ui.notifications.info(game.i18n.localize("FANG.Messages.ImportSuccess"));
+            } catch (err) {
+                console.error("FANG | Import Error:", err);
+                const errorMsg = `${game.i18n.localize("FANG.Messages.ImportError")} (${err.message})`;
+                ui.notifications.error(errorMsg);
+            } finally {
+                event.target.value = ""; // Reset input
+            }
+        };
+        reader.readAsText(file);
     }
 }

@@ -29,7 +29,8 @@ An interactive, self-arranging Actor Graph module for visualizing Character & NP
 - **Gravity Center (Boss Nodes):** Magnetically anchor important actors (e.g., villains) to the center of the graph with a customizable glowing aura.
 - **Visual Grouping:** Group actors (e.g., by location) with visual bounding boxes or cluster zones.
 - **Link Label Validation:** Ensures all connections have mandatory labels to prevent confusing "invisible" links.
-- **Multi-Language Support (I18n)::** Automatically translates to English or German based on Foundry settings.
+- **JSON Export & Import (Backup):** Save your entire graph (including token positions, factions, and visual settings) to a file. Perfect for backups or sharing templates.
+- **Multi-Language Support (I18n):** Automatically translates to English or German based on Foundry settings.
 
 ### Installation
 1. Start Foundry VTT and navigate to the **Add-on Modules** tab.
@@ -61,7 +62,6 @@ An interactive, self-arranging Actor Graph module for visualizing Character & NP
 - **Custom Link Styles:** Color-coded or dashed lines for different relationships (e.g., Enemies, Family, Master/Apprentice).
 - **GM-Secret Nodes:** The ability to hide masterminds in the graph from players until the GM chooses to reveal them.
 - **Character Portraits:** Supporting visual token portraits instead of just text/circle nodes.
-- **JSON Export/Import:** Sharing complex relationship webs as templates with the community.
 
 ---
 
@@ -88,6 +88,7 @@ An interactive, self-arranging Actor Graph module for visualizing Character & NP
 - **Zentrums-Gravitation (Boss-Knoten):** Verankere wichtige Akteure magnetisch in der Mitte des Graphen, inklusive leuchtender Aura.
 - **Visuelle Gruppierung:** Fassse Akteure (z.B. nach Standort) optisch in Gruppen oder Zonen zusammen.
 - **Verbindungs-Validierung:** Stellt sicher, dass jede Verbindung eine Beschriftung hat, um "unsichtbare" Linien zu vermeiden.
+- **JSON Export & Import (Backup):** Speichere deinen gesamten Graphen (inkl. Token-Positionen, Fraktionen und Einstellungen) in einer Datei. Ideal für Backups oder zum Teilen.
 - **Mehrsprachigkeit (I18n):** Das Modul ist komplett auf Englisch und Deutsch verfügbar.
 
 ### Installation
@@ -121,7 +122,6 @@ An interactive, self-arranging Actor Graph module for visualizing Character & NP
 - **Individuelle Verbindungslinien:** Farbkodierte, gestrichelte oder dicke Linien je nach Beziehungsart (Feinde, Liebespaar, Familie).
 - **Geheim-Knoten für GMs:** Akteure können für Spieler unsichtbar gemacht werden, bis der GM sie dramatisch enthüllt.
 - **Charakter-Portraits:** Die Möglichkeit, kreisrunde Foundry-Bilder der Akteure anstelle von simplen Kreisen darzustellen.
-- **JSON Export/Import:** Graphen oder Abenteuer-Templates speichern und mit der Community austauschen.
 
 ---
 

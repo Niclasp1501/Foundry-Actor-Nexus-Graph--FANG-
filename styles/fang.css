@@ -313,6 +313,19 @@ body.role-player .fang-app-container .gm-only {
     margin-top: 4px;
 }
 
+.fang-app-container .actions-group .button-row {
+    display: flex;
+    gap: 4px;
+}
+
+.fang-app-container .actions-group .btn {
+    flex: 1;
+    font-size: 0.8rem;
+    padding: 8px 10px;
+    height: 36px;
+    white-space: nowrap;
+}
+
 /* Elevated Action Buttons */
 .fang-app-container .action-btn {
     flex: 1;
@@ -328,7 +341,7 @@ body.role-player .fang-app-container .gm-only {
 }
 
 .fang-app-container .file-label {
-    display: flex;
+    margin: 0;
 }
 
 /* Canvas Area */

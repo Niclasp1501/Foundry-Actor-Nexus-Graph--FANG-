@@ -141,11 +141,15 @@
                     </div>
                 </div>
 
-                <div class="control-group actions-group" style="display: none;">
-                    <h3>Export / Import</h3>
+                <div class="control-group actions-group">
+                    <h3>{{localize "FANG.UI.Export"}} / {{localize "FANG.UI.Import"}}</h3>
                     <div class="button-row">
-                        <button id="btnSave" class="btn action-btn">Speichern</button>
-                        <label for="importFile" class="btn action-btn file-label">Laden</label>
+                        <button id="btnExportGraph" class="btn action-btn">
+                            <i class="fas fa-download"></i> {{localize "FANG.UI.ExportBtn"}}
+                        </button>
+                        <label for="importFile" class="btn action-btn file-label">
+                            <i class="fas fa-file-import"></i> {{localize "FANG.UI.ImportBtn"}}
+                        </label>
                         <input type="file" id="importFile" accept=".json" style="display: none;">
                     </div>
                 </div>

@@ -5,13 +5,17 @@ All notable changes to the **Foundry Actor Nexus Graph (FANG)** module will be d
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.6] - 2026-02-28
+### Added
+- **JSON Export & Import:** Back up your entire graph, factions, and visual settings to a file. Perfect for sharing or migration between worlds.
+- **Robustness:** Added safety defaults for graph data to prevent crashes when importing older or manually edited JSON files.
+- **UI Optimization:** Improved button layout in the "Advanced / Weitere Funktionen" tab for better readability.
+
 ## [1.1.5] - 2026-02-28
 ### Added
-- **Context-Aware Sidebar UI:** Completely restructured the sidebar. It now dynamically adapts to your selection, showing specific "Node Details" or "Link Details" panels when an element is clicked.
-- **Dedicated "Advanced" / "Weitere Funktionen" Tab:** Relocated global management tools (like Faction Management) to a dedicated third tab for a cleaner and more organized workspace.
-- **Interactive Selection Polish:** 
-  - **Select on Click:** Clicking any node or link on the canvas now automatically selects it in the sidebar and switches to the Editor tab.
-  - **Deselect on Canvas Click:** Clicking empty space on the canvas resets all selections and hides the contextual editors.
+- **Interactive Selection Sync:** Clicking nodes or links on the canvas now automatically selects them in the sidebar and switches to the editor.
+- **Canvas Deselect:** Clicking empty space on the canvas resets all selections.
+- **Bilingual Tab:** Added "Advanced" / "Weitere Funktionen" tab for global management.
   - **Deselect Guard:** Added a short time-based guard to prevent accidental selection resets while finishing a drag maneuver.
 - **Link Label Validation:** Added strict checking to prevent the creation or updating of links with empty labels, complete with localized warning notifications.
 

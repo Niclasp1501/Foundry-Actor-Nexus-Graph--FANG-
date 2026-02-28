@@ -8,6 +8,10 @@
             "TabEditor": "Editor",
             "TabView": "Ansicht",
             "TabAdvanced": "Weitere Funktionen",
+            "Export": "Graph exportieren",
+            "Import": "Graph importieren",
+            "ExportBtn": "Export (JSON)",
+            "ImportBtn": "Import (JSON)",
             "CreateConnection": "Verbindung erstellen",
             "SelectSource": "Quelle wählen",
             "SelectTarget": "Ziel wählen",
@@ -47,6 +51,10 @@
             "OpenBtn": "FANG Graph Öffnen"
         },
         "Messages": {
+            "ExportSuccess": "Graph-Daten erfolgreich exportiert.",
+            "ImportSuccess": "Graph-Daten erfolgreich importiert.",
+            "ImportError": "Import fehlgeschlagen: Ungültiges Dateiformat.",
+            "ConfirmImport": "Das Importieren einer Datei wird deinen aktuellen Graphen ÜBERSCHREIBEN. Bist du sicher?",
             "GraphShown": "FANG Graph wird jetzt allen Spielern angezeigt!",
             "GraphMonitorShown": "FANG Graph wird im Vollbild an den Monitor gesendet!",
             "GraphClosed": "Graphen bei allen Spielern geschlossen.",

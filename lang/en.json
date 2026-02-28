@@ -8,6 +8,10 @@
             "TabEditor": "Editor",
             "TabView": "View",
             "TabAdvanced": "Advanced",
+            "Export": "Export Graph",
+            "Import": "Import Graph",
+            "ExportBtn": "Export (JSON)",
+            "ImportBtn": "Import (JSON)",
             "CreateConnection": "Create Connection",
             "SelectSource": "Select Source",
             "SelectTarget": "Select Target",
@@ -47,6 +51,10 @@
             "OpenBtn": "Open FANG Graph"
         },
         "Messages": {
+            "ExportSuccess": "Graph data exported successfully.",
+            "ImportSuccess": "Graph data imported successfully.",
+            "ImportError": "Failed to import graph: Invalid file format.",
+            "ConfirmImport": "Importing a file will OVERWRITE your current graph. Are you sure?",
             "GraphShown": "FANG Graph is now shown to all players!",
             "GraphMonitorShown": "FANG Graph is sent to the monitor in fullscreen!",
             "GraphClosed": "Graph closed for all players.",
