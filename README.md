@@ -60,6 +60,7 @@ An interactive, self-arranging Actor Graph module for visualizing Character & NP
 - **Search & Filter:** A search bar that highlights specific actors and dims the rest.
 - **Mini-Map Navigator:** A small radar map in the corner for massive networks.
 - **Custom Link Styles:** Color-coded or dashed lines for different relationships (e.g., Enemies, Family, Master/Apprentice).
+- **Condition Overlays:** Visual indicators for character states (e.g., "Deceased", "Cursed", "In Love") directly on the tokens.
 - **GM-Secret Nodes:** The ability to hide masterminds in the graph from players until the GM chooses to reveal them.
 - **Character Portraits:** Supporting visual token portraits instead of just text/circle nodes.
 
@@ -120,6 +121,7 @@ An interactive, self-arranging Actor Graph module for visualizing Character & NP
 - **Suche & Filter:** Eine Suchleiste, die bestimmte Akteure hervorhebt und den Rest des Graphen ausblendet.
 - **Mini-Map / Navigator:** Eine kleine Radar-Übersicht in der Ecke für sehr große, komplexe Netzwerke.
 - **Individuelle Verbindungslinien:** Farbkodierte, gestrichelte oder dicke Linien je nach Beziehungsart (Feinde, Liebespaar, Familie).
+- **Zustands-Overlays:** Visuelle Merkmale für Charakter-Zustände (z.B. "Verstorben", "Verflucht", "Verliebt") direkt auf den Tokens.
 - **Geheim-Knoten für GMs:** Akteure können für Spieler unsichtbar gemacht werden, bis der GM sie dramatisch enthüllt.
 - **Charakter-Portraits:** Die Möglichkeit, kreisrunde Foundry-Bilder der Akteure anstelle von simplen Kreisen darzustellen.
 

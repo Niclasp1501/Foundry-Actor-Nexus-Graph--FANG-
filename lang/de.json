@@ -112,6 +112,10 @@
             "BtnCancel": "Abbrechen"
         },
         "Settings": {
+            "TokenSize": {
+                "Name": "Token-Größe",
+                "Hint": "Bestimme die Standardgröße der Token im Graphen. Texte und Abstände skaliert automatisch mit. (Standard: 40)"
+            },
             "CosmicWind": {
                 "Name": "Kosmischer Wind (Tokens schweben)",
                 "Hint": "Wenn aktiviert, driften die Tokens auf der Karte leicht hin und her (wie Atmen), sobald die initiale Physik-Simulation der Linien zur Ruhe gekommen ist. Das verleiht der Karte ein dynamisches, magisches Gefühl."

@@ -25,6 +25,26 @@ Hooks.once("init", () => {
   });
 
   // Register Module Settings
+  game.settings.register("fang", "tokenSize", {
+    name: "FANG.Settings.TokenSize.Name",
+    hint: "FANG.Settings.TokenSize.Hint",
+    scope: "world",
+    config: true,
+    type: Number,
+    range: {
+      min: 20,
+      max: 100,
+      step: 1
+    },
+    default: 40,
+    onChange: value => {
+      if (fangApp && fangApp.rendered) {
+        fangApp._initD3(); // Re-initialize to update distance/collision forces
+        fangApp.ticked(); // Immediate visual refresh
+      }
+    }
+  });
+
   game.settings.register("fang", "enableCosmicWind", {
     name: "FANG.Settings.CosmicWind.Name",
     hint: "FANG.Settings.CosmicWind.Hint",

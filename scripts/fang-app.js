@@ -1380,13 +1380,14 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
         const cosmicWindEnabled = game.settings.get("fang", "enableCosmicWind");
 
+        if (this.simulation) this.simulation.stop();
         this.simulation = d3.forceSimulation(nodes)
             .force("charge", d3.forceManyBody().strength(-800))
-            .force("link", d3.forceLink(links).id(d => d.id).distance(200))
+            .force("link", d3.forceLink(links).id(d => d.id).distance(game.settings.get("fang", "tokenSize") * 4 + 100))
             .force("center", d3.forceCenter(this.width / 2, this.height / 2))
             .force("x", d3.forceX(this.width / 2).strength(node => node.isCenter ? 0.4 : 0.025)) // Boss Node Gravity Pull
             .force("y", d3.forceY(this.height / 2).strength(node => node.isCenter ? 0.4 : 0.025)) // Boss Node Gravity Pull
-            .force("collide", d3.forceCollide().radius(60))
+            .force("collide", d3.forceCollide().radius(game.settings.get("fang", "tokenSize") + 100)) // Linear breathing room
             .force("link-avoidance", this._createLinkRepulsionForce())
             .on("tick", this.ticked.bind(this));
 
@@ -1592,9 +1593,11 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         // ----------------------------------------------------
 
         // Draw Links
+        const nodeRadius = game.settings.get("fang", "tokenSize") || 40;
         this.context.lineWidth = 2;
         this.context.strokeStyle = "#888";
-        this.context.font = "12px 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
+        const linkFontSize = Math.max(12, Math.floor(nodeRadius / 2.5));
+        this.context.font = `${linkFontSize}px 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif`;
         this.context.textAlign = "center";
         this.context.textBaseline = "middle";
 
@@ -1632,7 +1635,6 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             this.context.lineWidth = 2;
             this.context.strokeStyle = "#888";
 
-            const nodeRadius = 30; // Radius of token
             const arrowSize = 10;   // Size of the arrowhead
 
             // Helper function to draw arrowhead
@@ -1655,8 +1657,10 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 this.context.font = "bold 15px 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
                 const tWidth = Math.max(this.context.measureText(node.name).width, 40);
                 const halfW = (tWidth / 2) + 12; // Label width + padding
-                const topY = 25; // Label start Y relative to center
-                const bottomY = 58; // Label end Y relative to center
+
+                // Dynamic Label Y-bounds based on node radius
+                const topY = nodeRadius - 5;
+                const bottomY = nodeRadius + (node.role ? 36 : 22);
 
                 // Ray vector starting from the center of the node outwards
                 const vx = Math.cos(rayAngle);
@@ -1785,9 +1789,11 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             }
 
             if (link.label) {
+                const linkFontSize = Math.max(12, Math.floor(nodeRadius / 2.5));
+                this.context.font = `${linkFontSize}px 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif`;
                 const metrics = this.context.measureText(link.label);
                 const textWidth = metrics.width;
-                const textHeight = 16;
+                const textHeight = linkFontSize + 4;
                 this.context.fillStyle = "#ffffff";
                 this.context.beginPath();
                 this.context.roundRect(labelX - textWidth / 2 - 4, labelY - textHeight / 2, textWidth + 8, textHeight, 4);
@@ -1803,8 +1809,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         });
 
         // Draw Nodes
+        const radius = game.settings.get("fang", "tokenSize") || 33;
         this.graphData.nodes.forEach(node => {
-            const radius = 30; // Fixed radius restored
             const pos = renderPos[node.id];
 
             this.context.save();
@@ -1865,20 +1871,22 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             this.context.restore();
 
             // Draw Label Background for readability
-            this.context.font = "bold 15px 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
+            const nodeFontSize = 15;
+            const roleFontSize = 12;
+            this.context.font = `bold ${nodeFontSize}px 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif`;
             const metrics = this.context.measureText(node.name);
             let textWidth = Math.max(metrics.width, 40);
 
             let roleTextWidth = 0;
             if (node.role) {
-                this.context.font = "italic 12px 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
+                this.context.font = `italic ${roleFontSize}px 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif`;
                 roleTextWidth = this.context.measureText(node.role).width;
                 textWidth = Math.max(textWidth, roleTextWidth);
             }
 
             const textHeight = node.role ? 36 : 22; // Make background taller if we have a role
             // Base the label offset on the BASE radius, so the label doesn't jump up and down
-            const labelYOffset = 30 + (node.role ? 18 : 11); // Push down slightly further if role exists
+            const labelYOffset = radius + (node.role ? 18 : 11); // Push down slightly further if role exists
 
             this.context.fillStyle = "rgba(0, 0, 0, 0.8)";
             this.context.beginPath();
@@ -1891,7 +1899,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             this.context.stroke();
 
             // Draw Node Name Text
-            this.context.font = "bold 15px 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
+            this.context.font = `bold ${nodeFontSize}px 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif`;
             this.context.fillStyle = "#ffffff";
             this.context.textAlign = "center";
             this.context.textBaseline = "middle";
@@ -1899,7 +1907,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
             // Draw Role Text
             if (node.role) {
-                this.context.font = "italic 12px 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
+                this.context.font = `italic ${roleFontSize}px 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif`;
                 this.context.fillStyle = "#dcd6cc"; // slightly dimmer color
                 this.context.fillText(node.role, pos.x, pos.y + labelYOffset + 8);
             }
@@ -1984,7 +1992,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     dragSubject(event) {
-        let s2 = 40 * 40 * this.transform.k; // Increased drag target slop 
+        const radius = game.settings.get("fang", "tokenSize") || 33;
+        let s2 = (radius + 10) * (radius + 10) * this.transform.k; // Increased drag target slop 
         let subject = null;
         let x = this.transform.invertX(event.x);
         let y = this.transform.invertY(event.y);
@@ -2077,7 +2086,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const x = this.transform.invertX(mouseX);
         const y = this.transform.invertY(mouseY);
 
-        const s2 = (30 * 30); // Node radius squared
+        const radius = game.settings.get("fang", "tokenSize") || 33;
+        const s2 = (radius * radius); // Node radius squared
         let hoveredNode = null;
         let minD2 = s2;
 
@@ -2117,7 +2127,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     tooltip.innerHTML = hoveredNode.lore.replace(/\n/g, '<br>');
                     const nodeScreenX = this.transform.applyX(hoveredNode.x);
                     const nodeScreenY = this.transform.applyY(hoveredNode.y);
-                    const nodeRadiusScaled = 30 * this.transform.k; // 30 is the base radius
+                    const nodeRadiusScaled = (game.settings.get("fang", "tokenSize") || 33) * this.transform.k;
                     const cWidth = this.canvas.parentElement.clientWidth;
                     const estimatedTooltipWidth = 340;
 
@@ -2137,7 +2147,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             // If the tooltip is actively visible for this node, keep it glued exactly to the node's potential bounds during mouse movement
             const nodeScreenX = this.transform.applyX(hoveredNode.x);
             const nodeScreenY = this.transform.applyY(hoveredNode.y);
-            const nodeRadiusScaled = 30 * this.transform.k;
+            const nodeRadiusScaled = (game.settings.get("fang", "tokenSize") || 33) * this.transform.k;
             const cWidth = this.canvas.parentElement.clientWidth;
             const estimatedTooltipWidth = 340;
 

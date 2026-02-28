@@ -112,6 +112,10 @@
             "BtnCancel": "Cancel"
         },
         "Settings": {
+            "TokenSize": {
+                "Name": "Token Size",
+                "Hint": "Define the default visual size of tokens in the graph. Labels and spacing will scale automatically. (Default: 40)"
+            },
             "CosmicWind": {
                 "Name": "Cosmic Wind (Floating Tokens)",
                 "Hint": "When enabled, tokens will gently drift and float on the graph once the initial physics simulation has settled. This gives the graph a dynamic, magical, and breathing feel."

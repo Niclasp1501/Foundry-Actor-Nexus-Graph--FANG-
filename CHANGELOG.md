@@ -5,11 +5,15 @@ All notable changes to the **Foundry Actor Nexus Graph (FANG)** module will be d
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.1.6] - 2026-02-28
+## [Unreleased / Next]
 ### Added
-- **JSON Export & Import:** Back up your entire graph, factions, and visual settings to a file. Perfect for sharing or migration between worlds.
-- **Robustness:** Added safety defaults for graph data to prevent crashes when importing older or manually edited JSON files.
-- **UI Optimization:** Improved button layout in the "Advanced / Weitere Funktionen" tab for better readability.
+- **Adjustable Token Size & Scaling:** GMs can now configure the visual size of tokens via a new world setting.
+- **Improved Default Scale:** Base token size increased to **40px** for better visibility.
+- **Node Labels:** Fixed font sizes (15px/12px) restored for character names and roles for a cleaner look.
+- **Dynamic Link Scaling:** Relationship labels (on the lines) now automatically rescale their font size based on the token size for perfect legibility.
+- **Reactive Physics:** Collision and link distance now follow a robust progression (`tokenSize * 4 + 100`) and update immediately when settings change.
+
+## [1.1.6] - 2026-02-28
 
 ## [1.1.5] - 2026-02-28
 ### Added
