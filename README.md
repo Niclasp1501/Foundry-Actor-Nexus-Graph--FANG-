@@ -15,21 +15,21 @@ An interactive, self-arranging Actor Graph module for visualizing Character & NP
   <img src="assets/fang_ui_3.png" width="32%" title="Smart Actor Dropdowns" />
 </p>
 
-- **Self-Arranging Actor Graph:** View actors and their relationships as nodes and links in a dynamic system that automatically organizes itself for clarity.
+- **Self-Arranging Actor Graph:** View actors and their relationships in a dynamic system that automatically organizes itself for clarity.
+- **Context-Aware Sidebar UI:** The sidebar now dynamically adapts to your selection. Clicking a node or link on the canvas reveals specific "Details" panels for editing names, directions, or roles.
+- **Interactive Selection & Deselection:** 
+  - **Select on Click:** Clicking any node or link on the canvas automatically selects it in the sidebar.
+  - **Deselect on Canvas:** Clicking empty space on the canvas resets all selections and hides contextual editors.
+- **Dedicated "Advanced Functions" Tab:** Global tools (like Faction Management and Sharing controls) have been moved to a dedicated tab for a cleaner GM workspace.
 - **Player Collaborative Editing:** GMs can toggle a world setting allowing players to actively construct the graph—dropping tokens, creating links, and deleting elements safely via live socket sync.
-- **Context Menu & Token Lore:** Right-click or long-press any token to reveal a sleek Radial Context menu! Here you can assign roles or enter detailed multi-line text notes for a token. Hover over the token later to reveal these notes in an elegant, fading Tooltip.
-- **Spoiler Protection:** Strict permission checking ensures non-GM players cannot see or link unrevealed secret NPCs in their dropdown lists.
-- **Roles & Organizations:** Thanks to @mcmuffin88, GMs can now assign roles or faction affiliations to individual tokens (via UI and formatting), instantly adding secondary layers of organizational depth to the map.
-- **Gravity Center (Boss Nodes):** Magnetically anchor important actors (e.g., villains) to the very center of the graph, complete with a live-customizable glowing aura.
-- **Interactive Drag & Drop:** Seamlessly drag Actors directly from your Foundry sidebar onto the FANG canvas. Drop them into empty space to instantly spawn a node, or drop them onto an existing node to quickly build a new connection!
-- **Directional Links:** Optionally add arrows to connections to clearly denote relationship direction.
-- **Cosmic Wind:** A configurable physics animation that makes the network rhythmically breathe and drift when at rest.
-- **Smart Connection Menus:** The source and target dropdowns are intelligently split into "On Canvas" and "Other Actors", completely eliminating tedious scrolling in larger campaigns.
-- **Node & Link Management:** GMs can effortlessly add tokens, create links, and remove connections as the story progresses.
-- **Player Sharing:** GMs can push the current graph view to all connected players, ensuring everyone is on the same page.
-- **GM Controls:** Includes dedicated "Close for Players", "Show Monitor", and "Close Monitor" buttons for seamless presentation management.
-- **Visual Grouping:** Group certain people together (e.g., by location) with visual bounding boxes or cluster zones to make large graphs much clearer.
-- **Multi-Language Support (I18n):** Automatically translates to English or German based on your Foundry core language settings.
+- **Precise Coordinate Dragging:** Fully corrected coordinate tracking ensures tokens stay perfectly under your mouse during drag-and-drop, even when zoomed or panned.
+- **Context Menu & Token Lore:** Right-click or long-press any token to reveal a sleek Radial Context menu! Assign roles or enter detailed multi-line notes stored directly on individual tokens.
+- **Spoiler Protection:** Strict permission checking ensures non-GM players cannot see or link unrevealed secret NPCs.
+- **Roles & Organizations:** Assign roles or faction affiliations to individual tokens (via UI and formatting), adding secondary layers of depth to the map.
+- **Gravity Center (Boss Nodes):** Magnetically anchor important actors (e.g., villains) to the center of the graph with a customizable glowing aura.
+- **Visual Grouping:** Group actors (e.g., by location) with visual bounding boxes or cluster zones.
+- **Link Label Validation:** Ensures all connections have mandatory labels to prevent confusing "invisible" links.
+- **Multi-Language Support (I18n)::** Automatically translates to English or German based on Foundry settings.
 
 ### Installation
 1. Start Foundry VTT and navigate to the **Add-on Modules** tab.
@@ -74,19 +74,20 @@ An interactive, self-arranging Actor Graph module for visualizing Character & NP
   <img src="assets/fang_ui_3.png" width="32%" title="Smarte Akteur Dropdowns" />
 </p>
 
-- **Selbstanordnender Akteur-Graph:** Betrachte Akteure und ihre Verbindungen in einem dynamischen System, das sich für maximale Übersichtlichkeit automatisch selbst aufbaut und strukturiert.
-- **Kollaborative Spieler-Bearbeitung:** GMs können eine Einstellung aktivieren, die es Spielern erlaubt, den Graphen aktiv mitzubauen – Tokens ablegen, Verbindungen ziehen und löschen, alles live und sicher über den GM synchronisiert.
-- **Kontextmenü & Token-Lore:** Ein Rechtsklick (oder langes Drücken) auf einen Token öffnet ein modernes, radiales Kontextmenü! Weise Rollen zu oder speichere ausführliche Notizen im Token. Fährst du später mit der Maus darüber, blenden sich diese Notizen weich als Tooltip am Token ein.
-- **Spoiler-Schutz:** Strikte Rechte-Prüfung verhindert, dass Spieler in ihren Auswahllisten geheime, noch unentdeckte NPCs sehen können.
-- **Rollen & Fraktionen:** Dank @mcmuffin88 können GMs einzelnen Tokens nun Rollen oder Fraktions-Zugehörigkeiten zuweisen, was dem Netzwerk eine völlig neue Organisationstiefe verleiht!
-- **Zentrums-Gravitation (Boss-Knoten):** Verankere wichtige Akteure (z.B. Herrscher oder Bösewichte) magnetisch exakt in der Mitte des Graphen, inklusive farblich anpassbarer, leuchtender Aura.
-- **Intuitives Drag & Drop:** Ziehe Foundry Akteure einfach per Drag & Drop direkt aus der Sidebar auf die FANG Zeichenfläche! Ein Wurf ins Leere erstellt sofort einen neuen Knoten, ein Wurf exakt auf einen bestehenden Knoten generiert direkt eine neue Verbindung.
-- **Pfeilrichtungen:** Setze optional Pfeile an Verbindungslinien, um anzuzeigen, von wem die Beziehung ausgeht.
-- **Kosmischer Wind:** Eine konfigurierbare, atmosphärische Schwebesimulation, die dem Netzwerk Leben einhaucht, wenn es ruht.
-- **Smarte Verbindungsmenüs:** Die Quelle- und Ziel-Dropdowns sind in "Auf dem Canvas" und "Alle anderen Akteure" gegliedert. Das verhindert endloses Scrollen bei Spielwelten mit riesigen NPC-Listen!
-- **Knoten & Verbindungen Verwalten:** GMs können mühelos Tokens hinzufügen, miteinander verbinden und veraltete Elemente löschen.
-- **Mit Spielern Teilen:** Der GM kann die aktuelle Graphen-Ansicht mit einem Klick an alle Spieler schicken.
-- **GM Kontroll-Panel:** Dedizierte Knöpfe wie "Bei Spielern schließen", "Monitor zeigen" und "Bei Monitor schließen" erleichtern die Spielpräsentation.
+- **Selbstanordnender Akteur-Graph:** Betrachte Akteure und ihre Verbindungen in einem dynamischen System, das sich automatisch selbst aufbaut und strukturiert.
+- **Kontextsensitive Sidebar:** Die Sidebar passt sich deiner Auswahl an. Ein Klick auf einen Token oder eine Linie im Graphen öffnet direkt das passende "Details"-Panel zur Bearbeitung.
+- **Interaktive Auswahl & Abwahl:** 
+  - **Auswahl per Klick:** Ein Klick auf ein Element im Graphen wählt es automatisch in der Sidebar aus.
+  - **Abwahl per Canvas-Klick:** Ein Klick ins Leere setzt alle Auswahlen zurück und blendet die Editoren aus.
+- **Eigener Reiter "Weitere Funktionen":** Globale Werkzeuge (wie die Fraktionsverwaltung oder Präsentations-Knöpfe) haben nun einen eigenen Reiter für mehr Übersichtlichkeit.
+- **Präzises Drag & Drop:** Korrigierte Koordinaten-Berechnung sorgt dafür, dass Tokens beim Ziehen exakt unter der Maus bleiben, auch wenn du gezoomt oder den Ausschnitt verschoben hast.
+- **Kollaborative Spieler-Bearbeitung:** GMs können Spielern erlauben, den Graphen aktiv mitzubauen – Tokens ablegen, Verbindungen ziehen und löschen.
+- **Kontextmenü & Token-Lore:** Ein Rechtsklick (oder langes Drücken) öffnet ein radiales Kontextmenü! Weise Rollen zu oder speichere Notizen direkt im Token, die beim Drüberfahren als Tooltip erscheinen.
+- **Spoiler-Schutz:** Verhindert, dass Spieler geheime NPCs in ihren Auswahllisten sehen können.
+- **Rollen & Fraktionen:** Weise Rollen oder Fraktionen zu, um dem Netzwerk eine völlig neue Organisationstiefe zu verleihen.
+- **Zentrums-Gravitation (Boss-Knoten):** Verankere wichtige Akteure magnetisch in der Mitte des Graphen, inklusive leuchtender Aura.
+- **Visuelle Gruppierung:** Fassse Akteure (z.B. nach Standort) optisch in Gruppen oder Zonen zusammen.
+- **Verbindungs-Validierung:** Stellt sicher, dass jede Verbindung eine Beschriftung hat, um "unsichtbare" Linien zu vermeiden.
 - **Mehrsprachigkeit (I18n):** Das Modul ist komplett auf Englisch und Deutsch verfügbar.
 
 ### Installation

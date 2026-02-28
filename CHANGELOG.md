@@ -5,6 +5,22 @@ All notable changes to the **Foundry Actor Nexus Graph (FANG)** module will be d
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.5] - 2026-02-28
+### Added
+- **Context-Aware Sidebar UI:** Completely restructured the sidebar. It now dynamically adapts to your selection, showing specific "Node Details" or "Link Details" panels when an element is clicked.
+- **Dedicated "Advanced" / "Weitere Funktionen" Tab:** Relocated global management tools (like Faction Management) to a dedicated third tab for a cleaner and more organized workspace.
+- **Interactive Selection Polish:** 
+  - **Select on Click:** Clicking any node or link on the canvas now automatically selects it in the sidebar and switches to the Editor tab.
+  - **Deselect on Canvas Click:** Clicking empty space on the canvas resets all selections and hides the contextual editors.
+  - **Deselect Guard:** Added a short time-based guard to prevent accidental selection resets while finishing a drag maneuver.
+- **Link Label Validation:** Added strict checking to prevent the creation or updating of links with empty labels, complete with localized warning notifications.
+
+### Fixed
+- **Token Drag "Jumping" Bug:** Fixed coordinate inversion math that caused tokens to "glitch" or jump when dragged during active zoom or pan states.
+- **Window Stability & Singleton Fix:** Resolved a critical bug where re-opening the FANG window or receiving duplicate sync commands would corrupt the UI or result in an empty canvas.
+- **Selection Regression:** Fixed a bug where normal clicks were occasionally blocked by the new drag-protection logic.
+- **Responsive Initialization:** Moved D3 and listener setup to the main render cycle, ensuring the app remains perfectly functional even after a forced UI refresh.
+
 ## [1.1.4] - 2026-02-28
 ### Added
 - **Visual Grouping (Factions):** Merged community Pull Request implementing full Faction management.

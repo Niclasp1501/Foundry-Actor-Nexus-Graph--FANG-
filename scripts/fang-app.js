@@ -38,22 +38,29 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
     async _onFirstRender(context, options) {
         super._onFirstRender(context, options);
 
-        // Load D3 JS from CDN if not already loaded
+        // Load D3 JS from CDN if not already loaded (Only once)
         if (typeof d3 === "undefined") {
             await this.#loadD3();
         }
 
+        // Persistent data loading (Only once)
         await this.loadData();
+    }
 
+    _onRender(context, options) {
+        super._onRender(context, options);
+
+        // Re-initialize D3 and Canvas context on every render
         this._initD3();
         this._populateActors();
 
-        // Resize observer
+        // Manage ResizeObserver
+        if (this._resizeObserver) this._resizeObserver.disconnect();
         const canvasContainer = this.element.querySelector(".canvas-container");
         this._resizeObserver = new ResizeObserver(() => this.resizeCanvas());
         this._resizeObserver.observe(canvasContainer);
 
-        // Event listeners
+        // Re-attach Event Listeners to newly rendered elements
         this.element.querySelector("#btnAddLink").addEventListener("click", this._onAddLink.bind(this));
 
         const btnDelete = this.element.querySelector("#btnDeleteElement");
@@ -81,12 +88,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         tabBtns.forEach(btn => {
             btn.addEventListener("click", (e) => {
                 const targetTab = e.currentTarget.dataset.tab;
-
-                // Remove active classes
                 tabBtns.forEach(b => b.classList.remove("active"));
                 tabContents.forEach(c => c.classList.remove("active"));
-
-                // Add active to correct elements
                 e.currentTarget.classList.add("active");
                 const targetContent = this.element.querySelector(`.tab-content[data-tab="${targetTab}"]`);
                 if (targetContent) targetContent.classList.add("active");

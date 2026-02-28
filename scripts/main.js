@@ -15,7 +15,11 @@ Hooks.once("init", () => {
     ],
     onDown: () => {
       if (!fangApp) fangApp = new FangApplication();
-      fangApp.render({ force: true });
+      if (fangApp.rendered) {
+        fangApp.bringToFront();
+      } else {
+        fangApp.render({ force: true });
+      }
       return true;
     }
   });
@@ -92,7 +96,11 @@ Hooks.once("ready", () => {
   module.api = {
     toggleGraph: () => {
       if (!fangApp) fangApp = new FangApplication();
-      fangApp.render({ force: true });
+      if (fangApp.rendered) {
+        fangApp.bringToFront();
+      } else {
+        fangApp.render({ force: true });
+      }
     }
   };
 
@@ -107,6 +115,7 @@ Hooks.once("ready", () => {
       // Wait a tiny moment to ensure the latest data is flagged on the Journal
       setTimeout(async () => {
         await fangApp.loadData();
+        // If already rendered, initSimulation handles the update without destroying the window structure
         if (fangApp.rendered) {
           fangApp.initSimulation();
         } else {
@@ -197,7 +206,11 @@ Hooks.on("renderActorDirectory", (app, html, data) => {
     if (!fangApp) {
       fangApp = new FangApplication();
     }
-    fangApp.render(true);
+    if (fangApp.rendered) {
+      fangApp.bringToFront();
+    } else {
+      fangApp.render(true);
+    }
   });
 
   // Append to the directory header
