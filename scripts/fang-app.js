@@ -1470,7 +1470,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
         if (this.simulation) this.simulation.stop();
         this.simulation = d3.forceSimulation(nodes)
-            .force("charge", d3.forceManyBody().strength(-2000))
+            .force("charge", d3.forceManyBody().strength(-1000))
             .force("link", d3.forceLink(links).id(d => d.id).distance(game.settings.get("fang", "tokenSize") * 4 + 140))
             .force("center", d3.forceCenter(this.width / 2, this.height / 2))
             .force("x", d3.forceX(this.width / 2).strength(node => node.isCenter ? 0.4 : 0.025))
