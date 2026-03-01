@@ -129,81 +129,66 @@ Hooks.once("ready", () => {
   game.socket.on("module.fang", async (data) => {
     console.log("FANG | Socket event received:", data);
 
-    // When ordered to show the graph
+    // Initial show/close actions
     if (data.action === "showGraph") {
       if (!fangApp) fangApp = new FangApplication();
-      // Wait a tiny moment to ensure the latest data is flagged on the Journal
       setTimeout(async () => {
         await fangApp.loadData();
-        // If already rendered, initSimulation handles the update without destroying the window structure
-        if (fangApp.rendered) {
-          fangApp.initSimulation();
-        } else {
-          fangApp.render({ force: true });
-        }
+        if (fangApp.rendered) fangApp.initSimulation();
+        else fangApp.render({ force: true });
       }, 500);
     }
 
-    // When ordered to show the graph ONLY to the monitor
     if (data.action === "showGraphMonitor") {
       if (game.user.name.toLowerCase().includes("monitor")) {
         if (!fangApp) fangApp = new FangApplication();
-        // Wait a tiny moment to ensure the latest data is flagged on the Journal
         setTimeout(async () => {
           await fangApp.loadData();
-          if (fangApp.rendered) {
-            fangApp.initSimulation();
-          } else {
-            fangApp.render({ force: true });
-          }
+          if (fangApp.rendered) fangApp.initSimulation();
+          else fangApp.render({ force: true });
         }, 500);
       }
     }
 
-    // When ordered to close the graph
     if (data.action === "closeGraph") {
-      if (fangApp && fangApp.rendered) {
-        fangApp.close();
-      }
+      if (fangApp && fangApp.rendered) fangApp.close();
     }
 
-    // When ordered to close the graph ONLY on the monitor
     if (data.action === "closeGraphMonitor") {
       if (game.user.name.toLowerCase().includes("monitor")) {
-        if (fangApp && fangApp.rendered) {
-          fangApp.close();
-        }
+        if (fangApp && fangApp.rendered) fangApp.close();
       }
     }
 
     // --- SOCKET RELAY FOR PLAYER EDITING ---
-    // A player without Journal write-permissions sent an edit request to the GM
     if (data.action === "playerEditGraph" && game.user.isGM) {
-      console.log("FANG | Received Player Edit Graph Request. Processing as GM...");
-      if (!fangApp) {
-        fangApp = new FangApplication();
-      }
-
-      // Wait briefly to ensure we have the absolute latest baseline
+      if (!fangApp) fangApp = new FangApplication();
       setTimeout(async () => {
-        // Apply the player's new graph data onto our GM instance
-        if (data.payload && data.payload.newGraphData) {
+        if (data.payload?.newGraphData) {
           fangApp.graphData = data.payload.newGraphData;
-          console.log("FANG | GM locally applied player graph data.", fangApp.graphData);
         }
-
-        // If the GM's UI is open, visually update it so the GM sees the change live
         if (fangApp.rendered) {
           fangApp.initSimulation();
-          fangApp.simulation.alpha(0.05).restart(); // Small heat burst
-          fangApp._populateActors(); // Refresh sidebar lists
+          fangApp.simulation.alpha(0.05).restart();
+          fangApp._populateActors();
         }
-
-        // Save this new state into the GM's Journal
-        // Important: As the GM, we have permissions to do this.
-        // saveData() also automatically triggers a "showGraph" socket back to ALL players
-        await fangApp.saveData(false); // pass 'false' to avoid infinite render loops if already open
+        await fangApp.saveData(false);
       }, 100);
+    }
+
+    // --- STORYTELLER FEATURES: SPOTLIGHT & CAMERA SYNC ---
+    if (data.action === "spotlightStart") {
+      if (fangApp && fangApp.rendered) fangApp.startSpotlight(data.payload);
+    }
+
+    if (data.action === "spotlightStop") {
+      if (fangApp && fangApp.rendered) fangApp.stopSpotlight();
+    }
+
+    if (data.action === "syncCamera") {
+      if (!game.user.isGM && fangApp && fangApp.rendered) {
+        fangApp.remoteSyncCamera(data.payload);
+      }
     }
   });
 });

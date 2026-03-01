@@ -3,6 +3,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.9] - 2026-02-27
+### Added
+- **Narrative Spotlight**: Cinematic GM feature to focus the camera on a node and display its lore in a stylized overlay.
+- **Spectator Camera Sync**: Real-time GM camera broadcasting to all connected players and the monitor.
+- **UI & Controls**: New "Spectator Mode" toggle in the View tab and "Spotlight" context menu action.
+- **Multi-language**: German and English localization for all new storyteller features.
+
 ## [1.1.8] - 2026-03-01
 ### Added
 - **Auto-Zoom to Fit**: The graph now automatically adjusts zoom on open to ensure all tokens are visible within the canvas.
@@ -16,16 +23,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - **Manual Zoom Preservation**: Changing sidebar settings no longer resets your manually adjusted zoom level to 100%.
 - **V13 Application Lifecycle**: Corrected `_onClose` and `render` calls for full Foundry V13 `ApplicationV2` compatibility.
 - **Zero-Padding Monitor View**: Screen centering on the monitor is now mathematically perfect by removing viewport offsets.
-
-## [1.1.7] - 2026-02-27
-### Changed
-- **Physics Refinement**: Switched to linear scaling for link distance (`tokenSize * 4 + 100`) and collision radius (`tokenSize + 100`).
-- **Label Scaling**: Reverted node labels to a fixed font size. Link labels now scale dynamically based on token size.
-- **Reactivity**: Simulation forces now update immediately when `tokenSize` is changed.
-
-## [1.1.6] - 2026-02-28
-### Added
-- **JSON Export & Import**: Back up your graph or move it between worlds with full coordinate persistence.
 
 ## [1.1.5] - 2026-02-28
 ### Added

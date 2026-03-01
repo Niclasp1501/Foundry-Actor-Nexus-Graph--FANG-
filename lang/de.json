@@ -43,7 +43,11 @@
             "EditNodeHeader": "Akteur bearbeiten",
             "EditLinkHeader": "Verbindung bearbeiten",
             "UpdateLink": "Aktualisieren",
-            "EditLinkHint": "Ändere die gewählte Verbindung."
+            "EditLinkHint": "Ändere die gewählte Verbindung.",
+            "SpectatorMode": "Zuschauer-Modus",
+            "SyncCamera": "Kamera synchronisieren (Broadcast)",
+            "SyncCameraHint": "Übertrage deine Kamera-Position und Zoom live an alle Spieler und den Monitor.",
+            "SpectatorActive": "Zuschauer-Modus Aktiv"
         },
         "Journal": {
             "Title": "Über FANG",
@@ -77,11 +81,15 @@
             "DeletedLink": "Verbindung gelöscht.",
             "CenterEnabled": "wird nun vom Zentrum angezogen.",
             "CenterDisabled": "schwebt nun wieder frei.",
-            "ActorNotFound": "Actor nicht gefunden."
+            "ActorNotFound": "Actor nicht gefunden.",
+            "SpotlightStarted": "Narratives Spotlight für {actor} gestartet.",
+            "SpectatorEnabled": "Zuschauer-Modus aktiviert. Deine Kamera wird nun übertragen.",
+            "SpectatorDisabled": "Zuschauer-Modus deaktiviert."
         },
         "ContextMenu": {
             "EditRole": "Rolle / Organisation",
             "EditLore": "Informationen bearbeiten",
+            "Spotlight": "Narratives Spotlight",
             "DeleteNode": "Akteur vom Graphen löschen"
         },
         "Dropdowns": {

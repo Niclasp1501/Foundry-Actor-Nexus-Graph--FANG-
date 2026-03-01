@@ -29,6 +29,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         this.transform = null;
         this.zoom = null;
         this._initialZoomApplied = false;
+        this._isSpotlightActive = false;
+        this._isSyncCameraActive = false;
+        this._remoteSyncing = false; // Guard to prevent feedback loops
     }
 
     async _prepareContext(options) {
@@ -162,8 +165,25 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     ui.notifications.info(game.i18n.localize(e.target.checked ? "FANG.Messages.PlayersCanEdit" : "FANG.Messages.PlayersCannotEdit"));
                 });
             }
+
+            const cbSyncCamera = this.element.querySelector("#cbSyncCamera");
+            if (cbSyncCamera) {
+                cbSyncCamera.checked = this._isSyncCameraActive;
+                cbSyncCamera.addEventListener("change", (e) => {
+                    this._isSyncCameraActive = e.target.checked;
+                    ui.notifications.info(game.i18n.localize(this._isSyncCameraActive ? "FANG.Messages.SpectatorEnabled" : "FANG.Messages.SpectatorDisabled"));
+                    const indicator = this.element.querySelector("#spectator-active-indicator");
+                    if (indicator) indicator.classList.toggle("active", this._isSyncCameraActive);
+                });
+            }
         } else {
             setTimeout(() => this.resizeCanvas(), 50);
+        }
+
+        // Spotlight Overlay Close
+        const spotlightClose = this.element.querySelector(".narrative-close");
+        if (spotlightClose) {
+            spotlightClose.addEventListener("click", () => this.stopSpotlight());
         }
     }
 
@@ -901,15 +921,24 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
         const btnRole = menu.querySelector("#ctxEditRole");
         const btnLore = menu.querySelector("#ctxEditLore");
+        const btnSpotlight = menu.querySelector("#ctxSpotlight");
         const btnDelete = menu.querySelector("#ctxDeleteNode");
 
         // Clear previous listeners by cloning nodes
         const newBtnRole = btnRole.cloneNode(true);
         const newBtnLore = btnLore.cloneNode(true);
+        const newBtnSpotlight = btnSpotlight.cloneNode(true);
         const newBtnDelete = btnDelete.cloneNode(true);
         btnRole.parentNode.replaceChild(newBtnRole, btnRole);
         btnLore.parentNode.replaceChild(newBtnLore, btnLore);
+        btnSpotlight.parentNode.replaceChild(newBtnSpotlight, btnSpotlight);
         btnDelete.parentNode.replaceChild(newBtnDelete, btnDelete);
+
+        // --- Context Action: Spotlight ---
+        newBtnSpotlight.addEventListener("click", () => {
+            menu.classList.add("hidden");
+            this._onSpotlight(node);
+        });
 
         // --- Context Action: Edit Role ---
         newBtnRole.addEventListener("click", () => {
@@ -2044,6 +2073,18 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             this._hoverTimeout = null;
         }
         this._tooltipVisibleForNode = null;
+
+        // Broadcast camera sync if active and we are GM
+        if (this._isSyncCameraActive && game.user.isGM && !this._remoteSyncing) {
+            game.socket.emit("module.fang", {
+                action: "syncCamera",
+                payload: {
+                    x: event.transform.x,
+                    y: event.transform.y,
+                    k: event.transform.k
+                }
+            });
+        }
     }
 
     /**
@@ -2363,8 +2404,113 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         ui.notifications.info(game.i18n.localize("FANG.Messages.MonitorViewClosed"));
     }
 
+    // --- Storyteller Features: Spotlight & Camera Sync ---
+
+    _onSpotlight(node) {
+        if (!game.user.isGM) return;
+
+        // Broadcast spotlight event
+        game.socket.emit("module.fang", {
+            action: "spotlightStart",
+            payload: {
+                nodeId: node.id,
+                name: node.name,
+                lore: node.lore || "",
+                portrait: node.img || ""
+            }
+        });
+
+        // Also start locally for the GM
+        this.startSpotlight({
+            nodeId: node.id,
+            name: node.name,
+            lore: node.lore || "",
+            portrait: node.img || ""
+        });
+    }
+
+    startSpotlight(payload) {
+        if (this._spotlightTimeout) clearTimeout(this._spotlightTimeout);
+        this._isSpotlightActive = true;
+
+        // 1. Find the node position
+        const node = this.graphData.nodes.find(n => n.id === payload.nodeId);
+        if (node && this.zoom) {
+            // 2. Animate camera zoom to node
+            const targetScale = 1.5;
+            const tx = this.width / 2 - node.x * targetScale;
+            const ty = this.height / 2 - node.y * targetScale;
+
+            d3.select(this.canvas)
+                .transition()
+                .duration(1000)
+                .call(this.zoom.transform, d3.zoomIdentity.translate(tx, ty).scale(targetScale));
+        }
+
+        // 3. Populate and show narrative overlay
+        const overlay = this.element.querySelector("#fang-narrative-overlay");
+        const title = this.element.querySelector("#narrative-title");
+        const textArea = this.element.querySelector("#narrative-text");
+        const portrait = this.element.querySelector("#narrative-portrait");
+        const portraitContainer = this.element.querySelector(".narrative-portrait-container");
+
+        if (overlay && title && textArea) {
+            title.textContent = payload.name;
+            textArea.textContent = payload.lore || "...";
+
+            if (payload.portrait && portrait) {
+                portrait.src = payload.portrait;
+                portraitContainer.classList.remove("hidden");
+            } else {
+                portraitContainer.classList.add("hidden");
+            }
+
+            overlay.classList.remove("hidden");
+        }
+
+        // 4. Auto-reset after 15 seconds (slightly longer for reading)
+        this._spotlightTimeout = setTimeout(() => {
+            if (this._isSpotlightActive) this.stopSpotlight();
+        }, 15000);
+
+        ui.notifications.info(game.i18n.localize("FANG.Messages.SpotlightStarted").replace("{actor}", payload.name));
+    }
+
+    stopSpotlight() {
+        if (this._spotlightTimeout) clearTimeout(this._spotlightTimeout);
+        this._isSpotlightActive = false;
+
+        // Hide overlay
+        const overlay = this.element.querySelector("#fang-narrative-overlay");
+        if (overlay) overlay.classList.add("hidden");
+
+        // Return to normal view
+        this.zoomToFit(true);
+
+        // If we are GM, tell everyone to stop too
+        if (game.user.isGM) {
+            game.socket.emit("module.fang", { action: "spotlightStop" });
+        }
+    }
+
+    remoteSyncCamera(payload) {
+        if (!this.zoom || !this.canvas || this._remoteSyncing) return;
+
+        // Set syncing flag to prevent feedback loops if we are also a GM (unlikely but safe)
+        this._remoteSyncing = true;
+
+        const transform = d3.zoomIdentity.translate(payload.x, payload.y).scale(payload.k);
+
+        // Apply transform immediately without transition for smooth following
+        d3.select(this.canvas)
+            .call(this.zoom.transform, transform);
+
+        this._remoteSyncing = false;
+    }
+
     _onClose(options) {
         super._onClose(options);
+        if (this._spotlightTimeout) clearTimeout(this._spotlightTimeout);
         this._initialZoomApplied = false;
         this.transform = null;
     }

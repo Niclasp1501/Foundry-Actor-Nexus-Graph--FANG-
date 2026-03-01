@@ -43,7 +43,11 @@
             "EditNodeHeader": "Node Details",
             "EditLinkHeader": "Link Details",
             "UpdateLink": "Update Link",
-            "EditLinkHint": "Modify the selected connection."
+            "EditLinkHint": "Modify the selected connection.",
+            "SpectatorMode": "Spectator Mode",
+            "SyncCamera": "Sync Camera (Broadcast)",
+            "SyncCameraHint": "Broadcast your camera position and zoom live to all players and the monitor.",
+            "SpectatorActive": "Spectator Mode Active"
         },
         "Journal": {
             "Title": "About FANG",
@@ -77,11 +81,15 @@
             "DeletedLink": "Connection deleted.",
             "CenterEnabled": "is now magnetically pulled to the center.",
             "CenterDisabled": "now floats freely again.",
-            "ActorNotFound": "Actor not found."
+            "ActorNotFound": "Actor not found.",
+            "SpotlightStarted": "Narrative Spotlight started for {actor}.",
+            "SpectatorEnabled": "Spectator Mode enabled. Your camera is now synced.",
+            "SpectatorDisabled": "Spectator Mode disabled."
         },
         "ContextMenu": {
             "EditRole": "Role / Organization",
             "EditLore": "Edit Information",
+            "Spotlight": "Narrative Spotlight",
             "DeleteNode": "Delete Actor from Graph"
         },
         "Dropdowns": {

@@ -117,6 +117,22 @@
                 </div>
 
                 <div class="control-group">
+                    <h3>{{localize "FANG.UI.SpectatorMode"}}</h3>
+                    <div class="input-stack">
+                        <div
+                            style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px; padding: 5px 0;">
+                            <label for="cbSyncCamera"
+                                style="font-size: 0.9em; font-weight: bold; cursor: pointer;">{{localize
+                                "FANG.UI.SyncCamera"}}</label>
+                            <input type="checkbox" id="cbSyncCamera" style="width: auto; margin: 0; cursor: pointer;">
+                        </div>
+                        <p style="font-size: 0.8em; color: #666; margin-top: 0; margin-bottom: 5px; line-height: 1.2;">
+                            {{localize "FANG.UI.SyncCameraHint"}}
+                        </p>
+                    </div>
+                </div>
+
+                <div class="control-group">
                     <h3>{{localize "FANG.UI.AdvancedFeatures"}}</h3>
                     <div class="input-stack">
                         <div
@@ -169,6 +185,11 @@
         <!-- Hover Information Tooltip -->
         <div id="fang-tooltip" class="fang-tooltip hidden"></div>
 
+        <!-- Spectator Mode Activity Indicator -->
+        <div id="spectator-active-indicator" class="spectator-active-indicator">
+            <i class="fas fa-video"></i> {{localize "FANG.UI.SpectatorActive"}}
+        </div>
+
         <!-- Right-Click Radial Context Menu -->
         <div id="fang-context-menu" class="fang-context-menu hidden">
             <ul>
@@ -178,10 +199,29 @@
                 <li id="ctxEditLore" class="ctx-item">
                     <i class="fas fa-book-open"></i> {{localize "FANG.ContextMenu.EditLore"}}
                 </li>
+                <li id="ctxSpotlight" class="ctx-item gm-only">
+                    <i class="fas fa-compass"></i> {{localize "FANG.ContextMenu.Spotlight"}}
+                </li>
                 <li id="ctxDeleteNode" class="ctx-item danger">
                     <i class="fas fa-trash"></i> {{localize "FANG.ContextMenu.DeleteNode"}}
                 </li>
             </ul>
+        </div>
+
+        <!-- Narrative Spotlight Overlay -->
+        <div id="fang-narrative-overlay" class="fang-narrative-overlay hidden">
+            <div class="narrative-card">
+                <div class="narrative-portrait-container hidden">
+                    <img id="narrative-portrait" src="">
+                </div>
+                <div class="narrative-content">
+                    <h2 id="narrative-title"></h2>
+                    <div id="narrative-text"></div>
+                </div>
+                <div class="narrative-close">
+                    <i class="fas fa-times"></i>
+                </div>
+            </div>
         </div>
     </main>
 </div>
