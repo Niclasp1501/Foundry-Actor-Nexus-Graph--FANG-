@@ -577,6 +577,13 @@ body #fang-app.fang-app-window.fang-fullscreen-player .fang-app-container {
     overflow: hidden !important;
 }
 
+/* === MONITOR FULLSCREEN: Body-Level Resets === */
+body.fang-monitor {
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: hidden !important;
+}
+
 /* Hyper-specific override for Monitor Fullscreen */
 html body.fang-monitor div#fang-app.fang-app-window.fang-fullscreen-player {
     position: fixed !important;
@@ -587,11 +594,28 @@ html body.fang-monitor div#fang-app.fang-app-window.fang-fullscreen-player {
     inset: 0 !important;
     width: 100vw !important;
     height: 100vh !important;
+    max-height: none !important;
+    max-width: none !important;
+    min-height: 100vh !important;
+    min-width: 100vw !important;
     margin: 0 !important;
     padding: 0 !important;
     z-index: 200000 !important;
     display: flex !important;
     flex-direction: column;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+/* Force window-content to fill in monitor mode */
+html body.fang-monitor div#fang-app .window-content {
+    height: 100% !important;
+    max-height: none !important;
+    min-height: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: hidden !important;
+    flex: 1 !important;
 }
 
 body.fang-monitor #ui-bottom,
@@ -599,7 +623,10 @@ body.fang-monitor #hotbar,
 body.fang-monitor #players,
 body.fang-monitor #ui-top,
 body.fang-monitor #ui-left,
-body.fang-monitor #ui-right {
+body.fang-monitor #ui-right,
+body.fang-monitor #navigation,
+body.fang-monitor #controls,
+body.fang-monitor #sidebar {
     display: none !important;
 }
 
@@ -610,10 +637,17 @@ body.fang-monitor #fang-app.fang-app-window {
     right: 0 !important;
     height: 100vh !important;
     width: 100vw !important;
+    max-height: none !important;
+    max-width: none !important;
+    min-height: 100vh !important;
+    min-width: 100vw !important;
     margin: 0 !important;
+    padding: 0 !important;
     position: fixed !important;
     z-index: 200000 !important;
     display: flex !important;
+    border: none !important;
+    box-shadow: none !important;
 }
 
 /* Custom D&D Dialog Styling */

@@ -48,9 +48,6 @@ An interactive, self-arranging Actor Graph module for visualizing Character & NP
 - **Viewing the Graph:** Once shared by the GM, the window will pop up automatically.
 - **Manual Access:** If a player accidentally closes the window, they can re-open it via the **"FANG Graph" Journal Entry** (a link inside the journal text opens the tool) or simply by pressing `Shift + G`.
 
-### Known Issues
-- ⚠️ **Monitor Fullscreen Black Bar:** On some setups, a ~78px black bar may appear at the bottom of the Monitor's fullscreen view. This is caused by Foundry VTT's internal `ApplicationV2` window positioning. A fix is being investigated.
-
 ### Future Roadmap
 - **Custom Link Styles:** Color-coded or dashed lines for different relationships (e.g., Enemies, Family, Master/Apprentice).
 - **More Languages:** Community translation support (e.g. Spanish, French).
@@ -106,9 +103,6 @@ An interactive, self-arranging Actor Graph module for visualizing Character & NP
 - **Einrichtung:** Der GM muss das Tool einmalig öffnen, damit das Journal im Hintergrund erstellt wird.
 - **Graphen Betrachten:** Sobald der GM den Graphen teilt, öffnet sich dieser automatisch.
 - **Manuell Öffnen:** Falls du das Fenster versehentlich schließt, kannst du es über das **Journal "FANG Graph"** wieder öffnen (Klick auf den Link im Text) oder einfach `Shift + G` drücken.
-
-### Bekannte Probleme
-- ⚠️ **Monitor-Vollbild: Schwarzer Balken:** Auf manchen Setups kann ein ~78px hoher schwarzer Balken am unteren Rand der Monitor-Vollbildansicht erscheinen. Ursache ist Foundry VTTs internes `ApplicationV2`-Fenstermanagement. Ein Fix wird untersucht.
 
 ### Zukünftige Pläne (Roadmap)
 - **Individuelle Verbindungslinien:** Farbkodierte, gestrichelte oder dicke Linien je nach Beziehungsart (Feinde, Liebespaar, Familie).

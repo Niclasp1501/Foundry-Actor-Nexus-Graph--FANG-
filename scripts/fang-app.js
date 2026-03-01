@@ -70,17 +70,42 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             if (game.user.name.toLowerCase().includes("monitor")) {
                 this.element.classList.add("fang-fullscreen-player");
                 document.body.classList.add("fang-monitor");
-                this.element.style.setProperty("display", "flex", "important");
-                this.element.style.setProperty("visibility", "visible", "important");
-                this.element.style.setProperty("opacity", "1", "important");
-                this.element.style.setProperty("top", "0", "important");
-                this.element.style.setProperty("bottom", "0", "important");
-                this.element.style.setProperty("left", "0", "important");
-                this.element.style.setProperty("right", "0", "important");
-                this.element.style.setProperty("height", "100vh", "important");
-                this.element.style.setProperty("width", "100vw", "important");
-                this.element.style.setProperty("position", "fixed", "important");
-                this.element.style.setProperty("z-index", "200000", "important");
+
+                // --- FIX: Hide ALL Foundry UI containers via JS (Theorie C) ---
+                ["#ui-bottom", "#hotbar", "#players", "#ui-top", "#ui-left", "#ui-right", "#navigation", "#controls", "#sidebar"].forEach(sel => {
+                    const el = document.querySelector(sel);
+                    if (el) el.style.setProperty("display", "none", "important");
+                });
+                // Reset any body padding/margin that Foundry might apply
+                document.body.style.setProperty("padding", "0", "important");
+                document.body.style.setProperty("margin", "0", "important");
+                document.body.style.setProperty("overflow", "hidden", "important");
+
+                // --- Force fullscreen styles on the app element ---
+                this._applyMonitorFullscreenStyles();
+
+                // --- FIX: Force window-content to fill (Theorie B) ---
+                const windowContent = this.element.querySelector(".window-content");
+                if (windowContent) {
+                    windowContent.style.setProperty("height", "100%", "important");
+                    windowContent.style.setProperty("max-height", "none", "important");
+                    windowContent.style.setProperty("min-height", "100%", "important");
+                    windowContent.style.setProperty("padding", "0", "important");
+                    windowContent.style.setProperty("margin", "0", "important");
+                    windowContent.style.setProperty("overflow", "hidden", "important");
+                }
+
+                // --- FIX: MutationObserver to guard against Foundry resetting styles ---
+                if (this._monitorStyleObserver) this._monitorStyleObserver.disconnect();
+                this._monitorStyleObserver = new MutationObserver(() => {
+                    if (game.user.name.toLowerCase().includes("monitor")) {
+                        this._applyMonitorFullscreenStyles();
+                    }
+                });
+                this._monitorStyleObserver.observe(this.element, {
+                    attributes: true,
+                    attributeFilter: ["style"]
+                });
 
                 // Auto-zoom to fit after a short delay to ensure canvas resized
                 setTimeout(() => this.zoomToFit(false), 200);
@@ -216,6 +241,17 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         this._releaseMyLock();
         document.body.classList.remove("fang-monitor");
         if (this._resizeObserver) this._resizeObserver.disconnect();
+        if (this._monitorStyleObserver) this._monitorStyleObserver.disconnect();
+
+        // Restore Foundry UI containers if we hid them
+        ["#ui-bottom", "#hotbar", "#players", "#ui-top", "#ui-left", "#ui-right", "#navigation", "#controls", "#sidebar"].forEach(sel => {
+            const el = document.querySelector(sel);
+            if (el) el.style.removeProperty("display");
+        });
+        document.body.style.removeProperty("padding");
+        document.body.style.removeProperty("margin");
+        document.body.style.removeProperty("overflow");
+
         super._onClose(options);
     }
 
@@ -225,6 +261,39 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             return this;
         }
         return super.setPosition(position);
+    }
+
+    /** Override _updatePosition to prevent Foundry from constraining window dimensions for Monitor */
+    _updatePosition(position) {
+        if (game.user.name.toLowerCase().includes("monitor")) {
+            // Do NOT let Foundry constrain the window - we handle positioning ourselves
+            return;
+        }
+        return super._updatePosition(position);
+    }
+
+    /** Apply fullscreen styles to the monitor element. Called from _onRender and the MutationObserver. */
+    _applyMonitorFullscreenStyles() {
+        const el = this.element;
+        if (!el) return;
+        el.style.setProperty("display", "flex", "important");
+        el.style.setProperty("visibility", "visible", "important");
+        el.style.setProperty("opacity", "1", "important");
+        el.style.setProperty("position", "fixed", "important");
+        el.style.setProperty("top", "0", "important");
+        el.style.setProperty("bottom", "0", "important");
+        el.style.setProperty("left", "0", "important");
+        el.style.setProperty("right", "0", "important");
+        el.style.setProperty("width", "100vw", "important");
+        el.style.setProperty("height", "100vh", "important");
+        el.style.setProperty("max-height", "none", "important");
+        el.style.setProperty("max-width", "none", "important");
+        el.style.setProperty("min-height", "100vh", "important");
+        el.style.setProperty("min-width", "100vw", "important");
+        el.style.setProperty("z-index", "200000", "important");
+        el.style.setProperty("margin", "0", "important");
+        el.style.setProperty("padding", "0", "important");
+        el.style.setProperty("inset", "0", "important");
     }
 
     async #loadD3() {
