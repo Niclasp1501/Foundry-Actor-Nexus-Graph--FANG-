@@ -103,6 +103,143 @@ body.role-player .fang-app-container .gm-only {
     border: none;
 }
 
+/* --- Edit Lock Banner --- */
+.lock-banner {
+    padding: 8px 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #e9e4d9;
+    border-bottom: 1px solid var(--fang-border-color);
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+}
+
+.lock-banner.no-editor {
+    border-left: 4px solid #aaa;
+}
+
+.lock-banner.i-am-editor {
+    background: rgba(139, 0, 0, 0.05);
+    border-left: 4px solid var(--fang-primary-red);
+}
+
+.lock-banner.someone-else-editing {
+    background: #eee;
+    border-left: 4px solid var(--fang-accent-gold);
+    animation: pulse-border 2s infinite;
+}
+
+@keyframes pulse-border {
+    0% {
+        border-left-color: var(--fang-accent-gold);
+    }
+
+    50% {
+        border-left-color: #f3e5ab;
+    }
+
+    100% {
+        border-left-color: var(--fang-accent-gold);
+    }
+}
+
+.lock-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    color: #444;
+}
+
+.fang-lock-btn {
+    background: var(--fang-primary-red);
+    color: white;
+    border: 1px solid var(--fang-accent-gold);
+    border-radius: 4px;
+    padding: 4px 10px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-family: var(--fang-font-main);
+    transition: background 0.2s;
+}
+
+.fang-lock-btn:hover {
+    background: #a00;
+}
+
+.fang-lock-btn.active {
+    background: var(--fang-accent-gold);
+    color: var(--fang-primary-red);
+}
+
+/* Disabled UI State */
+.sidebar-locked .control-group,
+.tab-locked .control-group {
+    opacity: 0.6;
+    pointer-events: none;
+    filter: grayscale(0.5);
+    position: relative;
+}
+
+.sidebar-locked .control-group::after,
+.tab-locked .control-group::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 100;
+}
+
+/* --- Canvas Lock Indicator --- */
+.canvas-lock-indicator {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+    background: rgba(253, 251, 247, 0.9);
+    padding: 8px 20px;
+    border-radius: 30px;
+    border: 2px solid var(--fang-accent-gold);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: var(--fang-primary-red);
+    pointer-events: none;
+    animation: slide-down 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+}
+
+@keyframes slide-down {
+    from {
+        transform: translate(-50%, -100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translate(-50%, 0);
+        opacity: 1;
+    }
+}
+
+.canvas-lock-indicator i {
+    font-size: 1.2rem;
+    color: var(--fang-accent-gold);
+}
+
+.canvas-lock-indicator.hidden,
+.hidden {
+    display: none !important;
+}
+
 /* Add a gold accent line */
 .fang-app-container .sidebar-header h1::before {
     content: "";
@@ -408,6 +545,11 @@ body #fang-app.fang-app-window.fang-fullscreen-player {
     border-radius: 0 !important;
     z-index: 2147483647 !important;
     /* Maximum possible z-index to cover Monk's Display */
+    overflow: hidden !important;
+}
+
+body #fang-app.fang-app-window.fang-fullscreen-player .sidebar {
+    display: none !important;
 }
 
 /* Hide the Foundry Window Header when in fullscreen mode */
@@ -422,6 +564,26 @@ body #fang-app.fang-app-window.fang-fullscreen-player .window-content {
     margin: 0 !important;
     flex: 1;
     display: flex;
+    flex-direction: column;
+    height: 100% !important;
+    width: 100% !important;
+    max-height: 100vh !important;
+    overflow: hidden !important;
+}
+
+body #fang-app.fang-app-window.fang-fullscreen-player .fang-app-container {
+    height: 100% !important;
+    width: 100% !important;
+    overflow: hidden !important;
+}
+
+body.fang-monitor #ui-bottom,
+body.fang-monitor #hotbar,
+body.fang-monitor #players,
+body.fang-monitor #ui-top,
+body.fang-monitor #ui-left,
+body.fang-monitor #ui-right {
+    display: none !important;
 }
 
 /* Custom D&D Dialog Styling */

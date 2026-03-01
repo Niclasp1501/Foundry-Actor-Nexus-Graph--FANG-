@@ -3,6 +3,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-03-01
+### Added
+- **Exclusive Edit-Lock**: Only one user can edit the graph at a time to prevent conflicts.
+- **Canvas Status Indicator**: A floating banner at the top of the canvas shows who is currently editing.
+- **GM Override**: GMs can force-release locks held by players.
+- **Socket Synchronization**: Real-time updates for lock status across all clients.
+
+### Fixed
+- Improved Edit-Lock reliability for players (socket-based permission bypass).
+- Fixed UI state where players could interact with sidebar before acquiring lock.
+
 ## [1.1.9] - 2026-03-01
 ### Added
 - **Enhanced Narrative Spotlight**:

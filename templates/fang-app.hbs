@@ -16,6 +16,22 @@
         <div class="tabs-container">
             <!-- EDITOR TAB -->
             <section class="tab-content active" data-tab="editor">
+                <!-- Edit Lock Banner -->
+                <div id="fang-lock-banner" class="lock-banner no-editor">
+                    <div class="lock-info">
+                        <i class="fas fa-lock-open"></i>
+                        <span id="lock-text">{{localize "FANG.UI.NoEditor"}}</span>
+                    </div>
+                    <button id="btnToggleLock" class="fang-lock-btn">
+                        <i class="fas fa-pencil-alt"></i>
+                        <span id="lock-btn-text">{{localize "FANG.UI.EditMode"}}</span>
+                    </button>
+                    <button id="btnForceRelease" class="fang-lock-btn gm-only hidden"
+                        title="{{localize 'FANG.UI.ForceRelease'}}">
+                        <i class="fas fa-unlock-alt"></i>
+                    </button>
+                </div>
+
                 <div class="control-group">
                     <h3>{{localize "FANG.UI.CreateConnection"}}</h3>
                     <div class="input-stack">
@@ -180,6 +196,10 @@
 
     <!-- Main Canvas Area -->
     <main class="canvas-container" style="position: relative;">
+        <div id="fang-canvas-lock-indicator" class="canvas-lock-indicator hidden">
+            <i class="fas fa-user-edit"></i>
+            <span id="canvas-lock-text"></span>
+        </div>
         <canvas id="graphCanvas"></canvas>
 
         <!-- Hover Information Tooltip -->

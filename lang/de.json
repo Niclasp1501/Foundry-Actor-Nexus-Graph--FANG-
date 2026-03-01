@@ -47,7 +47,12 @@
             "SpectatorMode": "Zuschauer-Modus",
             "SyncCamera": "Kamera synchronisieren (Broadcast)",
             "SyncCameraHint": "Übertrage deine Kamera-Position und Zoom live an alle Spieler und den Monitor.",
-            "SpectatorActive": "Zuschauer-Modus Aktiv"
+            "SpectatorActive": "Zuschauer-Modus Aktiv",
+            "EditMode": "Editieren",
+            "ReleaseLock": "Sperre freigeben",
+            "ForceRelease": "Freigabe erzwingen",
+            "CurrentlyEditing": "wird gerade von {user} bearbeitet",
+            "NoEditor": "Bereit zum Editieren"
         },
         "Journal": {
             "Title": "Über FANG",
@@ -84,7 +89,10 @@
             "ActorNotFound": "Actor nicht gefunden.",
             "SpotlightStarted": "Narratives Spotlight für {actor} gestartet.",
             "SpectatorEnabled": "Zuschauer-Modus aktiviert. Deine Kamera wird nun übertragen.",
-            "SpectatorDisabled": "Zuschauer-Modus deaktiviert."
+            "SpectatorDisabled": "Zuschauer-Modus deaktiviert.",
+            "LockAcquired": "hat die Bearbeitungsrechte übernommen.",
+            "LockReleased": "Bearbeitung freigegeben.",
+            "AlreadyEditing": "bearbeitet den Graphen gerade."
         },
         "ContextMenu": {
             "EditRole": "Rolle / Organisation",

@@ -62,15 +62,19 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             const allowPlayerEdit = game.settings.get("fang", "allowPlayerEditing");
             const isGMOnline = game.users.some(u => u.isGM && u.active);
             if (sidebar) {
-                sidebar.style.display = (allowPlayerEdit && isGMOnline) ? "flex" : "none";
+                const isMonitor = game.user.name.toLowerCase().includes("monitor");
+                sidebar.style.display = (allowPlayerEdit && isGMOnline && !isMonitor) ? "flex" : "none";
                 const gmControls = sidebar.querySelectorAll(".gm-only");
                 gmControls.forEach(el => el.style.display = "none");
             }
             if (game.user.name.toLowerCase().includes("monitor")) {
                 this.element.classList.add("fang-fullscreen-player");
+                document.body.classList.add("fang-monitor");
                 this.element.style.setProperty("display", "flex", "important");
                 this.element.style.setProperty("visibility", "visible", "important");
                 this.element.style.setProperty("opacity", "1", "important");
+            } else {
+                document.body.classList.remove("fang-monitor");
             }
         }
 
@@ -95,9 +99,18 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const btnManageFactions = this.element.querySelector("#btnManageFactions");
         if (btnManageFactions) btnManageFactions.addEventListener("click", this._onManageFactions.bind(this));
 
+        const btnToggleLock = this.element.querySelector("#btnToggleLock");
+        if (btnToggleLock) btnToggleLock.addEventListener("click", this._onToggleEditLock.bind(this));
+
+        const btnForceRelease = this.element.querySelector("#btnForceRelease");
+        if (btnForceRelease) btnForceRelease.addEventListener("click", this._onForceReleaseLock.bind(this));
+
         const canvas = this.element.querySelector("#graphCanvas");
         canvas.addEventListener("click", this._onCanvasClick.bind(this));
         canvas.addEventListener("dblclick", this._onCanvasDoubleClick.bind(this));
+
+        // 4. Update Lock UI status
+        this._updateLockUI();
         canvas.addEventListener("contextmenu", this._onCanvasRightClick.bind(this));
         canvas.addEventListener("mousemove", this._handleCanvasMouseMove.bind(this));
 
@@ -155,6 +168,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             if (btnCenter) btnCenter.addEventListener("click", (e) => {
                 e.preventDefault();
                 this.zoomToFit(true);
+                game.socket.emit("module.fang", { action: "centerGraph" });
             });
 
             const cbAllowPlayerEdit = this.element.querySelector("#cbAllowPlayerEdit");
@@ -185,6 +199,12 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         if (spotlightClose) {
             spotlightClose.addEventListener("click", () => this.stopSpotlight());
         }
+    }
+
+    _onClose(options) {
+        this._releaseMyLock();
+        document.body.classList.remove("fang-monitor");
+        if (this._resizeObserver) this._resizeObserver.disconnect();
     }
 
     async #loadD3() {
@@ -437,18 +457,25 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         }
     }
 
-    _canEditGraph(silent = false) {
-        if (game.user.isGM) return true;
+    _canEditGraph(silent = false, allowGMOverride = false) {
+        // GMs can bypass for specific functions (like sharing, spotlight, export)
+        if (game.user.isGM && allowGMOverride) return true;
+
+        // --- NEW: Strict Lock Check for Everyone ---
+        const entry = game.journal.getName("FANG Graph");
+        const lock = entry?.getFlag("fang", "editLock");
+
+        if (!lock || lock.userId !== game.user.id) {
+            if (!silent) ui.notifications.warn(game.i18n.localize("FANG.Messages.AlreadyEditing"));
+            return false;
+        }
+
         const allowPlayerEdit = game.settings.get("fang", "allowPlayerEditing");
-        if (!allowPlayerEdit) {
+        if (!game.user.isGM && !allowPlayerEdit) {
             if (!silent) ui.notifications.warn(game.i18n.localize("FANG.Messages.SaveNoPermission"));
             return false;
         }
-        const isGMOnline = game.users.some(u => u.isGM && u.active);
-        if (!isGMOnline) {
-            if (!silent) ui.notifications.warn(game.i18n.localize("FANG.Messages.WarnNoGMOnline"));
-            return false;
-        }
+
         return true;
     }
 
@@ -530,6 +557,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     async _onToggleCenterNode() {
+        if (!this._canEditGraph()) return;
         const selectDelete = this.element.querySelector("#deleteSelect");
         const val = selectDelete.value;
 
@@ -566,7 +594,18 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     async _onManageFactions() {
-        if (!game.user.isGM) return;
+        if (!game.user.isGM) return; // Only GM can manage factions
+
+        // Check if the current user has the lock before opening the dialog
+        if (!this._canEditGraph(false, true)) {
+            // If not GM, and player editing is allowed, try to acquire the lock
+            if (!game.user.isGM && game.settings.get("fang", "allowPlayerEditing")) {
+                const acquired = await this._requestLock();
+                if (!acquired) return; // If lock not acquired, stop here
+            } else {
+                return; // If GM, but _canEditGraph() returned false (e.g., another GM has the lock), stop
+            }
+        }
 
         let factionsHtml = this.graphData.factions.map((f, index) => `
             <div class="fang-faction-item" style="display: flex; gap: 5px; align-items: center; margin-bottom: 5px;">
@@ -726,6 +765,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     async _onDrop(event) {
+        if (!this._canEditGraph()) return;
         event.preventDefault();
         if (!this._canEditGraph()) return;
         let data;
@@ -909,7 +949,6 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     _showContextMenu(node, mouseX, mouseY) {
-        if (!game.user.isGM && !game.settings.get("fang", "allowPlayerEditing")) return;
 
         const menu = this.element.querySelector("#fang-context-menu");
         if (!menu) return;
@@ -929,10 +968,20 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const newBtnLore = btnLore.cloneNode(true);
         const newBtnSpotlight = btnSpotlight.cloneNode(true);
         const newBtnDelete = btnDelete.cloneNode(true);
+
         btnRole.parentNode.replaceChild(newBtnRole, btnRole);
         btnLore.parentNode.replaceChild(newBtnLore, btnLore);
         btnSpotlight.parentNode.replaceChild(newBtnSpotlight, btnSpotlight);
         btnDelete.parentNode.replaceChild(newBtnDelete, btnDelete);
+
+        // --- Permission Logic: Hide buttons if no edit lock ---
+        const hasLock = this._canEditGraph(true);
+        newBtnRole.style.display = hasLock ? "block" : "none";
+        newBtnLore.style.display = hasLock ? "block" : "none";
+        newBtnDelete.style.display = hasLock ? "block" : "none";
+
+        // Spotlight is always visible for anyone who can right-click
+        newBtnSpotlight.style.display = "block";
 
         // --- Context Action: Spotlight ---
         newBtnSpotlight.addEventListener("click", () => {
@@ -943,7 +992,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         // --- Context Action: Edit Role ---
         newBtnRole.addEventListener("click", () => {
             menu.classList.add("hidden");
-            if (!game.user.isGM) return;
+            if (!this._canEditGraph()) return; // Check lock before editing
 
             const title = game.i18n.localize("FANG.Dialogs.EditRoleTitle") || "Details bearbeiten";
             const contentString = (game.i18n.localize("FANG.Dialogs.EditRoleContent") || "Details für {actor}:").replace("{actor}", node.name);
@@ -1125,9 +1174,54 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         this.graphData.links.forEach((link, idx) => {
             const s = link.source;
             const t = link.target;
-            if (!s || !t || !s.x || !t.x) return; // Wait for simulation
+            if (!s || !t || s.x === undefined || t.x === undefined) return;
 
-            const dist = this._pointToSegmentDistance({ x, y }, s, t);
+            let dist;
+            const pairInfo = this._linkCounts ? this._linkCounts[link.pairKey] : null;
+            const totalParams = pairInfo ? pairInfo.total : 1;
+
+            if (totalParams === 1) {
+                // Linear hit detection
+                dist = this._pointToSegmentDistance({ x, y }, s, t);
+            } else {
+                // Curved hit detection (Sampling)
+                const linkIndex = pairInfo.links.indexOf(idx);
+                const offsetMultiplier = (totalParams % 2 === 0)
+                    ? (linkIndex % 2 === 0 ? 1 : -1) * (Math.floor(linkIndex / 2) + 0.5)
+                    : (linkIndex === 0 ? 0 : (linkIndex % 2 === 0 ? 1 : -1) * Math.floor((linkIndex + 1) / 2));
+
+                const ddx = t.x - s.x;
+                const ddy = t.y - s.y;
+                const ddist = Math.sqrt(ddx * ddx + ddy * ddy) || 1;
+                const spreadDistance = 30 + (ddist * 0.1);
+                const finalOffset = offsetMultiplier * spreadDistance;
+
+                // Use canonical direction (A < B) for consistent normal vector
+                const isCanonical = link.source.id < link.target.id;
+                const cDx = isCanonical ? ddx : -ddx;
+                const cDy = isCanonical ? ddy : -ddy;
+                const cDist = ddist;
+                const nx = -cDy / cDist;
+                const ny = cDx / cDist;
+
+                const midX = (s.x + t.x) / 2;
+                const midY = (s.y + t.y) / 2;
+                const ctrlX = midX + nx * finalOffset * 2;
+                const ctrlY = midY + ny * finalOffset * 2;
+
+                // Sample 10 points along the quadratic curve
+                let minDistToCurve = Infinity;
+                for (let step = 0; step <= 10; step++) {
+                    const tVal = step / 10;
+                    const u = 1 - tVal;
+                    const px = (u * u) * s.x + 2 * u * tVal * ctrlX + (tVal * tVal) * t.x;
+                    const py = (u * u) * s.y + 2 * u * tVal * ctrlY + (tVal * tVal) * t.y;
+                    const d = Math.sqrt((x - px) ** 2 + (y - py) ** 2);
+                    if (d < minDistToCurve) minDistToCurve = d;
+                }
+                dist = minDistToCurve;
+            }
+
             if (dist < minLDist) {
                 clickedLinkIndex = idx;
                 minLDist = dist;
@@ -1426,22 +1520,49 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     const x2 = link.target.x, y2 = link.target.y;
                     const x0 = node.x, y0 = node.y;
 
-                    // Mathematics for point-to-line-segment distance
-                    const l2 = (x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1);
-                    if (l2 === 0) continue;
+                    let projX, projY;
+                    const pairInfo = this._linkCounts ? this._linkCounts[link.pairKey] : null;
+                    const totalParams = pairInfo ? pairInfo.total : 1;
 
-                    let t = ((x0 - x1) * (x2 - x1) + (y0 - y1) * (y2 - y1)) / l2;
-                    t = Math.max(0, Math.min(1, t)); // Constrain to segment
+                    if (totalParams === 1) {
+                        // Mathematics for point-to-line-segment distance
+                        const l2 = (x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1);
+                        if (l2 === 0) continue;
+                        let t = ((x0 - x1) * (x2 - x1) + (y0 - y1) * (y2 - y1)) / l2;
+                        t = Math.max(0, Math.min(1, t)); // Constrain to segment
+                        projX = x1 + t * (x2 - x1);
+                        projY = y1 + t * (y2 - y1);
+                    } else {
+                        // For curved links, repel from the mid-point of the curve (simplified)
+                        const linkIndex = pairInfo.links.indexOf(j);
+                        const offsetMultiplier = (totalParams % 2 === 0) ? (linkIndex % 2 === 0 ? 1 : -1) * (Math.floor(linkIndex / 2) + 0.5) : (linkIndex === 0 ? 0 : (linkIndex % 2 === 0 ? 1 : -1) * Math.floor((linkIndex + 1) / 2));
 
-                    const projX = x1 + t * (x2 - x1);
-                    const projY = y1 + t * (y2 - y1);
+                        // Use canonical direction (A < B) for consistent normal vector
+                        const isCanonical = link.source.id < link.target.id;
+                        const cX1 = isCanonical ? x1 : x2;
+                        const cY1 = isCanonical ? y1 : y2;
+                        const cX2 = isCanonical ? x2 : x1;
+                        const cY2 = isCanonical ? y2 : y1;
+
+                        const ddx = cX2 - cX1;
+                        const ddy = cY2 - cY1;
+                        const ddist = Math.sqrt(ddx * ddx + ddy * ddy) || 1;
+                        const spreadDistance = 30 + (ddist * 0.1);
+                        const finalOffset = offsetMultiplier * spreadDistance;
+                        const nx = -ddy / ddist;
+                        const ny = ddx / ddist;
+                        const midX = (x1 + x2) / 2;
+                        const midY = (y1 + y2) / 2;
+                        projX = midX + nx * finalOffset * 2;
+                        projY = midY + ny * finalOffset * 2;
+                    }
 
                     const dx = x0 - projX;
                     const dy = y0 - projY;
                     let dist = Math.sqrt(dx * dx + dy * dy);
 
                     if (dist < repulsionRadius) {
-                        // Node is too close to line, repel perpendicularly
+                        // Node is too close to line/curve center, repel perpendicularly
                         if (dist === 0) {
                             dist = 1;
                             node.vx += (Math.random() - 0.5) * strength * 10;
@@ -1600,22 +1721,22 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         this.context.textAlign = "center";
         this.context.textBaseline = "middle";
 
-        const linkCounts = {};
+        this._linkCounts = {};
         this.graphData.links.forEach((link, i) => {
             const pairKey = link.source.id < link.target.id
                 ? `${link.source.id}-${link.target.id}`
                 : `${link.target.id}-${link.source.id}`;
 
-            if (!linkCounts[pairKey]) {
-                linkCounts[pairKey] = { total: 0, links: [] };
+            if (!this._linkCounts[pairKey]) {
+                this._linkCounts[pairKey] = { total: 0, links: [] };
             }
-            linkCounts[pairKey].total++;
-            linkCounts[pairKey].links.push(i);
+            this._linkCounts[pairKey].total++;
+            this._linkCounts[pairKey].links.push(i);
             link.pairKey = pairKey;
         });
 
         this.graphData.links.forEach((link, i) => {
-            const pairInfo = linkCounts[link.pairKey];
+            const pairInfo = this._linkCounts[link.pairKey];
             const linkIndex = pairInfo.links.indexOf(i);
             const totalParams = pairInfo.total;
 
@@ -1652,14 +1773,14 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             };
 
             const getNodeBoundOffset = (node, rayAngle) => {
-                let R = nodeRadius + 2;
+                let R = nodeRadius + 5;
                 this.context.font = "bold 15px 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
                 const tWidth = Math.max(this.context.measureText(node.name).width, 40);
-                const halfW = (tWidth / 2) + 12; // Label width + padding
+                const halfW = (tWidth / 2) + 18; // Increased padding
 
                 // Dynamic Label Y-bounds based on node radius
-                const topY = nodeRadius - 5;
-                const bottomY = nodeRadius + (node.role ? 36 : 22);
+                const topY = nodeRadius - 10;
+                const bottomY = nodeRadius + (node.role ? 42 : 28);
 
                 // Ray vector starting from the center of the node outwards
                 const vx = Math.cos(rayAngle);
@@ -1742,8 +1863,13 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 const nx = -dy / dist;
                 const ny = dx / dist;
 
-                ctrlX = midX + nx * finalOffset * 2;
-                ctrlY = midY + ny * finalOffset * 2;
+                // Use canonical direction for consistent normal calculation
+                const isCanonical = link.source.id < link.target.id;
+                const finalNx = isCanonical ? nx : -nx;
+                const finalNy = isCanonical ? ny : -ny;
+
+                ctrlX = midX + finalNx * finalOffset * 2;
+                ctrlY = midY + finalNy * finalOffset * 2;
 
                 let targetX = tPos.x;
                 let targetY = tPos.y;
@@ -2014,7 +2140,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     dragstarted(event) {
-        if (!this._canEditGraph(false)) return; // Show warning on first click
+        if (!this._canEditGraph(true)) return;
         if (!event.active) this.simulation.alphaTarget(0.3).restart();
         if (event.subject.type === 'node') {
             event.subject.data.fx = event.subject.data.x;
@@ -2091,7 +2217,10 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
      * Re-centers the graph and adjusts zoom so all nodes are visible.
      * @param {boolean} transition - Whether to animate the transition.
      */
+    // Re-centers the graph and adjusts zoom so all nodes are visible.
+    // @param {boolean} transition - Whether to animate the transition.
     zoomToFit(transition = true) {
+        if (!this._canEditGraph(true, true)) return;
         if (!this.canvas || !this.zoom || !this.graphData.nodes.length) return;
 
         const padding = 60;
@@ -2251,6 +2380,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
      */
     _onExportGraph(event) {
         if (event) event.preventDefault();
+        if (!this._canEditGraph(false, true)) return;
 
         // Prepare data (full state including factions and settings)
         const exportData = {
@@ -2296,6 +2426,10 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
      * Import graph data from a JSON file.
      */
     async _onImportGraph(event) {
+        if (!this._canEditGraph(false, true)) {
+            event.target.value = "";
+            return;
+        }
         const file = event.target.files[0];
         if (!file) return;
 
@@ -2380,32 +2514,34 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
     async _onShareGraph(event) {
         if (event) event.preventDefault();
-        await this.saveData();
-        game.socket.emit("module.fang", { action: "showGraph" });
+        if (!this._canEditGraph(false, true)) return;
+        game.socket.emit("module.fang", { action: "showGraph", payload: { journalName: "FANG Graph" } });
         ui.notifications.info(game.i18n.localize("FANG.Messages.GraphShown"));
     }
 
     async _onShareGraphMonitor(event) {
         if (event) event.preventDefault();
-        await this.saveData();
-        game.socket.emit("module.fang", { action: "showGraphMonitor" });
-        ui.notifications.info(game.i18n.localize("FANG.Messages.MonitorViewOpened"));
+        if (!this._canEditGraph(false, true)) return;
+        game.socket.emit("module.fang", { action: "showGraphMonitor", payload: { journalName: "FANG Graph" } });
+        ui.notifications.info(game.i18n.localize("FANG.Messages.GraphMonitorShown"));
     }
 
-    _onCloseGraphRemote(event) {
+    async _onCloseGraphRemote(event) {
         if (event) event.preventDefault();
+        if (!this._canEditGraph(false, true)) return;
         game.socket.emit("module.fang", { action: "closeGraph" });
         ui.notifications.info(game.i18n.localize("FANG.Messages.GraphClosed"));
     }
 
-    _onCloseGraphMonitor(event) {
+    async _onCloseGraphMonitor(event) {
         if (event) event.preventDefault();
+        if (!this._canEditGraph(false, true)) return;
         game.socket.emit("module.fang", { action: "closeGraphMonitor" });
         ui.notifications.info(game.i18n.localize("FANG.Messages.MonitorViewClosed"));
     }
 
     _onSpotlight(node) {
-        if (!game.user.isGM) return;
+        // Spotlight can be used by anyone who can right-click (no lock required)
 
         // Broadcast spotlight event
         const actor = game.actors.get(node.id);
@@ -2521,5 +2657,168 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         if (this._spotlightOverlayTimeout) clearTimeout(this._spotlightOverlayTimeout);
         this._initialZoomApplied = false;
         this.transform = null;
+
+        // Release edit lock if I am the holder
+        this._releaseMyLock();
+    }
+
+    async _releaseMyLock() {
+        const entry = game.journal.getName("FANG Graph");
+        const lock = entry?.getFlag("fang", "editLock");
+        if (lock && lock.userId === game.user.id) {
+            if (game.user.isGM) {
+                await entry.unsetFlag("fang", "editLock");
+                game.socket.emit("module.fang", { action: "lockStatusUpdate" });
+            } else {
+                game.socket.emit("module.fang", { action: "requestReleaseLock", payload: { userId: game.user.id } });
+            }
+        }
+    }
+
+    // --- Edit Lock System ---
+
+    async _onToggleEditLock() {
+        const entry = await this.getJournalEntry();
+        if (!entry) return;
+
+        const currentLock = entry.getFlag("fang", "editLock");
+        const isLocked = !!currentLock;
+        const iAmLockHolder = isLocked && currentLock.userId === game.user.id;
+
+        if (iAmLockHolder) {
+            // Release the lock
+            if (game.user.isGM) {
+                await entry.unsetFlag("fang", "editLock");
+                ui.notifications.info(game.i18n.localize("FANG.Messages.LockReleased") || "Bearbeitung freigegeben.");
+                game.socket.emit("module.fang", { action: "lockStatusUpdate" });
+                this.render();
+            } else {
+                game.socket.emit("module.fang", { action: "requestReleaseLock", payload: { userId: game.user.id } });
+            }
+        } else {
+            // Take the lock
+            if (game.user.isGM) {
+                await entry.setFlag("fang", "editLock", {
+                    userId: game.user.id,
+                    userName: game.user.name,
+                    time: Date.now()
+                });
+                ui.notifications.info(game.user.name + " " + game.i18n.localize("FANG.Messages.LockAcquired") || "hat die Bearbeitung übernommen.");
+                game.socket.emit("module.fang", { action: "lockStatusUpdate" });
+                this.render();
+            } else {
+                game.socket.emit("module.fang", { action: "requestLock", payload: { userId: game.user.id, userName: game.user.name } });
+            }
+        }
+    }
+
+    async _onForceReleaseLock() {
+        if (!game.user.isGM) return;
+        const entry = await this.getJournalEntry();
+        if (!entry) return;
+
+        await entry.unsetFlag("fang", "editLock");
+        ui.notifications.info("GM forced lock release.");
+
+        game.socket.emit("module.fang", { action: "lockStatusUpdate" });
+        this.render();
+    }
+
+    _updateLockUI() {
+        const entry = game.journal.getName("FANG Graph");
+        const lock = entry?.getFlag("fang", "editLock");
+
+        const banner = this.element.querySelector("#fang-lock-banner");
+        const lockText = this.element.querySelector("#lock-text");
+        const btnToggleLock = this.element.querySelector("#btnToggleLock");
+        const btnText = this.element.querySelector("#lock-btn-text");
+        const btnIcon = btnToggleLock?.querySelector("i");
+        const bannerIcon = banner.querySelector(".lock-info i");
+        const btnForce = this.element.querySelector("#btnForceRelease");
+        const sidebar = this.element.querySelector(".sidebar");
+
+        // New Canvas UI
+        const canvasIndicator = this.element.querySelector("#fang-canvas-lock-indicator");
+        const canvasText = this.element.querySelector("#canvas-lock-text");
+
+        if (!banner || !lockText || !btnToggleLock) return;
+
+        // Reset classes and visibility
+        banner.classList.remove("no-editor", "i-am-editor", "someone-else-editing");
+        banner.classList.add("hidden"); // Default hidden for GM
+        sidebar?.classList.remove("sidebar-locked");
+
+        // Remove tab-level locking
+        const editorTab = this.element.querySelector(".tab-content[data-tab='editor']");
+        if (editorTab) editorTab.classList.remove("tab-locked");
+
+        if (btnForce) btnForce.classList.add("hidden");
+        if (canvasIndicator) canvasIndicator.classList.add("hidden");
+        if (bannerIcon) bannerIcon.className = "fas fa-lock-open";
+
+        if (!lock) {
+            // NO ACTIVE LOCK - Everyone is blocked for editing by default
+            banner.classList.add("no-editor");
+            lockText.textContent = game.i18n.localize("FANG.UI.NoEditor");
+            btnText.textContent = game.i18n.localize("FANG.UI.EditMode");
+            btnIcon.className = "fas fa-pencil-alt";
+            btnToggleLock.classList.remove("active");
+
+            // Block editor tab exclusively for everyone until lock is taken
+            if (editorTab) editorTab.classList.add("tab-locked");
+
+            const allowPlayerEdit = game.settings.get("fang", "allowPlayerEditing");
+            if (!game.user.isGM) {
+                banner.classList.remove("hidden");
+                btnToggleLock.style.display = allowPlayerEdit ? "flex" : "none";
+                // Players have no View/Advanced anyway, so we can lock their whole sidebar for simplicity
+                sidebar?.classList.add("sidebar-locked");
+            } else {
+                // GM: Show the button even if no lock, so they can take it
+                banner.classList.remove("hidden");
+                btnToggleLock.style.display = "flex";
+            }
+        } else {
+            // ACTIVE LOCK
+            const iAmEditor = lock.userId === game.user.id;
+            const someoneElse = !iAmEditor;
+            const lockUser = iAmEditor ? game.user.name : lock.userName;
+
+            if (iAmEditor) {
+                // I AM THE EDITOR
+                banner.classList.remove("hidden");
+                banner.classList.add("i-am-editor");
+                lockText.textContent = lockUser;
+                btnText.textContent = game.i18n.localize("FANG.UI.ReleaseLock");
+                btnIcon.className = "fas fa-lock"; // Use closed lock when holding
+                btnToggleLock.classList.add("active");
+                btnToggleLock.style.display = "flex";
+                if (bannerIcon) bannerIcon.className = "fas fa-lock"; // Match the button
+            } else {
+                // SOMEONE ELSE IS EDITING
+                banner.classList.remove("hidden");
+                banner.classList.add("someone-else-editing");
+                lockText.textContent = game.i18n.format("FANG.UI.CurrentlyEditing", { user: lockUser });
+                btnToggleLock.style.display = "none";
+                if (bannerIcon) bannerIcon.className = "fas fa-lock";
+
+                // Block ONLY the editor tab for GMs, but the whole sidebar for players
+                if (game.user.isGM) {
+                    if (editorTab) editorTab.classList.add("tab-locked");
+                } else {
+                    sidebar?.classList.add("sidebar-locked");
+                }
+
+                if (game.user.isGM && btnForce) {
+                    btnForce.classList.remove("hidden");
+                }
+
+                // Show floating indicator on canvas for everyone except the editor
+                if (canvasIndicator && canvasText) {
+                    canvasIndicator.classList.remove("hidden");
+                    canvasText.textContent = game.i18n.format("FANG.UI.CurrentlyEditing", { user: lockUser });
+                }
+            }
+        }
     }
 }

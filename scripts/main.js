@@ -176,13 +176,52 @@ Hooks.once("ready", () => {
       }, 100);
     }
 
-    // --- STORYTELLER FEATURES: SPOTLIGHT & CAMERA SYNC ---
+    // --- STORYTELLER FEATURES: SPOTLIGHT, LOCKS & CAMERA SYNC ---
+
+    if (data.action === "lockStatusUpdate") {
+      if (fangApp && fangApp.rendered) fangApp.render();
+    }
+
+    if (data.action === "requestLock" && game.user.isGM) {
+      const entry = game.journal.getName("FANG Graph");
+      if (entry) {
+        const currentLock = entry.getFlag("fang", "editLock");
+        if (!currentLock) {
+          entry.setFlag("fang", "editLock", {
+            userId: data.payload.userId,
+            userName: data.payload.userName,
+            time: Date.now()
+          }).then(() => {
+            game.socket.emit("module.fang", { action: "lockStatusUpdate" });
+            if (fangApp && fangApp.rendered) fangApp.render();
+          });
+        }
+      }
+    }
+
+    if (data.action === "requestReleaseLock" && game.user.isGM) {
+      const entry = game.journal.getName("FANG Graph");
+      if (entry) {
+        const currentLock = entry.getFlag("fang", "editLock");
+        if (currentLock && currentLock.userId === data.payload.userId) {
+          entry.unsetFlag("fang", "editLock").then(() => {
+            game.socket.emit("module.fang", { action: "lockStatusUpdate" });
+            if (fangApp && fangApp.rendered) fangApp.render();
+          });
+        }
+      }
+    }
+
     if (data.action === "spotlightStart") {
       if (fangApp && fangApp.rendered) fangApp.startSpotlight(data.payload);
     }
 
     if (data.action === "spotlightStop") {
       if (fangApp && fangApp.rendered) fangApp.stopSpotlight();
+    }
+
+    if (data.action === "centerGraph") {
+      if (fangApp && fangApp.rendered) fangApp.zoomToFit(true);
     }
 
     if (data.action === "syncCamera") {
@@ -231,4 +270,19 @@ Hooks.on("renderJournalTextPageSheet", (app, html, data) => {
       game.modules.get("fang").api.toggleGraph();
     }
   });
+});
+
+// Auto-Release lock on Disconnect
+Hooks.on("userConnected", async (user, connected) => {
+  if (!connected && game.user.isGM) {
+    const entry = game.journal.getName("FANG Graph");
+    if (!entry) return;
+
+    const lock = entry.getFlag("fang", "editLock");
+    if (lock && lock.userId === user.id) {
+      console.log(`FANG | Releasing lock held by disconnecting user: ${user.name}`);
+      await entry.unsetFlag("fang", "editLock");
+      game.socket.emit("module.fang", { action: "lockStatusUpdate" });
+    }
+  }
 });

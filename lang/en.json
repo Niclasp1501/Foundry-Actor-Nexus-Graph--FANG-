@@ -47,7 +47,12 @@
             "SpectatorMode": "Spectator Mode",
             "SyncCamera": "Sync Camera (Broadcast)",
             "SyncCameraHint": "Broadcast your camera position and zoom live to all players and the monitor.",
-            "SpectatorActive": "Spectator Mode Active"
+            "SpectatorActive": "Spectator Mode Active",
+            "EditMode": "Edit",
+            "ReleaseLock": "Release Lock",
+            "ForceRelease": "Force Release",
+            "CurrentlyEditing": "is currently being edited by {user}",
+            "NoEditor": "Ready for Editing"
         },
         "Journal": {
             "Title": "About FANG",
@@ -84,7 +89,10 @@
             "ActorNotFound": "Actor not found.",
             "SpotlightStarted": "Narrative Spotlight started for {actor}.",
             "SpectatorEnabled": "Spectator Mode enabled. Your camera is now synced.",
-            "SpectatorDisabled": "Spectator Mode disabled."
+            "SpectatorDisabled": "Spectator Mode disabled.",
+            "LockAcquired": "has acquired the edit lock.",
+            "LockReleased": "Edit lock released.",
+            "AlreadyEditing": "is currently editing the graph."
         },
         "ContextMenu": {
             "EditRole": "Role / Organization",
