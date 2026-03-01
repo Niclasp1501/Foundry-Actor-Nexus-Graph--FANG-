@@ -154,9 +154,19 @@ Hooks.once("ready", () => {
         if (!fangApp) fangApp = new FangApplication();
         setTimeout(async () => {
           await fangApp.loadData();
-          if (fangApp.rendered) fangApp.initSimulation();
-          else fangApp.render({ force: true });
+          if (fangApp.rendered) {
+            fangApp.initSimulation();
+            fangApp.zoomToFit(false);
+          } else {
+            fangApp.render({ force: true });
+          }
         }, 500);
+      }
+    }
+
+    if (data.action === "centerGraph") {
+      if (fangApp && fangApp.rendered) {
+        fangApp.zoomToFit(true);
       }
     }
 

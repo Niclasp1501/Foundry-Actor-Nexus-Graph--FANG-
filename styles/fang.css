@@ -577,6 +577,23 @@ body #fang-app.fang-app-window.fang-fullscreen-player .fang-app-container {
     overflow: hidden !important;
 }
 
+/* Hyper-specific override for Monitor Fullscreen */
+html body.fang-monitor div#fang-app.fang-app-window.fang-fullscreen-player {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    inset: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    z-index: 200000 !important;
+    display: flex !important;
+    flex-direction: column;
+}
+
 body.fang-monitor #ui-bottom,
 body.fang-monitor #hotbar,
 body.fang-monitor #players,
@@ -584,6 +601,19 @@ body.fang-monitor #ui-top,
 body.fang-monitor #ui-left,
 body.fang-monitor #ui-right {
     display: none !important;
+}
+
+body.fang-monitor #fang-app.fang-app-window {
+    top: 0 !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    height: 100vh !important;
+    width: 100vw !important;
+    margin: 0 !important;
+    position: fixed !important;
+    z-index: 200000 !important;
+    display: flex !important;
 }
 
 /* Custom D&D Dialog Styling */
@@ -603,6 +633,9 @@ body.fang-monitor #ui-right {
     color: var(--fang-text-color);
     padding: 15px;
     font-size: 0.95rem;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    overflow: hidden;
 }
 
 .fang-dialog input[type="text"] {
@@ -738,6 +771,10 @@ body.fang-monitor #ui-right {
     opacity: 0;
     /* Optional: A subtle glow */
     box-shadow: 0 0 15px rgba(212, 175, 55, 0.1);
+    /* Prevent text overflow */
+    word-break: break-word;
+    overflow-wrap: break-word;
+    overflow: hidden;
 }
 
 #fang-tooltip:not(.hidden) {
@@ -788,6 +825,7 @@ body.fang-monitor #ui-right {
     gap: 25px;
     animation: fangCinemaEnter 0.6s cubic-bezier(0.16, 1, 0.3, 1);
     overflow-y: auto;
+    overflow-x: hidden;
 }
 
 @keyframes fangCinemaEnter {
@@ -823,8 +861,10 @@ body.fang-monitor #ui-right {
 
 .narrative-content {
     flex: 1;
+    min-width: 0;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
 }
 
 .narrative-content h2 {
@@ -835,6 +875,8 @@ body.fang-monitor #ui-right {
     padding-bottom: 5px;
     font-weight: 800;
     text-transform: uppercase;
+    word-break: break-word;
+    overflow-wrap: break-word;
 }
 
 #narrative-subtitle {
@@ -843,6 +885,8 @@ body.fang-monitor #ui-right {
     font-style: italic;
     margin-bottom: 10px;
     font-weight: 600;
+    word-break: break-word;
+    overflow-wrap: break-word;
 }
 
 #narrative-text {
@@ -852,6 +896,8 @@ body.fang-monitor #ui-right {
     color: #222;
     font-style: italic;
     white-space: pre-wrap;
+    word-break: break-word;
+    overflow-wrap: break-word;
 }
 
 .narrative-close {

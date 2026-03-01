@@ -73,6 +73,17 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 this.element.style.setProperty("display", "flex", "important");
                 this.element.style.setProperty("visibility", "visible", "important");
                 this.element.style.setProperty("opacity", "1", "important");
+                this.element.style.setProperty("top", "0", "important");
+                this.element.style.setProperty("bottom", "0", "important");
+                this.element.style.setProperty("left", "0", "important");
+                this.element.style.setProperty("right", "0", "important");
+                this.element.style.setProperty("height", "100vh", "important");
+                this.element.style.setProperty("width", "100vw", "important");
+                this.element.style.setProperty("position", "fixed", "important");
+                this.element.style.setProperty("z-index", "200000", "important");
+
+                // Auto-zoom to fit after a short delay to ensure canvas resized
+                setTimeout(() => this.zoomToFit(false), 200);
             } else {
                 document.body.classList.remove("fang-monitor");
             }
@@ -205,6 +216,15 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         this._releaseMyLock();
         document.body.classList.remove("fang-monitor");
         if (this._resizeObserver) this._resizeObserver.disconnect();
+        super._onClose(options);
+    }
+
+    setPosition(position = {}) {
+        if (game.user.name.toLowerCase().includes("monitor")) {
+            // Force absolute fullscreen for Monitor to avoid Foundry UI offsets
+            return this;
+        }
+        return super.setPosition(position);
     }
 
     async #loadD3() {
@@ -2213,13 +2233,16 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
     // Re-centers the graph and adjusts zoom so all nodes are visible.
     // @param {boolean} transition - Whether to animate the transition.
     zoomToFit(transition = true) {
-        if (!this._canEditGraph(true, true)) return;
+        const isMonitor = game.user.name.toLowerCase().includes("monitor");
+        // Monitors can always re-center their own view; GM/Editor check only for others
+        if (!isMonitor && !this._canEditGraph(true, true)) return;
         if (!this.canvas || !this.zoom || !this.graphData.nodes.length) return;
 
         const padding = 60;
-        const width = this.width;
-        const height = this.height;
-        const isMonitor = game.user.name.toLowerCase().includes("monitor");
+        const width = isMonitor ? window.innerWidth : this.width;
+        const height = isMonitor ? window.innerHeight : this.height;
+        const sidebar = this.element ? this.element.querySelector(".sidebar") : null;
+        const actualWidth = (sidebar && sidebar.style.display !== "none") ? width - 300 : width;
 
         let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
         this.graphData.nodes.forEach(d => {
