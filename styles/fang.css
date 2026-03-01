@@ -596,8 +596,8 @@ body #fang-app.fang-app-window.fang-fullscreen-player .window-content {
     width: 100%;
     height: 100%;
     z-index: 2000;
-    background: rgba(0, 0, 0, 0.4);
-    backdrop-filter: blur(8px);
+    background: rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(2px);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -644,7 +644,6 @@ body #fang-app.fang-app-window.fang-fullscreen-player .window-content {
     flex: 0 0 160px;
     height: 160px;
     border-radius: 50%;
-    border: 4px solid var(--fang-primary-red);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     overflow: hidden;
     background: white;
@@ -674,6 +673,14 @@ body #fang-app.fang-app-window.fang-fullscreen-player .window-content {
     padding-bottom: 5px;
     font-weight: 800;
     text-transform: uppercase;
+}
+
+#narrative-subtitle {
+    font-size: 1.1rem;
+    color: var(--fang-accent-gold);
+    font-style: italic;
+    margin-bottom: 10px;
+    font-weight: 600;
 }
 
 #narrative-text {

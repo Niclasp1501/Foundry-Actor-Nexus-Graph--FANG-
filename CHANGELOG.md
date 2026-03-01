@@ -3,12 +3,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.1.9] - 2026-02-27
+## [1.1.9] - 2026-03-01
 ### Added
-- **Narrative Spotlight**: Cinematic GM feature to focus the camera on a node and display its lore in a stylized overlay.
+- **Enhanced Narrative Spotlight**:
+  - Cinematic sequenced activation (zoom first, then card).
+  - High-resolution actor portraits used instead of tokens.
+  - Subtitle displaying both Role and Faction information.
+  - Centered overlay design with optimized camera centering to keep the character visible.
+  - Improved aesthetics: Golden divider, red-themed title text.
+  - Manual close only (auto-hide removed for better storytelling pacing).
 - **Spectator Camera Sync**: Real-time GM camera broadcasting to all connected players and the monitor.
 - **UI & Controls**: New "Spectator Mode" toggle in the View tab and "Spotlight" context menu action.
-- **Multi-language**: German and English localization for all new storyteller features.
+- **Localization**: Full German and English support for all Storyteller features.
 
 ## [1.1.8] - 2026-03-01
 ### Added

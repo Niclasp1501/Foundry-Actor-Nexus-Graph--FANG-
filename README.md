@@ -15,12 +15,13 @@ An interactive, self-arranging Actor Graph module for visualizing Character & NP
   <img src="assets/fang_ui_3.png" width="32%" title="Smart Actor Dropdowns" />
 </p>
 
+- **Narrative Spotlight:** Cinematic GM feature to highlight characters with a sequenced zoom effect, high-resolution portraits, and a parchment-style overlay displaying lore, roles, and factions.
+- **Spectator Camera Sync (Broadcast):** Real-time GM camera broadcasting! Players and monitors follow the GM's pan and zoom movements live on their screens.
 - **Auto-Zoom to Fit:** Automatically calculates the perfect zoom level every time the graph is opened, ensuring no character is left out of view.
-- **Cinematic Monitor Focus (Boss Pivot):** Dedicated Monitor accounts (player users with "monitor" in their name) keep the focus strictly on "Center" nodes. The camera pivots around the story's anchor points for a perfect big-screen experience.
+- **Cinematic Monitor Focus (Boss Pivot):** Dedicated Monitor accounts keep the focus strictly on "Center" nodes. The camera pivots around the story's anchor points for a perfect big-screen experience.
+- **Context Menu & Character Portraits:** Right-click any token to reveal a sleek Radial Context menu! Narrative features now support high-resolution actor portraits instead of just token images.
 - **Precise Coordinate Dragging:** Fully corrected coordinate tracking ensures tokens stay perfectly under your mouse during drag-and-drop, even when zoomed or panned.
-- **Context Menu & Token Lore:** Right-click or long-press any token to reveal a sleek Radial Context menu! Assign roles or enter detailed multi-line notes stored directly on individual tokens.
-- **Spoiler Protection:** Strict permission checking ensures non-GM players cannot see or link unrevealed secret NPCs.
-- **Roles & Organizations:** Assign roles or faction affiliations to individual tokens (via UI and formatting), adding secondary layers of depth to the map.
+- **Roles & Organizations:** Assign roles or faction affiliations to individual tokens, adding secondary layers of depth to the map.
 - **Gravity Center (Boss Nodes):** Magnetically anchor important actors (e.g., villains) to the center of the graph with a customizable glowing aura.
 - **Visual Grouping:** Group actors (e.g., by location) with visual bounding boxes or cluster zones.
 - **Link Label Validation:** Ensures all connections have mandatory labels to prevent confusing "invisible" links.
@@ -70,12 +71,12 @@ An interactive, self-arranging Actor Graph module for visualizing Character & NP
   <img src="assets/fang_ui_3.png" width="32%" title="Smarte Akteur Dropdowns" />
 </p>
 
+- **Narratives Spotlight:** Kinematische Spielleiter-Funktion, um Charaktere mit einem sequenzierten Zoom-Effekt, hochauflösenden Porträts und einem Pergament-Overlay für Lore und Fraktionen hervorzuheben.
+- **Zuschauer-Modus (Kamera-Sync):** Echtzeit-Übertragung der SL-Kamera! Spieler und Monitore folgen den Bewegungen (Zoom/Pan) des Spielleiters live auf ihren Bildschirmen.
 - **Auto-Zoom & Passgenauigkeit:** Berechnet bei jedem Öffnen automatisch den perfekten Zoomfaktor, sodass alle Akteure sofort sichtbar sind.
-- **Cinematische Monitor-Zentrierung (Boss-Pivot):** Monitor-Accounts (Spieler mit "monitor" im Namen) fixieren den Bildausschnitt starr auf den als "Zentrum" markierten Boss-Nodes. Der Fokus bleibt immer auf den Hauptakteuren deiner Geschichte.
-- **Präzises Drag & Drop:** Korrigierte Koordinaten-Berechnung sorgt dafür, dass Tokens beim Ziehen exakt unter der Maus bleiben, auch wenn du gezoomt oder den Ausschnitt verschoben hast.
-- **Kollaborative Spieler-Bearbeitung:** GMs können Spielern erlauben, den Graphen aktiv mitzubauen – Tokens ablegen, Verbindungen ziehen und löschen.
-- **Kontextmenü & Token-Lore:** Ein Rechtsklick (oder langes Drücken) öffnet ein radiales Kontextmenü! Weise Rollen zu oder speichere Notizen direkt im Token, die beim Drüberfahren als Tooltip erscheinen.
-- **Spoiler-Schutz:** Verhindert, dass Spieler geheime NPCs in ihren Auswahllisten sehen können.
+- **Cinematische Monitor-Zentrierung (Boss-Pivot):** Monitor-Accounts fixieren den Bildausschnitt starr auf den als "Zentrum" markierten Boss-Nodes für ein perfektes Public-Display-Erlebnis.
+- **Kontextmenü & Charakter-Porträts:** Ein Rechtsklick öffnet ein radiales Kontextmenü! Das Spotlight unterstützt nun detaillierte Akteur-Bilder anstelle von simplen Token-Grafiken.
+- **Präzises Drag & Drop:** Korrigierte Koordinaten-Berechnung sorgt dafür, dass Tokens beim Ziehen exakt unter der Maus bleiben, auch wenn du gezoomt hast.
 - **Rollen & Fraktionen:** Weise Rollen oder Fraktionen zu, um dem Netzwerk eine völlig neue Organisationstiefe zu verleihen.
 - **Zentrums-Gravitation (Boss-Knoten):** Verankere wichtige Akteure magnetisch in der Mitte des Graphen, inklusive leuchtender Aura.
 - **Visuelle Gruppierung:** Fassse Akteure (z.B. nach Standort) optisch in Gruppen oder Zonen zusammen.

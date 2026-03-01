@@ -2404,19 +2404,25 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         ui.notifications.info(game.i18n.localize("FANG.Messages.MonitorViewClosed"));
     }
 
-    // --- Storyteller Features: Spotlight & Camera Sync ---
-
     _onSpotlight(node) {
         if (!game.user.isGM) return;
 
         // Broadcast spotlight event
+        const actor = game.actors.get(node.id);
+        const imgSrc = actor?.img || node.img || "icons/svg/mystery-man.svg";
+        const role = node.role || "";
+        const factionObj = this.graphData.factions.find(f => f.id === node.factionId);
+        const faction = factionObj ? factionObj.name : "";
+        const subtitle = [role, faction].filter(s => s).join(" • ");
+
         game.socket.emit("module.fang", {
             action: "spotlightStart",
             payload: {
                 nodeId: node.id,
                 name: node.name,
+                subtitle: subtitle,
                 lore: node.lore || "",
-                portrait: node.img || ""
+                portrait: imgSrc
             }
         });
 
@@ -2424,8 +2430,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         this.startSpotlight({
             nodeId: node.id,
             name: node.name,
+            subtitle: subtitle,
             lore: node.lore || "",
-            portrait: node.img || ""
+            portrait: imgSrc
         });
     }
 
@@ -2447,37 +2454,37 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 .call(this.zoom.transform, d3.zoomIdentity.translate(tx, ty).scale(targetScale));
         }
 
-        // 3. Populate and show narrative overlay
-        const overlay = this.element.querySelector("#fang-narrative-overlay");
-        const title = this.element.querySelector("#narrative-title");
-        const textArea = this.element.querySelector("#narrative-text");
-        const portrait = this.element.querySelector("#narrative-portrait");
-        const portraitContainer = this.element.querySelector(".narrative-portrait-container");
+        // 3. Populate and show narrative overlay (Delayed for 1s to allow zoom to settle)
+        this._spotlightOverlayTimeout = setTimeout(() => {
+            const overlay = this.element.querySelector("#fang-narrative-overlay");
+            const title = this.element.querySelector("#narrative-title");
+            const subtitle = this.element.querySelector("#narrative-subtitle");
+            const textArea = this.element.querySelector("#narrative-text");
+            const portrait = this.element.querySelector("#narrative-portrait");
+            const portraitContainer = this.element.querySelector(".narrative-portrait-container");
 
-        if (overlay && title && textArea) {
-            title.textContent = payload.name;
-            textArea.textContent = payload.lore || "...";
+            if (overlay && title && textArea) {
+                title.textContent = payload.name;
+                if (subtitle) subtitle.textContent = payload.subtitle || "";
+                textArea.textContent = payload.lore || "...";
 
-            if (payload.portrait && portrait) {
-                portrait.src = payload.portrait;
-                portraitContainer.classList.remove("hidden");
-            } else {
-                portraitContainer.classList.add("hidden");
+                if (payload.portrait && portrait) {
+                    portrait.src = payload.portrait;
+                    portraitContainer.classList.remove("hidden");
+                } else {
+                    portraitContainer.classList.add("hidden");
+                }
+
+                overlay.classList.remove("hidden");
             }
-
-            overlay.classList.remove("hidden");
-        }
-
-        // 4. Auto-reset after 15 seconds (slightly longer for reading)
-        this._spotlightTimeout = setTimeout(() => {
-            if (this._isSpotlightActive) this.stopSpotlight();
-        }, 15000);
+        }, 1000);
 
         ui.notifications.info(game.i18n.localize("FANG.Messages.SpotlightStarted").replace("{actor}", payload.name));
     }
 
     stopSpotlight() {
         if (this._spotlightTimeout) clearTimeout(this._spotlightTimeout);
+        if (this._spotlightOverlayTimeout) clearTimeout(this._spotlightOverlayTimeout);
         this._isSpotlightActive = false;
 
         // Hide overlay
@@ -2511,6 +2518,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
     _onClose(options) {
         super._onClose(options);
         if (this._spotlightTimeout) clearTimeout(this._spotlightTimeout);
+        if (this._spotlightOverlayTimeout) clearTimeout(this._spotlightOverlayTimeout);
         this._initialZoomApplied = false;
         this.transform = null;
     }
