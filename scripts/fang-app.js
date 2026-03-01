@@ -1470,12 +1470,12 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
         if (this.simulation) this.simulation.stop();
         this.simulation = d3.forceSimulation(nodes)
-            .force("charge", d3.forceManyBody().strength(-800))
-            .force("link", d3.forceLink(links).id(d => d.id).distance(game.settings.get("fang", "tokenSize") * 4 + 100))
+            .force("charge", d3.forceManyBody().strength(-2000))
+            .force("link", d3.forceLink(links).id(d => d.id).distance(game.settings.get("fang", "tokenSize") * 4 + 140))
             .force("center", d3.forceCenter(this.width / 2, this.height / 2))
-            .force("x", d3.forceX(this.width / 2).strength(node => node.isCenter ? 0.4 : 0.025)) // Boss Node Gravity Pull
-            .force("y", d3.forceY(this.height / 2).strength(node => node.isCenter ? 0.4 : 0.025)) // Boss Node Gravity Pull
-            .force("collide", d3.forceCollide().radius(game.settings.get("fang", "tokenSize") + 100)) // Linear breathing room
+            .force("x", d3.forceX(this.width / 2).strength(node => node.isCenter ? 0.4 : 0.025))
+            .force("y", d3.forceY(this.height / 2).strength(node => node.isCenter ? 0.4 : 0.025))
+            .force("collide", d3.forceCollide().radius(game.settings.get("fang", "tokenSize") + 120))
             .force("link-avoidance", this._createLinkRepulsionForce())
             .on("tick", this.ticked.bind(this));
 
@@ -1505,8 +1505,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         let nodes;
         const force = (alpha) => {
             const links = this.graphData.links;
-            const repulsionRadius = 50; // The distance nodes must keep from lines
-            const strength = 1.0 * alpha; // Push strength
+            const repulsionRadius = 80; // Increased: The-distance nodes must keep from lines
+            const strength = 1.2 * alpha; // Slightly stronger push
 
             for (let i = 0; i < nodes.length; i++) {
                 const node = nodes[i];
@@ -1547,7 +1547,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                         const ddx = cX2 - cX1;
                         const ddy = cY2 - cY1;
                         const ddist = Math.sqrt(ddx * ddx + ddy * ddy) || 1;
-                        const spreadDistance = 30 + (ddist * 0.1);
+                        const spreadDistance = 12 + (ddist * 0.05) + (totalParams * 4);
                         const finalOffset = offsetMultiplier * spreadDistance;
                         const nx = -ddy / ddist;
                         const ny = ddx / ddist;
@@ -1713,7 +1713,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         // ----------------------------------------------------
 
         // Draw Links
-        const nodeRadius = game.settings.get("fang", "tokenSize") || 40;
+        const nodeRadius = game.settings.get("fang", "tokenSize") || 33;
         this.context.lineWidth = 2;
         this.context.strokeStyle = "#888";
         const linkFontSize = Math.max(12, Math.floor(nodeRadius / 2.5));
@@ -1735,12 +1735,13 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             link.pairKey = pairKey;
         });
 
+        const labelsToDraw = [];
+
         this.graphData.links.forEach((link, i) => {
             const pairInfo = this._linkCounts[link.pairKey];
             const linkIndex = pairInfo.links.indexOf(i);
             const totalParams = pairInfo.total;
 
-            // Use virtual positions
             const sPos = renderPos[link.source.id];
             const tPos = renderPos[link.target.id];
 
@@ -1755,9 +1756,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             this.context.lineWidth = 2;
             this.context.strokeStyle = "#888";
 
-            const arrowSize = 10;   // Size of the arrowhead
+            const arrowSize = 10;
 
-            // Helper function to draw arrowhead
             const drawArrowhead = (context, x, y, angle) => {
                 context.save();
                 context.translate(x, y);
@@ -1773,33 +1773,24 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             };
 
             const getNodeBoundOffset = (node, rayAngle) => {
-                let R = nodeRadius + 5;
+                let R = nodeRadius + 2;
                 this.context.font = "bold 15px 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
                 const tWidth = Math.max(this.context.measureText(node.name).width, 40);
-                const halfW = (tWidth / 2) + 18; // Increased padding
-
-                // Dynamic Label Y-bounds based on node radius
+                const halfW = (tWidth / 2) + 12;
                 const topY = nodeRadius - 10;
                 const bottomY = nodeRadius + (node.role ? 42 : 28);
 
-                // Ray vector starting from the center of the node outwards
                 const vx = Math.cos(rayAngle);
                 const vy = Math.sin(rayAngle);
 
-                // Check intersection with bottom edge
                 if (vy > 0) {
                     const t_bottom = bottomY / vy;
-                    if (Math.abs(t_bottom * vx) <= halfW) {
-                        return Math.max(R, t_bottom);
-                    }
+                    if (Math.abs(t_bottom * vx) <= halfW) return Math.max(R, t_bottom);
                 }
-                // Check intersection with side edges
                 if (vx !== 0) {
                     const t_side = halfW / Math.abs(vx);
                     const y_hit = t_side * vy;
-                    if (y_hit >= topY && y_hit <= bottomY) {
-                        return Math.max(R, t_side);
-                    }
+                    if (y_hit >= topY && y_hit <= bottomY) return Math.max(R, t_side);
                 }
                 return R;
             };
@@ -1808,45 +1799,28 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 ctrlX = midX;
                 ctrlY = midY;
 
-                let targetX = tPos.x;
-                let targetY = tPos.y;
                 let angle = Math.atan2(dy, dx);
-
                 const offsetTarget = getNodeBoundOffset(link.target, angle + Math.PI);
                 const offsetSource = getNodeBoundOffset(link.source, angle);
 
-                let boundTargetX = tPos.x - Math.cos(angle) * offsetTarget;
-                let boundTargetY = tPos.y - Math.sin(angle) * offsetTarget;
+                const sourceX = link.directional ? sPos.x + Math.cos(angle) * offsetSource : sPos.x;
+                const sourceY = link.directional ? sPos.y + Math.sin(angle) * offsetSource : sPos.y;
+                const targetX = link.directional ? tPos.x - Math.cos(angle) * offsetTarget : tPos.x;
+                const targetY = link.directional ? tPos.y - Math.sin(angle) * offsetTarget : tPos.y;
 
-                if (link.directional) {
-                    targetX = boundTargetX;
-                    targetY = boundTargetY;
-                }
-
-                // Place label perfectly in the middle of the VISIBLE line gap between the two node boundaries
-                const boundSourceX = sPos.x + Math.cos(angle) * offsetSource;
-                const boundSourceY = sPos.y + Math.sin(angle) * offsetSource;
-
-                labelX = boundSourceX + ((link.directional ? targetX : boundTargetX) - boundSourceX) * 0.5;
-                labelY = boundSourceY + ((link.directional ? targetY : boundTargetY) - boundSourceY) * 0.5;
+                labelX = sourceX + (targetX - sourceX) * 0.5;
+                labelY = sourceY + (targetY - sourceY) * 0.5;
 
                 this.context.beginPath();
-                this.context.moveTo(sPos.x, sPos.y);
+                this.context.moveTo(sourceX, sourceY);
 
-                // Draw the line segment itself slightly short so the flat butt doesn't poke out of the arrowhead
-                let drawTargetX = targetX;
-                let drawTargetY = targetY;
-                if (link.directional) {
-                    drawTargetX -= Math.cos(angle) * (arrowSize - 3);
-                    drawTargetY -= Math.sin(angle) * (arrowSize - 3);
-                }
+                let dTX = link.directional ? targetX - Math.cos(angle) * (arrowSize - 3) : targetX;
+                let dTY = link.directional ? targetY - Math.sin(angle) * (arrowSize - 3) : targetY;
 
-                this.context.lineTo(drawTargetX, drawTargetY);
+                this.context.lineTo(dTX, dTY);
                 this.context.stroke();
 
-                if (link.directional) {
-                    drawArrowhead(this.context, targetX, targetY, angle);
-                }
+                if (link.directional) drawArrowhead(this.context, targetX, targetY, angle);
             } else {
                 let offsetMultiplier = 0;
                 if (totalParams % 2 === 0) {
@@ -1857,98 +1831,99 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     }
                 }
 
-                const spreadDistance = 30 + (dist * 0.1);
+                const spreadDistance = 12 + (dist * 0.05) + (totalParams * 4); // Aesthetic Tighter curves
                 const finalOffset = offsetMultiplier * spreadDistance;
 
-                const nx = -dy / dist;
-                const ny = dx / dist;
-
-                // Use canonical direction for consistent normal calculation
+                const nx = -dy / dist, ny = dx / dist;
                 const isCanonical = link.source.id < link.target.id;
-                const finalNx = isCanonical ? nx : -nx;
-                const finalNy = isCanonical ? ny : -ny;
+                const fNx = isCanonical ? nx : -nx, fNy = isCanonical ? ny : -ny;
 
-                ctrlX = midX + finalNx * finalOffset * 2;
-                ctrlY = midY + finalNy * finalOffset * 2;
+                ctrlX = midX + fNx * finalOffset * 2;
+                ctrlY = midY + fNy * finalOffset * 2;
 
-                let targetX = tPos.x;
-                let targetY = tPos.y;
-                let angle = Math.atan2(tPos.y - ctrlY, tPos.x - ctrlX); // Ray entering target
-                let angleOut = Math.atan2(ctrlY - sPos.y, ctrlX - sPos.x); // Ray exiting source
+                let targetAngle = Math.atan2(tPos.y - ctrlY, tPos.x - ctrlX);
+                let sourceAngle = Math.atan2(ctrlY - sPos.y, ctrlX - sPos.x);
 
-                const offsetTarget = getNodeBoundOffset(link.target, angle + Math.PI);
-                const offsetSource = getNodeBoundOffset(link.source, angleOut);
+                const offsetTarget = getNodeBoundOffset(link.target, targetAngle + Math.PI);
+                const offsetSource = getNodeBoundOffset(link.source, sourceAngle);
 
-                if (link.directional) {
-                    targetX = tPos.x - Math.cos(angle) * offsetTarget;
-                    targetY = tPos.y - Math.sin(angle) * offsetTarget;
-                }
+                const sourceX = link.directional ? sPos.x + Math.cos(sourceAngle) * offsetSource : sPos.x;
+                const sourceY = link.directional ? sPos.y + Math.sin(sourceAngle) * offsetSource : sPos.y;
+                const targetX = link.directional ? tPos.x - Math.cos(targetAngle) * offsetTarget : tPos.x;
+                const targetY = link.directional ? tPos.y - Math.sin(targetAngle) * offsetTarget : tPos.y;
 
-                // Bezier curve approximation to slide the label along the drawn path
                 const t1 = offsetSource / Math.max(dist, 1);
                 const t2 = 1.0 - (offsetTarget / Math.max(dist, 1));
 
-                // Keep label centered between node boundaries
-                const tMid = Math.min(Math.max((t1 + t2) / 2.0, 0.15), 0.85);
+                const minStep = 45 / Math.max(dist, 1);
+                const staggerStep = Math.min(0.2, Math.max(0.12, minStep));
+                const stagger = (linkIndex - (totalParams - 1) / 2) * staggerStep;
+                const tMid = Math.min(Math.max((t1 + t2) / 2 + stagger, 0.3), 0.7);
 
                 const u = 1.0 - tMid;
-
                 labelX = (u * u) * sPos.x + 2 * u * tMid * ctrlX + (tMid * tMid) * tPos.x;
                 labelY = (u * u) * sPos.y + 2 * u * tMid * ctrlY + (tMid * tMid) * tPos.y;
 
-                // Apply a small perpendicular offset to stagger labels if multiple links exist
-                if (totalParams > 1) {
-                    // Calculate tangent vector at tMid for the quadratic Bezier: B'(t) = 2(1-t)(P1-P0) + 2t(P2-P1)
-                    const tx = 2 * (1 - tMid) * (ctrlX - sPos.x) + 2 * tMid * (tPos.x - ctrlX);
-                    const ty = 2 * (1 - tMid) * (ctrlY - sPos.y) + 2 * tMid * (tPos.y - ctrlY);
-                    const tLen = Math.sqrt(tx * tx + ty * ty) || 1;
-
-                    // Normal vector is perpendicular to tangent
-                    const nx_local = -ty / tLen;
-                    const ny_local = tx / tLen;
-
-                    const labelStagger = (linkIndex - (totalParams - 1) / 2) * 28; // Slightly increased spacing
-                    labelX += nx_local * labelStagger;
-                    labelY += ny_local * labelStagger;
-                }
+                // Removed forced nudge to keep labels perfectly centered on the line by default
 
                 this.context.beginPath();
-                this.context.moveTo(sPos.x, sPos.y);
+                this.context.moveTo(sourceX, sourceY);
 
-                // Draw the line segment itself slightly short so the flat butt doesn't poke out of the arrowhead
-                let drawTargetX = targetX;
-                let drawTargetY = targetY;
-                if (link.directional) {
-                    drawTargetX -= Math.cos(angle) * (arrowSize - 3);
-                    drawTargetY -= Math.sin(angle) * (arrowSize - 3);
-                }
+                let dTX = link.directional ? targetX - Math.cos(targetAngle) * (arrowSize - 3) : targetX;
+                let dTY = link.directional ? targetY - Math.sin(targetAngle) * (arrowSize - 3) : targetY;
 
-                this.context.quadraticCurveTo(ctrlX, ctrlY, drawTargetX, drawTargetY);
+                this.context.quadraticCurveTo(ctrlX, ctrlY, dTX, dTY);
                 this.context.stroke();
 
-                if (link.directional) {
-                    drawArrowhead(this.context, targetX, targetY, angle);
-                }
+                if (link.directional) drawArrowhead(this.context, targetX, targetY, targetAngle);
             }
 
             if (link.label) {
                 const linkFontSize = Math.max(12, Math.floor(nodeRadius / 2.5));
                 this.context.font = `${linkFontSize}px 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif`;
-                const metrics = this.context.measureText(link.label);
-                const textWidth = metrics.width;
-                const textHeight = linkFontSize + 4;
-                this.context.fillStyle = "#ffffff";
-                this.context.beginPath();
-                this.context.roundRect(labelX - textWidth / 2 - 4, labelY - textHeight / 2, textWidth + 8, textHeight, 4);
-                this.context.fill();
-
-                this.context.lineWidth = 1;
-                this.context.strokeStyle = "#dcd6cc";
-                this.context.stroke();
-
-                this.context.fillStyle = "#1a1a1a";
-                this.context.fillText(link.label, labelX, labelY);
+                const met = this.context.measureText(link.label);
+                labelsToDraw.push({
+                    text: link.label, x: labelX, y: labelY,
+                    w: met.width + 10, h: linkFontSize + 6, fs: linkFontSize
+                });
             }
+        });
+
+        // Inter-pair Label Collision Repulsion (12 iterations for stability)
+        for (let iter = 0; iter < 12; iter++) {
+            for (let i = 0; i < labelsToDraw.length; i++) {
+                const a = labelsToDraw[i];
+                for (let j = i + 1; j < labelsToDraw.length; j++) {
+                    const b = labelsToDraw[j];
+                    const dx = a.x - b.x, dy = a.y - b.y;
+                    const hD = (a.w + b.w) / 2 + 2, vD = (a.h + b.h) / 2 + 2;
+
+                    if (Math.abs(dx) < hD && Math.abs(dy) < vD) {
+                        const overlapX = hD - Math.abs(dx), overlapY = vD - Math.abs(dy);
+                        if (overlapX < overlapY) {
+                            const push = overlapX * (dx > 0 ? 1 : -1) * 0.5;
+                            a.x += push; b.x -= push;
+                        } else {
+                            const push = overlapY * (dy > 0 ? 1 : -1) * 0.5;
+                            a.y += push; b.y -= push;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Draw Labels at resolved positions
+        labelsToDraw.forEach(l => {
+            this.context.font = `${l.fs}px 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif`;
+            this.context.fillStyle = "#ffffff";
+            this.context.beginPath();
+            this.context.roundRect(l.x - l.w / 2, l.y - l.h / 2, l.w, l.h, 4);
+            this.context.fill();
+            this.context.lineWidth = 1;
+            this.context.strokeStyle = "#dcd6cc";
+            this.context.stroke();
+            this.context.fillStyle = "#1a1a1a";
+            this.context.fillText(l.text, l.x, l.y);
         });
 
         // Draw Nodes
