@@ -139,6 +139,16 @@ Hooks.once("ready", () => {
       }, 500);
     }
 
+    if (data.action === "refreshGraph") {
+      if (fangApp && fangApp.rendered) {
+        setTimeout(async () => {
+          await fangApp.loadData();
+          fangApp.initSimulation();
+          fangApp._populateActors();
+        }, 100);
+      }
+    }
+
     if (data.action === "showGraphMonitor") {
       if (game.user.name.toLowerCase().includes("monitor")) {
         if (!fangApp) fangApp = new FangApplication();

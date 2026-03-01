@@ -344,7 +344,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
             // If GM is saving, optionally force all players to sync to this new baseline
             if (triggerSync && game.user.isGM) {
-                game.socket.emit("module.fang", { action: "showGraph" });
+                game.socket.emit("module.fang", { action: "refreshGraph" });
             }
         } else {
             // Player Collaborative Edit Relay
@@ -588,8 +588,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             this._populateActors();
             await this.saveData();
 
-            // Broadcast live update
-            game.socket.emit("module.fang", { action: "showGraph" });
+            // Broadcast silent live update
+            game.socket.emit("module.fang", { action: "refreshGraph" });
         }
     }
 
@@ -1887,12 +1887,30 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 // Bezier curve approximation to slide the label along the drawn path
                 const t1 = offsetSource / Math.max(dist, 1);
                 const t2 = 1.0 - (offsetTarget / Math.max(dist, 1));
-                const tMid = Math.min(Math.max((t1 + t2) / 2.0, 0.1), 0.9); // Clamp to avoid label sitting too far out
+
+                // Keep label centered between node boundaries
+                const tMid = Math.min(Math.max((t1 + t2) / 2.0, 0.15), 0.85);
+
                 const u = 1.0 - tMid;
 
-                // Place label perfectly in the middle of the available curve time
-                labelX = (u * u) * sPos.x + 2 * u * tMid * ctrlX + (tMid * tMid) * tPos.x; // Use original tPos for true curve tracing
+                labelX = (u * u) * sPos.x + 2 * u * tMid * ctrlX + (tMid * tMid) * tPos.x;
                 labelY = (u * u) * sPos.y + 2 * u * tMid * ctrlY + (tMid * tMid) * tPos.y;
+
+                // Apply a small perpendicular offset to stagger labels if multiple links exist
+                if (totalParams > 1) {
+                    // Calculate tangent vector at tMid for the quadratic Bezier: B'(t) = 2(1-t)(P1-P0) + 2t(P2-P1)
+                    const tx = 2 * (1 - tMid) * (ctrlX - sPos.x) + 2 * tMid * (tPos.x - ctrlX);
+                    const ty = 2 * (1 - tMid) * (ctrlY - sPos.y) + 2 * tMid * (tPos.y - ctrlY);
+                    const tLen = Math.sqrt(tx * tx + ty * ty) || 1;
+
+                    // Normal vector is perpendicular to tangent
+                    const nx_local = -ty / tLen;
+                    const ny_local = tx / tLen;
+
+                    const labelStagger = (linkIndex - (totalParams - 1) / 2) * 28; // Slightly increased spacing
+                    labelX += nx_local * labelStagger;
+                    labelY += ny_local * labelStagger;
+                }
 
                 this.context.beginPath();
                 this.context.moveTo(sPos.x, sPos.y);
