@@ -3,16 +3,26 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.2.0] - 2026-03-01
+## [1.2.0] - 2026-03-02
 ### Added
 - **Exclusive Edit-Lock**: Only one user can edit the graph at a time to prevent conflicts.
 - **Canvas Status Indicator**: A floating banner at the top of the canvas shows who is currently editing.
 - **GM Override**: GMs can force-release locks held by players.
 - **Socket Synchronization**: Real-time updates for lock status across all clients.
+- **Auto-Zoom for All Users**: When the GM shares the graph, all players and monitors now automatically zoom-to-fit so all tokens are visible.
+- **Center Graph Sync**: The GM's "Center Graph" button now works for all connected clients (players and monitors), not just locally.
+- **Live Permission Toggle**: Toggling "Allow Player Editing" now instantly shows/hides the sidebar and edit controls for players without requiring a close/reopen.
 
 ### Fixed
-- Improved Edit-Lock reliability for players (socket-based permission bypass).
-- Fixed UI state where players could interact with sidebar before acquiring lock.
+- **Monitor Fullscreen Centering**: The Monitor's `zoomToFit` was blocked by the edit-lock guard. Centering is now treated as a view-only operation accessible to all users.
+- **Monitor `setPosition` Override**: Overridden Foundry's internal window positioning for Monitor accounts to prevent UI offset fights.
+- **Context Menu Crash**: Fixed a `replaceChild` typo in `_showContextMenu` that could cause the right-click menu to break.
+- **Player Sidebar Refresh**: When the GM toggles player editing permissions, the lock UI now updates in real-time (previously required close/reopen).
+- **Label Overlap & Physics**: Reduced global repulsion force, tighter link curves, centered labels by default with collision-resolution pass.
+- **Undirected Link Alignment**: Undirected links now draw center-to-center; directed links clip at token boundary for clean arrow placement.
+
+### Known Issues
+- ⚠️ **Monitor Fullscreen Black Bar**: On some setups, a ~78px black bar may still appear at the bottom of the Monitor's fullscreen view. This is caused by Foundry VTT's internal `ApplicationV2` window positioning fighting with the fullscreen override. A workaround is being investigated.
 
 ## [1.1.9] - 2026-03-01
 ### Added

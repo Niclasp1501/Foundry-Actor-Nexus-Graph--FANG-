@@ -2234,8 +2234,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
     // @param {boolean} transition - Whether to animate the transition.
     zoomToFit(transition = true) {
         const isMonitor = game.user.name.toLowerCase().includes("monitor");
-        // Monitors can always re-center their own view; GM/Editor check only for others
-        if (!isMonitor && !this._canEditGraph(true, true)) return;
+        // Centering is a view-only operation — no edit lock required
         if (!this.canvas || !this.zoom || !this.graphData.nodes.length) return;
 
         const padding = 60;

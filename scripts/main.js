@@ -99,10 +99,15 @@ Hooks.once("init", () => {
     onChange: value => {
       // Sync sidebar visibility live on all clients without closing window
       if (fangApp && fangApp.rendered && !game.user.isGM) {
-        // Fix for ApplicationV2 where `element` is the HTMLElement itself, not jQuery
+        const isMonitor = game.user.name.toLowerCase().includes("monitor");
         const sidebar = fangApp.element.querySelector(".sidebar");
         if (sidebar) {
-          sidebar.style.display = value ? "flex" : "none";
+          sidebar.style.display = (value && !isMonitor) ? "flex" : "none";
+          // Hide GM-only controls for players
+          const gmControls = sidebar.querySelectorAll(".gm-only");
+          gmControls.forEach(el => el.style.display = "none");
+          // Refresh the lock UI so the edit button appears/disappears
+          fangApp._updateLockUI();
           fangApp.resizeCanvas();
         }
       }
@@ -134,8 +139,12 @@ Hooks.once("ready", () => {
       if (!fangApp) fangApp = new FangApplication();
       setTimeout(async () => {
         await fangApp.loadData();
-        if (fangApp.rendered) fangApp.initSimulation();
-        else fangApp.render({ force: true });
+        if (fangApp.rendered) {
+          fangApp.initSimulation();
+          fangApp.zoomToFit(false);
+        } else {
+          fangApp.render({ force: true });
+        }
       }, 500);
     }
 
