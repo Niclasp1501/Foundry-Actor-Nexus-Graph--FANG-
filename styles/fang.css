@@ -418,6 +418,8 @@ body #fang-app.fang-app-window.fang-fullscreen-player .window-header {
 body #fang-app.fang-app-window.fang-fullscreen-player .window-content {
     background: var(--fang-bg-color) !important;
     border-radius: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
     flex: 1;
     display: flex;
 }

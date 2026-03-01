@@ -52,7 +52,26 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
     _onRender(context, options) {
         super._onRender(context, options);
 
-        // Re-initialize D3 and Canvas context on every render
+        // 1. UI Setup (Pre-D3 Dimensions)
+        // Manage Sidebar visibility and Fullscreen classes first
+        if (!game.user.isGM) {
+            const sidebar = this.element.querySelector(".sidebar");
+            const allowPlayerEdit = game.settings.get("fang", "allowPlayerEditing");
+            const isGMOnline = game.users.some(u => u.isGM && u.active);
+            if (sidebar) {
+                sidebar.style.display = (allowPlayerEdit && isGMOnline) ? "flex" : "none";
+                const gmControls = sidebar.querySelectorAll(".gm-only");
+                gmControls.forEach(el => el.style.display = "none");
+            }
+            if (game.user.name.toLowerCase().includes("monitor")) {
+                this.element.classList.add("fang-fullscreen-player");
+                this.element.style.setProperty("display", "flex", "important");
+                this.element.style.setProperty("visibility", "visible", "important");
+                this.element.style.setProperty("opacity", "1", "important");
+            }
+        }
+
+        // 2. Re-initialize D3 and Canvas context
         this._initD3();
         this._populateActors();
 
@@ -62,7 +81,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         this._resizeObserver = new ResizeObserver(() => this.resizeCanvas());
         this._resizeObserver.observe(canvasContainer);
 
-        // Re-attach Event Listeners (Universal)
+        // 3. Re-attach Event Listeners (Universal)
         this.element.querySelector("#btnAddLink").addEventListener("click", this._onAddLink.bind(this));
         const btnDelete = this.element.querySelector("#btnDeleteElement");
         if (btnDelete) btnDelete.addEventListener("click", this._onDeleteElement.bind(this));
@@ -114,24 +133,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             });
         }
 
-        // Fullscreen and Sidebar hide for players
-        if (!game.user.isGM) {
-            const sidebar = this.element.querySelector(".sidebar");
-            const allowPlayerEdit = game.settings.get("fang", "allowPlayerEditing");
-            const isGMOnline = game.users.some(u => u.isGM && u.active);
-            if (sidebar) {
-                sidebar.style.display = (allowPlayerEdit && isGMOnline) ? "flex" : "none";
-                const gmControls = sidebar.querySelectorAll(".gm-only");
-                gmControls.forEach(el => el.style.display = "none");
-            }
-            if (game.user.name.toLowerCase().includes("monitor")) {
-                this.element.classList.add("fang-fullscreen-player");
-                this.element.style.setProperty("display", "flex", "important");
-                this.element.style.setProperty("visibility", "visible", "important");
-                this.element.style.setProperty("opacity", "1", "important");
-            }
-            setTimeout(() => this.resizeCanvas(), 50);
-        } else {
+        // 4. GM-specific or Player-specific Logic
+        if (game.user.isGM) {
             // GM-only Event Listeners
             const btnShare = this.element.querySelector("#btnShareGraph");
             if (btnShare) btnShare.addEventListener("click", this._onShareGraph.bind(this));
@@ -159,6 +162,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     ui.notifications.info(game.i18n.localize(e.target.checked ? "FANG.Messages.PlayersCanEdit" : "FANG.Messages.PlayersCannotEdit"));
                 });
             }
+        } else {
+            setTimeout(() => this.resizeCanvas(), 50);
         }
     }
 
@@ -1251,6 +1256,13 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             this.simulation.force("y", d3.forceY(this.height / 2).strength(node => node.isCenter ? 0.4 : 0.025));
             this.simulation.alpha(0.1).restart(); // Lower alpha bump on resize to prevent wild scattering
         }
+
+        // --- Monitor View Auto-Centering ---
+        // If this is the monitor (no sidebar), we want to "pin" the view to the center
+        if (game.user.name.toLowerCase().includes("monitor")) {
+            if (this._monitorResizeTimeout) clearTimeout(this._monitorResizeTimeout);
+            this._monitorResizeTimeout = setTimeout(() => this.zoomToFit(false), 100);
+        }
     }
 
     _initD3() {
@@ -1358,6 +1370,11 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         renderLoop();
 
         this.graphData.nodes = nodes;
+
+        // --- Monitor View Auto-Centering (on Sync) ---
+        if (game.user.name.toLowerCase().includes("monitor")) {
+            setTimeout(() => this.zoomToFit(false), 300);
+        }
         this.graphData.links = links;
     }
 
@@ -2039,6 +2056,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const padding = 60;
         const width = this.width;
         const height = this.height;
+        const isMonitor = game.user.name.toLowerCase().includes("monitor");
 
         let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
         this.graphData.nodes.forEach(d => {
@@ -2056,15 +2074,37 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         x1 += totalPadding;
         y1 += totalPadding;
 
-        const dx = x1 - x0;
-        const dy = y1 - y0;
-        const midX = (x0 + x1) / 2;
-        const midY = (y0 + y1) / 2;
+        // Default: Center on the geometric middle of the bounding box
+        let midX = (x0 + x1) / 2;
+        let midY = (y0 + y1) / 2;
 
-        let scale = 0.95 / Math.max(dx / width, dy / height);
+        // EXCLUSIVE: PIVOT ON BOSS NODES FOR MONITOR
+        const centerNodes = this.graphData.nodes.filter(n => n.isCenter);
+        if (isMonitor && centerNodes.length > 0) {
+            midX = centerNodes.reduce((acc, n) => acc + n.x, 0) / centerNodes.length;
+            midY = centerNodes.reduce((acc, n) => acc + n.y, 0) / centerNodes.length;
+        }
+
+        const dx = Math.max(x1 - x0, 100);
+        const dy = Math.max(y1 - y0, 100);
+
+        let scale;
+        if (isMonitor && centerNodes.length > 0) {
+            // Symmetrical scale for Monitor: 
+            // Calculate distance to furthest edge from the BOSS mid-point
+            const distRight = x1 - midX;
+            const distLeft = midX - x0;
+            const distBottom = y1 - midY;
+            const distTop = midY - y0;
+            const maxDX = Math.max(distRight, distLeft) * 2;
+            const maxDY = Math.max(distBottom, distTop) * 2;
+            scale = 0.9 / Math.max(maxDX / width, maxDY / height);
+        } else {
+            scale = 0.95 / Math.max(dx / width, dy / height);
+        }
 
         // Constrain extreme zoom
-        if (scale > 1.0) scale = 1.0;
+        if (!isFinite(scale) || scale > 1.0) scale = 1.0;
         if (scale < 0.1) scale = 0.1;
 
         const transform = d3.zoomIdentity

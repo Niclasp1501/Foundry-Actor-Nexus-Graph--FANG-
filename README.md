@@ -15,13 +15,8 @@ An interactive, self-arranging Actor Graph module for visualizing Character & NP
   <img src="assets/fang_ui_3.png" width="32%" title="Smart Actor Dropdowns" />
 </p>
 
-- **Self-Arranging Actor Graph:** View actors and their relationships in a dynamic system that automatically organizes itself for clarity.
-- **Context-Aware Sidebar UI:** The sidebar now dynamically adapts to your selection. Clicking a node or link on the canvas reveals specific "Details" panels for editing names, directions, or roles.
-- **Interactive Selection & Deselection:** 
-  - **Select on Click:** Clicking any node or link on the canvas automatically selects it in the sidebar.
-  - **Deselect on Canvas:** Clicking empty space on the canvas resets all selections and hides contextual editors.
-- **Dedicated "Advanced Functions" Tab:** Global tools (like Faction Management and Sharing controls) have been moved to a dedicated tab for a cleaner GM workspace.
-- **Player Collaborative Editing:** GMs can toggle a world setting allowing players to actively construct the graph—dropping tokens, creating links, and deleting elements safely via live socket sync.
+- **Auto-Zoom to Fit:** Automatically calculates the perfect zoom level every time the graph is opened, ensuring no character is left out of view.
+- **Cinematic Monitor Focus (Boss Pivot):** Dedicated Monitor accounts (player users with "monitor" in their name) keep the focus strictly on "Center" nodes. The camera pivots around the story's anchor points for a perfect big-screen experience.
 - **Precise Coordinate Dragging:** Fully corrected coordinate tracking ensures tokens stay perfectly under your mouse during drag-and-drop, even when zoomed or panned.
 - **Context Menu & Token Lore:** Right-click or long-press any token to reveal a sleek Radial Context menu! Assign roles or enter detailed multi-line notes stored directly on individual tokens.
 - **Spoiler Protection:** Strict permission checking ensures non-GM players cannot see or link unrevealed secret NPCs.
@@ -53,7 +48,7 @@ An interactive, self-arranging Actor Graph module for visualizing Character & NP
 - **Manual Access:** If a player accidentally closes the window, they can re-open it via the **"FANG Graph" Journal Entry** (a link inside the journal text opens the tool) or simply by pressing `Shift + G`.
 
 ### Future Roadmap
-- **Viewport Locking:** Ensure actors remain visible inside the GM's and Monitor's screens.
+- **Custom Link Styles:** Color-coded or dashed lines for different relationships (e.g., Enemies, Family, Master/Apprentice).
 - **More Languages:** Community translation support (e.g. Spanish, French).
 
 ### Potential Extensions (Ideas)
@@ -75,12 +70,8 @@ An interactive, self-arranging Actor Graph module for visualizing Character & NP
   <img src="assets/fang_ui_3.png" width="32%" title="Smarte Akteur Dropdowns" />
 </p>
 
-- **Selbstanordnender Akteur-Graph:** Betrachte Akteure und ihre Verbindungen in einem dynamischen System, das sich automatisch selbst aufbaut und strukturiert.
-- **Kontextsensitive Sidebar:** Die Sidebar passt sich deiner Auswahl an. Ein Klick auf einen Token oder eine Linie im Graphen öffnet direkt das passende "Details"-Panel zur Bearbeitung.
-- **Interaktive Auswahl & Abwahl:** 
-  - **Auswahl per Klick:** Ein Klick auf ein Element im Graphen wählt es automatisch in der Sidebar aus.
-  - **Abwahl per Canvas-Klick:** Ein Klick ins Leere setzt alle Auswahlen zurück und blendet die Editoren aus.
-- **Eigener Reiter "Weitere Funktionen":** Globale Werkzeuge (wie die Fraktionsverwaltung oder Präsentations-Knöpfe) haben nun einen eigenen Reiter für mehr Übersichtlichkeit.
+- **Auto-Zoom & Passgenauigkeit:** Berechnet bei jedem Öffnen automatisch den perfekten Zoomfaktor, sodass alle Akteure sofort sichtbar sind.
+- **Cinematische Monitor-Zentrierung (Boss-Pivot):** Monitor-Accounts (Spieler mit "monitor" im Namen) fixieren den Bildausschnitt starr auf den als "Zentrum" markierten Boss-Nodes. Der Fokus bleibt immer auf den Hauptakteuren deiner Geschichte.
 - **Präzises Drag & Drop:** Korrigierte Koordinaten-Berechnung sorgt dafür, dass Tokens beim Ziehen exakt unter der Maus bleiben, auch wenn du gezoomt oder den Ausschnitt verschoben hast.
 - **Kollaborative Spieler-Bearbeitung:** GMs können Spielern erlauben, den Graphen aktiv mitzubauen – Tokens ablegen, Verbindungen ziehen und löschen.
 - **Kontextmenü & Token-Lore:** Ein Rechtsklick (oder langes Drücken) öffnet ein radiales Kontextmenü! Weise Rollen zu oder speichere Notizen direkt im Token, die beim Drüberfahren als Tooltip erscheinen.
@@ -113,8 +104,7 @@ An interactive, self-arranging Actor Graph module for visualizing Character & NP
 - **Manuell Öffnen:** Falls du das Fenster versehentlich schließt, kannst du es über das **Journal "FANG Graph"** wieder öffnen (Klick auf den Link im Text) oder einfach `Shift + G` drücken.
 
 ### Zukünftige Pläne (Roadmap)
-- **Gruppierung nach Orten (Organisation):** Bestimmte Akteure (z.B. nach Standort) optisch in Gruppen zusammenfassen, um bei großen Graphen die Übersichtlichkeit zu wahren.
-- **Monitor-Sichtfeld:** Sicherstellen, dass die Akteure immer im sichtbaren Bereich des Monitors/GMs bleiben.
+- **Individuelle Verbindungslinien:** Farbkodierte, gestrichelte oder dicke Linien je nach Beziehungsart (Feinde, Liebespaar, Familie).
 - **Weitere Sprachen:** Bei Bedarf werden auf Wunsch gern weitere Übersetzungen integriert.
 
 ### Potenzielle Erweiterungen (Ideen)
