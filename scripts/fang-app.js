@@ -675,10 +675,15 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             this.initSimulation();
             this.simulation.alpha(0.6).restart(); // High heat to let it fly to center
             this._populateActors();
-            await this.saveData();
 
-            // Broadcast silent live update
-            game.socket.emit("module.fang", { action: "refreshGraph" });
+            // Save + sync once simulation has mostly settled (alpha < 0.05 = visually arrived)
+            this.simulation.on("tick.centerSync", async () => {
+                if (this.simulation.alpha() < 0.05) {
+                    this.simulation.on("tick.centerSync", null); // Remove one-time listener
+                    await this.saveData();
+                    game.socket.emit("module.fang", { action: "refreshGraph" });
+                }
+            });
         }
     }
 
@@ -1258,7 +1263,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
         // 2. Check Links (lower priority)
         let clickedLinkIndex = -1;
-        let minLDist = 12 / this.transform.k; // Threshold scaled by zoom
+        let minLDist = 15 / this.transform.k; // Threshold scaled by zoom
 
         this.graphData.links.forEach((link, idx) => {
             const s = link.source;
@@ -1273,7 +1278,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 // Linear hit detection
                 dist = this._pointToSegmentDistance({ x, y }, s, t);
             } else {
-                // Curved hit detection (Sampling)
+                // Curved hit detection (Sampling with segment distance)
                 const linkIndex = pairInfo.links.indexOf(idx);
                 const offsetMultiplier = (totalParams % 2 === 0)
                     ? (linkIndex % 2 === 0 ? 1 : -1) * (Math.floor(linkIndex / 2) + 0.5)
@@ -1282,7 +1287,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 const ddx = t.x - s.x;
                 const ddy = t.y - s.y;
                 const ddist = Math.sqrt(ddx * ddx + ddy * ddy) || 1;
-                const spreadDistance = 30 + (ddist * 0.1);
+                // Match the rendering spreadDistance formula exactly
+                const spreadDistance = 12 + (ddist * 0.05) + (totalParams * 4);
                 const finalOffset = offsetMultiplier * spreadDistance;
 
                 // Use canonical direction (A < B) for consistent normal vector
@@ -1298,15 +1304,23 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 const ctrlX = midX + nx * finalOffset * 2;
                 const ctrlY = midY + ny * finalOffset * 2;
 
-                // Sample 10 points along the quadratic curve
+                // Sample 25 points along the quadratic curve, using segment distance
+                const numSamples = 25;
                 let minDistToCurve = Infinity;
-                for (let step = 0; step <= 10; step++) {
-                    const tVal = step / 10;
+                let prevPx, prevPy;
+                for (let step = 0; step <= numSamples; step++) {
+                    const tVal = step / numSamples;
                     const u = 1 - tVal;
                     const px = (u * u) * s.x + 2 * u * tVal * ctrlX + (tVal * tVal) * t.x;
                     const py = (u * u) * s.y + 2 * u * tVal * ctrlY + (tVal * tVal) * t.y;
-                    const d = Math.sqrt((x - px) ** 2 + (y - py) ** 2);
-                    if (d < minDistToCurve) minDistToCurve = d;
+
+                    if (step > 0) {
+                        // Use point-to-segment distance between consecutive samples
+                        const segDist = this._pointToSegmentDistance({ x, y }, { x: prevPx, y: prevPy }, { x: px, y: py });
+                        if (segDist < minDistToCurve) minDistToCurve = segDist;
+                    }
+                    prevPx = px;
+                    prevPy = py;
                 }
                 dist = minDistToCurve;
             }
@@ -2412,7 +2426,72 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
             // Hide tooltip immediately when moving off a node or onto a new one
             tooltip.classList.add("hidden");
-            this.canvas.style.cursor = hoveredNode ? "pointer" : "grab";
+
+            // Determine cursor: pointer for nodes, pointer for hoverable links, grab otherwise
+            if (hoveredNode) {
+                this.canvas.style.cursor = "pointer";
+            } else {
+                // Check if hovering over a link
+                let overLink = false;
+                const linkThreshold = 15 / (this.transform ? this.transform.k : 1);
+                if (this._linkCounts) {
+                    for (let idx = 0; idx < this.graphData.links.length; idx++) {
+                        const link = this.graphData.links[idx];
+                        const s = link.source;
+                        const t = link.target;
+                        if (!s || !t || s.x === undefined || t.x === undefined) continue;
+
+                        const pairInfo = this._linkCounts[link.pairKey];
+                        const totalParams = pairInfo ? pairInfo.total : 1;
+                        let dist;
+
+                        if (totalParams === 1) {
+                            dist = this._pointToSegmentDistance({ x, y }, s, t);
+                        } else {
+                            const linkIndex = pairInfo.links.indexOf(idx);
+                            const offsetMultiplier = (totalParams % 2 === 0)
+                                ? (linkIndex % 2 === 0 ? 1 : -1) * (Math.floor(linkIndex / 2) + 0.5)
+                                : (linkIndex === 0 ? 0 : (linkIndex % 2 === 0 ? 1 : -1) * Math.floor((linkIndex + 1) / 2));
+                            const ddx = t.x - s.x;
+                            const ddy = t.y - s.y;
+                            const ddist = Math.sqrt(ddx * ddx + ddy * ddy) || 1;
+                            const spreadDistance = 12 + (ddist * 0.05) + (totalParams * 4);
+                            const finalOffset = offsetMultiplier * spreadDistance;
+                            const isCanonical = link.source.id < link.target.id;
+                            const cDx = isCanonical ? ddx : -ddx;
+                            const cDy = isCanonical ? ddy : -ddy;
+                            const nx = -cDy / ddist;
+                            const ny = cDx / ddist;
+                            const midX = (s.x + t.x) / 2;
+                            const midY = (s.y + t.y) / 2;
+                            const ctrlX = midX + nx * finalOffset * 2;
+                            const ctrlY = midY + ny * finalOffset * 2;
+
+                            let minDistToCurve = Infinity;
+                            let prevPx, prevPy;
+                            for (let step = 0; step <= 15; step++) {
+                                const tVal = step / 15;
+                                const u = 1 - tVal;
+                                const px = (u * u) * s.x + 2 * u * tVal * ctrlX + (tVal * tVal) * t.x;
+                                const py = (u * u) * s.y + 2 * u * tVal * ctrlY + (tVal * tVal) * t.y;
+                                if (step > 0) {
+                                    const segDist = this._pointToSegmentDistance({ x, y }, { x: prevPx, y: prevPy }, { x: px, y: py });
+                                    if (segDist < minDistToCurve) minDistToCurve = segDist;
+                                }
+                                prevPx = px;
+                                prevPy = py;
+                            }
+                            dist = minDistToCurve;
+                        }
+
+                        if (dist < linkThreshold) {
+                            overLink = true;
+                            break;
+                        }
+                    }
+                }
+                this.canvas.style.cursor = overLink ? "pointer" : "grab";
+            }
 
             // If we are now hovering over a node with lore, start the timer
             if (hoveredNode && hoveredNode.lore) {
@@ -2425,18 +2504,21 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     const nodeScreenY = this.transform.applyY(hoveredNode.y);
                     const nodeRadiusScaled = (game.settings.get("fang", "tokenSize") || 33) * this.transform.k;
                     const cWidth = this.canvas.parentElement.clientWidth;
-                    const estimatedTooltipWidth = 340;
+
+                    // Measure actual tooltip width by briefly rendering it off-screen
+                    tooltip.style.left = '-9999px';
+                    tooltip.style.top = '-9999px';
+                    tooltip.classList.remove("hidden");
+                    const actualTooltipWidth = tooltip.offsetWidth;
 
                     let tooltipX = nodeScreenX + nodeRadiusScaled + 15;
-                    if (tooltipX + estimatedTooltipWidth > cWidth) {
-                        tooltipX = nodeScreenX - nodeRadiusScaled - estimatedTooltipWidth - 15;
+                    if (tooltipX + actualTooltipWidth > cWidth) {
+                        tooltipX = nodeScreenX - nodeRadiusScaled - actualTooltipWidth - 15;
                     }
 
                     let tooltipY = nodeScreenY - 10;
                     tooltip.style.left = `${tooltipX}px`;
                     tooltip.style.top = `${tooltipY}px`;
-
-                    tooltip.classList.remove("hidden");
                 }, 450); // 450ms hover delay
             }
         } else if (hoveredNode && hoveredNode.lore && this._tooltipVisibleForNode === hoveredNode.id) {
@@ -2445,15 +2527,76 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             const nodeScreenY = this.transform.applyY(hoveredNode.y);
             const nodeRadiusScaled = (game.settings.get("fang", "tokenSize") || 33) * this.transform.k;
             const cWidth = this.canvas.parentElement.clientWidth;
-            const estimatedTooltipWidth = 340;
+            const actualTooltipWidth = tooltip.offsetWidth;
 
             let tooltipX = nodeScreenX + nodeRadiusScaled + 15;
-            if (tooltipX + estimatedTooltipWidth > cWidth) {
-                tooltipX = nodeScreenX - nodeRadiusScaled - estimatedTooltipWidth - 15;
+            if (tooltipX + actualTooltipWidth > cWidth) {
+                tooltipX = nodeScreenX - nodeRadiusScaled - actualTooltipWidth - 15;
             }
             let tooltipY = nodeScreenY - 10;
             tooltip.style.left = `${tooltipX}px`;
             tooltip.style.top = `${tooltipY}px`;
+        } else if (!hoveredNode) {
+            // No node hovered and no change in hover state - still update cursor for link proximity
+            let overLink = false;
+            const linkThreshold = 15 / (this.transform ? this.transform.k : 1);
+            if (this._linkCounts) {
+                for (let idx = 0; idx < this.graphData.links.length; idx++) {
+                    const link = this.graphData.links[idx];
+                    const s = link.source;
+                    const t = link.target;
+                    if (!s || !t || s.x === undefined || t.x === undefined) continue;
+
+                    const pairInfo = this._linkCounts[link.pairKey];
+                    const totalParams = pairInfo ? pairInfo.total : 1;
+                    let dist;
+
+                    if (totalParams === 1) {
+                        dist = this._pointToSegmentDistance({ x, y }, s, t);
+                    } else {
+                        const linkIndex = pairInfo.links.indexOf(idx);
+                        const offsetMultiplier = (totalParams % 2 === 0)
+                            ? (linkIndex % 2 === 0 ? 1 : -1) * (Math.floor(linkIndex / 2) + 0.5)
+                            : (linkIndex === 0 ? 0 : (linkIndex % 2 === 0 ? 1 : -1) * Math.floor((linkIndex + 1) / 2));
+                        const ddx = t.x - s.x;
+                        const ddy = t.y - s.y;
+                        const ddist = Math.sqrt(ddx * ddx + ddy * ddy) || 1;
+                        const spreadDistance = 12 + (ddist * 0.05) + (totalParams * 4);
+                        const finalOffset = offsetMultiplier * spreadDistance;
+                        const isCanonical = link.source.id < link.target.id;
+                        const cDx = isCanonical ? ddx : -ddx;
+                        const cDy = isCanonical ? ddy : -ddy;
+                        const nx = -cDy / ddist;
+                        const ny = cDx / ddist;
+                        const midX = (s.x + t.x) / 2;
+                        const midY = (s.y + t.y) / 2;
+                        const ctrlX = midX + nx * finalOffset * 2;
+                        const ctrlY = midY + ny * finalOffset * 2;
+
+                        let minDistToCurve = Infinity;
+                        let prevPx, prevPy;
+                        for (let step = 0; step <= 15; step++) {
+                            const tVal = step / 15;
+                            const u = 1 - tVal;
+                            const px = (u * u) * s.x + 2 * u * tVal * ctrlX + (tVal * tVal) * t.x;
+                            const py = (u * u) * s.y + 2 * u * tVal * ctrlY + (tVal * tVal) * t.y;
+                            if (step > 0) {
+                                const segDist = this._pointToSegmentDistance({ x, y }, { x: prevPx, y: prevPy }, { x: px, y: py });
+                                if (segDist < minDistToCurve) minDistToCurve = segDist;
+                            }
+                            prevPx = px;
+                            prevPy = py;
+                        }
+                        dist = minDistToCurve;
+                    }
+
+                    if (dist < linkThreshold) {
+                        overLink = true;
+                        break;
+                    }
+                }
+            }
+            this.canvas.style.cursor = overLink ? "pointer" : "grab";
         }
     }
 

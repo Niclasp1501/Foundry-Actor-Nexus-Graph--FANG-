@@ -3,6 +3,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.2] - 2026-03-02
+### Fixed
+- **Link Click Detection**: Fixed clicking on individual links when multiple connections exist between two tokens. The hit-detection curve formula now matches the rendered curve, sampling increased for better accuracy.
+- **Tooltip Positioning**: The hover tooltip no longer appears too far away when flipped to the left side. Now measures actual tooltip width instead of using a hardcoded estimate.
+- **Center Node Sync**: Centering/uncentering a token now syncs correctly to all players and the monitor. Positions are saved once the simulation has settled, not immediately.
+
+### Improved
+- **Link Hover Cursor**: The cursor now changes to a pointer when hovering over clickable links, indicating they are interactive.
+
 ## [1.2.1] - 2026-03-02
 ### Fixed
 - **Monitor Fullscreen Black Bar**: Resolved the persistent ~78px gap at the bottom of the Monitor view. Applied a multi-layered fix: `_updatePosition` override, `MutationObserver` to guard against Foundry resetting styles, forced body padding/margin reset, and explicit hiding of all Foundry UI containers via JS.
