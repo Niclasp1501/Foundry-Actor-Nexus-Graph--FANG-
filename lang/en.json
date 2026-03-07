@@ -92,13 +92,19 @@
             "SpectatorDisabled": "Spectator Mode disabled.",
             "LockAcquired": "has acquired the edit lock.",
             "LockReleased": "Edit lock released.",
-            "AlreadyEditing": "is currently editing the graph."
+            "AlreadyEditing": "is currently editing the graph.",
+            "SpotlightHiddenBlocked": "Reveal the character first before using Spotlight!",
+            "MonitorViewClosed": "Monitor view closed."
         },
         "ContextMenu": {
             "EditRole": "Role / Organization",
             "EditLore": "Edit Information",
             "Spotlight": "Narrative Spotlight",
-            "DeleteNode": "Delete Actor from Graph"
+            "Identity": "Identity",
+            "Condition": "Condition",
+            "DeleteNode": "Delete Actor from Graph",
+            "EditConnection": "Edit Information",
+            "DeleteConnection": "Delete Connection"
         },
         "Dropdowns": {
             "Nodes": "Nodes (Tokens)",
@@ -111,8 +117,6 @@
         "Dialogs": {
             "FastLinkTitle": "Create Connection",
             "FastLinkContent": "Relationship from {source} to {target}",
-            "LabelInput": "Connection Label",
-            "DirectionalInput": "Directional (Arrow)",
             "RoleTitle": "Faction / Role",
             "RoleContent": "Enter a role or faction for {actor} (optional):",
             "RoleInput": "Role",
@@ -123,11 +127,27 @@
             "EditRoleContent": "Faction / Role for {actor}:",
             "EditLoreTitle": "Edit Information",
             "EditLoreContent": "Additional details or notes for {actor}:",
+            "EditConnectionTitle": "Edit Information",
+            "EditConnectionContent": "Additional details for the connection:",
+            "InfoInput": "Notes",
+            "LabelInput": "Name (Label)",
+            "DirectionalInput": "Directional (Arrow)",
             "BtnConnect": "Connect",
             "BtnAdd": "Add",
             "BtnAddFaction": "Add Faction",
             "BtnSave": "Save",
-            "BtnCancel": "Cancel"
+            "BtnCancel": "Cancel",
+            "IdentityTitle": "Identity",
+            "IdentityName": "Displayed Name",
+            "IdentityOriginal": "Original: {name}",
+            "IdentityHidden": "Hidden for Players",
+            "IdentityAlias": "Alias (when hidden)",
+            "ConditionTitle": "Set Condition",
+            "ConditionContent": "Conditions for {actor}:",
+            "ConditionDeceased": "Deceased",
+            "ConditionMissing": "Missing",
+            "ConditionCaptured": "Captured",
+            "ConditionQuestgiver": "Quest Giver"
         },
         "Settings": {
             "TokenSize": {
@@ -149,6 +169,10 @@
             "AllowPlayerEditing": {
                 "Name": "Allow Player Editing",
                 "Hint": "If enabled, players can create and delete connections, and drop tokens onto the graph."
+            },
+            "DefaultHidden": {
+                "Name": "Default Hidden Mode",
+                "Hint": "If enabled, new tokens dragged onto the graph are automatically hidden for players. You can reveal them later via the context menu."
             }
         }
     }

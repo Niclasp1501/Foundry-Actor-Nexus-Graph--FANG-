@@ -178,6 +178,23 @@
                     </div>
                 </div>
 
+                <div class="control-group">
+                    <h3>{{localize "FANG.ContextMenu.Identity"}}</h3>
+                    <div class="input-stack">
+                        <div
+                            style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px; padding: 5px 0;">
+                            <label for="cbDefaultHidden"
+                                style="font-size: 0.9em; font-weight: bold; cursor: pointer;">{{localize
+                                "FANG.Settings.DefaultHidden.Name"}}</label>
+                            <input type="checkbox" id="cbDefaultHidden"
+                                style="width: auto; margin: 0; cursor: pointer;">
+                        </div>
+                        <p style="font-size: 0.8em; color: #666; margin-top: 0; margin-bottom: 5px; line-height: 1.2;">
+                            {{localize "FANG.Settings.DefaultHidden.Hint"}}
+                        </p>
+                    </div>
+                </div>
+
                 <div class="control-group actions-group">
                     <h3>{{localize "FANG.UI.Export"}} / {{localize "FANG.UI.Import"}}</h3>
                     <div class="button-row">
@@ -222,8 +239,29 @@
                 <li id="ctxSpotlight" class="ctx-item gm-only">
                     <i class="fas fa-compass"></i> {{localize "FANG.ContextMenu.Spotlight"}}
                 </li>
+                <li id="ctxIdentity" class="ctx-item">
+                    <i class="fas fa-user-secret"></i> {{localize "FANG.ContextMenu.Identity"}}
+                </li>
+                <li id="ctxCondition" class="ctx-item">
+                    <i class="fas fa-tag"></i> {{localize "FANG.ContextMenu.Condition"}}
+                </li>
                 <li id="ctxDeleteNode" class="ctx-item danger">
                     <i class="fas fa-trash"></i> {{localize "FANG.ContextMenu.DeleteNode"}}
+                </li>
+            </ul>
+        </div>
+
+        <!-- Edge Right-Click Radial Context Menu -->
+        <div id="fang-edge-context-menu" class="fang-context-menu hidden">
+            <ul>
+                <li id="ctxEditConnection" class="ctx-item">
+                    <i class="fas fa-edit"></i> {{localize "FANG.ContextMenu.EditConnection"}}
+                </li>
+                <li id="ctxEdgeSpotlight" class="ctx-item gm-only">
+                    <i class="fas fa-compass"></i> {{localize "FANG.ContextMenu.Spotlight"}}
+                </li>
+                <li id="ctxDeleteConnection" class="ctx-item danger">
+                    <i class="fas fa-unlink"></i> {{localize "FANG.ContextMenu.DeleteConnection"}}
                 </li>
             </ul>
         </div>
@@ -238,6 +276,29 @@
                     <h2 id="narrative-title"></h2>
                     <div id="narrative-subtitle"></div>
                     <div id="narrative-text"></div>
+                </div>
+                <div class="narrative-close">
+                    <i class="fas fa-times"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Edge Narrative Spotlight Overlay -->
+        <div id="fang-edge-spotlight-overlay" class="fang-narrative-overlay hidden">
+            <div class="narrative-card edge-spotlight-card">
+                <div class="narrative-portrait-container edge-source-portrait">
+                    <img id="edge-source-portrait" src="">
+                </div>
+                <div class="narrative-content edge-content">
+                    <h2 id="edge-narrative-title"></h2>
+                    <div id="edge-narrative-text"></div>
+                </div>
+                <div class="edge-directional-indicator"
+                    style="display: none; align-self: center; font-size: 2.5em; color: var(--fang-accent); margin: 0 15px; opacity: 0.8; text-shadow: 0 0 10px rgba(0,0,0,0.5);">
+                    <i class="fas fa-arrow-right"></i>
+                </div>
+                <div class="narrative-portrait-container edge-target-portrait">
+                    <img id="edge-target-portrait" src="">
                 </div>
                 <div class="narrative-close">
                     <i class="fas fa-times"></i>

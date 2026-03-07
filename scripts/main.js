@@ -113,6 +113,15 @@ Hooks.once("init", () => {
       }
     }
   });
+
+  game.settings.register("fang", "defaultHiddenMode", {
+    name: "FANG.Settings.DefaultHidden.Name",
+    hint: "FANG.Settings.DefaultHidden.Hint",
+    scope: "world",
+    config: false,
+    type: Boolean,
+    default: false
+  });
 });
 
 Hooks.once("ready", () => {
@@ -247,6 +256,10 @@ Hooks.once("ready", () => {
 
     if (data.action === "spotlightStop") {
       if (fangApp && fangApp.rendered) fangApp.stopSpotlight();
+    }
+
+    if (data.action === "spotlightEdgeStart") {
+      if (fangApp && fangApp.rendered) fangApp.startEdgeSpotlight(data.payload);
     }
 
     if (data.action === "centerGraph") {

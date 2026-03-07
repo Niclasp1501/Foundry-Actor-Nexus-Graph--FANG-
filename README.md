@@ -19,6 +19,7 @@ An interactive, self-arranging Actor Graph module for visualizing Character & NP
 - **Spectator Camera Sync (Broadcast):** Real-time GM camera broadcasting! Players and monitors follow the GM's pan and zoom movements live on their screens.
 - **Auto-Zoom to Fit:** Automatically calculates the perfect zoom level every time the graph is opened, ensuring no character is left out of view.
 - **Cinematic Monitor Focus (Boss Pivot):** Dedicated Monitor accounts keep the focus strictly on "Center" nodes. The camera pivots around the story's anchor points for a perfect big-screen experience.
+- **Connection Editing & Spotlight:** Right-click relationships to rename them, add lore, or cast a cinematic dual-portrait Spotlight with glowing directional arrows.
 - **Context Menu & Character Portraits:** Right-click any token to reveal a sleek Radial Context menu! Narrative features now support high-resolution actor portraits instead of just token images.
 - **Precise Coordinate Dragging:** Fully corrected coordinate tracking ensures tokens stay perfectly under your mouse during drag-and-drop, even when zoomed or panned.
 - **Roles & Organizations:** Assign roles or faction affiliations to individual tokens, adding secondary layers of depth to the map.
@@ -75,6 +76,7 @@ An interactive, self-arranging Actor Graph module for visualizing Character & NP
 - **Zuschauer-Modus (Kamera-Sync):** Echtzeit-Übertragung der SL-Kamera! Spieler und Monitore folgen den Bewegungen (Zoom/Pan) des Spielleiters live auf ihren Bildschirmen.
 - **Auto-Zoom & Passgenauigkeit:** Berechnet bei jedem Öffnen automatisch den perfekten Zoomfaktor, sodass alle Akteure sofort sichtbar sind.
 - **Cinematische Monitor-Zentrierung (Boss-Pivot):** Monitor-Accounts fixieren den Bildausschnitt starr auf den als "Zentrum" markierten Boss-Nodes für ein perfektes Public-Display-Erlebnis.
+- **Verbindungen Bearbeiten & Spotlight:** Rechtsklick auf Beziehungen, um sie umzubenennen, eigene Notizen hinzuzufügen oder ein kinematisches Dual-Porträt-Spotlight mit leuchtenden Pfeilen auszulösen.
 - **Kontextmenü & Charakter-Porträts:** Ein Rechtsklick öffnet ein radiales Kontextmenü! Das Spotlight unterstützt nun detaillierte Akteur-Bilder anstelle von simplen Token-Grafiken.
 - **Präzises Drag & Drop:** Korrigierte Koordinaten-Berechnung sorgt dafür, dass Tokens beim Ziehen exakt unter der Maus bleiben, auch wenn du gezoomt hast.
 - **Rollen & Fraktionen:** Weise Rollen oder Fraktionen zu, um dem Netzwerk eine völlig neue Organisationstiefe zu verleihen.

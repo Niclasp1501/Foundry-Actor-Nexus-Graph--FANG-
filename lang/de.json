@@ -92,13 +92,19 @@
             "SpectatorDisabled": "Zuschauer-Modus deaktiviert.",
             "LockAcquired": "hat die Bearbeitungsrechte übernommen.",
             "LockReleased": "Bearbeitung freigegeben.",
-            "AlreadyEditing": "bearbeitet den Graphen gerade."
+            "AlreadyEditing": "bearbeitet den Graphen gerade.",
+            "SpotlightHiddenBlocked": "Decke den Charakter zuerst auf, bevor du das Spotlight nutzt!",
+            "MonitorViewClosed": "Monitor Ansicht geschlossen."
         },
         "ContextMenu": {
             "EditRole": "Rolle / Organisation",
             "EditLore": "Informationen bearbeiten",
             "Spotlight": "Narratives Spotlight",
-            "DeleteNode": "Akteur vom Graphen löschen"
+            "Identity": "Identität",
+            "Condition": "Zustand",
+            "DeleteNode": "Akteur vom Graphen löschen",
+            "EditConnection": "Informationen bearbeiten",
+            "DeleteConnection": "Verbindung löschen"
         },
         "Dropdowns": {
             "Nodes": "Knoten (Tokens)",
@@ -111,8 +117,6 @@
         "Dialogs": {
             "FastLinkTitle": "Verbindung herstellen",
             "FastLinkContent": "Beziehung von {source} zu {target}",
-            "LabelInput": "Label der Verbindung",
-            "DirectionalInput": "Gerichtet (Pfeil)",
             "RoleTitle": "Fraktion / Rolle",
             "RoleContent": "Gib eine Rolle oder Fraktion für {actor} ein (optional):",
             "RoleInput": "Rolle",
@@ -123,11 +127,27 @@
             "EditRoleContent": "Fraktion / Rolle für {actor}:",
             "EditLoreTitle": "Informationen bearbeiten",
             "EditLoreContent": "Zusätzliche Details oder Notizen für {actor}:",
+            "EditConnectionTitle": "Informationen bearbeiten",
+            "EditConnectionContent": "Zusätzliche Details für die Verbindung:",
+            "InfoInput": "Notizen",
+            "LabelInput": "Bezeichnung (Label)",
+            "DirectionalInput": "Gerichtet (Pfeil)",
             "BtnConnect": "Verbinden",
             "BtnAdd": "Hinzufügen",
             "BtnAddFaction": "Fraktion hinzufügen",
             "BtnSave": "Speichern",
-            "BtnCancel": "Abbrechen"
+            "BtnCancel": "Abbrechen",
+            "IdentityTitle": "Identität",
+            "IdentityName": "Angezeigter Name",
+            "IdentityOriginal": "Original: {name}",
+            "IdentityHidden": "Für Spieler verborgen",
+            "IdentityAlias": "Alias (wenn verborgen)",
+            "ConditionTitle": "Zustand setzen",
+            "ConditionContent": "Zustände für {actor}:",
+            "ConditionDeceased": "Verstorben",
+            "ConditionMissing": "Vermisst",
+            "ConditionCaptured": "Gefangen",
+            "ConditionQuestgiver": "Questgeber"
         },
         "Settings": {
             "TokenSize": {
@@ -149,6 +169,10 @@
             "AllowPlayerEditing": {
                 "Name": "Spieler-Bearbeitung erlauben",
                 "Hint": "Wenn aktiviert, können Spieler eigene Verbindungen erstellen und löschen sowie Tokens auf den Graph ziehen."
+            },
+            "DefaultHidden": {
+                "Name": "Standardmäßig verborgen",
+                "Hint": "Wenn aktiviert, werden neue Tokens automatisch für Spieler verborgen. Du kannst sie später über das Kontextmenü aufdecken."
             }
         }
     }

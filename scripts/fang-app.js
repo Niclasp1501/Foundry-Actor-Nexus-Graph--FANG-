@@ -216,6 +216,14 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 });
             }
 
+            const cbDefaultHidden = this.element.querySelector("#cbDefaultHidden");
+            if (cbDefaultHidden) {
+                cbDefaultHidden.checked = game.settings.get("fang", "defaultHiddenMode");
+                cbDefaultHidden.addEventListener("change", async (e) => {
+                    await game.settings.set("fang", "defaultHiddenMode", e.target.checked);
+                });
+            }
+
             const cbSyncCamera = this.element.querySelector("#cbSyncCamera");
             if (cbSyncCamera) {
                 cbSyncCamera.checked = this._isSyncCameraActive;
@@ -231,10 +239,10 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         }
 
         // Spotlight Overlay Close
-        const spotlightClose = this.element.querySelector(".narrative-close");
-        if (spotlightClose) {
-            spotlightClose.addEventListener("click", () => this.stopSpotlight());
-        }
+        const spotlightCloses = this.element.querySelectorAll(".narrative-close");
+        spotlightCloses.forEach(btn => {
+            btn.addEventListener("click", () => this.stopSpotlight());
+        });
     }
 
     _onClose(options) {
@@ -379,6 +387,14 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     }
                 });
 
+                // Migration: Identity & Conditions fields
+                this.graphData.nodes.forEach(node => {
+                    if (!node.originalName) node.originalName = node.name;
+                    if (node.hidden === undefined) node.hidden = false;
+                    if (!node.displayName) node.displayName = "";
+                    if (!node.conditions) node.conditions = [];
+                });
+
                 if (this.graphData.showFactionLines === undefined) {
                     this.graphData.showFactionLines = true;
                 }
@@ -401,6 +417,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             nodes: this.graphData.nodes.map(n => ({
                 id: n.id,
                 name: n.name,
+                originalName: n.originalName || n.name,
                 role: n.role,
                 factionId: n.factionId || null,
                 x: n.x,
@@ -408,12 +425,16 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 vx: n.vx,
                 vy: n.vy,
                 isCenter: n.isCenter || false,
-                lore: n.lore || ""
+                lore: n.lore || "",
+                hidden: n.hidden || false,
+                displayName: n.displayName || "",
+                conditions: n.conditions || []
             })),
             links: this.graphData.links.map(l => ({
                 source: typeof l.source === 'object' ? l.source.id : l.source,
                 target: typeof l.target === 'object' ? l.target.id : l.target,
                 label: l.label,
+                info: l.info || "",
                 directional: l.directional || false
             })),
             factions: this.graphData.factions.map(f => ({
@@ -520,10 +541,14 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             if (this.graphData.nodes.length > 0) {
                 const optGroupN = document.createElement("optgroup");
                 optGroupN.label = game.i18n.localize("FANG.Dropdowns.Nodes");
+                const isPlayerView = !game.user.isGM;
                 this.graphData.nodes.forEach(node => {
                     let opt = document.createElement("option");
                     opt.value = `node|${node.id}`;
-                    opt.textContent = `${game.i18n.localize("FANG.Dropdowns.TokenPrefix")} ${node.name}`;
+                    const shownName = (isPlayerView && node.hidden)
+                        ? (node.displayName || game.i18n.localize("FANG.Dropdowns.Unknown"))
+                        : node.name;
+                    opt.textContent = `${game.i18n.localize("FANG.Dropdowns.TokenPrefix")} ${shownName}`;
                     optGroupN.appendChild(opt);
                 });
                 selectDelete.appendChild(optGroupN);
@@ -532,12 +557,18 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             if (this.graphData.links.length > 0) {
                 const optGroupL = document.createElement("optgroup");
                 optGroupL.label = game.i18n.localize("FANG.Dropdowns.Links");
+                const isPlayerView = !game.user.isGM;
+                const getNodeName = (ref) => {
+                    const node = typeof ref === 'object' ? ref : this.graphData.nodes.find(n => n.id === ref);
+                    if (!node) return game.i18n.localize("FANG.Dropdowns.Unknown");
+                    if (isPlayerView && node.hidden) return node.displayName || game.i18n.localize("FANG.Dropdowns.Unknown");
+                    return node.name || game.i18n.localize("FANG.Dropdowns.Unknown");
+                };
                 this.graphData.links.forEach((link, index) => {
                     let opt = document.createElement("option");
                     opt.value = `link|${index}`;
-                    const unknownLabel = game.i18n.localize("FANG.Dropdowns.Unknown");
-                    const sourceName = typeof link.source === 'object' ? link.source.name : this.graphData.nodes.find(n => n.id === link.source)?.name || unknownLabel;
-                    const targetName = typeof link.target === 'object' ? link.target.name : this.graphData.nodes.find(n => n.id === link.target)?.name || unknownLabel;
+                    const sourceName = getNodeName(link.source);
+                    const targetName = getNodeName(link.target);
                     opt.textContent = `${sourceName} -> ${targetName} (${link.label})`;
                     optGroupL.appendChild(opt);
                 });
@@ -586,7 +617,11 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 if (!this.graphData.nodes.find(n => n.id === id)) {
                     const actor = game.actors.get(id);
                     if (actor) {
-                        this.graphData.nodes.push({ id: id, name: actor.name });
+                        this.graphData.nodes.push({
+                            id: id, name: actor.name, originalName: actor.name,
+                            hidden: game.settings.get("fang", "defaultHiddenMode"),
+                            displayName: "", conditions: []
+                        });
                     }
                 }
             });
@@ -946,7 +981,12 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                             let sourceNode = this.graphData.nodes.find(n => n.id === actor.id);
                             if (!sourceNode) {
                                 // Add near target to make the simulation look nice
-                                sourceNode = { id: actor.id, name: actor.name, x: x - 20, y: y - 20 };
+                                sourceNode = {
+                                    id: actor.id, name: actor.name, originalName: actor.name,
+                                    x: x - 20, y: y - 20,
+                                    hidden: game.settings.get("fang", "defaultHiddenMode"),
+                                    displayName: "", conditions: []
+                                };
                                 this.graphData.nodes.push(sourceNode);
                             }
 
@@ -991,10 +1031,14 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 this.graphData.nodes.push({
                     id: actor.id,
                     name: actor.name,
+                    originalName: actor.name,
                     role: null,
                     factionId: null,
                     x: jitterX,
-                    y: jitterY
+                    y: jitterY,
+                    hidden: game.settings.get("fang", "defaultHiddenMode"),
+                    displayName: "",
+                    conditions: []
                 });
             }
 
@@ -1055,38 +1099,168 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const btnRole = menu.querySelector("#ctxEditRole");
         const btnLore = menu.querySelector("#ctxEditLore");
         const btnSpotlight = menu.querySelector("#ctxSpotlight");
+        const btnIdentity = menu.querySelector("#ctxIdentity");
+        const btnCondition = menu.querySelector("#ctxCondition");
         const btnDelete = menu.querySelector("#ctxDeleteNode");
 
         // Clear previous listeners by cloning nodes
         const newBtnRole = btnRole.cloneNode(true);
         const newBtnLore = btnLore.cloneNode(true);
         const newBtnSpotlight = btnSpotlight.cloneNode(true);
+        const newBtnIdentity = btnIdentity ? btnIdentity.cloneNode(true) : null;
+        const newBtnCondition = btnCondition ? btnCondition.cloneNode(true) : null;
         const newBtnDelete = btnDelete.cloneNode(true);
 
         btnRole.parentNode.replaceChild(newBtnRole, btnRole);
         btnLore.parentNode.replaceChild(newBtnLore, btnLore);
         btnSpotlight.parentNode.replaceChild(newBtnSpotlight, btnSpotlight);
+        if (btnIdentity && newBtnIdentity) btnIdentity.parentNode.replaceChild(newBtnIdentity, btnIdentity);
+        if (btnCondition && newBtnCondition) btnCondition.parentNode.replaceChild(newBtnCondition, btnCondition);
         btnDelete.parentNode.replaceChild(newBtnDelete, btnDelete);
 
-        // --- Permission Logic: Hide buttons if no edit lock ---
+        // --- Permission Logic ---
         const hasLock = this._canEditGraph(true);
+        const isPlayerView = !game.user.isGM;
+        const tokenIsHidden = node.hidden;
+
         newBtnRole.style.display = hasLock ? "block" : "none";
         newBtnLore.style.display = hasLock ? "block" : "none";
         newBtnDelete.style.display = hasLock ? "block" : "none";
+        if (newBtnIdentity) newBtnIdentity.style.display = (game.user.isGM && hasLock) ? "block" : "none";
+        if (newBtnCondition) newBtnCondition.style.display = (game.user.isGM && hasLock) ? "block" : "none";
 
-        // Spotlight is always visible for anyone who can right-click
+        // Protection: Hide Role/Lore for players viewing hidden tokens
+        if (isPlayerView && tokenIsHidden) {
+            newBtnRole.style.display = "none";
+            newBtnLore.style.display = "none";
+        }
+
+        // Spotlight is always visible
         newBtnSpotlight.style.display = "block";
 
         // --- Context Action: Spotlight ---
         newBtnSpotlight.addEventListener("click", () => {
             menu.classList.add("hidden");
+            if (node.hidden) {
+                ui.notifications.warn(game.i18n.localize("FANG.Messages.SpotlightHiddenBlocked") || "Reveal the character first before using Spotlight!");
+                return;
+            }
             this._onSpotlight(node);
         });
+
+        // --- Context Action: Identity ---
+        if (newBtnIdentity) {
+            newBtnIdentity.addEventListener("click", () => {
+                menu.classList.add("hidden");
+                if (!this._canEditGraph()) return;
+
+                const title = game.i18n.localize("FANG.Dialogs.IdentityTitle") || "Identity";
+                const lblName = game.i18n.localize("FANG.Dialogs.IdentityName") || "Displayed Name";
+                const lblOriginal = (game.i18n.localize("FANG.Dialogs.IdentityOriginal") || "Original: {name}").replace("{name}", node.originalName || node.name);
+                const lblHidden = game.i18n.localize("FANG.Dialogs.IdentityHidden") || "Hidden for Players";
+                const lblAlias = game.i18n.localize("FANG.Dialogs.IdentityAlias") || "Alias (when hidden)";
+
+                new Dialog({
+                    title: title,
+                    content: `
+                        <div class="form-group">
+                            <label>${lblName}:</label>
+                            <div class="form-fields">
+                                <input type="text" id="fang-identity-name" value="${node.name || ""}" style="width: 100%;">
+                            </div>
+                            <p style="font-size: 0.8em; color: #888; margin: 2px 0 8px 0;">${lblOriginal}</p>
+                        </div>
+                        <div class="form-group">
+                            <label>${lblHidden}:</label>
+                            <div class="form-fields">
+                                <input type="checkbox" id="fang-identity-hidden" ${node.hidden ? "checked" : ""} style="width: auto;">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>${lblAlias}:</label>
+                            <div class="form-fields">
+                                <input type="text" id="fang-identity-alias" value="${node.displayName || ""}" placeholder="???" style="width: 100%;">
+                            </div>
+                        </div>
+                    `,
+                    buttons: {
+                        save: {
+                            icon: '<i class="fas fa-save"></i>',
+                            label: game.i18n.localize("FANG.Dialogs.BtnSave") || "Save",
+                            callback: async (html) => {
+                                const newName = html.find("#fang-identity-name").val().trim();
+                                const isHidden = html.find("#fang-identity-hidden").is(":checked");
+                                const newAlias = html.find("#fang-identity-alias").val().trim();
+                                if (newName) node.name = newName;
+                                node.hidden = isHidden;
+                                node.displayName = newAlias;
+                                this.ticked();
+                                this._populateActors();
+                                await this.saveData();
+                            }
+                        },
+                        cancel: { icon: '<i class="fas fa-times"></i>', label: game.i18n.localize("FANG.Dialogs.BtnCancel") || "Cancel" }
+                    },
+                    default: "save"
+                }, { classes: ["dialog", "fang-dialog"], width: 420 }).render(true);
+            });
+        }
+
+        // --- Context Action: Condition ---
+        if (newBtnCondition) {
+            newBtnCondition.addEventListener("click", () => {
+                menu.classList.add("hidden");
+                if (!this._canEditGraph()) return;
+
+                const title = game.i18n.localize("FANG.Dialogs.ConditionTitle") || "Set Condition";
+                const conditions = node.conditions || [];
+                const conditionDefs = [
+                    { id: "deceased", label: game.i18n.localize("FANG.Dialogs.ConditionDeceased") || "Deceased", icon: "fa-skull" },
+                    { id: "missing", label: game.i18n.localize("FANG.Dialogs.ConditionMissing") || "Missing", icon: "fa-question-circle" },
+                    { id: "captured", label: game.i18n.localize("FANG.Dialogs.ConditionCaptured") || "Captured", icon: "fa-link" },
+                    { id: "questgiver", label: game.i18n.localize("FANG.Dialogs.ConditionQuestgiver") || "Quest Giver", icon: "fa-scroll" }
+                ];
+
+                const checkboxes = conditionDefs.map(c => {
+                    const checked = conditions.includes(c.id) ? "checked" : "";
+                    return `<div style="display: flex; align-items: center; gap: 8px; padding: 4px 0;">
+                        <input type="checkbox" id="fang-cond-${c.id}" ${checked} style="width: auto; margin: 0;">
+                        <i class="fas ${c.icon}" style="width: 18px; text-align: center;"></i>
+                        <label for="fang-cond-${c.id}" style="cursor: pointer;">${c.label}</label>
+                    </div>`;
+                }).join("");
+
+                new Dialog({
+                    title: title,
+                    content: `
+                        <p><strong>${(game.i18n.localize("FANG.Dialogs.ConditionContent") || "Conditions for {actor}:").replace("{actor}", node.name)}</strong></p>
+                        <div class="form-group" style="flex-direction: column; gap: 2px;">${checkboxes}</div>
+                    `,
+                    buttons: {
+                        save: {
+                            icon: '<i class="fas fa-save"></i>',
+                            label: game.i18n.localize("FANG.Dialogs.BtnSave") || "Save",
+                            callback: async (html) => {
+                                const newConditions = [];
+                                conditionDefs.forEach(c => {
+                                    if (html.find(`#fang-cond-${c.id}`).is(":checked")) newConditions.push(c.id);
+                                });
+                                node.conditions = newConditions;
+                                this.ticked();
+                                await this.saveData();
+                            }
+                        },
+                        cancel: { icon: '<i class="fas fa-times"></i>', label: game.i18n.localize("FANG.Dialogs.BtnCancel") || "Cancel" }
+                    },
+                    default: "save"
+                }, { classes: ["dialog", "fang-dialog"], width: 380 }).render(true);
+            });
+        }
 
         // --- Context Action: Edit Role ---
         newBtnRole.addEventListener("click", () => {
             menu.classList.add("hidden");
-            if (!this._canEditGraph()) return; // Check lock before editing
+            if (!this._canEditGraph()) return;
 
             const title = game.i18n.localize("FANG.Dialogs.EditRoleTitle") || "Details bearbeiten";
             const contentString = (game.i18n.localize("FANG.Dialogs.EditRoleContent") || "Details für {actor}:").replace("{actor}", node.name);
@@ -1218,11 +1392,178 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
         if (clickedNode) {
             this._showContextMenu(clickedNode, mouseX, mouseY);
+            return;
+        }
+
+        // If no node clicked, check for Edge click
+        let clickedLinkIndex = -1;
+        let minLDist = 15 / this.transform.k; // Threshold scaled by zoom
+
+        this.graphData.links.forEach((link, idx) => {
+            const s = link.source;
+            const t = link.target;
+            if (!s || !t || s.x === undefined || t.x === undefined) return;
+
+            let dist;
+            const pairInfo = this._linkCounts ? this._linkCounts[link.pairKey] : null;
+            const totalParams = pairInfo ? pairInfo.total : 1;
+
+            if (totalParams === 1) {
+                // Linear hit detection
+                dist = this._pointToSegmentDistance({ x, y }, s, t);
+            } else {
+                // Curved hit detection
+                const linkIndex = pairInfo.links.indexOf(idx);
+                const offsetMultiplier = (totalParams % 2 === 0)
+                    ? (linkIndex % 2 === 0 ? 1 : -1) * (Math.floor(linkIndex / 2) + 0.5)
+                    : (linkIndex === 0 ? 0 : (linkIndex % 2 === 0 ? 1 : -1) * Math.floor((linkIndex + 1) / 2));
+
+                const ddx = t.x - s.x;
+                const ddy = t.y - s.y;
+                const ddist = Math.sqrt(ddx * ddx + ddy * ddy) || 1;
+                const spreadDistance = 12 + (ddist * 0.05) + (totalParams * 4);
+                const finalOffset = offsetMultiplier * spreadDistance;
+
+                const isCanonical = link.source.id < link.target.id;
+                const cDx = isCanonical ? ddx : -ddx;
+                const cDy = isCanonical ? ddy : -ddy;
+                const cDist = ddist;
+                const nx = -cDy / cDist;
+                const ny = cDx / cDist;
+
+                const midX = (s.x + t.x) / 2;
+                const midY = (s.y + t.y) / 2;
+                const ctrlX = midX + nx * finalOffset * 2;
+                const ctrlY = midY + ny * finalOffset * 2;
+
+                const numSamples = 25;
+                let minDistToCurve = Infinity;
+                let prevPx, prevPy;
+                for (let step = 0; step <= numSamples; step++) {
+                    const tVal = step / numSamples;
+                    const u = 1 - tVal;
+                    const px = (u * u) * s.x + 2 * u * tVal * ctrlX + (tVal * tVal) * t.x;
+                    const py = (u * u) * s.y + 2 * u * tVal * ctrlY + (tVal * tVal) * t.y;
+
+                    if (step > 0) {
+                        const segDist = this._pointToSegmentDistance({ x, y }, { x: prevPx, y: prevPy }, { x: px, y: py });
+                        if (segDist < minDistToCurve) minDistToCurve = segDist;
+                    }
+                    prevPx = px;
+                    prevPy = py;
+                }
+                dist = minDistToCurve;
+            }
+
+            if (dist < minLDist) {
+                clickedLinkIndex = idx;
+                minLDist = dist;
+            }
+        });
+
+        if (clickedLinkIndex !== -1) {
+            this._showEdgeContextMenu(clickedLinkIndex, mouseX, mouseY);
         } else {
-            // Hide menu if clicked elsewhere
+            // Hide menus if clicked elsewhere
             const menu = this.element.querySelector("#fang-context-menu");
             if (menu) menu.classList.add("hidden");
+            const edgeMenu = this.element.querySelector("#fang-edge-context-menu");
+            if (edgeMenu) edgeMenu.classList.add("hidden");
         }
+    }
+
+    _showEdgeContextMenu(linkIndex, mouseX, mouseY) {
+        const menu = this.element.querySelector("#fang-edge-context-menu");
+        if (!menu) return;
+
+        const link = this.graphData.links[linkIndex];
+        if (!link) return;
+
+        // Position menu at cursor
+        menu.style.left = `${mouseX}px`;
+        menu.style.top = `${mouseY}px`;
+        menu.classList.remove("hidden");
+
+        const btnEdit = menu.querySelector("#ctxEditConnection");
+        const btnSpotlight = menu.querySelector("#ctxEdgeSpotlight");
+        const btnDelete = menu.querySelector("#ctxDeleteConnection");
+
+        const newBtnEdit = btnEdit.cloneNode(true);
+        const newBtnSpotlight = btnSpotlight.cloneNode(true);
+        const newBtnDelete = btnDelete.cloneNode(true);
+
+        btnEdit.parentNode.replaceChild(newBtnEdit, btnEdit);
+        btnSpotlight.parentNode.replaceChild(newBtnSpotlight, btnSpotlight);
+        btnDelete.parentNode.replaceChild(newBtnDelete, btnDelete);
+
+        const hasLock = this._canEditGraph(true);
+        newBtnEdit.style.display = hasLock ? "block" : "none";
+        newBtnDelete.style.display = hasLock ? "block" : "none";
+        newBtnSpotlight.style.display = "block"; // Always available
+
+        // Action: Edit
+        newBtnEdit.addEventListener("click", () => {
+            menu.classList.add("hidden");
+            if (!this._canEditGraph()) return;
+
+            const title = game.i18n.localize("FANG.Dialogs.EditConnectionTitle") || "Informationen bearbeiten";
+            const contentString = game.i18n.localize("FANG.Dialogs.EditConnectionContent") || "Zusätzliche Details für die Verbindung:";
+            const lblName = game.i18n.localize("FANG.Dialogs.LabelInput") || "Bezeichnung (Label)";
+            const lblInfo = game.i18n.localize("FANG.Dialogs.InfoInput") || "Notizen";
+
+            new Dialog({
+                title: title,
+                content: `
+                    <p><strong>${contentString}</strong></p>
+                    <div class="form-group" style="margin-bottom: 10px;">
+                        <div class="form-fields">
+                            <input type="text" id="fang-edit-link-name" value="${link.label || ""}" placeholder="${lblName}" style="width: 100%; font-family: var(--fang-font-main); padding: 5px;">
+                        </div>
+                    </div>
+                    <div class="form-group" style="height: 150px;">
+                        <textarea id="fang-edit-link-info" placeholder="${lblInfo}" style="width: 100%; height: 100%; resize: none; font-family: var(--fang-font-main); padding: 5px;">${link.info || ""}</textarea>
+                    </div>
+                `,
+                buttons: {
+                    save: {
+                        icon: '<i class="fas fa-save"></i>',
+                        label: game.i18n.localize("FANG.Dialogs.BtnSave") || "Save",
+                        callback: async (html) => {
+                            const newLabel = html.find("#fang-edit-link-name").val().trim();
+                            const newInfo = html.find("#fang-edit-link-info").val().trim();
+                            if (newLabel) link.label = newLabel;
+                            link.info = newInfo !== "" ? newInfo : null;
+
+                            this.initSimulation();
+                            this.simulation.alpha(0.05).restart();
+                            await this.saveData();
+                            this._toggleLinkEditor(linkIndex); // Sync sidebar if open
+                        }
+                    },
+                    cancel: { icon: '<i class="fas fa-times"></i>', label: game.i18n.localize("FANG.Dialogs.BtnCancel") || "Cancel" }
+                },
+                default: "save"
+            }, { classes: ["dialog", "fang-dialog"], width: 450 }).render(true);
+        });
+
+        // Action: Delete
+        newBtnDelete.addEventListener("click", async () => {
+            menu.classList.add("hidden");
+            if (!this._canEditGraph()) return;
+
+            this.graphData.links.splice(linkIndex, 1);
+            ui.notifications.info(game.i18n.localize("FANG.Messages.DeletedLink") || "Connection deleted.");
+            this.initSimulation();
+            this.simulation.alpha(0.3).restart();
+            this._toggleLinkEditor(-1); // Close sidebar link editor if it was open
+            await this.saveData();
+        });
+
+        // Action: Edge Spotlight
+        newBtnSpotlight.addEventListener("click", () => {
+            menu.classList.add("hidden");
+            this._onEdgeSpotlight(link);
+        });
     }
 
     async _onCanvasClick(event) {
@@ -1338,6 +1679,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             this._syncSidebarSelection("none", null);
             const menu = this.element.querySelector("#fang-context-menu");
             if (menu) menu.classList.add("hidden");
+            const edgeMenu = this.element.querySelector("#fang-edge-context-menu");
+            if (edgeMenu) edgeMenu.classList.add("hidden");
         }
     }
 
@@ -2029,12 +2372,31 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             this.context.fillText(l.text, l.x, l.y);
         });
 
+        // --- Condition Constants (from project palette) ---
+        const FANG_CONDITIONS = {
+            deceased: { color: "#3d3d3d", icon: "\uf54c" }, // fa-skull
+            missing: { color: "#4a6a8a", icon: "\uf059" }, // fa-question-circle
+            captured: { color: "#8B0000", icon: "\uf0c1" }, // fa-link
+            questgiver: { color: "#D4AF37", icon: "\uf70e" }  // fa-scroll
+        };
+
         // Draw Nodes
         const radius = game.settings.get("fang", "tokenSize") || 33;
+        const isGM = game.user.isGM;
+
         this.graphData.nodes.forEach(node => {
             const pos = renderPos[node.id];
+            const isHidden = node.hidden && !isGM;
+            const conditions = node.conditions || [];
+            const isDeceased = conditions.includes("deceased");
+            const isMissing = conditions.includes("missing");
 
             this.context.save();
+
+            // --- Condition: Missing -> halbtransparent ---
+            if (isMissing) {
+                this.context.globalAlpha = 0.5;
+            }
 
             // -----------------------------
             const faction = node.factionId ? this.graphData.factions.find(f => f.id === node.factionId) : null;
@@ -2048,20 +2410,23 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 this.context.shadowBlur = 15;
                 this.context.shadowColor = `rgba(${auraR}, ${auraG}, ${auraB}, 1)`;
                 this.context.stroke();
-                this.context.shadowBlur = 0; // Reset for token
+                this.context.shadowBlur = 0;
             }
             // -----------------------------
 
-            // -----------------------------
-            // Faction visuals (lines and labels) are handled after the node loop
-            // to ensure they are on top or clearly visible.
-            // -----------------------------
+            // --- Draw Token Image ---
+            // Apply visual filters for conditions and hidden state
+            const needsFilter = isDeceased || isHidden;
+            if (needsFilter) {
+                const filters = [];
+                if (isDeceased) filters.push("grayscale(1)");
+                if (isHidden) filters.push("blur(10px) brightness(0.65)");
+                this.context.filter = filters.join(" ");
+            }
 
             if (node.imgElement && node.imgElement.complete && node.imgElement.naturalWidth !== 0) {
-                // Just draw the raw token image without extra circles/borders
                 this.context.drawImage(node.imgElement, pos.x - radius, pos.y - radius, radius * 2, radius * 2);
             } else {
-                // Fallback fill if not loaded
                 this.context.beginPath();
                 this.context.arc(pos.x, pos.y, radius, 0, Math.PI * 2, true);
                 this.context.fillStyle = "#b91c1c";
@@ -2071,8 +2436,21 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 this.context.stroke();
             }
 
+            // Reset filter after token image
+            if (needsFilter) {
+                this.context.filter = "none";
+            }
+
+            // Soft dark overlay for hidden tokens (obscure but keep silhouette)
+            if (isHidden) {
+                this.context.beginPath();
+                this.context.arc(pos.x, pos.y, radius, 0, Math.PI * 2);
+                this.context.fillStyle = "rgba(20, 20, 30, 0.3)";
+                this.context.fill();
+            }
+
             // --- Faction Icon (Top-Left corner) ---
-            if (faction && faction.icon) {
+            if (faction && faction.icon && !isHidden) {
                 if (!this._iconCache) this._iconCache = {};
                 let img = this._iconCache[faction.icon];
                 if (!img) {
@@ -2083,31 +2461,86 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
                 if (img.complete && img.naturalWidth > 0) {
                     const iconSize = 24;
-                    // Calculate position at top-left of circle
-                    const offset = radius * 0.7; // Approx 45 degrees
+                    const offset = radius * 0.7;
                     this.context.drawImage(img, pos.x - offset - iconSize / 2, pos.y - offset - iconSize / 2, iconSize, iconSize);
                 }
             }
 
             this.context.restore();
 
+            // --- Condition Badges (drawn AFTER restore so token effects don't leak) ---
+            if (conditions.length > 0) {
+                const badgeRadius = 10;
+                conditions.forEach((cond, ci) => {
+                    const condDef = FANG_CONDITIONS[cond];
+                    if (!condDef) return;
+                    const angle = -Math.PI / 2 + (ci - (conditions.length - 1) / 2) * 0.55;
+                    const bx = pos.x + Math.cos(angle) * (radius + badgeRadius + 2);
+                    const by = pos.y + Math.sin(angle) * (radius + badgeRadius + 2);
+
+                    // Badge circle background
+                    this.context.beginPath();
+                    this.context.arc(bx, by, badgeRadius, 0, Math.PI * 2);
+                    this.context.fillStyle = condDef.color;
+                    this.context.fill();
+                    this.context.lineWidth = 1.5;
+                    // Icon Style (FontAwesome)
+                    this.context.fillStyle = "#e8e0d4";
+                    this.context.font = '900 13px "Font Awesome 6 Pro", "Font Awesome 6 Free", "FontAwesome"';
+                    this.context.textAlign = "center";
+                    this.context.textBaseline = "middle";
+                    this.context.fillText(condDef.icon, bx, by);
+                });
+            }
+
+            // --- GM Hidden Indicator Badge ---
+            if (node.hidden && isGM) {
+                const hbx = pos.x - radius - 4;
+                const hby = pos.y - radius - 4;
+                this.context.beginPath();
+                this.context.arc(hbx, hby, 9, 0, Math.PI * 2);
+                this.context.fillStyle = "rgba(80, 70, 100, 0.85)";
+                this.context.fill();
+                this.context.lineWidth = 1;
+                this.context.strokeStyle = "rgba(255,255,255,0.15)";
+                this.context.stroke();
+
+                // Eye-slash icon (FontAwesome)
+                this.context.fillStyle = "#e8e0d4";
+                this.context.font = '900 12px "Font Awesome 6 Pro", "Font Awesome 6 Free", "FontAwesome"';
+                this.context.textAlign = "center";
+                this.context.textBaseline = "middle";
+                this.context.fillText("\uf070", hbx, hby); // fa-eye-slash
+            }
+
+            // --- Determine displayed name ---
+            const isPlayerView = !isGM;
+            let shownName;
+            let shownRole;
+            if (node.hidden && isPlayerView) {
+                shownName = node.displayName || game.i18n.localize("FANG.Dropdowns.Unknown");
+                shownRole = null; // Hide role for hidden tokens
+            } else {
+                shownName = node.name;
+                shownRole = node.role;
+            }
+
             // Draw Label Background for readability
             const nodeFontSize = 15;
             const roleFontSize = 12;
             this.context.font = `bold ${nodeFontSize}px 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif`;
-            const metrics = this.context.measureText(node.name);
+            const metrics = this.context.measureText(shownName);
             let textWidth = Math.max(metrics.width, 40);
 
             let roleTextWidth = 0;
-            if (node.role) {
+            if (shownRole) {
                 this.context.font = `italic ${roleFontSize}px 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif`;
-                roleTextWidth = this.context.measureText(node.role).width;
+                roleTextWidth = this.context.measureText(shownRole).width;
                 textWidth = Math.max(textWidth, roleTextWidth);
             }
 
-            const textHeight = node.role ? 36 : 22; // Make background taller if we have a role
-            // Base the label offset on the BASE radius, so the label doesn't jump up and down
-            const labelYOffset = radius + (node.role ? 18 : 11); // Push down slightly further if role exists
+            const textHeight = shownRole ? 36 : 22;
+            const labelYOffset = radius + (shownRole ? 18 : 11);
 
             this.context.fillStyle = "rgba(0, 0, 0, 0.8)";
             this.context.beginPath();
@@ -2124,13 +2557,13 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             this.context.fillStyle = "#ffffff";
             this.context.textAlign = "center";
             this.context.textBaseline = "middle";
-            this.context.fillText(node.name, pos.x, pos.y + labelYOffset - (node.role ? 7 : 0));
+            this.context.fillText(shownName, pos.x, pos.y + labelYOffset - (shownRole ? 7 : 0));
 
             // Draw Role Text
-            if (node.role) {
+            if (shownRole) {
                 this.context.font = `italic ${roleFontSize}px 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif`;
-                this.context.fillStyle = "#dcd6cc"; // slightly dimmer color
-                this.context.fillText(node.role, pos.x, pos.y + labelYOffset + 8);
+                this.context.fillStyle = "#dcd6cc";
+                this.context.fillText(shownRole, pos.x, pos.y + labelYOffset + 8);
             }
         });
 
@@ -2495,6 +2928,10 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
             // If we are now hovering over a node with lore, start the timer
             if (hoveredNode && hoveredNode.lore) {
+                // Protection: Don't show lore tooltip to players for hidden tokens
+                const canSeeLore = game.user.isGM || !hoveredNode.hidden;
+                if (!canSeeLore) return;
+
                 this._hoverTimeout = setTimeout(() => {
                     this._tooltipVisibleForNode = hoveredNode.id;
 
@@ -2767,6 +3204,106 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         ui.notifications.info(game.i18n.localize("FANG.Messages.MonitorViewClosed"));
     }
 
+    _onEdgeSpotlight(link) {
+        const sourceNode = link.source;
+        const targetNode = link.target;
+        if (!sourceNode || !targetNode) return;
+
+        // Prevent spotlight if either node is hidden block the spotlight entirely
+        if ((sourceNode.hidden || targetNode.hidden) && !game.user.isGM) {
+            return;
+        }
+        if (sourceNode.hidden || targetNode.hidden) {
+            ui.notifications.warn(game.i18n.localize("FANG.Messages.SpotlightHiddenBlocked") || "Reveal the characters first before using Spotlight!");
+            return;
+        }
+
+        const sActor = game.actors.get(sourceNode.id);
+        const tActor = game.actors.get(targetNode.id);
+
+        const sourceImg = sActor?.img || sourceNode.img || sourceNode.imgElement?.src || "icons/svg/mystery-man.svg";
+        const targetImg = tActor?.img || targetNode.img || targetNode.imgElement?.src || "icons/svg/mystery-man.svg";
+
+        game.socket.emit("module.fang", {
+            action: "spotlightEdgeStart",
+            payload: {
+                linkId: link.index, // Not strictly needed but good to have
+                label: link.label || "",
+                info: link.info || "",
+                sourcePortrait: sourceImg,
+                targetPortrait: targetImg,
+                sourceX: sourceNode.x,
+                sourceY: sourceNode.y,
+                targetX: targetNode.x,
+                targetY: targetNode.y,
+                directional: link.directional || false
+            }
+        });
+
+        this.startEdgeSpotlight({
+            linkId: link.index,
+            label: link.label || "",
+            info: link.info || "",
+            sourcePortrait: sourceImg,
+            targetPortrait: targetImg,
+            sourceX: sourceNode.x,
+            sourceY: sourceNode.y,
+            targetX: targetNode.x,
+            targetY: targetNode.y,
+            directional: link.directional || false
+        });
+    }
+
+    startEdgeSpotlight(payload) {
+        if (this._spotlightTimeout) clearTimeout(this._spotlightTimeout);
+        this._isSpotlightActive = true;
+
+        if (this.zoom) {
+            // Center camera between the two nodes
+            const midX = (payload.sourceX + payload.targetX) / 2;
+            const midY = (payload.sourceY + payload.targetY) / 2;
+            const dx = payload.targetX - payload.sourceX;
+            const dy = payload.targetY - payload.sourceY;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+
+            // Scale based on distance to fit both nodes roughly on screen. Cap at 1.5, floor at 0.5
+            let targetScale = Math.min(1.5, Math.max(0.5, this.width / (dist * 1.5)));
+            const tx = this.width / 2 - midX * targetScale;
+            const ty = this.height / 2 - midY * targetScale;
+
+            d3.select(this.canvas)
+                .transition()
+                .duration(1000)
+                .call(this.zoom.transform, d3.zoomIdentity.translate(tx, ty).scale(targetScale));
+        }
+
+        this._spotlightOverlayTimeout = setTimeout(() => {
+            const overlay = this.element.querySelector("#fang-edge-spotlight-overlay");
+            const title = this.element.querySelector("#edge-narrative-title");
+            const textArea = this.element.querySelector("#edge-narrative-text");
+            const sourcePortrait = this.element.querySelector("#edge-source-portrait");
+            const targetPortrait = this.element.querySelector("#edge-target-portrait");
+
+            if (overlay && title && textArea) {
+                title.textContent = payload.label;
+                textArea.textContent = payload.info || "";
+
+                if (payload.sourcePortrait && sourcePortrait) sourcePortrait.src = payload.sourcePortrait;
+                if (payload.targetPortrait && targetPortrait) targetPortrait.src = payload.targetPortrait;
+
+                // Handle directional indicator
+                const directionalIndicator = overlay.querySelector(".edge-directional-indicator");
+                if (directionalIndicator) {
+                    directionalIndicator.style.display = payload.directional ? "flex" : "none";
+                }
+
+                overlay.classList.remove("hidden");
+            }
+        }, 1000);
+
+        ui.notifications.info(game.i18n.localize("FANG.Messages.SpotlightStarted").replace("{actor}", payload.label));
+    }
+
     _onSpotlight(node) {
         // Spotlight can be used by anyone who can right-click (no lock required)
 
@@ -2850,9 +3387,11 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         if (this._spotlightOverlayTimeout) clearTimeout(this._spotlightOverlayTimeout);
         this._isSpotlightActive = false;
 
-        // Hide overlay
+        // Hide overlays
         const overlay = this.element.querySelector("#fang-narrative-overlay");
+        const edgeOverlay = this.element.querySelector("#fang-edge-spotlight-overlay");
         if (overlay) overlay.classList.add("hidden");
+        if (edgeOverlay) edgeOverlay.classList.add("hidden");
 
         // Return to normal view
         this.zoomToFit(true);
