@@ -3,6 +3,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.5] - 2026-03-07
+### Added
+- **In-Person Gaming Mode**: New setting to enable specialized monitor controls and display logic.
+- **Configurable Monitor Name**: Users can now specify the display name for the monitor view (defaults to "Monitor"). Socket logic and display rules now use this setting (case-insensitive, includes-match).
+- **Integrated Physics Controls**: Added a "Physics & Simulation" section to the View tab for GMs, allowing live control of Cosmic Wind and its strength.
+
+### Improved
+- **UI Aesthetics**: Completely redesigned the Presentation button groups with a more premium, structured layout, golden accents, and group headers.
+- **Internalized Settings**: Moved physics-related settings out of the main module configuration and directly into the app's View tab for better accessibility.
+- **Dynamic Visibility**: Monitor controls are now smarter, only appearing when In-Person Gaming Mode is on AND a valid monitor user is online.
+
 ## [1.2.4] - 2026-03-07
 ### Added
 - **Connection Context Menu**: Right-click on any connection (edge) to edit its information, add detailed notes, or delete it, mirroring the node features.

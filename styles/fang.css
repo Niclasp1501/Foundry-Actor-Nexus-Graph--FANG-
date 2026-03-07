@@ -1029,3 +1029,40 @@ body.fang-monitor #fang-app.fang-app-window {
         opacity: 1;
     }
 }
+
+/* --- UI Button Grouping Nest --- */
+.fang-app-container .button-group-nest {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px 10px;
+    background: rgba(0, 0, 0, 0.03);
+    border: 1px solid var(--fang-border-color);
+    border-left: 3px solid var(--fang-accent-gold);
+    border-radius: 4px;
+    margin-bottom: 8px;
+    transition: all 0.2s ease;
+}
+
+.fang-app-container .button-group-nest:hover {
+    background: rgba(0, 0, 0, 0.05);
+    border-color: #c0b9ae;
+}
+
+.fang-app-container .button-group-nest h4 {
+    font-size: 0.7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: #888;
+    margin: 0 0 6px 0;
+    letter-spacing: 0.8px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    padding-bottom: 2px;
+}
+
+.fang-app-container .button-group-nest .btn {
+    width: 100%;
+    margin-bottom: 0 !important;
+    justify-content: flex-start;
+    padding-left: 12px;
+}

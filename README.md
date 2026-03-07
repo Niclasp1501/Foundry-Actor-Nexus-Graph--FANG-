@@ -49,17 +49,8 @@ An interactive, self-arranging Actor Graph module for visualizing Character & NP
 - **Viewing the Graph:** Once shared by the GM, the window will pop up automatically.
 - **Manual Access:** If a player accidentally closes the window, they can re-open it via the **"FANG Graph" Journal Entry** (a link inside the journal text opens the tool) or simply by pressing `Shift + G`.
 
-### Future Roadmap
-- **Custom Link Styles:** Color-coded or dashed lines for different relationships (e.g., Enemies, Family, Master/Apprentice).
-- **More Languages:** Community translation support (e.g. Spanish, French).
-
-### Potential Extensions (Ideas)
-- **Search & Filter:** A search bar that highlights specific actors and dims the rest.
-- **Mini-Map Navigator:** A small radar map in the corner for massive networks.
-- **Custom Link Styles:** Color-coded or dashed lines for different relationships (e.g., Enemies, Family, Master/Apprentice).
-- **Condition Overlays:** Visual indicators for character states (e.g., "Deceased", "Cursed", "In Love") directly on the tokens.
-- **GM-Secret Nodes:** The ability to hide masterminds in the graph from players until the GM chooses to reveal them.
-- **Character Portraits:** Supporting visual token portraits instead of just text/circle nodes.
+### Future Plans & Roadmap
+For the current development status and planned features, please refer to the [TODO.md](TODO.md) file.
 
 ---
 
@@ -106,17 +97,8 @@ An interactive, self-arranging Actor Graph module for visualizing Character & NP
 - **Graphen Betrachten:** Sobald der GM den Graphen teilt, öffnet sich dieser automatisch.
 - **Manuell Öffnen:** Falls du das Fenster versehentlich schließt, kannst du es über das **Journal "FANG Graph"** wieder öffnen (Klick auf den Link im Text) oder einfach `Shift + G` drücken.
 
-### Zukünftige Pläne (Roadmap)
-- **Individuelle Verbindungslinien:** Farbkodierte, gestrichelte oder dicke Linien je nach Beziehungsart (Feinde, Liebespaar, Familie).
-- **Weitere Sprachen:** Bei Bedarf werden auf Wunsch gern weitere Übersetzungen integriert.
-
-### Potenzielle Erweiterungen (Ideen)
-- **Suche & Filter:** Eine Suchleiste, die bestimmte Akteure hervorhebt und den Rest des Graphen ausblendet.
-- **Mini-Map / Navigator:** Eine kleine Radar-Übersicht in der Ecke für sehr große, komplexe Netzwerke.
-- **Individuelle Verbindungslinien:** Farbkodierte, gestrichelte oder dicke Linien je nach Beziehungsart (Feinde, Liebespaar, Familie).
-- **Zustands-Overlays:** Visuelle Merkmale für Charakter-Zustände (z.B. "Verstorben", "Verflucht", "Verliebt") direkt auf den Tokens.
-- **Geheim-Knoten für GMs:** Akteure können für Spieler unsichtbar gemacht werden, bis der GM sie dramatisch enthüllt.
-- **Charakter-Portraits:** Die Möglichkeit, kreisrunde Foundry-Bilder der Akteure anstelle von simplen Kreisen darzustellen.
+### Zukünftige Pläne & Roadmap
+Den aktuellen Stand der Entwicklung und geplante Features findest du in der Datei [TODO.md](TODO.md).
 
 ---
 

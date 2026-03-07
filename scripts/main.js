@@ -49,7 +49,7 @@ Hooks.once("init", () => {
     name: "FANG.Settings.CosmicWind.Name",
     hint: "FANG.Settings.CosmicWind.Hint",
     scope: "world",      // Universal setting for all players 
-    config: true,        // Shows up in module settings menu
+    config: false,       // Hide from main menu, controlled via app
     type: Boolean,
     default: true,
     onChange: value => {
@@ -64,7 +64,7 @@ Hooks.once("init", () => {
     name: "FANG.Settings.CosmicWindStrength.Name",
     hint: "FANG.Settings.CosmicWindStrength.Hint",
     scope: "world",
-    config: true,
+    config: false,       // Hide from main menu, controlled via app
     type: Number,
     range: {
       min: 0.1,    // Minimum value so it doesn't turn off entirely, user should use the checkbox for that
@@ -99,7 +99,8 @@ Hooks.once("init", () => {
     onChange: value => {
       // Sync sidebar visibility live on all clients without closing window
       if (fangApp && fangApp.rendered && !game.user.isGM) {
-        const isMonitor = game.user.name.toLowerCase().includes("monitor");
+        const monitorName = game.settings.get("fang", "monitorDisplayName").toLowerCase();
+        const isMonitor = game.user.name.toLowerCase().includes(monitorName);
         const sidebar = fangApp.element.querySelector(".sidebar");
         if (sidebar) {
           sidebar.style.display = (value && !isMonitor) ? "flex" : "none";
@@ -111,6 +112,30 @@ Hooks.once("init", () => {
           fangApp.resizeCanvas();
         }
       }
+    }
+  });
+
+  game.settings.register("fang", "inPersonGaming", {
+    name: "FANG.Settings.InPersonGaming.Name",
+    hint: "FANG.Settings.InPersonGaming.Hint",
+    scope: "world",
+    config: true,
+    type: Boolean,
+    default: false,
+    onChange: () => {
+      if (fangApp && fangApp.rendered) fangApp.render();
+    }
+  });
+
+  game.settings.register("fang", "monitorDisplayName", {
+    name: "FANG.Settings.MonitorDisplayName.Name",
+    hint: "FANG.Settings.MonitorDisplayName.Hint",
+    scope: "world",
+    config: true,
+    type: String,
+    default: "Monitor",
+    onChange: () => {
+      if (fangApp && fangApp.rendered) fangApp.render();
     }
   });
 
@@ -168,7 +193,8 @@ Hooks.once("ready", () => {
     }
 
     if (data.action === "showGraphMonitor") {
-      if (game.user.name.toLowerCase().includes("monitor")) {
+      const monitorName = game.settings.get("fang", "monitorDisplayName").toLowerCase();
+      if (game.user.name.toLowerCase().includes(monitorName)) {
         if (!fangApp) fangApp = new FangApplication();
         setTimeout(async () => {
           await fangApp.loadData();
@@ -193,7 +219,8 @@ Hooks.once("ready", () => {
     }
 
     if (data.action === "closeGraphMonitor") {
-      if (game.user.name.toLowerCase().includes("monitor")) {
+      const monitorName = game.settings.get("fang", "monitorDisplayName").toLowerCase();
+      if (game.user.name.toLowerCase().includes(monitorName)) {
         if (fangApp && fangApp.rendered) fangApp.close();
       }
     }

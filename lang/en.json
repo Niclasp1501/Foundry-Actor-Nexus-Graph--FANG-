@@ -23,6 +23,8 @@
             "SelectElement": "Select Node / Link",
             "Delete": "Delete",
             "Presentation": "Presentation",
+            "GroupPlayers": "Players",
+            "GroupMonitor": "Monitor",
             "AdvancedFeatures": "Advanced Functions",
             "AdvancedSettings": "Open Advanced Settings",
             "ShowPlayers": "Show Players",
@@ -173,7 +175,21 @@
             "DefaultHidden": {
                 "Name": "Default Hidden Mode",
                 "Hint": "If enabled, new tokens dragged onto the graph are automatically hidden for players. You can reveal them later via the context menu."
+            },
+            "InPersonGaming": {
+                "Name": "In-Person Gaming Mode",
+                "Hint": "Enables special monitor controls for tabletop gaming (e.g., second screen monitoring)."
+            },
+            "MonitorDisplayName": {
+                "Name": "Monitor Display Name",
+                "Hint": "The name of the user or display (e.g., 'Monitor') used for the public viewing view."
             }
+        },
+        "Physics": {
+            "Title": "Physics & Simulation",
+            "CosmicWind": "Cosmic Wind (Floating Tokens)",
+            "Strength": "Wind Strength",
+            "Hint": "Determine how much the tokens drift across the graph."
         }
     }
 }

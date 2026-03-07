@@ -35,8 +35,13 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     async _prepareContext(options) {
+        const inPersonGaming = game.settings.get("fang", "inPersonGaming");
+        const monitorName = game.settings.get("fang", "monitorDisplayName").toLowerCase();
+        const hasMonitorPlayer = game.users.some(u => u.active && u.name.toLowerCase().includes(monitorName));
+
         return {
-            ...await super._prepareContext(options)
+            ...await super._prepareContext(options),
+            showMonitorControls: inPersonGaming && hasMonitorPlayer
         };
     }
 
@@ -55,6 +60,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
     _onRender(context, options) {
         super._onRender(context, options);
 
+        const monitorName = game.settings.get("fang", "monitorDisplayName").toLowerCase();
+
         // 1. UI Setup (Pre-D3 Dimensions)
         // Manage Sidebar visibility and Fullscreen classes first
         if (!game.user.isGM) {
@@ -62,12 +69,12 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             const allowPlayerEdit = game.settings.get("fang", "allowPlayerEditing");
             const isGMOnline = game.users.some(u => u.isGM && u.active);
             if (sidebar) {
-                const isMonitor = game.user.name.toLowerCase().includes("monitor");
+                const isMonitor = game.user.name.toLowerCase().includes(monitorName);
                 sidebar.style.display = (allowPlayerEdit && isGMOnline && !isMonitor) ? "flex" : "none";
                 const gmControls = sidebar.querySelectorAll(".gm-only");
                 gmControls.forEach(el => el.style.display = "none");
             }
-            if (game.user.name.toLowerCase().includes("monitor")) {
+            if (game.user.name.toLowerCase().includes(monitorName)) {
                 this.element.classList.add("fang-fullscreen-player");
                 document.body.classList.add("fang-monitor");
 
@@ -98,7 +105,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 // --- FIX: MutationObserver to guard against Foundry resetting styles ---
                 if (this._monitorStyleObserver) this._monitorStyleObserver.disconnect();
                 this._monitorStyleObserver = new MutationObserver(() => {
-                    if (game.user.name.toLowerCase().includes("monitor")) {
+                    if (game.user.name.toLowerCase().includes(monitorName)) {
                         this._applyMonitorFullscreenStyles();
                     }
                 });
@@ -232,6 +239,30 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     ui.notifications.info(game.i18n.localize(this._isSyncCameraActive ? "FANG.Messages.SpectatorEnabled" : "FANG.Messages.SpectatorDisabled"));
                     const indicator = this.element.querySelector("#spectator-active-indicator");
                     if (indicator) indicator.classList.toggle("active", this._isSyncCameraActive);
+                });
+            }
+
+            // Physics & Simulation Controls
+            const cbCosmic = this.element.querySelector("#cbEnableCosmicWind");
+            const rngCosmic = this.element.querySelector("#rngCosmicWindStrength");
+            const valCosmic = this.element.querySelector("#wind-strength-val");
+
+            if (cbCosmic && rngCosmic) {
+                cbCosmic.checked = game.settings.get("fang", "enableCosmicWind");
+                rngCosmic.value = game.settings.get("fang", "cosmicWindStrength");
+                if (valCosmic) valCosmic.innerText = rngCosmic.value;
+
+                cbCosmic.addEventListener("change", (ev) => {
+                    game.settings.set("fang", "enableCosmicWind", ev.target.checked);
+                });
+
+                rngCosmic.addEventListener("input", (ev) => {
+                    const val = ev.target.value;
+                    if (valCosmic) valCosmic.innerText = val;
+                });
+
+                rngCosmic.addEventListener("change", (ev) => {
+                    game.settings.set("fang", "cosmicWindStrength", parseFloat(ev.target.value));
                 });
             }
         } else {
@@ -3186,8 +3217,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
     async _onShareGraphMonitor(event) {
         if (event) event.preventDefault();
         if (!this._canEditGraph(false, true)) return;
+        const monitorName = game.settings.get("fang", "monitorDisplayName").toLowerCase();
         game.socket.emit("module.fang", { action: "showGraphMonitor", payload: { journalName: "FANG Graph" } });
-        ui.notifications.info(game.i18n.localize("FANG.Messages.GraphMonitorShown"));
+        ui.notifications.info(`${game.i18n.localize("FANG.Messages.GraphMonitorShown")} (${monitorName})`);
     }
 
     async _onCloseGraphRemote(event) {
@@ -3200,8 +3232,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
     async _onCloseGraphMonitor(event) {
         if (event) event.preventDefault();
         if (!this._canEditGraph(false, true)) return;
+        const monitorName = game.settings.get("fang", "monitorDisplayName").toLowerCase();
         game.socket.emit("module.fang", { action: "closeGraphMonitor" });
-        ui.notifications.info(game.i18n.localize("FANG.Messages.MonitorViewClosed"));
+        ui.notifications.info(`${game.i18n.localize("FANG.Messages.MonitorViewClosed")} (${monitorName})`);
     }
 
     _onEdgeSpotlight(link) {

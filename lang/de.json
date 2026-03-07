@@ -23,6 +23,8 @@
             "SelectElement": "Knoten / Link wählen",
             "Delete": "Löschen",
             "Presentation": "Präsentation",
+            "GroupPlayers": "Spieler",
+            "GroupMonitor": "Monitor",
             "AdvancedFeatures": "Erweiterte Funktionen",
             "AdvancedSettings": "Erweiterte Optionen öffnen",
             "ShowPlayers": "Spielern zeigen",
@@ -173,7 +175,21 @@
             "DefaultHidden": {
                 "Name": "Standardmäßig verborgen",
                 "Hint": "Wenn aktiviert, werden neue Tokens automatisch für Spieler verborgen. Du kannst sie später über das Kontextmenü aufdecken."
+            },
+            "InPersonGaming": {
+                "Name": "In-Person Gaming Modus",
+                "Hint": "Aktiviert spezielle Monitor-Steuerungen für das Spielen vor Ort am Tisch (z.B. zweiter Monitor)."
+            },
+            "MonitorDisplayName": {
+                "Name": "Monitor-Anzeigename",
+                "Hint": "Der Name des Benutzers oder der Anzeige (z.B. 'Monitor'), der für die Public-Display-Ansicht genutzt wird."
             }
+        },
+        "Physics": {
+            "Title": "Physik & Simulation",
+            "CosmicWind": "Kosmischer Wind (Tokens schweben)",
+            "Strength": "Stärke des Winds",
+            "Hint": "Bestimme, wie stark die Tokens auf dem Graphen driften."
         }
     }
 }
