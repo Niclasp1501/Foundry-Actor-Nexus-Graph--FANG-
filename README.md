@@ -15,9 +15,9 @@ An interactive, self-arranging Actor Graph module for visualizing Character & NP
   <img src="assets/fang_ui_3.png" width="32%" title="Smart Actor Dropdowns" />
 </p>
 
-- **Narrative Spotlight:** Cinematic GM feature to highlight characters with a sequenced zoom effect, high-resolution portraits, and a parchment-style overlay displaying lore, roles, and factions.
-- **Spectator Camera Sync (Broadcast):** Real-time GM camera broadcasting! Players and monitors follow the GM's pan and zoom movements live on their screens.
-- **Auto-Zoom to Fit:** Automatically calculates the perfect zoom level every time the graph is opened, ensuring no character is left out of view.
+- **In-Person Gaming Mode:** Enable a specialized workflow for local gaming sessions. Includes toggleable monitor controls that appear dynamically in the UI.
+- **Configurable Monitor Name:** Specify exactly which user/display represents your group monitor (e.g., "TV-Display"). FANG uses smart name-matching to target the right screen.
+- **Live Physics Controls:** Fine-tune the simulation's "Cosmic Wind" and strength directly from the View tab. Changes sync instantly across all connected clients.
 - **Cinematic Monitor Focus (Boss Pivot):** Dedicated Monitor accounts keep the focus strictly on "Center" nodes. The camera pivots around the story's anchor points for a perfect big-screen experience.
 - **Connection Editing & Spotlight:** Right-click relationships to rename them, add lore, or cast a cinematic dual-portrait Spotlight with glowing directional arrows.
 - **Context Menu & Character Portraits:** Right-click any token to reveal a sleek Radial Context menu! Narrative features now support high-resolution actor portraits instead of just token images.
@@ -40,9 +40,9 @@ An interactive, self-arranging Actor Graph module for visualizing Character & NP
 1. **Opening FANG:** Click the new "Ninjo's FANG" button inside the **Actors Directory** header, or press `Shift + G`.
 2. **Adding Nodes:** Use the side panel to add connections. If the token doesn't exist on the board yet, it will automatically be pulled from your Actors directory.
 3. **Sharing the Graph:** 
-   - When you are ready, click **"Show Players"** in the Presentation tab.
-   - This sends the data to the background Journal and automatically opens a read-only view on your players' screens.
-4. **Closing the Graph:** Use **"Close for Players"** to instantly close the window on their screens.
+   - Click **"Show Players"** to open a read-only window for all players.
+   - Use **"Show Monitor"** (available in In-Person mode) to send a specialized fullscreen view to your dedicated monitor user.
+4. **Closing the Graph:** Use **"Close for Players"** or **"Close Monitor"** to instantly manage remote views.
 
 #### For the Players
 - **Initial Setup:** The GM must open the graph at least once to initialize the background data.
@@ -63,9 +63,9 @@ For the current development status and planned features, please refer to the [TO
   <img src="assets/fang_ui_3.png" width="32%" title="Smarte Akteur Dropdowns" />
 </p>
 
-- **Narratives Spotlight:** Kinematische Spielleiter-Funktion, um Charaktere mit einem sequenzierten Zoom-Effekt, hochauflösenden Porträts und einem Pergament-Overlay für Lore und Fraktionen hervorzuheben.
-- **Zuschauer-Modus (Kamera-Sync):** Echtzeit-Übertragung der SL-Kamera! Spieler und Monitore folgen den Bewegungen (Zoom/Pan) des Spielleiters live auf ihren Bildschirmen.
-- **Auto-Zoom & Passgenauigkeit:** Berechnet bei jedem Öffnen automatisch den perfekten Zoomfaktor, sodass alle Akteure sofort sichtbar sind.
+- **In-Person Gaming Modus:** Spezialisierter Workflow für Vor-Ort-Runden. Schaltet optimierte Monitor-Steuerelemente frei, die dynamisch in der UI erscheinen.
+- **Anpassbarer Monitor-Name:** Leg genau fest, welcher Benutzer/Monitor angesteuert werden soll (z. B. "TV-Display"). FANG nutzt intelligentes Name-Matching, um das Bild auf das richtige Ziel zu übertragen.
+- **Live-Physik-Steuerung:** Justiere den "Kosmischen Wind" und dessen Stärke direkt im Reiter "Ansicht". Änderungen werden in Echtzeit an alle verbundenen Spieler synchronisiert.
 - **Cinematische Monitor-Zentrierung (Boss-Pivot):** Monitor-Accounts fixieren den Bildausschnitt starr auf den als "Zentrum" markierten Boss-Nodes für ein perfektes Public-Display-Erlebnis.
 - **Verbindungen Bearbeiten & Spotlight:** Rechtsklick auf Beziehungen, um sie umzubenennen, eigene Notizen hinzuzufügen oder ein kinematisches Dual-Porträt-Spotlight mit leuchtenden Pfeilen auszulösen.
 - **Kontextmenü & Charakter-Porträts:** Ein Rechtsklick öffnet ein radiales Kontextmenü! Das Spotlight unterstützt nun detaillierte Akteur-Bilder anstelle von simplen Token-Grafiken.
@@ -88,9 +88,9 @@ For the current development status and planned features, please refer to the [TO
 1. **FANG Öffnen:** Klicke auf den neuen Button "Ninjo's FANG" oben im **Akteurs-Verzeichnis**, oder drücke `Shift + G`.
 2. **Knoten Hinzufügen:** Über die Seitenleiste kannst du Verbindungen herstellen. Fehlt ein Akteur auf dem Board, zieht sich FANG diesen direkt aus deinem Verzeichnis.
 3. **Den Graphen Teilen:** 
-   - Klicke im Reiter "Präsentation" auf **"Spielern zeigen"**.
-   - FANG speichert die Daten in einem Hintergrund-Journal und öffnet das Graphen-Fenster synchron bei allen Spielern.
-4. **Graphen Schließen:** Mit **"Bei Spielern schließen"** verschwindet das Fenster sofort von ihren Monitoren.
+   - Klicke auf **"Spielern zeigen"**, um ein Lese-Fenster für alle Spieler zu öffnen.
+   - Nutze **"Monitor zeigen"** (im In-Person Modus verfügbar), um ein spezielles Vollbild an deine Player-Display zu senden.
+4. **Graphen Schließen:** Mit **"Bei Spielern schließen"** oder **"Monitor schließen"** verwaltest du die Remote-Fenster deiner Runde.
 
 #### Für die Spieler
 - **Einrichtung:** Der GM muss das Tool einmalig öffnen, damit das Journal im Hintergrund erstellt wird.
