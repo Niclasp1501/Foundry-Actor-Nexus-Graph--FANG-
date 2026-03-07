@@ -2249,8 +2249,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 const offsetTarget = getNodeBoundOffset(link.target, angle + Math.PI);
                 const offsetSource = getNodeBoundOffset(link.source, angle);
 
-                const sourceX = link.directional ? sPos.x + Math.cos(angle) * offsetSource : sPos.x;
-                const sourceY = link.directional ? sPos.y + Math.sin(angle) * offsetSource : sPos.y;
+                const sourceX = sPos.x;
+                const sourceY = sPos.y;
                 const targetX = link.directional ? tPos.x - Math.cos(angle) * offsetTarget : tPos.x;
                 const targetY = link.directional ? tPos.y - Math.sin(angle) * offsetTarget : tPos.y;
 
@@ -2293,8 +2293,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 const offsetTarget = getNodeBoundOffset(link.target, targetAngle + Math.PI);
                 const offsetSource = getNodeBoundOffset(link.source, sourceAngle);
 
-                const sourceX = link.directional ? sPos.x + Math.cos(sourceAngle) * offsetSource : sPos.x;
-                const sourceY = link.directional ? sPos.y + Math.sin(sourceAngle) * offsetSource : sPos.y;
+                const sourceX = sPos.x;
+                const sourceY = sPos.y;
                 const targetX = link.directional ? tPos.x - Math.cos(targetAngle) * offsetTarget : tPos.x;
                 const targetY = link.directional ? tPos.y - Math.sin(targetAngle) * offsetTarget : tPos.y;
 

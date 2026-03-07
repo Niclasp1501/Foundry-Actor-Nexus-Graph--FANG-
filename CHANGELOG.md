@@ -3,14 +3,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.2.2] - 2026-03-07
+## [1.2.4] - 2026-03-07
 ### Added
 - **Connection Context Menu**: Right-click on any connection (edge) to edit its information, add detailed notes, or delete it, mirroring the node features.
 - **Connection Narrative Spotlight**: Added a cinematic Spotlight specifically designed for connections, showing the source character portrait, connection details, the target character portrait, and a glowing directional arrow if applicable.
 
 ### Fixed
+- **Directed Arrow Start Point**: Fixed the starting point of directed arrows so they originate from the center of the source token, matching the behavior of regular connections and preventing "snaking" around the token.
 - **Link Click Detection**: Fixed clicking on individual links when multiple connections exist between two tokens. The hit-detection curve formula now matches the rendered curve, sampling increased for better accuracy.
 - **Tooltip Positioning**: The hover tooltip no longer appears too far away when flipped to the left side. Now measures actual tooltip width instead of using a hardcoded estimate.
+
+## [1.2.2] - 2026-03-06
 - **Center Node Sync**: Centering/uncentering a token now syncs correctly to all players and the monitor. Positions are saved once the simulation has settled, not immediately.
 - **Translation Fixes**: Added the missing localization string for closing the Monitor View.
 
