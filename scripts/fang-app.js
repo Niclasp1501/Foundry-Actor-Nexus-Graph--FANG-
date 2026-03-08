@@ -32,6 +32,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         this._isSpotlightActive = false;
         this._isSyncCameraActive = false;
         this._remoteSyncing = false; // Guard to prevent feedback loops
+        this._hoveredNodeId = null;
     }
 
     async _prepareContext(options) {
@@ -1503,6 +1504,43 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         }
     }
 
+    _onMouseMove(event) {
+        if (!this.transform || this._isDragging) return;
+
+        const rect = this.canvas.getBoundingClientRect();
+        const mouseX = event.clientX - rect.left;
+        const mouseY = event.clientY - rect.top;
+
+        const x = (mouseX - this.transform.x) / this.transform.k;
+        const y = (mouseY - this.transform.y) / this.transform.k;
+
+        let hoveredNode = null;
+        let minNDist = 30; // Same radius as click
+
+        for (const node of this.graphData.nodes) {
+            const dx = x - node.x;
+            const dy = y - node.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < minNDist) {
+                hoveredNode = node;
+                minNDist = dist;
+            }
+        }
+
+        const newHoverId = hoveredNode ? hoveredNode.id : null;
+        if (this._hoveredNodeId !== newHoverId) {
+            this._hoveredNodeId = newHoverId;
+            this.ticked(); // Trigger immediate redraw for focus effect
+        }
+    }
+
+    _onMouseLeave() {
+        if (this._hoveredNodeId !== null) {
+            this._hoveredNodeId = null;
+            this.ticked();
+        }
+    }
+
     _showEdgeContextMenu(linkIndex, mouseX, mouseY) {
         const menu = this.element.querySelector("#fang-edge-context-menu");
         if (!menu) return;
@@ -1891,6 +1929,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 .on("end", this.dragended.bind(this)))
             .call(this.zoom);
 
+        this.canvas.addEventListener("mousemove", this._onMouseMove.bind(this));
+        this.canvas.addEventListener("mouseleave", this._onMouseLeave.bind(this));
+
         // Apply initial zoom-to-fit once on window open
         if (!this._initialZoomApplied && this.graphData.nodes.length > 0) {
             this._initialZoomApplied = true;
@@ -2117,6 +2158,19 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             renderPos[node.id] = { x: rx, y: ry };
         });
 
+        // --- Hover focus logic ---
+        const hoveredNodeId = this._hoveredNodeId;
+        const connectedNodeIds = new Set();
+        if (hoveredNodeId) {
+            connectedNodeIds.add(hoveredNodeId);
+            this.graphData.links.forEach(link => {
+                const sId = typeof link.source === 'object' ? link.source.id : link.source;
+                const tId = typeof link.target === 'object' ? link.target.id : link.target;
+                if (sId === hoveredNodeId) connectedNodeIds.add(tId);
+                if (tId === hoveredNodeId) connectedNodeIds.add(sId);
+            });
+        }
+
         this.context.save();
         this.context.clearRect(0, 0, this.width, this.height);
         this.context.translate(this.transform.x, this.transform.y);
@@ -2157,6 +2211,12 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 this.context.save();
                 this.context.setLineDash([8, 8]);
                 this.context.strokeStyle = faction.color || "#ffffff";
+
+                // Dim faction lines if hover is active and none of the members are hovered/connected
+                if (hoveredNodeId) {
+                    const hasRelevantMember = members.some(m => connectedNodeIds.has(m.id));
+                    this.context.globalAlpha = hasRelevantMember ? 0.4 : 0.1;
+                }
 
                 for (let i = 0; i < sortedMembers.length; i++) {
                     const node1 = sortedMembers[i];
@@ -2229,6 +2289,13 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             const midY = (sPos.y + tPos.y) / 2;
 
             let ctrlX, ctrlY, labelX, labelY;
+
+            const sId = typeof link.source === 'object' ? link.source.id : link.source;
+            const tId = typeof link.target === 'object' ? link.target.id : link.target;
+            const isRelevantLink = hoveredNodeId ? (sId === hoveredNodeId || tId === hoveredNodeId) : true;
+
+            this.context.save();
+            this.context.globalAlpha = isRelevantLink ? 1.0 : 0.15;
 
             this.context.lineWidth = 2;
             this.context.strokeStyle = "#888";
@@ -2361,9 +2428,11 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 const met = this.context.measureText(link.label);
                 labelsToDraw.push({
                     text: link.label, x: labelX, y: labelY,
-                    w: met.width + 10, h: linkFontSize + 6, fs: linkFontSize
+                    w: met.width + 10, h: linkFontSize + 6, fs: linkFontSize,
+                    alpha: this.context.globalAlpha
                 });
             }
+            this.context.restore();
         });
 
         // Inter-pair Label Collision Repulsion (12 iterations for stability)
@@ -2391,6 +2460,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
         // Draw Labels at resolved positions
         labelsToDraw.forEach(l => {
+            this.context.save();
+            this.context.globalAlpha = l.alpha;
             this.context.font = `${l.fs}px 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif`;
             this.context.fillStyle = "#ffffff";
             this.context.beginPath();
@@ -2401,6 +2472,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             this.context.stroke();
             this.context.fillStyle = "#1a1a1a";
             this.context.fillText(l.text, l.x, l.y);
+            this.context.restore();
         });
 
         // --- Condition Constants (from project palette) ---
@@ -2422,11 +2494,14 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             const isDeceased = conditions.includes("deceased");
             const isMissing = conditions.includes("missing");
 
+            const isRelevantNode = hoveredNodeId ? connectedNodeIds.has(node.id) : true;
+
             this.context.save();
+            this.context.globalAlpha = isRelevantNode ? 1.0 : 0.15;
 
             // --- Condition: Missing -> halbtransparent ---
             if (isMissing) {
-                this.context.globalAlpha = 0.5;
+                this.context.globalAlpha *= 0.5;
             }
 
             // -----------------------------

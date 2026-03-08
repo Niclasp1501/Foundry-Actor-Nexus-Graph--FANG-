@@ -30,7 +30,7 @@
 }
 
 /* --- Container Frame --- */
-.container {
+.fang-app-container .container {
     display: flex;
     flex: 1;
     overflow: hidden;
@@ -38,7 +38,7 @@
 }
 
 /* Sidebar Styling */
-.sidebar {
+.fang-app-container .sidebar-base {
     width: 300px;
     background: var(--fang-bg-color);
     font-family: var(--fang-font-main);
@@ -104,7 +104,7 @@ body.role-player .fang-app-container .gm-only {
 }
 
 /* --- Edit Lock Banner --- */
-.lock-banner {
+.fang-app-container .lock-banner {
     padding: 8px 12px;
     display: flex;
     justify-content: space-between;
@@ -115,16 +115,16 @@ body.role-player .fang-app-container .gm-only {
     transition: all 0.3s ease;
 }
 
-.lock-banner.no-editor {
+.fang-app-container .lock-banner.no-editor {
     border-left: 4px solid #aaa;
 }
 
-.lock-banner.i-am-editor {
+.fang-app-container .lock-banner.i-am-editor {
     background: rgba(139, 0, 0, 0.05);
     border-left: 4px solid var(--fang-primary-red);
 }
 
-.lock-banner.someone-else-editing {
+.fang-app-container .lock-banner.someone-else-editing {
     background: #eee;
     border-left: 4px solid var(--fang-accent-gold);
     animation: pulse-border 2s infinite;
@@ -144,7 +144,7 @@ body.role-player .fang-app-container .gm-only {
     }
 }
 
-.lock-info {
+.fang-app-container .lock-info {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -177,16 +177,16 @@ body.role-player .fang-app-container .gm-only {
 }
 
 /* Disabled UI State */
-.sidebar-locked .control-group,
-.tab-locked .control-group {
+.fang-app-container .sidebar-locked .control-group,
+.fang-app-container .tab-locked .control-group {
     opacity: 0.6;
     pointer-events: none;
     filter: grayscale(0.5);
     position: relative;
 }
 
-.sidebar-locked .control-group::after,
-.tab-locked .control-group::after {
+.fang-app-container .sidebar-locked .control-group::after,
+.fang-app-container .tab-locked .control-group::after {
     content: "";
     position: absolute;
     top: 0;
@@ -197,7 +197,7 @@ body.role-player .fang-app-container .gm-only {
 }
 
 /* --- Canvas Lock Indicator --- */
-.canvas-lock-indicator {
+.fang-app-container .canvas-lock-indicator {
     position: absolute;
     top: 20px;
     left: 50%;
@@ -230,13 +230,13 @@ body.role-player .fang-app-container .gm-only {
     }
 }
 
-.canvas-lock-indicator i {
+.fang-app-container .canvas-lock-indicator i {
     font-size: 1.2rem;
     color: var(--fang-accent-gold);
 }
 
-.canvas-lock-indicator.hidden,
-.hidden {
+.fang-app-container .canvas-lock-indicator.hidden,
+.fang-app-container .hidden {
     display: none !important;
 }
 
@@ -753,7 +753,7 @@ body.fang-monitor #fang-app.fang-app-window {
     padding: 5px 0;
 }
 
-.ctx-item {
+.fang-app-container .ctx-item {
     padding: 10px 15px;
     cursor: pointer;
     display: flex;
@@ -764,25 +764,25 @@ body.fang-monitor #fang-app.fang-app-window {
     border-left: 3px solid transparent;
 }
 
-.ctx-item i {
+.fang-app-container .ctx-item i {
     width: 16px;
     text-align: center;
     color: var(--fang-accent-gold);
 }
 
-.ctx-item:hover {
+.fang-app-container .ctx-item:hover {
     background: var(--fang-nav-bg);
     border-left-color: var(--fang-primary-red);
     color: var(--fang-primary-red);
 }
 
-.ctx-item.danger:hover {
+.fang-app-container .ctx-item.danger:hover {
     background: #ffe6e6;
     border-left-color: var(--fang-primary-red);
     color: var(--fang-primary-red);
 }
 
-.ctx-item.danger i {
+.fang-app-container .ctx-item.danger i {
     color: #ff4d4d;
 }
 
@@ -847,7 +847,7 @@ body.fang-monitor #fang-app.fang-app-window {
     display: none !important;
 }
 
-.narrative-card {
+.fang-app-container .narrative-card {
     background: #fdfbf7;
     border: 2px solid var(--fang-accent-gold);
     border-radius: 8px;
@@ -877,7 +877,7 @@ body.fang-monitor #fang-app.fang-app-window {
     }
 }
 
-.narrative-portrait-container {
+.fang-app-container .narrative-portrait-container {
     flex: 0 0 160px;
     height: 160px;
     border-radius: 50%;
@@ -886,17 +886,17 @@ body.fang-monitor #fang-app.fang-app-window {
     background: white;
 }
 
-.narrative-portrait-container.hidden {
+.fang-app-container .narrative-portrait-container.hidden {
     display: none;
 }
 
-.narrative-portrait-container img {
+.fang-app-container .narrative-portrait-container img {
     width: 100%;
     height: 100%;
     object-fit: cover;
 }
 
-.narrative-content {
+.fang-app-container .narrative-content {
     flex: 1;
     min-width: 0;
     display: flex;
@@ -904,7 +904,7 @@ body.fang-monitor #fang-app.fang-app-window {
     overflow: hidden;
 }
 
-.narrative-content h2 {
+.fang-app-container .narrative-content h2 {
     font-size: 2.2rem;
     color: var(--fang-primary-red);
     margin: 0 0 15px 0;
@@ -939,14 +939,14 @@ body.fang-monitor #fang-app.fang-app-window {
 }
 
 /* --- Edge Specific Override for Spotlight --- */
-.edge-spotlight-card {
+.fang-app-container .edge-spotlight-card {
     max-width: 900px;
     /* Wider for dual portraits */
     justify-content: space-between;
     align-items: center;
 }
 
-.edge-spotlight-card .edge-content {
+.fang-app-container .edge-spotlight-card .edge-content {
     text-align: center;
     padding: 0 20px;
     display: flex;
@@ -954,7 +954,7 @@ body.fang-monitor #fang-app.fang-app-window {
     justify-content: center;
 }
 
-.edge-spotlight-card h2#edge-narrative-title {
+.fang-app-container .edge-spotlight-card h2#edge-narrative-title {
     font-size: 2rem;
     color: var(--fang-primary-red);
     margin: 0 0 15px 0;
@@ -968,7 +968,7 @@ body.fang-monitor #fang-app.fang-app-window {
     overflow-wrap: break-word;
 }
 
-.narrative-close {
+.fang-app-container .narrative-close {
     position: absolute;
     top: 15px;
     right: 15px;
@@ -979,12 +979,12 @@ body.fang-monitor #fang-app.fang-app-window {
     z-index: 10;
 }
 
-.narrative-close:hover {
+.fang-app-container .narrative-close:hover {
     color: var(--fang-primary-red);
 }
 
 /* Spectator Mode Indicator */
-.spectator-active-indicator {
+.fang-app-container .spectator-active-indicator {
     position: absolute;
     bottom: 20px;
     right: 20px;
@@ -1006,12 +1006,12 @@ body.fang-monitor #fang-app.fang-app-window {
     border: 1px solid var(--fang-accent-gold);
 }
 
-.spectator-active-indicator.active {
+.fang-app-container .spectator-active-indicator.active {
     display: flex;
     animation: fangFadeIn 0.3s ease;
 }
 
-.spectator-active-indicator i {
+.fang-app-container .spectator-active-indicator i {
     animation: fangPulseIndicator 1.5s linear infinite;
     color: #ff4d4d;
 }
