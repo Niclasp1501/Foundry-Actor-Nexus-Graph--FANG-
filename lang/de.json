@@ -57,7 +57,10 @@
             "NoEditor": "Bereit zum Editieren"
         },
         "Journal": {
+            "FolderName": "FANG - Nicht löschen",
             "Title": "Über FANG",
+            "WarningTitle": "WARNUNG",
+            "WarningText": "DIESES JOURNAL NICHT LÖSCHEN!<br>Dieses Journal speichert alle FANG-Graphen-Beziehungen und Spieler-Notizen. Wenn du es löschst, wird dein Graph und alle damit verbundenen Notizen unwiderruflich zerstört.",
             "Header": "Foundry Actor Nexus Graph",
             "Desc1": "Dieses Journal speichert die Graphen-Daten im Hintergrund.",
             "Desc2": "Um den Graphen zu öffnen, klicke auf den Button unten oder drücke Shift + G auf deiner Tastatur.",
@@ -101,6 +104,8 @@
         "ContextMenu": {
             "EditRole": "Rolle / Organisation",
             "EditLore": "Informationen bearbeiten",
+            "OpenJournal": "GM Journal öffnen",
+            "OpenQuest": "Quest Log öffnen",
             "Spotlight": "Narratives Spotlight",
             "Identity": "Identität",
             "Condition": "Zustand",
@@ -139,6 +144,11 @@
             "BtnAddFaction": "Fraktion hinzufügen",
             "BtnSave": "Speichern",
             "BtnCancel": "Abbrechen",
+            "AssignJournalTitle": "Journal zuweisen an {actor}",
+            "AssignJournalContent": "Wähle aus, wie das Journal <strong>{journal}</strong> mit <strong>{actor}</strong> verknüpft werden soll.",
+            "DeleteConfirmTitle": "Löschen bestätigen",
+            "DeleteNodeContent": "Möchtest du diesen Token wirklich aus dem Graphen entfernen? Keine Sorge, deine Spieler-Notizen bleiben sicher im Hintergrund erhalten.",
+            "DeleteLinkContent": "Möchtest du diese Verbindung wirklich löschen?",
             "IdentityTitle": "Identität",
             "IdentityName": "Angezeigter Name",
             "IdentityOriginal": "Original: {name}",
@@ -149,7 +159,16 @@
             "ConditionDeceased": "Verstorben",
             "ConditionMissing": "Vermisst",
             "ConditionCaptured": "Gefangen",
-            "ConditionQuestgiver": "Questgeber"
+            "ConditionQuestgiver": "Questgeber",
+            "LegacyNotes": "Schnelle Lore-Notiz:",
+            "GMNotesTitle": "GM Private Notizen",
+            "GMNotesHint": "Ziehe ein Journal hier rein oder klicke zum Öffnen.",
+            "QuestLogTitle": "Öffentliches Quest Log",
+            "QuestLogHint": "Sichtbar für Spieler als Questgeber-Symbol. Journal hierher ziehen.",
+            "DropJournalHere": "Journal hier ablegen",
+            "BtnOpenPlayerJournal": "Spieler-Notizen öffnen",
+            "BtnConvertPlayerJournal": "In Spieler-Journal umwandeln",
+            "BtnConvertPlayerJournalHint": "Wandelt diese einfache Textnotiz in ein dediziertes, vom Spieler bearbeitbares Foundry-Journal um. Dies gibt dir und dem Spieler volle Textformatierungsfreiheit."
         },
         "Settings": {
             "TokenSize": {

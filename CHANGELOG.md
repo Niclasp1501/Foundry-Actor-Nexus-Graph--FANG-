@@ -3,6 +3,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.7] - 2026-03-10
+### Fixed
+- **UI Refinements**: Renamed "(Legacy) Quick Notes" to "Quick Lore Note", fixed Assign Journal dialog button alignment, and added explanatory tooltips.
+- **Journal Linking Dialog**: Wrapped node and link deletion in native `Dialog.confirm` dialogs, preventing accidental deletion.
+- **Data Persistence**: Legacy player lore notes are now backed up in the actor's flags to prevent data loss when deleting nodes.
+- **Journal Protection**: FANG Journal is automatically placed inside a localized "FANG - Do Not Delete" folder with explicit warning texts.
+
 ## [1.2.6] - 2026-03-08
 ### Fixed
 - **CSS Namespacing**: Fixed an issue where generic CSS classes (like `.container` and `.sidebar`) in FANG caused formatting and layout bugs in the default D&D 5e Actor Sheets. All FANG UI styles are now strictly scoped to the `.fang-app-container`.

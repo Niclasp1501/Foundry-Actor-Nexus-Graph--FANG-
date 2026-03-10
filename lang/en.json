@@ -57,7 +57,10 @@
             "NoEditor": "Ready for Editing"
         },
         "Journal": {
+            "FolderName": "FANG - Do Not Delete",
             "Title": "About FANG",
+            "WarningTitle": "WARNING",
+            "WarningText": "DO NOT DELETE THIS JOURNAL!<br>This journal stores all FANG graph relationships and player lore notes. Deleting it will irrevocably destroy your graph and all associated notes.",
             "Header": "Foundry Actor Nexus Graph",
             "Desc1": "This journal saves the graph data in the background.",
             "Desc2": "To open the graph, click the button below or press Shift + G on your keyboard.",
@@ -101,6 +104,8 @@
         "ContextMenu": {
             "EditRole": "Role / Organization",
             "EditLore": "Edit Information",
+            "OpenJournal": "Open GM Journal",
+            "OpenQuest": "Open Quest Log",
             "Spotlight": "Narrative Spotlight",
             "Identity": "Identity",
             "Condition": "Condition",
@@ -139,6 +144,11 @@
             "BtnAddFaction": "Add Faction",
             "BtnSave": "Save",
             "BtnCancel": "Cancel",
+            "AssignJournalTitle": "Assign Journal to {actor}",
+            "AssignJournalContent": "Select how you want to link the journal <strong>{journal}</strong> to <strong>{actor}</strong>.",
+            "DeleteConfirmTitle": "Confirm Deletion",
+            "DeleteNodeContent": "Are you sure you want to delete this token from the graph? Your Player Lore notes will be kept safe.",
+            "DeleteLinkContent": "Are you sure you want to delete this connection?",
             "IdentityTitle": "Identity",
             "IdentityName": "Displayed Name",
             "IdentityOriginal": "Original: {name}",
@@ -149,7 +159,16 @@
             "ConditionDeceased": "Deceased",
             "ConditionMissing": "Missing",
             "ConditionCaptured": "Captured",
-            "ConditionQuestgiver": "Quest Giver"
+            "ConditionQuestgiver": "Quest Giver",
+            "LegacyNotes": "Quick Lore Note:",
+            "GMNotesTitle": "GM Private Notes",
+            "GMNotesHint": "Drag & Drop a Journal Entry here, or click to open.",
+            "QuestLogTitle": "Public Quest Log",
+            "QuestLogHint": "Visible to players as a Questgiver mark. Drop Journal here.",
+            "DropJournalHere": "Drop Journal Here",
+            "BtnOpenPlayerJournal": "Open Player Notes Journal",
+            "BtnConvertPlayerJournal": "Convert & Open in Player Journal",
+            "BtnConvertPlayerJournalHint": "Converts this simple text note into a dedicated, player-editable Foundry Journal. This gives you and the player full text formatting freedom."
         },
         "Settings": {
             "TokenSize": {
