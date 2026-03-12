@@ -665,12 +665,31 @@ body.fang-monitor #fang-app.fang-app-window {
 .fang-dialog .window-content {
     background: var(--fang-bg-color);
     color: var(--fang-text-color);
-    padding: 15px;
+    padding: 0;
     font-size: 0.95rem;
     word-break: break-word;
     overflow-wrap: break-word;
-    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    max-height: 75vh;
 }
+
+.fang-dialog .dialog-content {
+    padding: 15px;
+    overflow-y: auto;
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+.fang-dialog .dialog-buttons {
+    flex-shrink: 0;
+    display: flex;
+    gap: 8px;
+    padding: 8px 15px;
+    border-top: 1px solid var(--fang-border-color);
+    background: var(--fang-bg-color);
+}
+
 
 .fang-dialog input[type="text"] {
     width: 100%;
@@ -691,6 +710,11 @@ body.fang-monitor #fang-app.fang-app-window {
 }
 
 .fang-dialog .dialog-buttons button {
+    height: 34px !important;
+    padding: 0 14px !important;
+    font-size: 0.88rem !important;
+    line-height: 34px !important;
+    flex: 1;
     background-color: var(--fang-primary-red);
     color: var(--fang-header-text);
     border: none;
@@ -700,7 +724,6 @@ body.fang-monitor #fang-app.fang-app-window {
     font-weight: bold;
     cursor: pointer;
     transition: background-color 0.2s;
-    line-height: normal;
 }
 
 .fang-dialog .dialog-buttons button:hover {
@@ -938,6 +961,73 @@ body.fang-monitor #fang-app.fang-app-window {
     overflow-wrap: break-word;
 }
 
+/* --- Narrative Columns --- */
+.fang-app-container .narrative-columns {
+    display: flex;
+    gap: 30px;
+    align-items: flex-start;
+    margin-top: 10px;
+}
+
+.fang-app-container #narrative-text {
+    flex: 1;
+}
+
+.fang-app-container #narrative-quests-container {
+    flex: 0 0 240px;
+    border-left: 2px solid var(--fang-accent-gold);
+    padding-left: 20px;
+    display: flex;
+    flex-direction: column;
+}
+
+.fang-app-container #narrative-quests-container.hidden {
+    display: none;
+}
+
+.fang-app-container .narrative-quests-header {
+    font-size: 0.85rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: var(--fang-primary-red);
+    margin-bottom: 12px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    padding-bottom: 6px;
+    letter-spacing: 0.5px;
+}
+
+.fang-app-container #narrative-quests-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.fang-app-container .narrative-quest-item {
+    font-family: var(--fang-font-main);
+    font-size: 0.95rem;
+    padding: 8px 12px;
+    margin-bottom: 6px;
+    background: rgba(0, 0, 0, 0.03);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-left: 3px solid transparent;
+}
+
+.fang-app-container .narrative-quest-item:hover {
+    background: rgba(212, 175, 55, 0.08);
+    border-left-color: var(--fang-primary-red);
+    transform: translateX(4px);
+    color: var(--fang-primary-red);
+}
+
+.fang-app-container .narrative-quest-item i {
+    color: var(--fang-accent-gold);
+}
+
 /* --- Edge Specific Override for Spotlight --- */
 .fang-app-container .edge-spotlight-card {
     max-width: 900px;
@@ -1065,4 +1155,151 @@ body.fang-monitor #fang-app.fang-app-window {
     margin-bottom: 0 !important;
     justify-content: flex-start;
     padding-left: 12px;
+}
+
+/* === Only-Sheet: Actor Panel Open — shift actor sheet left to make room === */
+/* Applied when FANG injects the actor directory panel on the right side.     */
+body.fang-actor-panel-open .window-app:not(.sidebar-popout):not(.fang-app-window):not(.fang-dialog),
+body.fang-actor-panel-open .application:not(.sidebar-popout):not(.fang-app-window):not(.fang-dialog) {
+    max-width: calc(100vw - 300px) !important;
+    transition: max-width 0.2s ease;
+}
+
+/* --- Background Settings & Premium Features --- */
+.fang-app-container #fang-bg-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
+    transition: all 0.5s ease;
+}
+
+/* Texture Overlay (Grain) */
+.fang-app-container .canvas-container::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1;
+    /* Above bg layer, below canvas */
+    opacity: 0.15;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Ffilter id='n' %3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    mix-blend-mode: overlay;
+}
+
+.fang-app-container .premium-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 5px;
+}
+
+.fang-app-container .premium-badge {
+    background: linear-gradient(135deg, #FFD700, #B8860B);
+    color: #1a0000;
+    font-size: 0.65rem;
+    font-weight: 800;
+    padding: 2px 6px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    box-shadow: 0 0 10px rgba(212, 175, 55, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.fang-app-container .premium-disclaimer {
+    font-size: 0.75rem;
+    font-style: italic;
+    color: #887b66;
+    margin-top: 8px;
+    line-height: 1.3;
+    display: flex;
+    gap: 6px;
+    padding: 8px;
+    background: rgba(212, 175, 55, 0.05);
+    border-radius: 4px;
+    border-left: 2px solid var(--fang-accent-gold);
+}
+
+.fang-app-container .bg-sub-section {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed var(--fang-border-color);
+    animation: fangFadeIn 0.3s ease;
+}
+
+.fang-app-container .color-palette-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+}
+
+.fang-app-container .color-patch {
+    aspect-ratio: 1;
+    border-radius: 4px;
+    border: 2px solid white;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s, border-color 0.2s;
+}
+
+.fang-app-container .color-patch:hover {
+    transform: scale(1.1);
+}
+
+.fang-app-container .color-patch.active {
+    border-color: var(--fang-accent-gold);
+    box-shadow: 0 0 0 2px white, 0 0 0 4px var(--fang-accent-gold);
+}
+
+.fang-app-container .slider-group {
+    margin-top: 10px;
+}
+
+.fang-app-container .slider-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    color: #666;
+    margin-bottom: 2px;
+}
+
+.fang-app-container .small-btn {
+    padding: 5px;
+    width: 36px;
+    min-width: 36px;
+}
+
+/* Background Presets */
+.fang-app-container #fang-bg-layer.fang-bg-preset-parchment {
+    background-color: #fdfbf7;
+    background-image: radial-gradient(at 0% 0%, rgba(212, 175, 55, 0.05) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(139, 0, 0, 0.03) 0px, transparent 50%);
+}
+
+.fang-app-container #fang-bg-layer.fang-bg-preset-dark {
+    background-color: #0b0a13 !important;
+    background-image: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.02) 0%, transparent 100%) !important;
+}
+
+.fang-app-container #fang-bg-layer.fang-bg-preset-starfield {
+    background: #000005 url('https://www.transparenttextures.com/patterns/stardust.png') repeat !important;
+}
+
+.fang-app-container #fang-bg-layer.fang-bg-preset-forest {
+    background: linear-gradient(135deg, #0f1f0e 0%, #1a2a1a 100%) !important;
+}
+
+.fang-app-container #fang-bg-layer.fang-bg-preset-ocean {
+    background: linear-gradient(135deg, #0d1b2a 0%, #1b263b 100%) !important;
+}
+
+.fang-app-container #fang-bg-layer.fang-bg-preset-stone {
+    background-color: #333 !important;
+    background-image: url("https://www.transparenttextures.com/patterns/black-linen.png") !important;
 }

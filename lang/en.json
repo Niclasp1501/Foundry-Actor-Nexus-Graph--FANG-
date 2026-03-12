@@ -27,6 +27,7 @@
             "GroupMonitor": "Monitor",
             "AdvancedFeatures": "Advanced Functions",
             "AdvancedSettings": "Open Advanced Settings",
+            "AvailableQuests": "Available Quests",
             "ShowPlayers": "Show Players",
             "ShowPlayersHint": "Shows the graph to all players in a normal window",
             "ShowMonitor": "Show Monitor",
@@ -54,7 +55,41 @@
             "ReleaseLock": "Release Lock",
             "ForceRelease": "Force Release",
             "CurrentlyEditing": "is currently being edited by {user}",
-            "NoEditor": "Ready for Editing"
+            "NoEditor": "Ready for Editing",
+            "Background": {
+                "Title": "Background Settings",
+                "PremiumBadge": "PREMIUM ★",
+                "PremiumHint": "This feature is currently free. As a future premium feature, it will be part of the supporter benefits.",
+                "Mode": "Background Type",
+                "ModeDefault": "Standard Parchment",
+                "ModePalette": "Color Palette",
+                "ModeImage": "Custom Image",
+                "ModePreset": "Style Preset",
+                "Color": "Background Color",
+                "Image": "Image Path",
+                "Blur": "Blur Effect",
+                "Opacity": "Opacity",
+                "Preset": "Select Preset",
+                "BtnBrowse": "Browse",
+                "Presets": {
+                    "Parchment": "Parchment",
+                    "Dark": "Dark Dungeon",
+                    "Starfield": "Starfield",
+                    "Forest": "Mystic Forest",
+                    "Ocean": "Deep Ocean",
+                    "Stone": "Ancient Stone"
+                },
+                "Palette": {
+                    "Parchment": "Parchment",
+                    "Black": "Deep Black",
+                    "Grey": "Dungeon Grey",
+                    "Navy": "Night Blue",
+                    "Green": "Forest Green",
+                    "Red": "Blood Red",
+                    "Purple": "Dark Purple",
+                    "Sand": "Sandstone"
+                }
+            }
         },
         "Journal": {
             "FolderName": "FANG - Do Not Delete",
@@ -168,7 +203,9 @@
             "DropJournalHere": "Drop Journal Here",
             "BtnOpenPlayerJournal": "Open Player Notes Journal",
             "BtnConvertPlayerJournal": "Convert & Open in Player Journal",
-            "BtnConvertPlayerJournalHint": "Converts this simple text note into a dedicated, player-editable Foundry Journal. This gives you and the player full text formatting freedom."
+            "BtnConvertPlayerJournalHint": "Converts this simple text note into a dedicated, player-editable Foundry Journal. This gives you and the player full text formatting freedom.",
+            "QuestLogAddBtn": "Add Quest Journal (Drag & Drop here)",
+            "SelectQuestContent": "Choose a Quest Journal to open:"
         },
         "Settings": {
             "TokenSize": {
@@ -202,6 +239,10 @@
             "MonitorDisplayName": {
                 "Name": "Monitor Display Name",
                 "Hint": "The name of the user or display (e.g., 'Monitor') used for the public viewing view."
+            },
+            "ReplaceOnlySheetActor": {
+                "Name": "Only-Sheet: Replace Actor Button",
+                "Hint": "If the 'Only-Sheet' module is active, FANG will hide the original actor open button and replace it with a custom button that opens the standard Foundry Actor Directory."
             }
         },
         "Physics": {

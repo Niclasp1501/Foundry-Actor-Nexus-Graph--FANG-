@@ -244,12 +244,104 @@
                         <input type="file" id="importFile" accept=".json" style="display: none;">
                     </div>
                 </div>
+
+                <!-- BACKGROUND SETTINGS (PREMIUM) -->
+                <div class="control-group premium-feature">
+                    <div class="premium-header">
+                        <h3>{{localize "FANG.UI.Background.Title"}}</h3>
+                        <span class="premium-badge">{{localize "FANG.UI.Background.PremiumBadge"}}</span>
+                    </div>
+
+                    <div class="input-stack">
+                        <select id="bgModeSelect">
+                            <option value="default">{{localize "FANG.UI.Background.ModeDefault"}}</option>
+                            <option value="palette">{{localize "FANG.UI.Background.ModePalette"}}</option>
+                            <option value="image">{{localize "FANG.UI.Background.ModeImage"}}</option>
+                            <option value="preset">{{localize "FANG.UI.Background.ModePreset"}}</option>
+                        </select>
+
+                        <!-- Palette Section -->
+                        <div id="bgPaletteSection" class="bg-sub-section hidden">
+                            <div class="color-palette-grid">
+                                <div class="color-patch" data-color="#fdfbf7"
+                                    title="{{localize 'FANG.UI.Background.Palette.Parchment'}}"
+                                    style="background: #fdfbf7;"></div>
+                                <div class="color-patch" data-color="#0b0a13"
+                                    title="{{localize 'FANG.UI.Background.Palette.Black'}}"
+                                    style="background: #0b0a13;"></div>
+                                <div class="color-patch" data-color="#1c1c1e"
+                                    title="{{localize 'FANG.UI.Background.Palette.Grey'}}" style="background: #1c1c1e;">
+                                </div>
+                                <div class="color-patch" data-color="#0d1b2a"
+                                    title="{{localize 'FANG.UI.Background.Palette.Navy'}}" style="background: #0d1b2a;">
+                                </div>
+                                <div class="color-patch" data-color="#0f1f0e"
+                                    title="{{localize 'FANG.UI.Background.Palette.Green'}}"
+                                    style="background: #0f1f0e;"></div>
+                                <div class="color-patch" data-color="#1a0000"
+                                    title="{{localize 'FANG.UI.Background.Palette.Red'}}" style="background: #1a0000;">
+                                </div>
+                                <div class="color-patch" data-color="#1a0d2e"
+                                    title="{{localize 'FANG.UI.Background.Palette.Purple'}}"
+                                    style="background: #1a0d2e;"></div>
+                                <div class="color-patch" data-color="#c8b99a"
+                                    title="{{localize 'FANG.UI.Background.Palette.Sand'}}" style="background: #c8b99a;">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Image Section -->
+                        <div id="bgImageSection" class="bg-sub-section hidden">
+                            <div class="input-row">
+                                <input type="text" id="bgImageInput"
+                                    placeholder="{{localize 'FANG.UI.Background.Image'}}">
+                                <button id="btnBrowseBg" class="btn action-btn small-btn"
+                                    title="{{localize 'FANG.UI.Background.BtnBrowse'}}">
+                                    <i class="fas fa-file-image"></i>
+                                </button>
+                            </div>
+
+                            <div class="slider-group">
+                                <div class="slider-label">
+                                    <span>{{localize "FANG.UI.Background.Blur"}}</span>
+                                    <span id="bgBlurVal">0px</span>
+                                </div>
+                                <input type="range" id="rngBgBlur" min="0" max="20" step="1" value="0">
+                            </div>
+
+                            <div class="slider-group">
+                                <div class="slider-label">
+                                    <span>{{localize "FANG.UI.Background.Opacity"}}</span>
+                                    <span id="bgOpacityVal">100%</span>
+                                </div>
+                                <input type="range" id="rngBgOpacity" min="0.1" max="1.0" step="0.1" value="1.0">
+                            </div>
+                        </div>
+
+                        <!-- Preset Section -->
+                        <div id="bgPresetSection" class="bg-sub-section hidden">
+                            <select id="bgPresetSelect">
+                                <option value="parchment">{{localize "FANG.UI.Background.Presets.Parchment"}}</option>
+                                <option value="dark">{{localize "FANG.UI.Background.Presets.Dark"}}</option>
+                                <option value="starfield">{{localize "FANG.UI.Background.Presets.Starfield"}}</option>
+                                <option value="forest">{{localize "FANG.UI.Background.Presets.Forest"}}</option>
+                                <option value="ocean">{{localize "FANG.UI.Background.Presets.Ocean"}}</option>
+                                <option value="stone">{{localize "FANG.UI.Background.Presets.Stone"}}</option>
+                            </select>
+                        </div>
+
+                        <p class="premium-disclaimer">
+                            <i class="fas fa-info-circle"></i> {{localize "FANG.UI.Background.PremiumHint"}}
+                        </p>
+                    </div>
+                </div>
             </section>
         </div>
     </aside>
 
     <!-- Main Canvas Area -->
     <main class="canvas-container" style="position: relative;">
+        <div id="fang-bg-layer"></div>
         <div id="fang-canvas-lock-indicator" class="canvas-lock-indicator hidden">
             <i class="fas fa-user-edit"></i>
             <span id="canvas-lock-text"></span>
@@ -318,7 +410,14 @@
                 <div class="narrative-content">
                     <h2 id="narrative-title"></h2>
                     <div id="narrative-subtitle"></div>
-                    <div id="narrative-text"></div>
+                    <div class="narrative-columns">
+                        <div id="narrative-text"></div>
+                        <div id="narrative-quests-container" class="hidden">
+                            <h4 class="narrative-quests-header"><i class="fas fa-scroll"></i> {{localize
+                                "FANG.UI.AvailableQuests"}}</h4>
+                            <ul id="narrative-quests-list"></ul>
+                        </div>
+                    </div>
                 </div>
                 <div class="narrative-close">
                     <i class="fas fa-times"></i>
@@ -347,6 +446,37 @@
                     <i class="fas fa-times"></i>
                 </div>
             </div>
+        </div>
+        <!-- Quest Picker Panel (In-Canvas, shown when a node has multiple quests) -->
+        <div id="fang-quest-picker" class="hidden" style="
+            position: absolute;
+            z-index: 1000;
+            min-width: 220px;
+            max-width: 300px;
+            background: var(--fang-card-bg);
+            border: 1px solid var(--fang-border-color);
+            border-radius: 6px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.25), 0 0 10px rgba(212,175,55,0.12);
+            font-family: var(--fang-font-main);
+            overflow: hidden;
+        ">
+            <div id="fang-quest-picker-header" style="
+                padding: 9px 12px;
+                background: var(--fang-primary-red);
+                color: var(--fang-header-text);
+                border-bottom: 2px solid var(--fang-accent-gold);
+                font-size: 0.85rem;
+                font-weight: bold;
+                letter-spacing: 0.05em;
+                text-transform: uppercase;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            ">
+                <i class="fas fa-scroll" style="color: var(--fang-accent-gold);"></i>
+                <span id="fang-quest-picker-title"></span>
+            </div>
+            <ul id="fang-quest-picker-list" style="list-style: none; margin: 0; padding: 5px 0;"></ul>
         </div>
     </main>
 </div>

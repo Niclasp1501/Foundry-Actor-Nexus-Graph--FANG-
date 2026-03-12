@@ -147,6 +147,65 @@ Hooks.once("init", () => {
     type: Boolean,
     default: false
   });
+
+  game.settings.register("fang", "replaceOnlySheetActor", {
+    name: "FANG.Settings.ReplaceOnlySheetActor.Name",
+    hint: "FANG.Settings.ReplaceOnlySheetActor.Hint",
+    scope: "world",
+    config: true,
+    type: Boolean,
+    default: false,
+    onChange: () => {
+      // Remove injected buttons so they get re-injected with new setting
+      document.getElementById("fang-so-btn")?.remove();
+      document.getElementById("fang-so-actors-btn")?.remove();
+      const orig = document.getElementById("so-collapse-actor-select");
+      if (orig) orig.style.display = "";
+    }
+  });
+
+  // --- BACKGROUND SETTINGS ---
+  game.settings.register("fang", "canvasBackgroundMode", {
+    scope: "world",
+    config: false,
+    type: String,
+    default: "default" // "default" | "palette" | "image" | "preset"
+  });
+
+  game.settings.register("fang", "canvasBackgroundColor", {
+    scope: "world",
+    config: false,
+    type: String,
+    default: "#fdfbf7"
+  });
+
+  game.settings.register("fang", "canvasBackgroundImage", {
+    scope: "world",
+    config: false,
+    type: String,
+    default: ""
+  });
+
+  game.settings.register("fang", "canvasBackgroundBlur", {
+    scope: "world",
+    config: false,
+    type: Number,
+    default: 0
+  });
+
+  game.settings.register("fang", "canvasBackgroundOpacity", {
+    scope: "world",
+    config: false,
+    type: Number,
+    default: 1.0
+  });
+
+  game.settings.register("fang", "canvasBackgroundPreset", {
+    scope: "world",
+    config: false,
+    type: String,
+    default: "parchment"
+  });
 });
 
 Hooks.once("ready", () => {
@@ -241,6 +300,12 @@ Hooks.once("ready", () => {
       }, 100);
     }
 
+    if (data.action === "applyBackground") {
+      if (fangApp && fangApp.rendered) {
+        fangApp._applyBackground();
+      }
+    }
+
     // --- STORYTELLER FEATURES: SPOTLIGHT, LOCKS & CAMERA SYNC ---
 
     if (data.action === "lockStatusUpdate") {
@@ -299,6 +364,120 @@ Hooks.once("ready", () => {
       }
     }
   });
+
+  // Helper: apply Only-Sheet-matching style to a button element
+  function _applyOnlySheetStyle(btn) {
+    btn.className = "button";
+    btn.style.background = "";
+    btn.style.border = "";
+    btn.style.color = "";
+    btn.style.padding = "";
+    btn.style.borderRadius = "";
+    btn.style.cursor = "pointer";
+  }
+
+  // Inject FANG button (and optionally replace actor-opener) into "only-sheet" module
+  const observer = new MutationObserver((mutations) => {
+    for (let mutation of mutations) {
+      if (mutation.addedNodes.length) {
+        const container = document.getElementById("so-main-buttons");
+        if (container && !document.getElementById("fang-so-btn")) {
+          const replaceActorBtn = game.settings.get("fang", "replaceOnlySheetActor");
+
+          // 1) Optionally replace the original actor-selector button
+          if (replaceActorBtn) {
+            const orig = document.getElementById("so-collapse-actor-select");
+            if (orig) orig.style.display = "none";
+
+            if (!document.getElementById("fang-so-actors-btn")) {
+              const actorsBtn = document.createElement("button");
+              actorsBtn.id = "fang-so-actors-btn";
+              actorsBtn.title = game.i18n.localize("ACTOR.TabActor") || "Actors";
+              _applyOnlySheetStyle(actorsBtn);
+              actorsBtn.innerHTML = '<i class="fa-solid fa-user"></i>';
+              // FIX: Robust toggle and close logic for V13 + Only-Sheet
+              actorsBtn.addEventListener("click", (e) => {
+                e.preventDefault();
+
+                // If already marked as open, find the app and close it. 
+                // The MutationObserver below will handle all state cleanup (!).
+                if (actorsBtn.dataset.fangOpen === "1") {
+                  const popout = document.querySelector(".actors-sidebar.sidebar-popout");
+                  if (popout) {
+                    const app = Object.values(ui.windows).find(w => w.element?.[0] === popout);
+                    if (app) app.close();
+                    else popout.remove();
+                  }
+                  return;
+                }
+
+                // Ensure the panel CSS is injected (immune to Foundry's _updatePosition)
+                const STYLE_ID = "fang-actor-panel-style";
+                if (!document.getElementById(STYLE_ID)) {
+                  const style = document.createElement("style");
+                  style.id = STYLE_ID;
+                  style.textContent = `
+                    .actors-sidebar.sidebar-popout {
+                      position: fixed !important;
+                      right: 0px !important;
+                      top: 0px !important;
+                      left: auto !important;
+                      width: 300px !important;
+                      height: 100vh !important;
+                      max-height: 100vh !important;
+                      margin: 0 !important;
+                      border-radius: 0 !important;
+                      z-index: 9999 !important;
+                      background: rgba(11, 10, 19, 0.95) !important;
+                      border: 1px solid rgb(48, 40, 49) !important;
+                      box-shadow: -4px 0 16px rgba(0,0,0,0.6) !important;
+                    }
+                  `;
+                  document.head.appendChild(style);
+                }
+
+                // Initial state update: mark as open and shift sheet left
+                actorsBtn.dataset.fangOpen = "1";
+                document.body.classList.add("fang-actor-panel-open");
+
+                // Render as popout (lowercase 'o' for V13 compatibility)
+                const dir = ui.actors;
+                if (!dir) return;
+                if (dir.renderPopout) dir.renderPopout();
+                else dir.render(true, { popout: true });
+
+                // SINGLE SOURCE OF TRUTH for cleanup: Watch for the panel removal from DOM.
+                // This handles X-button, our button-close, and external closes correctly.
+                const observer = new MutationObserver(() => {
+                  if (!document.querySelector(".actors-sidebar.sidebar-popout")) {
+                    document.body.classList.remove("fang-actor-panel-open");
+                    actorsBtn.removeAttribute("data-fang-open");
+                    observer.disconnect();
+                  }
+                });
+                observer.observe(document.body, { childList: true, subtree: true });
+              });
+              // Insert at same position as the original (first child)
+              container.insertBefore(actorsBtn, container.firstChild);
+            }
+          }
+
+          // 2) Always inject the FANG button (matching Only-Sheet style)
+          const fangBtn = document.createElement("button");
+          fangBtn.id = "fang-so-btn";
+          fangBtn.title = game.i18n.localize("FANG.ButtonOpen") || "Open FANG Graph";
+          _applyOnlySheetStyle(fangBtn);
+          fangBtn.innerHTML = '<i class="fas fa-project-diagram"></i>';
+          fangBtn.addEventListener("click", (e) => {
+            e.preventDefault();
+            game.modules.get("fang")?.api?.toggleGraph();
+          });
+          container.appendChild(fangBtn);
+        }
+      }
+    }
+  });
+  observer.observe(document.body, { childList: true, subtree: true });
 });
 
 Hooks.on("renderActorDirectory", (app, html, data) => {
@@ -328,7 +507,32 @@ Hooks.on("renderActorDirectory", (app, html, data) => {
 
   // Append to the directory header
   $(html).find(".directory-header .header-actions").append(button);
+
+  // If Only-Sheet is active and this is a popout, position it like the journal panel
+  if (document.getElementById("so-main-buttons") && app.popOut) {
+    // Small delay to let Foundry finish positioning first
+    setTimeout(() => {
+      const el = app.element?.[0] ?? document.querySelector(".actors-sidebar.sidebar-popout, [class*='actor'][class*='popout']");
+      if (!el) return;
+      Object.assign(el.style, {
+        position: "fixed",
+        right: "0px",
+        top: "0px",
+        left: "auto",
+        width: "300px",
+        height: "100vh",
+        maxHeight: "100vh",
+        margin: "0",
+        borderRadius: "0",
+        zIndex: "9999",
+        background: "rgba(11, 10, 19, 0.95)",
+        border: "1px solid rgb(48, 40, 49)",
+        boxShadow: "-4px 0 16px rgba(0,0,0,0.6)"
+      });
+    }, 50);
+  }
 });
+
 
 Hooks.on("renderJournalTextPageSheet", (app, html, data) => {
   // Foundry sanitizes onclick attributes for security. We attach the listener here safely.

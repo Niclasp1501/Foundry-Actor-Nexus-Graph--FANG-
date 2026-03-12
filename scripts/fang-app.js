@@ -1,5 +1,17 @@
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
+/**
+ * Helper class for future premium features.
+ * Currently returns true for all checks, but ready for license validation.
+ */
+class FangLicense {
+    static isPremium() {
+        // Today: always true. 
+        // Future: Check game.settings.get("fang", "licenseKey") via Patreon API etc.
+        return true;
+    }
+}
+
 export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
     static DEFAULT_OPTIONS = {
         id: "fang-app",
@@ -42,7 +54,16 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
         return {
             ...await super._prepareContext(options),
-            showMonitorControls: inPersonGaming && hasMonitorPlayer
+            showMonitorControls: inPersonGaming && hasMonitorPlayer,
+            isPremium: FangLicense.isPremium(),
+            background: {
+                mode: game.settings.get("fang", "canvasBackgroundMode"),
+                color: game.settings.get("fang", "canvasBackgroundColor"),
+                image: game.settings.get("fang", "canvasBackgroundImage"),
+                blur: game.settings.get("fang", "canvasBackgroundBlur"),
+                opacity: game.settings.get("fang", "canvasBackgroundOpacity"),
+                preset: game.settings.get("fang", "canvasBackgroundPreset")
+            }
         };
     }
 
@@ -266,9 +287,106 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     game.settings.set("fang", "cosmicWindStrength", parseFloat(ev.target.value));
                 });
             }
+
+            // --- BACKGROUND EVENT LISTENERS (GM ONLY) ---
+            const bgModeSelect = this.element.querySelector("#bgModeSelect");
+            if (bgModeSelect) {
+                bgModeSelect.value = game.settings.get("fang", "canvasBackgroundMode");
+                bgModeSelect.addEventListener("change", async (e) => {
+                    await game.settings.set("fang", "canvasBackgroundMode", e.target.value);
+                    this._updateBackgroundUI();
+                    this._applyBackground();
+                    game.socket.emit("module.fang", { action: "applyBackground" });
+                });
+            }
+
+            const bgPresetSelect = this.element.querySelector("#bgPresetSelect");
+            if (bgPresetSelect) {
+                bgPresetSelect.value = game.settings.get("fang", "canvasBackgroundPreset");
+                bgPresetSelect.addEventListener("change", async (e) => {
+                    await game.settings.set("fang", "canvasBackgroundPreset", e.target.value);
+                    this._applyBackground();
+                    game.socket.emit("module.fang", { action: "applyBackground" });
+                });
+            }
+
+            const colorPatches = this.element.querySelectorAll(".color-patch");
+            colorPatches.forEach(patch => {
+                patch.addEventListener("click", async (e) => {
+                    const color = e.currentTarget.dataset.color;
+                    await game.settings.set("fang", "canvasBackgroundColor", color);
+                    colorPatches.forEach(p => p.classList.remove("active"));
+                    e.currentTarget.classList.add("active");
+                    this._applyBackground();
+                    game.socket.emit("module.fang", { action: "applyBackground" });
+                });
+            });
+
+            // Image Selection
+            const btnBrowse = this.element.querySelector("#btnBrowseBg");
+            if (btnBrowse) {
+                btnBrowse.addEventListener("click", async () => {
+                    const current = game.settings.get("fang", "canvasBackgroundImage");
+                    new FilePicker({
+                        type: "image",
+                        current: current,
+                        callback: async (path) => {
+                            this.element.querySelector("#bgImageInput").value = path;
+                            await game.settings.set("fang", "canvasBackgroundImage", path);
+                            this._applyBackground();
+                            game.socket.emit("module.fang", { action: "applyBackground" });
+                        }
+                    }).render(true);
+                });
+            }
+
+            const bgImageInput = this.element.querySelector("#bgImageInput");
+            if (bgImageInput) {
+                bgImageInput.value = game.settings.get("fang", "canvasBackgroundImage");
+                bgImageInput.addEventListener("change", async (e) => {
+                    await game.settings.set("fang", "canvasBackgroundImage", e.target.value);
+                    this._applyBackground();
+                    game.socket.emit("module.fang", { action: "applyBackground" });
+                });
+            }
+
+            const rngBlur = this.element.querySelector("#rngBgBlur");
+            const bgBlurVal = this.element.querySelector("#bgBlurVal");
+            if (rngBlur) {
+                rngBlur.value = game.settings.get("fang", "canvasBackgroundBlur");
+                if (bgBlurVal) bgBlurVal.innerText = `${rngBlur.value}px`;
+                rngBlur.addEventListener("input", (e) => {
+                    if (bgBlurVal) bgBlurVal.innerText = `${e.target.value}px`;
+                });
+                rngBlur.addEventListener("change", async (e) => {
+                    await game.settings.set("fang", "canvasBackgroundBlur", parseInt(e.target.value));
+                    this._applyBackground();
+                    game.socket.emit("module.fang", { action: "applyBackground" });
+                });
+            }
+
+            const rngOpacity = this.element.querySelector("#rngBgOpacity");
+            const bgOpacityVal = this.element.querySelector("#bgOpacityVal");
+            if (rngOpacity) {
+                rngOpacity.value = game.settings.get("fang", "canvasBackgroundOpacity");
+                if (bgOpacityVal) bgOpacityVal.innerText = `${Math.round(rngOpacity.value * 100)}%`;
+                rngOpacity.addEventListener("input", (e) => {
+                    if (bgOpacityVal) bgOpacityVal.innerText = `${Math.round(e.target.value * 100)}%`;
+                });
+                rngOpacity.addEventListener("change", async (e) => {
+                    await game.settings.set("fang", "canvasBackgroundOpacity", parseFloat(e.target.value));
+                    this._applyBackground();
+                    game.socket.emit("module.fang", { action: "applyBackground" });
+                });
+            }
+
+            this._updateBackgroundUI();
         } else {
             setTimeout(() => this.resizeCanvas(), 50);
         }
+
+        // Apply background initially for all users
+        this._applyBackground();
 
         // Spotlight Overlay Close
         const spotlightCloses = this.element.querySelectorAll(".narrative-close");
@@ -447,7 +565,13 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     // Migration: Journal linking fields
                     if (node.playerLorePageId === undefined) node.playerLorePageId = null;
                     if (node.journalUuid === undefined) node.journalUuid = null;
-                    if (node.questUuid === undefined) node.questUuid = null;
+                    // Migration: questUuid (single) -> questUuids (array)
+                    if (node.questUuid !== undefined && !node.questUuids) {
+                        node.questUuids = node.questUuid ? [{ uuid: node.questUuid, name: node._questJournalName || "Quest Journal" }] : [];
+                        delete node.questUuid;
+                        delete node._questJournalName;
+                    }
+                    if (!node.questUuids) node.questUuids = [];
                 });
 
                 if (this.graphData.showFactionLines === undefined) {
@@ -483,7 +607,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 lore: n.lore || "",
                 playerLorePageId: n.playerLorePageId || null,
                 journalUuid: n.journalUuid || null,
-                questUuid: n.questUuid || null,
+                questUuids: (n.questUuids || []).map(q => ({ uuid: q.uuid, name: q.name })),
                 hidden: n.hidden || false,
                 displayName: n.displayName || "",
                 conditions: n.conditions || []
@@ -531,6 +655,73 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             } else {
                 ui.notifications.warn(game.i18n.localize("FANG.Messages.SaveNoPermission"));
             }
+        }
+    }
+
+    // --- BACKGROUND LOGIC ---
+
+    /**
+     * Updates the visibility of background sub-sections based on selected mode.
+     */
+    _updateBackgroundUI() {
+        if (!this.element) return;
+        const mode = game.settings.get("fang", "canvasBackgroundMode");
+
+        const sections = {
+            palette: this.element.querySelector("#bgPaletteSection"),
+            image: this.element.querySelector("#bgImageSection"),
+            preset: this.element.querySelector("#bgPresetSection")
+        };
+
+        Object.keys(sections).forEach(k => {
+            if (sections[k]) sections[k].classList.toggle("hidden", k !== mode);
+        });
+
+        // Highlight active color patch if in palette mode
+        if (mode === "palette") {
+            const currentColor = game.settings.get("fang", "canvasBackgroundColor");
+            const patches = this.element.querySelectorAll(".color-patch");
+            patches.forEach(p => p.classList.toggle("active", p.dataset.color === currentColor));
+        }
+    }
+
+    /**
+     * Applies the background style to the #fang-bg-layer element.
+     */
+    _applyBackground() {
+        if (!this.element) return;
+        const layer = this.element.querySelector("#fang-bg-layer");
+        if (!layer) return;
+
+        const mode = game.settings.get("fang", "canvasBackgroundMode");
+
+        // Reset
+        layer.style.backgroundColor = "";
+        layer.style.backgroundImage = "";
+        layer.style.filter = "";
+        layer.style.opacity = "";
+        layer.className = "";
+
+        if (mode === "palette") {
+            const color = game.settings.get("fang", "canvasBackgroundColor");
+            layer.style.backgroundColor = color;
+        } else if (mode === "image") {
+            const path = game.settings.get("fang", "canvasBackgroundImage");
+            const blur = game.settings.get("fang", "canvasBackgroundBlur");
+            const opacity = game.settings.get("fang", "canvasBackgroundOpacity");
+
+            if (path) {
+                layer.style.backgroundImage = `url("${path}")`;
+                layer.style.backgroundSize = "cover";
+                layer.style.backgroundPosition = "center";
+            }
+            if (blur > 0) layer.style.filter = `blur(${blur}px)`;
+            layer.style.opacity = opacity;
+        } else if (mode === "preset") {
+            const preset = game.settings.get("fang", "canvasBackgroundPreset");
+            layer.classList.add(`fang-bg-preset-${preset}`);
+        } else {
+            // Default: no styles applied (shows the CSS-defined default parchment)
         }
     }
 
@@ -1025,8 +1216,11 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                         icon: '<i class="fas fa-scroll"></i>',
                         label: game.i18n.localize("FANG.Dialogs.QuestLogTitle") || "Public Quest Log",
                         callback: async () => {
-                            targetNode.questUuid = data.uuid;
-                            targetNode._questJournalName = droppedDoc.name;
+                            if (!targetNode.questUuids) targetNode.questUuids = [];
+                            const alreadyLinked = targetNode.questUuids.some(q => q.uuid === data.uuid);
+                            if (!alreadyLinked) {
+                                targetNode.questUuids.push({ uuid: data.uuid, name: droppedDoc.name });
+                            }
                             if (!targetNode.conditions) targetNode.conditions = [];
                             if (!targetNode.conditions.includes("questgiver")) {
                                 targetNode.conditions.push("questgiver");
@@ -1290,7 +1484,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         newBtnRole.style.display = hasLock ? "block" : "none";
         newBtnLore.style.display = hasLock ? "block" : "none";
         if (newBtnOpenJournal) newBtnOpenJournal.style.display = (game.user.isGM && node.journalUuid) ? "block" : "none";
-        if (newBtnOpenQuest) newBtnOpenQuest.style.display = node.questUuid ? "block" : "none";
+        if (newBtnOpenQuest) newBtnOpenQuest.style.display = (node.questUuids && node.questUuids.length > 0) ? "block" : "none";
         newBtnDelete.style.display = hasLock ? "block" : "none";
         if (newBtnIdentity) newBtnIdentity.style.display = (game.user.isGM && hasLock) ? "block" : "none";
         if (newBtnCondition) newBtnCondition.style.display = (game.user.isGM && hasLock) ? "block" : "none";
@@ -1327,14 +1521,84 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
         // --- Context Action: Open Quest Log ---
         if (newBtnOpenQuest) {
-            newBtnOpenQuest.addEventListener("click", async () => {
+            newBtnOpenQuest.addEventListener("click", async (evt) => {
                 menu.classList.add("hidden");
-                if (!node.questUuid) return;
-                const doc = await fromUuid(node.questUuid);
-                if (doc) doc.sheet.render(true);
-                else if (!game.user.isGM) ui.notifications.warn("Quest Journal not found or you lack permissions to view it.");
+                if (!node.questUuids || node.questUuids.length === 0) return;
+
+                if (node.questUuids.length === 1) {
+                    // Only one quest – open directly
+                    const doc = await fromUuid(node.questUuids[0].uuid);
+                    if (doc) doc.sheet.render(true);
+                    else if (!game.user.isGM) ui.notifications.warn("Quest Journal not found or you lack permissions.");
+                    return;
+                }
+
+                // Multiple quests – show the in-canvas quest picker panel
+                const picker = this.element.querySelector("#fang-quest-picker");
+                const pickerTitle = picker.querySelector("#fang-quest-picker-title");
+                const pickerList = picker.querySelector("#fang-quest-picker-list");
+                if (!picker) return;
+
+                // Set header text: character name
+                pickerTitle.textContent = node.name;
+
+                // Build the list of quests
+                pickerList.innerHTML = node.questUuids.map((q, i) => `
+                    <li class="fang-quest-pick-item ctx-item" data-idx="${i}" style="padding: 9px 14px; cursor: pointer; display: flex; align-items: center; gap: 10px; border-left: 3px solid transparent; transition: background 0.15s, border-color 0.15s;">
+                        <i class="fas fa-scroll" style="color: var(--fang-accent-gold); width:16px; text-align:center;"></i>
+                        <span style="font-size:0.92rem;">${q.name || "Quest " + (i + 1)}</span>
+                    </li>
+                `).join("");
+
+                // Position next to cursor, within canvas bounds
+                const canvasBounds = this.canvas.getBoundingClientRect();
+                const containerBounds = this.element.querySelector("main").getBoundingClientRect();
+                let px = mouseX + 10;
+                let py = mouseY;
+                picker.classList.remove("hidden");
+                // Clamp to canvas
+                const pw = picker.offsetWidth || 240;
+                const ph = picker.offsetHeight || 150;
+                if (px + pw > containerBounds.width) px = mouseX - pw - 10;
+                if (py + ph > containerBounds.height) py = containerBounds.height - ph - 10;
+                picker.style.left = `${px}px`;
+                picker.style.top = `${py}px`;
+
+                // Click handlers on items
+                picker.querySelectorAll(".fang-quest-pick-item").forEach(el => {
+                    el.addEventListener("click", async () => {
+                        picker.classList.add("hidden");
+                        const idx = parseInt(el.dataset.idx);
+                        const q = node.questUuids[idx];
+                        if (!q) return;
+                        const doc = await fromUuid(q.uuid);
+                        if (doc) doc.sheet.render(true);
+                        else ui.notifications.warn("Quest Journal not found or you lack permissions.");
+                    });
+                    el.addEventListener("mouseover", () => {
+                        el.style.background = "var(--fang-nav-bg)";
+                        el.style.borderLeftColor = "var(--fang-primary-red)";
+                        el.style.color = "var(--fang-primary-red)";
+                    });
+                    el.addEventListener("mouseout", () => {
+                        el.style.background = "";
+                        el.style.borderLeftColor = "transparent";
+                        el.style.color = "";
+                    });
+                });
+
+                // Close on outside click
+                const closePicker = (e) => {
+                    if (!picker.contains(e.target)) {
+                        picker.classList.add("hidden");
+                        document.removeEventListener("click", closePicker, true);
+                    }
+                };
+                setTimeout(() => document.addEventListener("click", closePicker, true), 50);
             });
         }
+
+
 
         // --- Context Action: Identity ---
         if (newBtnIdentity) {
@@ -1533,17 +1797,25 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     </div>
                 `;
 
-                // Public Quest Log Section
-                const questJournalName = node.questUuid ? (node._questJournalName || "Linked Quest") : "None";
+                // Public Quest Log Section (dynamic multi-entry list)
+                const addQuestBtn = game.i18n.localize("FANG.Dialogs.QuestLogAddBtn") || "Add Quest Journal";
+                const existingQuestItems = (node.questUuids || []).map((q, i) => `
+                    <div id="fang-quest-item-${i}" style="display: flex; align-items: center; gap: 6px; padding: 6px; background: rgba(212,175,55,0.07); border: 1px solid var(--fang-accent-gold); border-radius: 4px; margin-bottom: 5px;">
+                        <i class="fas fa-scroll" style="color: var(--fang-accent-gold);"></i>
+                        <span style="flex:1; font-size:0.9em;">${q.name}</span>
+                        <button class="btn danger-btn fang-quest-remove" data-idx="${i}" style="padding: 2px 6px; width: auto;" title="Remove">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                `).join("");
+
                 const questSection = `
                     <div style="margin-top: 15px; padding-top: 10px; border-top: 1px solid var(--fang-accent-gold);">
                         <h3 style="margin-bottom: 5px; color: var(--fang-accent-gold);"><i class="fas fa-scroll"></i> ${questLogTitle}</h3>
                         <p style="font-size: 0.8em; color: #888; margin-bottom: 5px;">${questLogHint}</p>
-                        <div id="fang-drop-quest" class="fang-drop-zone ${node.questUuid ? 'has-link' : ''}" style="border: 2px dashed #666; padding: 10px; text-align: center; border-radius: 5px; cursor: pointer; position: relative;">
-                            <span id="fang-quest-link-text">${node.questUuid ? '<i class="fas fa-link"></i> ' + questJournalName : dropJournalHere}</span>
-                            <button id="fang-remove-quest" class="btn danger-btn ${node.questUuid ? '' : 'hidden'}" style="position: absolute; right: 5px; top: 5px; padding: 2px 5px; width: auto;" title="Remove Link">
-                                <i class="fas fa-times"></i>
-                            </button>
+                        <div id="fang-quest-list">${existingQuestItems}</div>
+                        <div id="fang-drop-quest-new" style="border: 2px dashed #666; padding: 8px; text-align: center; border-radius: 5px; cursor: pointer; color: #888; font-size: 0.9em;">
+                            <i class="fas fa-plus"></i> ${addQuestBtn}
                         </div>
                     </div>
                 `;
@@ -1683,7 +1955,73 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                         };
 
                         setupDropZone("fang-drop-gm", "fang-gm-link-text", "fang-remove-gm", "journalUuid", "_gmJournalName");
-                        setupDropZone("fang-drop-quest", "fang-quest-link-text", "fang-remove-quest", "questUuid", "_questJournalName");
+
+                        // Multi-Quest Drop Zone
+                        const questListEl = html.find("#fang-quest-list")[0];
+                        const newQuestZone = html.find("#fang-drop-quest-new")[0];
+
+                        const refreshQuestRemoveButtons = () => {
+                            html.find(".fang-quest-remove").off("click").on("click", (e) => {
+                                e.stopPropagation();
+                                e.preventDefault();
+                                const idx = parseInt($(e.currentTarget).data("idx"));
+                                node.questUuids.splice(idx, 1);
+                                // Re-render list
+                                questListEl.innerHTML = (node.questUuids).map((q, i) => `
+                                    <div id="fang-quest-item-${i}" style="display:flex;align-items:center;gap:6px;padding:6px;background:rgba(212,175,55,0.07);border:1px solid var(--fang-accent-gold);border-radius:4px;margin-bottom:5px;">
+                                        <i class="fas fa-scroll" style="color:var(--fang-accent-gold);"></i>
+                                        <span style="flex:1;font-size:0.9em;">${q.name}</span>
+                                        <button class="btn danger-btn fang-quest-remove" data-idx="${i}" style="padding:2px 6px;width:auto;" title="Remove">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                `).join("");
+                                refreshQuestRemoveButtons();
+                            });
+                        };
+                        refreshQuestRemoveButtons();
+
+                        if (newQuestZone) {
+                            newQuestZone.addEventListener("dragover", (e) => {
+                                e.preventDefault();
+                                newQuestZone.style.borderColor = "var(--fang-accent-gold)";
+                                newQuestZone.style.backgroundColor = "rgba(212,175,55,0.1)";
+                            });
+                            newQuestZone.addEventListener("dragleave", () => {
+                                newQuestZone.style.borderColor = "#666";
+                                newQuestZone.style.backgroundColor = "";
+                            });
+                            newQuestZone.addEventListener("drop", async (e) => {
+                                e.preventDefault();
+                                newQuestZone.style.borderColor = "#666";
+                                newQuestZone.style.backgroundColor = "";
+                                let dropData;
+                                try { dropData = JSON.parse(e.dataTransfer.getData("text/plain")); } catch { return; }
+                                if (dropData.type !== "JournalEntry" && dropData.type !== "JournalEntryPage") {
+                                    ui.notifications.warn("Please drop a Journal Entry or Journal Page here.");
+                                    return;
+                                }
+                                const doc = await fromUuid(dropData.uuid);
+                                if (!doc) return;
+                                if (!node.questUuids) node.questUuids = [];
+                                if (!node.questUuids.some(q => q.uuid === dropData.uuid)) {
+                                    node.questUuids.push({ uuid: dropData.uuid, name: doc.name });
+                                    const idx = node.questUuids.length - 1;
+                                    questListEl.insertAdjacentHTML("beforeend", `
+                                        <div id="fang-quest-item-${idx}" style="display:flex;align-items:center;gap:6px;padding:6px;background:rgba(212,175,55,0.07);border:1px solid var(--fang-accent-gold);border-radius:4px;margin-bottom:5px;">
+                                            <i class="fas fa-scroll" style="color:var(--fang-accent-gold);"></i>
+                                            <span style="flex:1;font-size:0.9em;">${doc.name}</span>
+                                            <button class="btn danger-btn fang-quest-remove" data-idx="${idx}" style="padding:2px 6px;width:auto;" title="Remove">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    `);
+                                    refreshQuestRemoveButtons();
+                                } else {
+                                    ui.notifications.info("This Quest Journal is already linked.");
+                                }
+                            });
+                        }
                     }
                 },
                 buttons: {
@@ -1703,9 +2041,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                             }
 
                             // Re-evaluate Questgiver condition
-                            if (node.questUuid && !node.conditions.includes("questgiver")) {
+                            if (node.questUuids && node.questUuids.length > 0 && !node.conditions.includes("questgiver")) {
                                 node.conditions.push("questgiver");
-                            } else if (!node.questUuid && node.conditions.includes("questgiver")) {
+                            } else if ((!node.questUuids || node.questUuids.length === 0) && node.conditions.includes("questgiver")) {
                                 node.conditions = node.conditions.filter(c => c !== "questgiver");
                             }
 
@@ -1727,25 +2065,36 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             const dialogTitle = game.i18n.localize("FANG.Dialogs.DeleteConfirmTitle") || "Confirm Deletion";
             const dialogContent = game.i18n.localize("FANG.Dialogs.DeleteNodeContent") || "Are you sure you want to delete this token from the graph? Your Player Lore notes will be kept safe.";
 
-            Dialog.confirm({
+            new Dialog({
                 title: dialogTitle,
-                content: `<p>${dialogContent}</p>`,
-                yes: async () => {
-                    this.graphData.nodes = this.graphData.nodes.filter(n => n.id !== node.id);
-                    this.graphData.links = this.graphData.links.filter(l => {
-                        const sId = typeof l.source === 'object' ? l.source.id : l.source;
-                        const tId = typeof l.target === 'object' ? l.target.id : l.target;
-                        return sId !== node.id && tId !== node.id;
-                    });
+                content: `<p style="margin-bottom: 15px;">${dialogContent}</p>`,
+                buttons: {
+                    yes: {
+                        icon: '<i class="fas fa-check"></i>',
+                        label: game.i18n.localize("Yes"),
+                        callback: async () => {
+                            this.graphData.nodes = this.graphData.nodes.filter(n => n.id !== node.id);
+                            this.graphData.links = this.graphData.links.filter(l => {
+                                const sId = typeof l.source === 'object' ? l.source.id : l.source;
+                                const tId = typeof l.target === 'object' ? l.target.id : l.target;
+                                return sId !== node.id && tId !== node.id;
+                            });
 
-                    ui.notifications.info(game.i18n.localize("FANG.Messages.DeletedNode"));
-                    this.initSimulation();
-                    this.simulation.alpha(0.3).restart();
-                    this._populateActors();
-                    await this.saveData();
+                            ui.notifications.info(game.i18n.localize("FANG.Messages.DeletedNode"));
+                            this.initSimulation();
+                            this.simulation.alpha(0.3).restart();
+                            this._populateActors();
+                            await this.saveData();
+                        }
+                    },
+                    no: {
+                        icon: '<i class="fas fa-times"></i>',
+                        label: game.i18n.localize("No"),
+                        className: "cancel" // Applies the white/grey FANG cancel styling
+                    }
                 },
-                defaultYes: false
-            }, { classes: ["dialog", "fang-dialog"] });
+                default: "no"
+            }, { classes: ["dialog", "fang-dialog"], width: 400 }).render(true);
         });
     }
 
@@ -1977,19 +2326,30 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             const dialogTitle = game.i18n.localize("FANG.Dialogs.DeleteConfirmTitle") || "Confirm Deletion";
             const dialogContent = game.i18n.localize("FANG.Dialogs.DeleteLinkContent") || "Are you sure you want to delete this connection?";
 
-            Dialog.confirm({
+            new Dialog({
                 title: dialogTitle,
-                content: `<p>${dialogContent}</p>`,
-                yes: async () => {
-                    this.graphData.links.splice(linkIndex, 1);
-                    ui.notifications.info(game.i18n.localize("FANG.Messages.DeletedLink") || "Connection deleted.");
-                    this.initSimulation();
-                    this.simulation.alpha(0.3).restart();
-                    this._toggleLinkEditor(-1); // Close sidebar link editor if it was open
-                    await this.saveData();
+                content: `<p style="margin-bottom: 15px;">${dialogContent}</p>`,
+                buttons: {
+                    yes: {
+                        icon: '<i class="fas fa-check"></i>',
+                        label: game.i18n.localize("Yes"),
+                        callback: async () => {
+                            this.graphData.links.splice(linkIndex, 1);
+                            ui.notifications.info(game.i18n.localize("FANG.Messages.DeletedLink") || "Connection deleted.");
+                            this.initSimulation();
+                            this.simulation.alpha(0.3).restart();
+                            this._toggleLinkEditor(-1); // Close sidebar link editor if it was open
+                            await this.saveData();
+                        }
+                    },
+                    no: {
+                        icon: '<i class="fas fa-times"></i>',
+                        label: game.i18n.localize("No"),
+                        className: "cancel"
+                    }
                 },
-                defaultYes: false
-            }, { classes: ["dialog", "fang-dialog"] });
+                default: "no"
+            }, { classes: ["dialog", "fang-dialog"], width: 400 }).render(true);
         });
 
         // Action: Edge Spotlight
@@ -3834,7 +4194,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 name: node.name,
                 subtitle: subtitle,
                 lore: loreText,
-                portrait: imgSrc
+                portrait: imgSrc,
+                quests: node.questUuids || []
             }
         });
 
@@ -3844,7 +4205,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             name: node.name,
             subtitle: subtitle,
             lore: loreText,
-            portrait: imgSrc
+            portrait: imgSrc,
+            quests: node.questUuids || []
         });
     }
 
@@ -3874,6 +4236,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             const textArea = this.element.querySelector("#narrative-text");
             const portrait = this.element.querySelector("#narrative-portrait");
             const portraitContainer = this.element.querySelector(".narrative-portrait-container");
+            const questsContainer = this.element.querySelector("#narrative-quests-container");
+            const questsList = this.element.querySelector("#narrative-quests-list");
 
             if (overlay && title && textArea) {
                 title.textContent = payload.name;
@@ -3885,6 +4249,29 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     portraitContainer.classList.remove("hidden");
                 } else {
                     portraitContainer.classList.add("hidden");
+                }
+
+                // Handle Quests
+                if (payload.quests && payload.quests.length > 0) {
+                    questsList.innerHTML = payload.quests.map(q => `
+                        <li class="narrative-quest-item" data-uuid="${q.uuid}">
+                            <i class="fas fa-scroll"></i>
+                            <span>${q.name}</span>
+                        </li>
+                    `).join("");
+
+                    // Add click listeners to quest items
+                    questsList.querySelectorAll(".narrative-quest-item").forEach(item => {
+                        item.addEventListener("click", async () => {
+                            const doc = await fromUuid(item.dataset.uuid);
+                            if (doc) doc.sheet.render(true);
+                            else ui.notifications.warn("Quest Journal not found or permissions missing.");
+                        });
+                    });
+
+                    questsContainer.classList.remove("hidden");
+                } else {
+                    questsContainer.classList.add("hidden");
                 }
 
                 overlay.classList.remove("hidden");

@@ -27,6 +27,7 @@
             "GroupMonitor": "Monitor",
             "AdvancedFeatures": "Erweiterte Funktionen",
             "AdvancedSettings": "Erweiterte Optionen öffnen",
+            "AvailableQuests": "Verfügbare Aufgaben",
             "ShowPlayers": "Spielern zeigen",
             "ShowPlayersHint": "Zeigt den Graphen bei allen Spielern in einem normalen Fenster",
             "ShowMonitor": "Monitor zeigen",
@@ -54,7 +55,41 @@
             "ReleaseLock": "Sperre freigeben",
             "ForceRelease": "Freigabe erzwingen",
             "CurrentlyEditing": "wird gerade von {user} bearbeitet",
-            "NoEditor": "Bereit zum Editieren"
+            "NoEditor": "Bereit zum Editieren",
+            "Background": {
+                "Title": "Hintergrund-Einstellungen",
+                "PremiumBadge": "PREMIUM ★",
+                "PremiumHint": "Dieses Feature ist aktuell kostenlos. Als zukünftiges Premium-Feature wird es Teil der Unterstützer-Vorteile sein.",
+                "Mode": "Hintergrund-Typ",
+                "ModeDefault": "Standard Pergament",
+                "ModePalette": "Farbpalette",
+                "ModeImage": "Eigenes Bild",
+                "ModePreset": "Stilvorlage",
+                "Color": "Hintergrundfarbe",
+                "Image": "Bildpfad",
+                "Blur": "Weichzeichner (Blur)",
+                "Opacity": "Deckkraft",
+                "Preset": "Vorlage wählen",
+                "BtnBrowse": "Durchsuchen",
+                "Presets": {
+                    "Parchment": "Pergament",
+                    "Dark": "Dunkles Verlies",
+                    "Starfield": "Sternenmeer",
+                    "Forest": "Mystischer Wald",
+                    "Ocean": "Tiefer Ozean",
+                    "Stone": "Alter Stein"
+                },
+                "Palette": {
+                    "Parchment": "Pergament",
+                    "Black": "Tiefschwarz",
+                    "Grey": "Dungeon-Grau",
+                    "Navy": "Nachtblau",
+                    "Green": "Waldgrün",
+                    "Red": "Blutrot",
+                    "Purple": "Dunkelviolett",
+                    "Sand": "Sandstein"
+                }
+            }
         },
         "Journal": {
             "FolderName": "FANG - Nicht löschen",
@@ -168,7 +203,9 @@
             "DropJournalHere": "Journal hier ablegen",
             "BtnOpenPlayerJournal": "Spieler-Notizen öffnen",
             "BtnConvertPlayerJournal": "In Spieler-Journal umwandeln",
-            "BtnConvertPlayerJournalHint": "Wandelt diese einfache Textnotiz in ein dediziertes, vom Spieler bearbeitbares Foundry-Journal um. Dies gibt dir und dem Spieler volle Textformatierungsfreiheit."
+            "BtnConvertPlayerJournalHint": "Wandelt diese einfache Textnotiz in ein dediziertes, vom Spieler bearbeitbares Foundry-Journal um. Dies gibt dir und dem Spieler volle Textformatierungsfreiheit.",
+            "QuestLogAddBtn": "Quest-Journal hinzufügen (hier ablegen)",
+            "SelectQuestContent": "Wähle ein Quest-Journal zum Öffnen:"
         },
         "Settings": {
             "TokenSize": {
@@ -202,6 +239,10 @@
             "MonitorDisplayName": {
                 "Name": "Monitor-Anzeigename",
                 "Hint": "Der Name des Benutzers oder der Anzeige (z.B. 'Monitor'), der für die Public-Display-Ansicht genutzt wird."
+            },
+            "ReplaceOnlySheetActor": {
+                "Name": "Only-Sheet: Actor-Button ersetzen",
+                "Hint": "Wenn das 'Only-Sheet'-Modul aktiv ist, versteckt FANG den originalen Button zum Öffnen des Akteurdirektoriums und ersetzt ihn durch einen eigenen Button, der das standard Foundry Akteurverzeichnis öffnet."
             }
         },
         "Physics": {
