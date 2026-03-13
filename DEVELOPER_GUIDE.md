@@ -37,6 +37,7 @@ All custom UI elements (Dialogs, Sidebars, Context Menus, Tooltips) MUST use the
 ### 1.2 UI Component Rules
 - **Sidebars:** Sidebars must have a `var(--fang-nav-bg)` background, a `var(--fang-primary-red)` header with white text, and a bottom border of `var(--fang-accent-gold)`.
 - **Buttons:** Primary interactive elements should be red (`--fang-primary-red`) with white text. Hover states should darken the red (e.g., `#600000`), never invert to light mode. Secondary cancel buttons can be light.
+- **Dividers / Separators:** Use a single consistent divider: `1px solid var(--fang-border-color)` (e.g. `hr`, section splits). Use dashed borders **only** for drag & drop zones.
 - **Floating Menus / Tooltips:** Must use `var(--fang-card-bg)` or `rgba(255,255,255, 0.96)`. Always include a 1px solid `var(--fang-accent-gold)` border and a soft drop shadow.
 - **Spacing:** Use flexbox (`input-stack`, `form-group`) from `fang.css` for consistent padding and alignment. Checkboxes must always be aligned perfectly to the right in Dialogs.
 

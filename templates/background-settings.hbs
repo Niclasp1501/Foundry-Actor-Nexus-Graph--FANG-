@@ -1,6 +1,4 @@
 <div class="background-config-container">
-    <p class="section-hint">{{localize "FANG.UI.Background.Hint"}}</p>
-
     <div class="bg-config-section">
         <label>{{localize "FANG.UI.Background.Mode"}}</label>
         <select name="bgMode">
@@ -60,14 +58,26 @@
     {{#if (eq background.mode "preset")}}
     <div class="bg-config-section">
         <label>{{localize "FANG.UI.Background.PresetTitle"}}</label>
-        <select name="bgPreset">
-            <option value="parchment" {{#if (eq background.preset "parchment")}}selected{{/if}}>{{localize "FANG.UI.Background.Preset.Parchment"}}</option>
-            <option value="dark" {{#if (eq background.preset "dark")}}selected{{/if}}>{{localize "FANG.UI.Background.Preset.Dark"}}</option>
-            <option value="starfield" {{#if (eq background.preset "starfield")}}selected{{/if}}>{{localize "FANG.UI.Background.Preset.Starfield"}}</option>
-            <option value="ethereal" {{#if (eq background.preset "ethereal")}}selected{{/if}}>{{localize "FANG.UI.Background.Preset.Ethereal"}}</option>
-            <option value="stone" {{#if (eq background.preset "stone")}}selected{{/if}}>{{localize "FANG.UI.Background.Preset.Stone"}}</option>
-            <option value="stars" {{#if (eq background.preset "stars")}}selected{{/if}}>{{localize "FANG.UI.Background.Preset.Stars"}}</option>
-        </select>
+        <div class="preset-grid">
+            <button type="button" class="preset-tile preset-parchment {{#if (eq background.preset "parchment")}}active{{/if}}" data-preset="parchment">
+                <span class="preset-name">{{localize "FANG.UI.Background.Preset.Parchment"}}</span>
+            </button>
+            <button type="button" class="preset-tile preset-dark {{#if (eq background.preset "dark")}}active{{/if}}" data-preset="dark">
+                <span class="preset-name">{{localize "FANG.UI.Background.Preset.Dark"}}</span>
+            </button>
+            <button type="button" class="preset-tile preset-starfield {{#if (eq background.preset "starfield")}}active{{/if}}" data-preset="starfield">
+                <span class="preset-name">{{localize "FANG.UI.Background.Preset.Starfield"}}</span>
+            </button>
+            <button type="button" class="preset-tile preset-ethereal {{#if (eq background.preset "ethereal")}}active{{/if}}" data-preset="ethereal">
+                <span class="preset-name">{{localize "FANG.UI.Background.Preset.Ethereal"}}</span>
+            </button>
+            <button type="button" class="preset-tile preset-stone {{#if (eq background.preset "stone")}}active{{/if}}" data-preset="stone">
+                <span class="preset-name">{{localize "FANG.UI.Background.Preset.Stone"}}</span>
+            </button>
+            <button type="button" class="preset-tile preset-stars {{#if (eq background.preset "stars")}}active{{/if}}" data-preset="stars">
+                <span class="preset-name">{{localize "FANG.UI.Background.Preset.Stars"}}</span>
+            </button>
+        </div>
     </div>
     {{/if}}
 

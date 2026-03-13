@@ -27,7 +27,7 @@
             "GroupMonitor": "Monitor",
             "AdvancedFeatures": "Advanced Functions",
             "AdvancedSettings": "Open Advanced Settings",
-            "AvailableQuests": "Quests",
+            "Quests": "Quests",
             "ShowPlayers": "Show Players",
             "ShowPlayersHint": "Shows the graph to all players in a normal window",
             "ShowMonitor": "Show Monitor",

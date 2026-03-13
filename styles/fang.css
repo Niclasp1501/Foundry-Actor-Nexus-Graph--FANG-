@@ -650,9 +650,68 @@ body.fang-monitor #fang-app.fang-app-window {
     box-shadow: none !important;
 }
 
+/* === MONITOR: Spotlight Readability (TV distance) === */
+body.fang-monitor .fang-app-container .narrative-card {
+    width: 96%;
+    max-width: 1200px;
+    max-height: 92%;
+    padding: 46px;
+    gap: 46px;
+}
+
+body.fang-monitor .fang-app-container .narrative-left-side {
+    width: 300px;
+    gap: 18px;
+}
+
+body.fang-monitor .fang-app-container .narrative-portrait-container {
+    width: 230px;
+    height: 230px;
+}
+
+body.fang-monitor .fang-app-container .narrative-content h2 {
+    font-size: 3.1rem;
+    margin-bottom: 18px;
+}
+
+body.fang-monitor #narrative-subtitle {
+    font-size: 1.35rem;
+    margin-bottom: 14px;
+}
+
+body.fang-monitor #narrative-text,
+body.fang-monitor #edge-narrative-text,
+body.fang-monitor #quest-spotlight-text {
+    font-size: 1.55rem;
+    line-height: 1.85;
+}
+
+body.fang-monitor .fang-app-container #narrative-quests-container {
+    padding-top: 18px;
+}
+
+body.fang-monitor .fang-app-container .narrative-quests-header {
+    font-size: 1.35rem;
+    margin-bottom: 14px;
+}
+
+body.fang-monitor .fang-app-container .narrative-quest-item {
+    font-size: 1.1rem;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+}
+
+body.fang-monitor .fang-app-container .narrative-close {
+    top: 22px;
+    right: 22px;
+    font-size: 2rem;
+}
+
 /* Custom D&D Dialog Styling */
 .fang-dialog.window-app {
     font-family: var(--fang-font-main);
+    border: 1px solid var(--fang-accent-gold);
+    border-radius: 4px;
 }
 
 .fang-dialog .window-header {
@@ -679,6 +738,55 @@ body.fang-monitor #fang-app.fang-app-window {
     overflow-y: auto;
     flex: 1 1 auto;
     min-height: 0;
+}
+
+.fang-dialog hr {
+    border: 0;
+    border-top: 1px solid var(--fang-border-color);
+    margin: 12px 0;
+}
+
+.fang-dialog .fang-dialog-section {
+    margin-top: 15px;
+    padding-top: 10px;
+    border-top: 1px solid var(--fang-border-color);
+}
+
+.fang-dialog .fang-drop-zone {
+    border: 2px dashed rgba(0, 0, 0, 0.35);
+    padding: 10px;
+    text-align: center;
+    border-radius: 4px;
+    cursor: pointer;
+    position: relative;
+    background: rgba(255, 255, 255, 0.6);
+}
+
+.fang-dialog .fang-drop-zone:hover {
+    border-color: var(--fang-accent-gold);
+}
+
+.fang-dialog .fang-drop-zone-add {
+    padding: 8px;
+}
+
+.fang-dialog .fang-drop-remove {
+    position: absolute;
+    right: 5px;
+    top: 5px;
+    padding: 2px 6px;
+    width: auto;
+}
+
+.fang-dialog .fang-quest-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px;
+    background: rgba(0, 0, 0, 0.02);
+    border: 1px solid var(--fang-border-color);
+    border-radius: 4px;
+    margin-bottom: 5px;
 }
 
 .fang-dialog .dialog-buttons {
@@ -1146,14 +1254,206 @@ body.fang-monitor #fang-app.fang-app-window {
     margin: 0 0 6px 0;
     letter-spacing: 0.8px;
     border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    font-style: italic;
+    margin-bottom: 10px;
+    font-weight: 600;
+    word-break: break-word;
+    overflow-wrap: break-word;
+}
+
+#narrative-text,
+#edge-narrative-text {
+    font-family: var(--fang-font-main);
+    font-size: 1.25rem;
+    line-height: 1.7;
+    color: #222;
+    font-style: italic;
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    margin-top: 10px;
+}
+
+.fang-app-container #narrative-quests-container {
+    flex: 0 0 auto;
+    width: 100%;
+    border-top: 1px solid var(--fang-accent-gold);
+    padding-top: 15px;
+    display: flex;
+    flex-direction: column;
+}
+
+.fang-app-container #narrative-quests-container.hidden {
+    display: none;
+}
+
+.fang-app-container .narrative-quests-header {
+    font-size: 1.25rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: var(--fang-primary-red);
+    margin-bottom: 15px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    padding-bottom: 6px;
+    letter-spacing: 0.5px;
+}
+
+.fang-app-container #narrative-quests-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.fang-app-container .narrative-quest-item {
+    font-family: var(--fang-font-main);
+    font-size: 1.05rem;
+    padding: 8px 12px;
+    margin-bottom: 6px;
+    background: rgba(0, 0, 0, 0.03);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-left: 3px solid transparent;
+}
+
+.fang-app-container .narrative-quest-item:hover {
+    background: rgba(212, 175, 55, 0.08);
+    border-left-color: var(--fang-primary-red);
+    transform: translateX(4px);
+    color: var(--fang-primary-red);
+}
+
+.fang-app-container .narrative-quest-item i {
+    color: var(--fang-accent-gold);
+}
+
+/* --- Edge Specific Override for Spotlight --- */
+.fang-app-container .edge-spotlight-card {
+    max-width: 900px;
+    /* Wider for dual portraits */
+    justify-content: space-between;
+    align-items: center;
+}
+
+.fang-app-container .edge-spotlight-card .edge-content {
+    text-align: center;
+    padding: 0 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.fang-app-container .edge-spotlight-card h2#edge-narrative-title {
+    font-size: 2rem;
+    color: var(--fang-primary-red);
+    margin: 0 0 15px 0;
+    border-bottom: 2px solid var(--fang-accent-gold);
+    padding-bottom: 5px;
+    font-weight: 800;
+    display: inline-block;
+    align-self: center;
+    text-align: center;
+    word-break: break-word;
+    overflow-wrap: break-word;
+}
+
+.fang-app-container .narrative-close {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    color: #888;
+    cursor: pointer;
+    font-size: 1.4rem;
+    transition: color 0.2s;
+    z-index: 10;
+}
+
+.fang-app-container .narrative-close:hover {
+    color: var(--fang-primary-red);
+}
+
+/* Spectator Mode Indicator */
+.fang-app-container .spectator-active-indicator {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    background: rgba(139, 0, 0, 0.85);
+    color: white;
+    padding: 8px 20px;
+    border-radius: 25px;
+    font-size: 0.85rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    z-index: 1500;
+    pointer-events: none;
+    display: none;
+    /* Shown via JS */
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4), 0 0 10px rgba(139, 0, 0, 0.4);
+    border: 1px solid var(--fang-accent-gold);
+}
+
+.fang-app-container .spectator-active-indicator.active {
+    display: flex;
+    animation: fangFadeIn 0.3s ease;
+}
+
+.fang-app-container .spectator-active-indicator i {
+    animation: fangPulseIndicator 1.5s linear infinite;
+    color: #ff4d4d;
+}
+
+@keyframes fangPulseIndicator {
+    0% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.3;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+/* --- UI Button Grouping Nest --- */
+.fang-app-container .button-group-nest {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px 10px;
+    background: rgba(0, 0, 0, 0.03);
+    border: 1px solid var(--fang-border-color);
+    border-left: 3px solid var(--fang-accent-gold);
+    border-radius: 4px;
+    margin-bottom: 8px;
+    transition: all 0.2s ease;
+}
+
+.fang-app-container .button-group-nest:hover {
+    background: rgba(0, 0, 0, 0.05);
+    border-color: #c0b9ae;
+}
+
+.fang-app-container .button-group-nest h4 {
+    font-size: 0.7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: #888;
+    margin: 0 0 6px 0;
+    letter-spacing: 0.8px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
     padding-bottom: 2px;
 }
 
 .fang-app-container .button-group-nest .btn {
     width: 100%;
-    margin-bottom: 0 !important;
-    justify-content: flex-start;
-    padding-left: 12px;
 }
 
 /* === Only-Sheet: Actor Panel Open — shift actor sheet left to make room === */
@@ -1175,6 +1475,10 @@ body.fang-actor-panel-open .application:not(.sidebar-popout):not(.fang-app-windo
     pointer-events: none;
     transition: all 0.5s ease;
     transform-origin: center;
+}
+
+.fang-app-container #fang-bg-layer.no-transition {
+    transition: none !important;
 }
 
 /* Texture Overlay (Grain) */
@@ -1263,123 +1567,468 @@ body.fang-actor-panel-open .application:not(.sidebar-popout):not(.fang-app-windo
     box-shadow: 0 0 0 2px white, 0 0 15px var(--fang-accent-gold);
 }
 
-/* --- Background Configuration Dialog Styles --- */
+/* --- Background Configuration Dialog Styles (Premium Redesign) --- */
+.fang-config-dialog {
+    border: 1px solid var(--fang-accent-gold);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+}
+
 .fang-config-dialog .window-content {
-    background: var(--fang-card-bg);
+    background: var(--fang-bg-color);
+    color: var(--fang-text-color);
     padding: 0;
+    border: none;
+}
+
+.fang-config-dialog .window-header {
+    background-color: var(--fang-primary-red) !important;
+    border-bottom: 2px solid var(--fang-accent-gold) !important;
+}
+
+/* More robust selectors for Foundry's V13+ app structure */
+#fang-background-config {
+    border: 1px solid var(--fang-accent-gold);
+    box-shadow: var(--fang-shadow-md);
+    border-radius: 4px;
+}
+
+#fang-background-config .window-content {
+    background: var(--fang-bg-color);
+    color: var(--fang-text-color);
+    padding: 0;
+}
+
+#fang-background-config .window-header {
+    background-color: var(--fang-primary-red) !important;
+    border-bottom: 2px solid var(--fang-accent-gold) !important;
 }
 
 .background-config-container {
     padding: 15px;
 }
 
-.background-config-container .section-hint {
-    font-size: 0.85rem;
-    color: #666;
-    font-style: italic;
-    margin-bottom: 20px;
-    border-left: 3px solid var(--fang-accent-gold);
-    padding-left: 10px;
-}
-
 .bg-config-section {
-    margin-top: 15px;
-    animation: fangFadeIn 0.3s ease-out;
+    margin-top: 14px;
+    animation: fangSlideIn 0.3s ease-out;
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-radius: 0;
 }
 
 .bg-config-section.hidden {
     display: none;
 }
 
+.bg-config-section label {
+    display: block;
+    margin-bottom: 10px;
+    font-weight: bold;
+    color: var(--fang-primary-red);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 0.75rem;
+}
+
+.background-config-container select,
+.background-config-container input[type="text"] {
+    height: 34px;
+    background: #fff;
+    color: var(--fang-text-color);
+    border: 1px solid var(--fang-border-color);
+    border-radius: 2px;
+    padding: 0 10px;
+}
+
+.background-config-container .flexrow.gap-5 {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.background-config-container .file-picker.small-btn {
+    flex: 0 0 auto;
+    width: 38px;
+    height: 34px;
+    border: 1px solid rgba(212, 175, 55, 0.35);
+    border-radius: 2px;
+    background: #fff;
+    color: var(--fang-text-color);
+    cursor: pointer;
+    transition: transform 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease;
+}
+
+.background-config-container .file-picker.small-btn:hover {
+    transform: translateY(-1px);
+    border-color: var(--fang-accent-gold);
+    box-shadow: 0 0 10px rgba(212, 175, 55, 0.25);
+}
+
+.background-config-container .slider-group {
+    margin-top: 14px;
+    padding-top: 10px;
+    border-top: 1px dashed rgba(0, 0, 0, 0.10);
+}
+
+.background-config-container .slider-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 0.78rem;
+    color: #6b5f4f;
+    margin-bottom: 6px;
+}
+
+.background-config-container input[type="range"] {
+    width: 100%;
+}
+
+.background-config-container .color-palette-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 8px;
+    justify-items: center;
+}
+
+.background-config-container .color-patch {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 2px solid rgba(0, 0, 0, 0.14);
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+}
+
+.background-config-container .color-patch:hover {
+    transform: scale(1.15);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+.background-config-container .color-patch.active {
+    border-color: var(--fang-accent-gold);
+    box-shadow: 0 0 0 2px white, 0 0 15px var(--fang-accent-gold);
+}
+
+.background-config-container .preset-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+}
+
+.background-config-container .preset-tile {
+    position: relative;
+    height: 56px;
+    border-radius: 8px;
+    border: 1px solid var(--fang-border-color);
+    overflow: hidden;
+    cursor: pointer;
+    padding: 0;
+    background: #fff;
+    transition: transform 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease;
+}
+
+.background-config-container .preset-tile::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.10) 60%, rgba(0,0,0,0) 100%);
+    pointer-events: none;
+}
+
+.background-config-container .preset-tile:hover {
+    transform: translateY(-1px);
+    border-color: rgba(212, 175, 55, 0.55);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+}
+
+.background-config-container .preset-tile.active {
+    border-color: var(--fang-accent-gold);
+    box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.25), 0 8px 20px rgba(0, 0, 0, 0.18);
+}
+
+.background-config-container .preset-name {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 1;
+    color: #fff;
+    font-weight: 800;
+    font-size: 0.85rem;
+    text-shadow: 0 2px 6px rgba(0,0,0,0.5);
+    letter-spacing: 0.2px;
+    text-align: left;
+}
+
+.background-config-container .preset-tile.preset-parchment {
+    background-color: #f4ece1;
+    background-image:
+        radial-gradient(at 0% 0%, rgba(255, 255, 255, 0.2) 0%, transparent 50%),
+        repeating-linear-gradient(0deg, rgba(120, 90, 50, 0.05) 0 1px, rgba(255, 255, 255, 0) 1px 6px),
+        radial-gradient(circle at 30% 40%, rgba(120, 90, 50, 0.06) 0%, transparent 55%);
+}
+
+.background-config-container .preset-tile.preset-dark {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    background-image:
+        radial-gradient(circle at 25% 20%, rgba(120, 0, 200, 0.10) 0%, transparent 45%),
+        radial-gradient(circle at 75% 80%, rgba(0, 80, 255, 0.10) 0%, transparent 50%),
+        repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.02) 0 2px, rgba(0, 0, 0, 0.02) 2px 4px);
+}
+
+.background-config-container .preset-tile.preset-starfield {
+    background-color: #020205;
+    background-image:
+        radial-gradient(circle at 20% 30%, rgba(75, 0, 130, 0.18) 0%, transparent 42%),
+        radial-gradient(circle at 80% 70%, rgba(0, 0, 139, 0.18) 0%, transparent 42%),
+        radial-gradient(rgba(255,255,255,0.9) 1px, transparent 1.2px),
+        radial-gradient(rgba(255,255,255,0.55) 1px, transparent 1.2px);
+    background-size: cover, cover, 180px 180px, 260px 260px;
+    background-position: center, center, 0 0, 60px 90px;
+}
+
+.background-config-container .preset-tile.preset-ethereal {
+    background: linear-gradient(135deg, #1a0d2e 0%, #2c3e50 100%);
+    background-image:
+        radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.07) 0%, transparent 55%),
+        radial-gradient(circle at 70% 80%, rgba(255, 255, 255, 0.06) 0%, transparent 60%),
+        repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.015) 0 2px, rgba(0, 0, 0, 0.015) 2px 4px);
+}
+
+.background-config-container .preset-tile.preset-stone {
+    background-color: #2a2a2a;
+    background-image:
+        repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.045) 0 1px, rgba(0, 0, 0, 0) 1px 9px),
+        radial-gradient(circle at 35% 35%, rgba(0, 0, 0, 0.35) 0%, transparent 55%),
+        linear-gradient(rgba(0,0,0,0.28), rgba(0,0,0,0.28));
+    background-blend-mode: overlay;
+}
+
+.background-config-container .preset-tile.preset-stars {
+    background-color: #000;
+    background-image:
+        radial-gradient(white, rgba(255,255,255,.2) 2px, transparent 40px),
+        radial-gradient(white, rgba(255,255,255,.15) 1px, transparent 30px);
+    background-size: 550px 550px, 350px 350px;
+    background-position: 40px 60px, 130px 270px;
+}
+
+.background-config-container select:focus,
+.background-config-container input[type="text"]:focus {
+    border-color: var(--fang-accent-gold);
+    box-shadow: 0 0 5px var(--fang-accent-gold);
+}
+
 .background-config-container hr {
     border: 0;
-    height: 1px;
-    background: linear-gradient(to right, transparent, var(--fang-border-color), transparent);
-    margin: 20px 0;
+    border-top: 1px solid var(--fang-border-color);
+    margin: 12px 0;
 }
 
 .background-config-container .premium-notice {
-    margin-top: 25px;
-    padding: 12px;
+    margin-top: 30px;
+    padding: 15px;
     background: rgba(212, 175, 55, 0.08);
     border-radius: 6px;
-    border: 1px solid rgba(212, 175, 55, 0.2);
+    border: 1px solid rgba(212, 175, 55, 0.35);
     display: flex;
     flex-direction: column;
     align-items: center;
     text-align: center;
-    gap: 8px;
+    gap: 10px;
+    box-shadow: none;
+}
+
+.background-config-container .premium-badge {
+    background: var(--fang-accent-gold);
+    color: #1a0a0a;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-weight: bold;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    box-shadow: 0 0 10px var(--fang-accent-gold);
 }
 
 .background-config-container .premium-notice p {
-    font-size: 0.75rem;
-    color: #887b66;
+    font-size: 0.78rem;
+    color: #d4af37;
     margin: 0;
     font-style: italic;
+    line-height: 1.4;
 }
 
-.fang-app-container .slider-group {
-    margin-top: 10px;
-}
-
-.fang-app-container .slider-label {
-    display: flex;
-    justify-content: space-between;
-    font-size: 0.8rem;
-    color: #666;
-    margin-bottom: 2px;
-}
-
-.fang-app-container .small-btn {
-    padding: 5px;
-    width: 36px;
-    min-width: 36px;
+@keyframes fangSlideIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 /* Background Presets - Enhanced Visuals */
 .fang-app-container #fang-bg-layer.fang-bg-preset-parchment {
-    background-color: #fdfbf7;
+    background-color: #f4ece1;
     background-image: 
-        radial-gradient(at 0% 0%, rgba(212, 175, 55, 0.1) 0px, transparent 50%),
-        radial-gradient(at 100% 100%, rgba(139, 0, 0, 0.05) 0px, transparent 50%),
-        url("https://www.transparenttextures.com/patterns/old-mathematics.png");
+        radial-gradient(at 0% 0%, rgba(255, 255, 255, 0.2) 0%, transparent 50%),
+        repeating-linear-gradient(0deg, rgba(120, 90, 50, 0.05) 0 1px, rgba(255, 255, 255, 0) 1px 6px),
+        radial-gradient(circle at 30% 40%, rgba(120, 90, 50, 0.06) 0%, transparent 55%);
+    filter: sepia(0.25) contrast(1.05);
 }
 
 .fang-app-container #fang-bg-layer.fang-bg-preset-dark {
-    background-color: #0b0a13 !important;
-    background-image: 
-        radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.05) 0%, transparent 80%),
-        url("https://www.transparenttextures.com/patterns/dark-matter.png") !important;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    background-image:
+        radial-gradient(circle at 25% 20%, rgba(120, 0, 200, 0.10) 0%, transparent 45%),
+        radial-gradient(circle at 75% 80%, rgba(0, 80, 255, 0.10) 0%, transparent 50%),
+        repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.02) 0 2px, rgba(0, 0, 0, 0.02) 2px 4px);
 }
 
 .fang-app-container #fang-bg-layer.fang-bg-preset-starfield {
     background-color: #020205 !important;
     background-image: 
-        url('https://www.transparenttextures.com/patterns/stardust.png'),
-        radial-gradient(circle at 20% 30%, rgba(75, 0, 130, 0.2) 0%, transparent 40%),
-        radial-gradient(circle at 80% 70%, rgba(0, 0, 139, 0.2) 0%, transparent 40%) !important;
-    background-size: auto, cover, cover;
+        radial-gradient(circle at 20% 30%, rgba(75, 0, 130, 0.18) 0%, transparent 42%),
+        radial-gradient(circle at 80% 70%, rgba(0, 0, 139, 0.18) 0%, transparent 42%),
+        radial-gradient(rgba(255,255,255,0.9) 1px, transparent 1.2px),
+        radial-gradient(rgba(255,255,255,0.55) 1px, transparent 1.2px);
+    background-size: cover, cover, 180px 180px, 260px 260px;
+    background-position: center, center, 0 0, 60px 90px;
 }
 
 .fang-app-container #fang-bg-layer.fang-bg-preset-ethereal {
     background: linear-gradient(135deg, #1a0d2e 0%, #2c3e50 100%) !important;
-    background-image: url("https://www.transparenttextures.com/patterns/cloudy-day.png") !important;
+    background-image:
+        radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.07) 0%, transparent 55%),
+        radial-gradient(circle at 70% 80%, rgba(255, 255, 255, 0.06) 0%, transparent 60%),
+        repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.015) 0 2px, rgba(0, 0, 0, 0.015) 2px 4px) !important;
     opacity: 0.8;
 }
 
 .fang-app-container #fang-bg-layer.fang-bg-preset-stone {
     background-color: #2a2a2a !important;
     background-image: 
-        url("https://www.transparenttextures.com/patterns/cracked-lava.png"),
-        linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)) !important;
+        repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.045) 0 1px, rgba(0, 0, 0, 0) 1px 9px),
+        radial-gradient(circle at 35% 35%, rgba(0, 0, 0, 0.35) 0%, transparent 55%),
+        linear-gradient(rgba(0,0,0,0.28), rgba(0,0,0,0.28)) !important;
     background-blend-mode: overlay;
 }
 
 .fang-app-container #fang-bg-layer.fang-bg-preset-stars {
-     background-color: #000 !important;
-     background-image: 
-        url("https://www.transparenttextures.com/patterns/stardust.png"),
+      background-color: #000 !important;
+      background-image: 
         radial-gradient(white, rgba(255,255,255,.2) 2px, transparent 40px),
         radial-gradient(white, rgba(255,255,255,.15) 1px, transparent 30px) !important;
-    background-size: auto, 550px 550px, 350px 350px !important;
-    background-position: 0 0, 40px 60px, 130px 270px !important;
+    background-size: 550px 550px, 350px 350px !important;
+    background-position: 40px 60px, 130px 270px !important;
+}
+
+/* --- Narrative Sidebar & Quest Quests --- */
+.fang-app-container .narrative-left-side {
+    display: flex;
+    flex-direction: column;
+    width: 240px;
+    flex-shrink: 0;
+    gap: 15px;
+}
+
+.fang-app-container #narrative-quests-container {
+    /* No "box" around the quest list; keep it integrated like the Spotlight body */
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    padding: 14px 0 0 0;
+}
+
+.fang-app-container .narrative-quests-header {
+    margin: 0 0 12px 0;
+    font-size: 1.15rem;
+    font-weight: 900;
+    color: var(--fang-primary-red);
+    text-transform: uppercase;
+    border-bottom: 2px solid var(--fang-accent-gold);
+    padding-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    justify-content: center;
+    text-align: center;
+    letter-spacing: 0.06em;
+}
+
+.fang-app-container #narrative-quests-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.fang-app-container .narrative-quest-item {
+    padding: 7px 10px;
+    margin-bottom: 4px;
+    background: white;
+    border-radius: 4px;
+    border: 1px solid var(--fang-border-color);
+    font-size: 0.9rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s;
+}
+
+.fang-app-container .narrative-quest-item:hover {
+    background: var(--fang-nav-bg);
+    border-color: var(--fang-accent-gold);
+    color: var(--fang-primary-red);
+    transform: translateX(3px);
+}
+
+.fang-app-container .narrative-quest-item i {
+    color: var(--fang-accent-gold);
+    font-size: 0.8rem;
+}
+
+/* --- Quest Spotlight Card (match Narrative Spotlight look) --- */
+.fang-app-container .quest-spotlight-card {
+    /* Keep same background/border/shadow as .narrative-card; only minor sizing tweak */
+    max-width: 850px;
+}
+
+/* Improve title readability on some Foundry themes where primary red renders too dark */
+#fang-quest-spotlight-overlay #quest-spotlight-title {
+    color: var(--fang-primary-red);
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.75), 0 6px 18px rgba(0, 0, 0, 0.08);
+    line-height: 1.15;
+    padding-top: 2px; /* avoid glyph ascenders being clipped in some renderers */
+}
+
+#fang-quest-spotlight-overlay .narrative-content {
+    /* Default .narrative-content uses overflow:hidden, which can clip shadows/large glyphs */
+    overflow: visible;
+}
+
+#quest-spotlight-text {
+    /* Mirror narrative text styling so it feels like the same Spotlight surface */
+    font-family: var(--fang-font-main);
+    font-size: 1.25rem;
+    line-height: 1.7;
+    color: #222;
+    font-style: italic;
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    margin-top: 10px;
+}
+
+#quest-spotlight-text :is(h1, h2, h3, h4, h5, h6) {
+    font-style: normal; /* base text is italic; headings should be crisp */
+    color: var(--fang-primary-red);
+    margin: 0.9em 0 0.35em;
+    line-height: 1.15;
+    padding-top: 2px;
+    border-bottom: 2px solid rgba(212, 175, 55, 0.85);
+    padding-bottom: 5px;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
 }

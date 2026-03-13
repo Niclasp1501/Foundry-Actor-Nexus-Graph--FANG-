@@ -6,6 +6,9 @@ let fangApp = null;
 Hooks.once("init", () => {
   console.log("FANG | Initializing Foundry Actor Nexus Graph module");
 
+  // Register Handlebars Helpers
+  Handlebars.registerHelper("eq", (a, b) => a === b);
+
   // Register Keybinding
   game.keybindings.register("fang", "openGraph", {
     name: "FANG.ButtonOpen",
@@ -169,7 +172,7 @@ Hooks.once("init", () => {
     scope: "world",
     config: false,
     type: String,
-    default: "default" // "default" | "palette" | "image" | "preset"
+    default: "none" // "none" | "palette" | "image" | "preset"
   });
 
   game.settings.register("fang", "canvasBackgroundColor", {
@@ -352,6 +355,18 @@ Hooks.once("ready", () => {
 
     if (data.action === "spotlightEdgeStart") {
       if (fangApp && fangApp.rendered) fangApp.startEdgeSpotlight(data.payload);
+    }
+
+    if (data.action === "questSpotlightStart") {
+      if (fangApp && fangApp.rendered) fangApp.startQuestSpotlight(data.payload);
+    }
+
+    if (data.action === "questSpotlightStop") {
+      if (fangApp && fangApp.rendered) fangApp.stopQuestSpotlight();
+    }
+
+    if (data.action === "questSpotlightScroll") {
+      if (fangApp && fangApp.rendered) fangApp.syncQuestSpotlightScroll(data.payload);
     }
 
     if (data.action === "centerGraph") {

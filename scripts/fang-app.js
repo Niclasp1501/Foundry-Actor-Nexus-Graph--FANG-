@@ -18,7 +18,7 @@ class FangLicense {
 class FangBackgroundConfig extends HandlebarsApplicationMixin(ApplicationV2) {
     static DEFAULT_OPTIONS = {
         id: "fang-background-config",
-        classes: ["fang-app-window", "fang-config-dialog"],
+        classes: ["fang-app-window", "fang-dialog", "fang-background-config"],
         position: { width: 420, height: "auto" },
         window: {
             title: "FANG.UI.Background.BackgroundConfigTitle",
@@ -64,7 +64,11 @@ class FangBackgroundConfig extends HandlebarsApplicationMixin(ApplicationV2) {
                 { hex: "#2c3e50", name: game.i18n.localize("FANG.UI.Background.Palette.Midnight") },
                 { hex: "#1a0000", name: game.i18n.localize("FANG.UI.Background.Palette.Red") },
                 { hex: "#1c1c1e", name: game.i18n.localize("FANG.UI.Background.Palette.Grey") },
-                { hex: "#0b0a13", name: game.i18n.localize("FANG.UI.Background.Palette.Black") }
+                { hex: "#0b0a13", name: game.i18n.localize("FANG.UI.Background.Palette.Black") },
+                { hex: "#223011", name: game.i18n.localize("FANG.UI.Background.Palette.Forest") },
+                { hex: "#1a2a2d", name: game.i18n.localize("FANG.UI.Background.Palette.Ocean") },
+                { hex: "#3e2723", name: game.i18n.localize("FANG.UI.Background.Palette.DeepMahogany") },
+                { hex: "#2b2d42", name: game.i18n.localize("FANG.UI.Background.Palette.Shadow") }
             ]
         };
     }
@@ -72,20 +76,26 @@ class FangBackgroundConfig extends HandlebarsApplicationMixin(ApplicationV2) {
     _onRender(context, options) {
         super._onRender(context, options);
         const html = this.element;
+        console.log("FANG | Rendering Background Config Dialog");
 
         // Mode Change
-        html.querySelector('select[name="bgMode"]').addEventListener("change", async (e) => {
-            const mode = e.target.value;
-            await game.settings.set("fang", "canvasBackgroundMode", mode);
-            this.render();
-            this.fangApp._applyBackground();
-            game.socket.emit("module.fang", { action: "applyBackground" });
-        });
+        const modeSelect = html.querySelector('select[name="bgMode"]');
+        if (modeSelect) {
+            modeSelect.addEventListener("change", async (e) => {
+                const mode = e.target.value;
+                console.log("FANG | Setting Mode:", mode);
+                await game.settings.set("fang", "canvasBackgroundMode", mode);
+                this.render(); // Re-render this dialog
+                this.fangApp._applyBackground();
+                game.socket.emit("module.fang", { action: "applyBackground" });
+            });
+        }
 
         // Color Palette (Single Click)
         html.querySelectorAll(".color-patch").forEach(patch => {
             patch.addEventListener("click", async (e) => {
                 const color = e.currentTarget.dataset.color;
+                console.log("FANG | Setting Color:", color);
                 await game.settings.set("fang", "canvasBackgroundColor", color);
                 this.render();
                 this.fangApp._applyBackground();
@@ -95,54 +105,78 @@ class FangBackgroundConfig extends HandlebarsApplicationMixin(ApplicationV2) {
 
         // Image Selection (File Picker)
         const imageInput = html.querySelector('input[name="bgImage"]');
-        imageInput.addEventListener("change", async (e) => {
-            await game.settings.set("fang", "canvasBackgroundImage", e.target.value);
-            this.fangApp._applyBackground();
-            game.socket.emit("module.fang", { action: "applyBackground" });
-        });
+        if (imageInput) {
+            imageInput.addEventListener("change", async (e) => {
+                await game.settings.set("fang", "canvasBackgroundImage", e.target.value);
+                this.fangApp._applyBackground();
+                game.socket.emit("module.fang", { action: "applyBackground" });
+            });
+        }
 
-        html.querySelector('.file-picker[data-target="bgImage"]').addEventListener("click", (e) => {
-            new FilePicker({
-                type: "image",
-                current: game.settings.get("fang", "canvasBackgroundImage"),
-                callback: async (path) => {
-                    imageInput.value = path;
-                    await game.settings.set("fang", "canvasBackgroundImage", path);
-                    this.fangApp._applyBackground();
-                    game.socket.emit("module.fang", { action: "applyBackground" });
-                }
-            }).render(true);
-        });
+        const pickerBtn = html.querySelector('.file-picker[data-target="bgImage"]');
+        if (pickerBtn) {
+            pickerBtn.addEventListener("click", (e) => {
+                new FilePicker({
+                    type: "image",
+                    current: game.settings.get("fang", "canvasBackgroundImage"),
+                    callback: async (path) => {
+                        if (imageInput) imageInput.value = path;
+                        await game.settings.set("fang", "canvasBackgroundImage", path);
+                        this.fangApp._applyBackground();
+                        game.socket.emit("module.fang", { action: "applyBackground" });
+                    }
+                }).render(true);
+            });
+        }
 
         // Blur Slider
         const blurInput = html.querySelector('input[name="bgBlur"]');
-        const blurVal = html.querySelector("#bgBlurVal");
-        blurInput.addEventListener("input", (e) => {
-            blurVal.innerText = `${e.target.value}px`;
-        });
-        blurInput.addEventListener("change", async (e) => {
-            await game.settings.set("fang", "canvasBackgroundBlur", parseInt(e.target.value));
-            this.fangApp._applyBackground();
-            game.socket.emit("module.fang", { action: "applyBackground" });
-        });
+        if (blurInput) {
+            const blurVal = html.querySelector("#bgBlurVal");
+            blurInput.addEventListener("input", (e) => {
+                if (blurVal) blurVal.innerText = `${e.target.value}px`;
+            });
+            blurInput.addEventListener("change", async (e) => {
+                await game.settings.set("fang", "canvasBackgroundBlur", parseInt(e.target.value));
+                this.fangApp._applyBackground();
+                game.socket.emit("module.fang", { action: "applyBackground" });
+            });
+        }
 
         // Opacity Slider
         const opacityInput = html.querySelector('input[name="bgOpacity"]');
-        const opacityVal = html.querySelector("#bgOpacityVal");
-        opacityInput.addEventListener("input", (e) => {
-            opacityVal.innerText = `${Math.round(e.target.value * 100)}%`;
-        });
-        opacityInput.addEventListener("change", async (e) => {
-            await game.settings.set("fang", "canvasBackgroundOpacity", parseFloat(e.target.value));
-            this.fangApp._applyBackground();
-            game.socket.emit("module.fang", { action: "applyBackground" });
-        });
+        if (opacityInput) {
+            const opacityVal = html.querySelector("#bgOpacityVal");
+            opacityInput.addEventListener("input", (e) => {
+                if (opacityVal) opacityVal.innerText = `${Math.round(e.target.value * 100)}%`;
+            });
+            opacityInput.addEventListener("change", async (e) => {
+                await game.settings.set("fang", "canvasBackgroundOpacity", parseFloat(e.target.value));
+                this.fangApp._applyBackground();
+                game.socket.emit("module.fang", { action: "applyBackground" });
+            });
+        }
 
         // Preset Change
-        html.querySelector('select[name="bgPreset"]').addEventListener("change", async (e) => {
-            await game.settings.set("fang", "canvasBackgroundPreset", e.target.value);
-            this.fangApp._applyBackground();
-            game.socket.emit("module.fang", { action: "applyBackground" });
+        const presetSelect = html.querySelector('select[name="bgPreset"]');
+        if (presetSelect) {
+            presetSelect.addEventListener("change", async (e) => {
+                await game.settings.set("fang", "canvasBackgroundPreset", e.target.value);
+                this.fangApp._applyBackground();
+                game.socket.emit("module.fang", { action: "applyBackground" });
+            });
+        }
+
+        // Preset Tiles (Preview Grid)
+        html.querySelectorAll(".preset-tile").forEach(btn => {
+            btn.addEventListener("click", async (e) => {
+                const preset = e.currentTarget?.dataset?.preset;
+                if (!preset) return;
+                await game.settings.set("fang", "canvasBackgroundPreset", preset);
+                this.fangApp._applyBackground();
+                game.socket.emit("module.fang", { action: "applyBackground" });
+                this.render();
+            });
         });
     }
 }
@@ -744,12 +778,26 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
         const mode = game.settings.get("fang", "canvasBackgroundMode");
 
+        // --- Startup Stabilization ---
+        // If this is the very first apply (or within the first 500ms of render),
+        // we skip the transition to prevent the jarring zoom/blur effect.
+        const isStartup = !this._bgInitialized;
+        if (isStartup) {
+            layer.classList.add("no-transition");
+            this._bgInitialized = true;
+            setTimeout(() => {
+                if (layer) layer.classList.remove("no-transition");
+            }, 500);
+        }
+
         // Reset
         layer.style.backgroundColor = "";
         layer.style.backgroundImage = "";
         layer.style.filter = "";
         layer.style.opacity = "";
-        layer.className = "";
+        // Keep no-transition if it was just added above
+        const hasNoTrans = layer.classList.contains("no-transition");
+        layer.className = hasNoTrans ? "no-transition" : "";
 
         if (mode === "palette") {
             const color = game.settings.get("fang", "canvasBackgroundColor");
@@ -1838,41 +1886,41 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
                 // GM Private Notes Section
                 const gmJournalName = node.journalUuid ? (node._gmJournalName || "Linked Journal") : "None";
-                const gmSection = `
-                    <div style="margin-top: 15px; padding-top: 10px; border-top: 1px solid var(--fang-accent-gold);">
-                        <h3 style="margin-bottom: 5px; color: var(--fang-accent-gold);"><i class="fas fa-book"></i> ${gmNotesTitle}</h3>
-                        <p style="font-size: 0.8em; color: #888; margin-bottom: 5px;">${gmNotesHint}</p>
-                        <div id="fang-drop-gm" class="fang-drop-zone ${node.journalUuid ? 'has-link' : ''}" style="border: 2px dashed #666; padding: 10px; text-align: center; border-radius: 5px; cursor: pointer; position: relative;">
-                            <span id="fang-gm-link-text">${node.journalUuid ? '<i class="fas fa-link"></i> ' + gmJournalName : dropJournalHere}</span>
-                            <button id="fang-remove-gm" class="btn danger-btn ${node.journalUuid ? '' : 'hidden'}" style="position: absolute; right: 5px; top: 5px; padding: 2px 5px; width: auto;" title="Remove Link">
-                                <i class="fas fa-times"></i>
-                            </button>
-                        </div>
-                    </div>
-                `;
+                 const gmSection = `
+                     <div class="fang-dialog-section">
+                         <h3 style="margin-bottom: 5px; color: var(--fang-accent-gold);"><i class="fas fa-book"></i> ${gmNotesTitle}</h3>
+                         <p style="font-size: 0.8em; color: #888; margin-bottom: 5px;">${gmNotesHint}</p>
+                         <div id="fang-drop-gm" class="fang-drop-zone ${node.journalUuid ? 'has-link' : ''}">
+                             <span id="fang-gm-link-text">${node.journalUuid ? '<i class="fas fa-link"></i> ' + gmJournalName : dropJournalHere}</span>
+                             <button id="fang-remove-gm" class="btn danger-btn fang-drop-remove ${node.journalUuid ? '' : 'hidden'}" title="Remove Link">
+                                 <i class="fas fa-times"></i>
+                             </button>
+                         </div>
+                     </div>
+                 `;
 
                 // Public Quest Log Section (dynamic multi-entry list)
                 const addQuestBtn = game.i18n.localize("FANG.Dialogs.QuestLogAddBtn") || "Add Quest Journal";
-                const existingQuestItems = (node.questUuids || []).map((q, i) => `
-                    <div id="fang-quest-item-${i}" style="display: flex; align-items: center; gap: 6px; padding: 6px; background: rgba(212,175,55,0.07); border: 1px solid var(--fang-accent-gold); border-radius: 4px; margin-bottom: 5px;">
-                        <i class="fas fa-scroll" style="color: var(--fang-accent-gold);"></i>
-                        <span style="flex:1; font-size:0.9em;">${q.name}</span>
-                        <button class="btn danger-btn fang-quest-remove" data-idx="${i}" style="padding: 2px 6px; width: auto;" title="Remove">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
-                `).join("");
+                 const existingQuestItems = (node.questUuids || []).map((q, i) => `
+                     <div id="fang-quest-item-${i}" class="fang-quest-item">
+                         <i class="fas fa-scroll" style="color: var(--fang-accent-gold);"></i>
+                         <span style="flex:1; font-size:0.9em;">${q.name}</span>
+                         <button class="btn danger-btn fang-quest-remove" data-idx="${i}" style="padding: 2px 6px; width: auto;" title="Remove">
+                             <i class="fas fa-times"></i>
+                         </button>
+                     </div>
+                 `).join("");
 
-                const questSection = `
-                    <div style="margin-top: 15px; padding-top: 10px; border-top: 1px solid var(--fang-accent-gold);">
-                        <h3 style="margin-bottom: 5px; color: var(--fang-accent-gold);"><i class="fas fa-scroll"></i> ${questLogTitle}</h3>
-                        <p style="font-size: 0.8em; color: #888; margin-bottom: 5px;">${questLogHint}</p>
-                        <div id="fang-quest-list">${existingQuestItems}</div>
-                        <div id="fang-drop-quest-new" style="border: 2px dashed #666; padding: 8px; text-align: center; border-radius: 5px; cursor: pointer; color: #888; font-size: 0.9em;">
-                            <i class="fas fa-plus"></i> ${addQuestBtn}
-                        </div>
-                    </div>
-                `;
+                 const questSection = `
+                     <div class="fang-dialog-section">
+                         <h3 style="margin-bottom: 5px; color: var(--fang-accent-gold);"><i class="fas fa-scroll"></i> ${questLogTitle}</h3>
+                         <p style="font-size: 0.8em; color: #888; margin-bottom: 5px;">${questLogHint}</p>
+                         <div id="fang-quest-list">${existingQuestItems}</div>
+                         <div id="fang-drop-quest-new" class="fang-drop-zone fang-drop-zone-add" style="color: #888; font-size: 0.9em;">
+                             <i class="fas fa-plus"></i> ${addQuestBtn}
+                         </div>
+                     </div>
+                 `;
                 gmHtml = gmSection + questSection;
             }
 
@@ -2022,14 +2070,14 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                                 node.questUuids.splice(idx, 1);
                                 // Re-render list
                                 questListEl.innerHTML = (node.questUuids).map((q, i) => `
-                                    <div id="fang-quest-item-${i}" style="display:flex;align-items:center;gap:6px;padding:6px;background:rgba(212,175,55,0.07);border:1px solid var(--fang-accent-gold);border-radius:4px;margin-bottom:5px;">
-                                        <i class="fas fa-scroll" style="color:var(--fang-accent-gold);"></i>
-                                        <span style="flex:1;font-size:0.9em;">${q.name}</span>
-                                        <button class="btn danger-btn fang-quest-remove" data-idx="${i}" style="padding:2px 6px;width:auto;" title="Remove">
-                                            <i class="fas fa-times"></i>
-                                        </button>
-                                    </div>
-                                `).join("");
+                                     <div id="fang-quest-item-${i}" class="fang-quest-item">
+                                         <i class="fas fa-scroll" style="color:var(--fang-accent-gold);"></i>
+                                         <span style="flex:1;font-size:0.9em;">${q.name}</span>
+                                         <button class="btn danger-btn fang-quest-remove" data-idx="${i}" style="padding:2px 6px;width:auto;" title="Remove">
+                                             <i class="fas fa-times"></i>
+                                         </button>
+                                     </div>
+                                 `).join("");
                                 refreshQuestRemoveButtons();
                             });
                         };
@@ -2042,12 +2090,12 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                                 newQuestZone.style.backgroundColor = "rgba(212,175,55,0.1)";
                             });
                             newQuestZone.addEventListener("dragleave", () => {
-                                newQuestZone.style.borderColor = "#666";
+                                newQuestZone.style.borderColor = "";
                                 newQuestZone.style.backgroundColor = "";
                             });
                             newQuestZone.addEventListener("drop", async (e) => {
                                 e.preventDefault();
-                                newQuestZone.style.borderColor = "#666";
+                                newQuestZone.style.borderColor = "";
                                 newQuestZone.style.backgroundColor = "";
                                 let dropData;
                                 try { dropData = JSON.parse(e.dataTransfer.getData("text/plain")); } catch { return; }
@@ -2062,7 +2110,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                                     node.questUuids.push({ uuid: dropData.uuid, name: doc.name });
                                     const idx = node.questUuids.length - 1;
                                     questListEl.insertAdjacentHTML("beforeend", `
-                                        <div id="fang-quest-item-${idx}" style="display:flex;align-items:center;gap:6px;padding:6px;background:rgba(212,175,55,0.07);border:1px solid var(--fang-accent-gold);border-radius:4px;margin-bottom:5px;">
+                                        <div id="fang-quest-item-${idx}" class="fang-quest-item">
                                             <i class="fas fa-scroll" style="color:var(--fang-accent-gold);"></i>
                                             <span style="flex:1;font-size:0.9em;">${doc.name}</span>
                                             <button class="btn danger-btn fang-quest-remove" data-idx="${idx}" style="padding:2px 6px;width:auto;" title="Remove">
@@ -4314,12 +4362,37 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                         </li>
                     `).join("");
 
-                    // Add click listeners to quest items
+                    // Add click listeners to quest items (Short Click vs Long Press)
                     questsList.querySelectorAll(".narrative-quest-item").forEach(item => {
-                        item.addEventListener("click", async () => {
-                            const doc = await fromUuid(item.dataset.uuid);
-                            if (doc) doc.sheet.render(true);
-                            else ui.notifications.warn("Quest Journal not found or permissions missing.");
+                        let clickTimer = null;
+                        const uuid = item.dataset.uuid;
+
+                        item.addEventListener("mousedown", (e) => {
+                            if (e.button !== 0) return;
+                            clickTimer = setTimeout(async () => {
+                                clickTimer = null;
+                                // Long Press: Open Journal Sheet
+                                const doc = await fromUuid(uuid);
+                                if (doc) doc.sheet.render(true);
+                                else ui.notifications.warn("Quest Journal not found or permissions missing.");
+                            }, 500);
+                        });
+
+                        item.addEventListener("mouseup", (e) => {
+                            if (e.button !== 0) return;
+                            if (clickTimer) {
+                                clearTimeout(clickTimer);
+                                clickTimer = null;
+                                // Short Click: Narrative Spotlight
+                                this._onQuestSpotlight(uuid);
+                            }
+                        });
+
+                        item.addEventListener("mouseleave", () => {
+                            if (clickTimer) {
+                                clearTimeout(clickTimer);
+                                clickTimer = null;
+                            }
                         });
                     });
 
@@ -4339,12 +4412,16 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         if (this._spotlightTimeout) clearTimeout(this._spotlightTimeout);
         if (this._spotlightOverlayTimeout) clearTimeout(this._spotlightOverlayTimeout);
         this._isSpotlightActive = false;
+        this._stopMonitorAutoScroll();
+        this._detachQuestSpotlightScrollSync();
 
         // Hide overlays
         const overlay = this.element.querySelector("#fang-narrative-overlay");
         const edgeOverlay = this.element.querySelector("#fang-edge-spotlight-overlay");
+        const questOverlay = this.element.querySelector("#fang-quest-spotlight-overlay");
         if (overlay) overlay.classList.add("hidden");
         if (edgeOverlay) edgeOverlay.classList.add("hidden");
+        if (questOverlay) questOverlay.classList.add("hidden");
 
         // Return to normal view
         this.zoomToFit(true);
@@ -4352,7 +4429,212 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         // If we are GM, tell everyone to stop too
         if (game.user.isGM) {
             game.socket.emit("module.fang", { action: "spotlightStop" });
+            game.socket.emit("module.fang", { action: "questSpotlightStop" });
         }
+    }
+
+    async _onQuestSpotlight(questUuid) {
+        try {
+            const doc = await fromUuid(questUuid);
+            if (!doc) return;
+
+            // Extract content from the first text page
+            let content = "";
+            let title = doc.name;
+
+            const page = doc.pages.contents[0];
+            if (page && page.type === "text" && page.text && page.text.content) {
+                content = page.text.content;
+            } else if (doc.pages.size === 0 && doc.content) {
+                // Legacy Journal compatibility
+                content = doc.content;
+            }
+
+            if (!content) content = "...";
+
+            const payload = {
+                uuid: questUuid,
+                name: title,
+                content: content
+            };
+
+            // Broadcast
+            game.socket.emit("module.fang", {
+                action: "questSpotlightStart",
+                payload: payload
+            });
+
+            // Start locally
+            this.startQuestSpotlight(payload);
+
+        } catch (e) {
+            console.error("FANG | Error in Quest Spotlight", e);
+        }
+    }
+
+    startQuestSpotlight(payload) {
+        const overlay = this.element.querySelector("#fang-quest-spotlight-overlay");
+        const title = this.element.querySelector("#quest-spotlight-title");
+        const textArea = this.element.querySelector("#quest-spotlight-text");
+
+        if (overlay && title && textArea) {
+            this._stopMonitorAutoScroll();
+            this._detachQuestSpotlightScrollSync();
+            title.textContent = payload.name;
+            textArea.innerHTML = payload.content;
+
+            // Hide other overlays just in case
+            const mainOverlay = this.element.querySelector("#fang-narrative-overlay");
+            if (mainOverlay) mainOverlay.classList.add("hidden");
+
+            overlay.classList.remove("hidden");
+
+            // Close listener
+            overlay.querySelector(".narrative-close").onclick = () => {
+                this.stopQuestSpotlight();
+            };
+
+            // Monitor mode: auto-scroll long quest text since nobody can interact with the display.
+            // We scroll the card container (it already has overflow-y: auto).
+            const card = overlay.querySelector(".quest-spotlight-card");
+            this._startMonitorAutoScroll(card);
+
+            // GM: broadcast scroll position so in-person monitor(s) can follow without interaction.
+            this._attachQuestSpotlightScrollSync(card);
+        }
+    }
+
+    stopQuestSpotlight() {
+        this._stopMonitorAutoScroll();
+        this._detachQuestSpotlightScrollSync();
+        const overlay = this.element.querySelector("#fang-quest-spotlight-overlay");
+        if (overlay) overlay.classList.add("hidden");
+
+        // Re-show main narrative spotlight if it was active
+        if (this._isSpotlightActive) {
+            const mainOverlay = this.element.querySelector("#fang-narrative-overlay");
+            if (mainOverlay) mainOverlay.classList.remove("hidden");
+        }
+
+        if (game.user.isGM) {
+            game.socket.emit("module.fang", { action: "questSpotlightStop" });
+        }
+    }
+
+    _attachQuestSpotlightScrollSync(scrollEl) {
+        if (!game.user.isGM) return;
+        if (this._isMonitorClient()) return;
+        if (!scrollEl) return;
+
+        this._questSpotlightScrollEl = scrollEl;
+        this._questSpotlightScrollHandler = () => {
+            if (this._questSpotlightScrollRaf) return;
+            this._questSpotlightScrollRaf = requestAnimationFrame(() => {
+                this._questSpotlightScrollRaf = null;
+                if (!this._questSpotlightScrollEl?.isConnected) return;
+
+                game.socket.emit("module.fang", {
+                    action: "questSpotlightScroll",
+                    payload: {
+                        scrollTop: this._questSpotlightScrollEl.scrollTop
+                    }
+                });
+            });
+        };
+
+        scrollEl.addEventListener("scroll", this._questSpotlightScrollHandler, { passive: true });
+
+        // Send initial position (top) after layout so monitors start correctly.
+        setTimeout(() => {
+            if (!this._questSpotlightScrollEl?.isConnected) return;
+            game.socket.emit("module.fang", { action: "questSpotlightScroll", payload: { scrollTop: 0 } });
+        }, 50);
+    }
+
+    _detachQuestSpotlightScrollSync() {
+        if (this._questSpotlightScrollEl && this._questSpotlightScrollHandler) {
+            this._questSpotlightScrollEl.removeEventListener("scroll", this._questSpotlightScrollHandler);
+        }
+        if (this._questSpotlightScrollRaf) cancelAnimationFrame(this._questSpotlightScrollRaf);
+        this._questSpotlightScrollEl = null;
+        this._questSpotlightScrollHandler = null;
+        this._questSpotlightScrollRaf = null;
+        this._remoteQuestSpotlightScrolling = false;
+    }
+
+    syncQuestSpotlightScroll(payload) {
+        if (!this._isMonitorClient()) return;
+        const overlay = this.element.querySelector("#fang-quest-spotlight-overlay");
+        if (!overlay || overlay.classList.contains("hidden")) return;
+        const card = overlay.querySelector(".quest-spotlight-card");
+        if (!card) return;
+
+        // If GM is driving the scroll, do not also auto-scroll locally.
+        this._stopMonitorAutoScroll();
+
+        this._remoteQuestSpotlightScrolling = true;
+        card.scrollTop = Math.max(0, Number(payload?.scrollTop ?? 0));
+        this._remoteQuestSpotlightScrolling = false;
+    }
+
+    _isMonitorClient() {
+        // The app sets this class for the configured monitor display name.
+        return document?.body?.classList?.contains("fang-monitor");
+    }
+
+    _startMonitorAutoScroll(scrollEl) {
+        this._stopMonitorAutoScroll();
+        if (!this._isMonitorClient()) return;
+        if (!scrollEl) return;
+
+        // Wait for layout so scrollHeight is correct after innerHTML changes.
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                const maxScroll = scrollEl.scrollHeight - scrollEl.clientHeight;
+                if (!(maxScroll > 8)) return; // no overflow, nothing to do
+
+                const pxPerSecond = 14; // slow, readable pace on big screens
+                const pauseMs = 1800;
+                let lastTs = null;
+
+                const step = (ts) => {
+                    if (!this._isMonitorClient()) return; // safety if mode changes
+                    if (!scrollEl.isConnected) return;
+
+                    const currentMax = scrollEl.scrollHeight - scrollEl.clientHeight;
+                    if (!(currentMax > 8)) return;
+
+                    if (lastTs == null) lastTs = ts;
+                    const dt = (ts - lastTs) / 1000;
+                    lastTs = ts;
+
+                    scrollEl.scrollTop = Math.min(currentMax, scrollEl.scrollTop + pxPerSecond * dt);
+
+                    if (scrollEl.scrollTop >= currentMax - 1) {
+                        this._monitorAutoScrollTimer = setTimeout(() => {
+                            if (!scrollEl.isConnected) return;
+                            scrollEl.scrollTop = 0;
+                            lastTs = null;
+                            this._monitorAutoScrollRaf = requestAnimationFrame(step);
+                        }, pauseMs);
+                        return;
+                    }
+
+                    this._monitorAutoScrollRaf = requestAnimationFrame(step);
+                };
+
+                this._monitorAutoScrollTimer = setTimeout(() => {
+                    this._monitorAutoScrollRaf = requestAnimationFrame(step);
+                }, pauseMs);
+            });
+        });
+    }
+
+    _stopMonitorAutoScroll() {
+        if (this._monitorAutoScrollRaf) cancelAnimationFrame(this._monitorAutoScrollRaf);
+        if (this._monitorAutoScrollTimer) clearTimeout(this._monitorAutoScrollTimer);
+        this._monitorAutoScrollRaf = null;
+        this._monitorAutoScrollTimer = null;
     }
 
     remoteSyncCamera(payload) {
