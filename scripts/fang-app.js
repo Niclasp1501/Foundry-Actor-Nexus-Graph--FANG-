@@ -411,7 +411,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             deleteSelect.addEventListener("change", (e) => {
                 const val = e.target.value;
                 if (!val) return;
-                const [type, id] = val.split("|");
+                const [type, id] = val.split("|").map(s => s.trim());
                 this._syncSidebarSelection(type, id);
             });
         }
@@ -2725,7 +2725,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
         // Re-select to keep editor open with fresh data
         const newSelect = this.element.querySelector("#deleteSelect");
-        if (newSelect) newSelect.value = `link | ${linkIndex}`;
+        if (newSelect) newSelect.value = `link|${linkIndex}`;
 
         await this.saveData();
         ui.notifications.info(game.i18n.localize("FANG.Messages.SaveSuccess") || "Changes saved.");
@@ -2744,11 +2744,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
             if (sourceSelect) {
                 sourceSelect.value = id;
-                sourceSelect.dispatchEvent(new Event('change'));
             }
             if (deleteSelect) {
-                deleteSelect.value = `node | ${id}`;
-                deleteSelect.dispatchEvent(new Event('change'));
+                deleteSelect.value = `node|${id}`;
             }
             // Trigger node UI
             this._toggleNodeEditor(true);
@@ -2756,8 +2754,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         } else if (type === "link") {
             const deleteSelect = this.element.querySelector("#deleteSelect");
             if (deleteSelect) {
-                deleteSelect.value = `link | ${id}`;
-                deleteSelect.dispatchEvent(new Event('change'));
+                deleteSelect.value = `link|${id}`;
             }
             // Trigger link UI
             this._toggleLinkEditor(id);

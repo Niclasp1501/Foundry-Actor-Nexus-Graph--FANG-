@@ -73,10 +73,10 @@
                 "Blur": "Blur Effect",
                 "Opacity": "Opacity",
                 "Preset": {
-                    "Parchment": "Old Parchment",
-                    "Dark": "Deep Darkness",
+                    "Parchment": "Weathered Parchment",
+                    "Dark": "Jungle Canopy",
                     "Starfield": "Starfield (Nebula)",
-                    "Ethereal": "Ethereal Plane",
+                    "Ethereal": "Feywild Mist",
                     "Stone": "Dungeon Stone",
                     "Stars": "Starry Night"
                 },

@@ -73,10 +73,10 @@
                 "Blur": "Weichzeichner (Blur)",
                 "Opacity": "Deckkraft",
                 "Preset": {
-                    "Parchment": "Altes Pergament",
-                    "Dark": "Tiefe Dunkelheit",
+                    "Parchment": "Verwittertes Pergament",
+                    "Dark": "Wald & Dschungel",
                     "Starfield": "Sternenmeer (Nebel)",
-                    "Ethereal": "Ätherische Ebene",
+                    "Ethereal": "Feenwald-Nebel",
                     "Stone": "Dungeon-Stein",
                     "Stars": "Sternennacht"
                 },
