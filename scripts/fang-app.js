@@ -59,16 +59,16 @@ class FangBackgroundConfig extends HandlebarsApplicationMixin(ApplicationV2) {
                 { hex: "#8b5e3c", name: game.i18n.localize("FANG.UI.Background.Palette.AutumnLeaf") },
                 { hex: "#a39171", name: game.i18n.localize("FANG.UI.Background.Palette.Sage") },
                 { hex: "#5d6d7e", name: game.i18n.localize("FANG.UI.Background.Palette.SteelBlue") },
-                { hex: "#0d1b2a", name: game.i18n.localize("FANG.UI.Background.Palette.Navy") },
-                { hex: "#1a0d2e", name: game.i18n.localize("FANG.UI.Background.Palette.Purple") },
-                { hex: "#2c3e50", name: game.i18n.localize("FANG.UI.Background.Palette.Midnight") },
-                { hex: "#1a0000", name: game.i18n.localize("FANG.UI.Background.Palette.Red") },
-                { hex: "#1c1c1e", name: game.i18n.localize("FANG.UI.Background.Palette.Grey") },
-                { hex: "#0b0a13", name: game.i18n.localize("FANG.UI.Background.Palette.Black") },
-                { hex: "#223011", name: game.i18n.localize("FANG.UI.Background.Palette.Forest") },
-                { hex: "#1a2a2d", name: game.i18n.localize("FANG.UI.Background.Palette.Ocean") },
-                { hex: "#3e2723", name: game.i18n.localize("FANG.UI.Background.Palette.DeepMahogany") },
-                { hex: "#2b2d42", name: game.i18n.localize("FANG.UI.Background.Palette.Shadow") }
+                { hex: "#223a55", name: game.i18n.localize("FANG.UI.Background.Palette.Navy") },
+                { hex: "#36204e", name: game.i18n.localize("FANG.UI.Background.Palette.Purple") },
+                { hex: "#3f556a", name: game.i18n.localize("FANG.UI.Background.Palette.Midnight") },
+                { hex: "#3b0b0b", name: game.i18n.localize("FANG.UI.Background.Palette.Red") },
+                { hex: "#3a3a3f", name: game.i18n.localize("FANG.UI.Background.Palette.Grey") },
+                { hex: "#26242e", name: game.i18n.localize("FANG.UI.Background.Palette.Black") },
+                { hex: "#3a4b22", name: game.i18n.localize("FANG.UI.Background.Palette.Forest") },
+                { hex: "#2f4a4f", name: game.i18n.localize("FANG.UI.Background.Palette.Ocean") },
+                { hex: "#5a3a33", name: game.i18n.localize("FANG.UI.Background.Palette.DeepMahogany") },
+                { hex: "#424660", name: game.i18n.localize("FANG.UI.Background.Palette.Shadow") }
             ]
         };
     }
@@ -135,6 +135,12 @@ class FangBackgroundConfig extends HandlebarsApplicationMixin(ApplicationV2) {
             const blurVal = html.querySelector("#bgBlurVal");
             blurInput.addEventListener("input", (e) => {
                 if (blurVal) blurVal.innerText = `${e.target.value}px`;
+                // Live preview without spamming world settings writes
+                this.#previewImageLayer({
+                    blur: parseInt(e.target.value),
+                    opacity: parseFloat(html.querySelector('input[name="bgOpacity"]')?.value ?? "1"),
+                    path: html.querySelector('input[name="bgImage"]')?.value ?? ""
+                });
             });
             blurInput.addEventListener("change", async (e) => {
                 await game.settings.set("fang", "canvasBackgroundBlur", parseInt(e.target.value));
@@ -149,6 +155,12 @@ class FangBackgroundConfig extends HandlebarsApplicationMixin(ApplicationV2) {
             const opacityVal = html.querySelector("#bgOpacityVal");
             opacityInput.addEventListener("input", (e) => {
                 if (opacityVal) opacityVal.innerText = `${Math.round(e.target.value * 100)}%`;
+                // Live preview without spamming world settings writes
+                this.#previewImageLayer({
+                    blur: parseInt(html.querySelector('input[name="bgBlur"]')?.value ?? "0"),
+                    opacity: parseFloat(e.target.value),
+                    path: html.querySelector('input[name="bgImage"]')?.value ?? ""
+                });
             });
             opacityInput.addEventListener("change", async (e) => {
                 await game.settings.set("fang", "canvasBackgroundOpacity", parseFloat(e.target.value));
@@ -178,6 +190,26 @@ class FangBackgroundConfig extends HandlebarsApplicationMixin(ApplicationV2) {
                 this.render();
             });
         });
+    }
+
+    #previewImageLayer({ blur, opacity, path }) {
+        if (!this.fangApp?.element) return;
+        const mode = game.settings.get("fang", "canvasBackgroundMode");
+        if (mode !== "image") return;
+        const layer = this.fangApp.element.querySelector("#fang-bg-layer");
+        if (!layer) return;
+
+        layer.classList.add("no-transition");
+        if (path) {
+            layer.style.backgroundImage = `url("${path}")`;
+            layer.style.backgroundSize = "cover";
+            layer.style.backgroundPosition = "center";
+            layer.style.backgroundRepeat = "no-repeat";
+            layer.style.transform = "scale(1.08)";
+        }
+        layer.style.filter = blur > 0 ? `blur(${blur}px)` : "";
+        layer.style.opacity = `${opacity}`;
+        setTimeout(() => layer.classList.remove("no-transition"), 60);
     }
 }
 
@@ -214,6 +246,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         this._isSyncCameraActive = false;
         this._remoteSyncing = false; // Guard to prevent feedback loops
         this._hoveredNodeId = null;
+        this._bgImageLoaded = new Map();
     }
 
     async _prepareContext(options) {
@@ -794,6 +827,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         layer.style.backgroundColor = "";
         layer.style.backgroundImage = "";
         layer.style.filter = "";
+        layer.style.transform = "";
         layer.style.opacity = "";
         // Keep no-transition if it was just added above
         const hasNoTrans = layer.classList.contains("no-transition");
@@ -807,18 +841,58 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             const blur = game.settings.get("fang", "canvasBackgroundBlur");
             const opacity = game.settings.get("fang", "canvasBackgroundOpacity");
 
-            if (path) {
-                layer.style.backgroundImage = `url("${path}")`;
-                layer.style.backgroundSize = "cover";
-                layer.style.backgroundPosition = "center";
+            const applyImageStyles = () => {
+                if (path) {
+                    layer.style.backgroundImage = `url("${path}")`;
+                    layer.style.backgroundSize = "cover";
+                    layer.style.backgroundPosition = "center";
+                    layer.style.backgroundRepeat = "no-repeat";
+                    // Constant scale: no visible zoom when blur changes; also hides blur edge artifacts.
+                    layer.style.transform = "scale(1.08)";
+                }
+                layer.style.filter = blur > 0 ? `blur(${blur}px)` : "";
+                layer.style.opacity = `${opacity}`;
+            };
+
+            if (!path) {
+                applyImageStyles();
+                return;
             }
-            if (blur > 0) {
-                layer.style.filter = `blur(${blur}px)`;
-                layer.style.transform = "scale(1.1)"; // Hide white edges
-            } else {
-                layer.style.transform = "scale(1.0)";
+
+            const isLoaded = this._bgImageLoaded.get(path) === true;
+            if (isLoaded) {
+                applyImageStyles();
+                return;
             }
-            layer.style.opacity = opacity;
+
+            // Avoid a "sharp first, blurred later" flash while the image decodes:
+            // keep the layer hidden until the image is ready, then apply blur immediately.
+            layer.classList.add("no-transition");
+            layer.style.opacity = "0";
+            layer.style.backgroundImage = `url("${path}")`;
+            layer.style.backgroundSize = "cover";
+            layer.style.backgroundPosition = "center";
+            layer.style.backgroundRepeat = "no-repeat";
+            layer.style.transform = "scale(1.08)";
+            layer.style.filter = blur > 0 ? `blur(${blur}px)` : "";
+
+            const img = new Image();
+            img.onload = () => {
+                this._bgImageLoaded.set(path, true);
+                applyImageStyles();
+                // Let the browser commit filter/paint first, then show.
+                requestAnimationFrame(() => {
+                    layer.style.opacity = `${opacity}`;
+                    setTimeout(() => layer.classList.remove("no-transition"), 60);
+                });
+            };
+            img.onerror = () => {
+                this._bgImageLoaded.set(path, false);
+                // Fallback: show whatever we can.
+                applyImageStyles();
+                setTimeout(() => layer.classList.remove("no-transition"), 60);
+            };
+            img.src = path;
         } else if (mode === "preset") {
             const preset = game.settings.get("fang", "canvasBackgroundPreset");
             layer.classList.add(`fang-bg-preset-${preset}`);
@@ -2013,11 +2087,11 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                                 e.preventDefault();
                                 node[fieldName] = null;
                                 delete node[cacheName];
-                                html.find(`#${textId}`).text("Drop Journal Here");
-                                html.find(`#${removeBtnId}`).addClass("hidden");
-                                zone.classList.remove("has-link");
-                                zone.style.borderColor = "#666";
-                            });
+                                 html.find(`#${textId}`).text("Drop Journal Here");
+                                 html.find(`#${removeBtnId}`).addClass("hidden");
+                                 zone.classList.remove("has-link");
+                                 zone.style.borderColor = "";
+                             });
 
                             // Drag & Drop
                             zone.addEventListener("dragover", (e) => {
@@ -2025,15 +2099,15 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                                 zone.style.borderColor = "var(--fang-accent-gold)";
                                 zone.style.backgroundColor = "rgba(212, 175, 55, 0.1)";
                             });
-                            zone.addEventListener("dragleave", (e) => {
-                                e.preventDefault();
-                                zone.style.borderColor = node[fieldName] ? "var(--fang-accent-gold)" : "#666";
-                                zone.style.backgroundColor = "";
-                            });
-                            zone.addEventListener("drop", async (e) => {
-                                e.preventDefault();
-                                zone.style.borderColor = "var(--fang-accent-gold)";
-                                zone.style.backgroundColor = "";
+                             zone.addEventListener("dragleave", (e) => {
+                                 e.preventDefault();
+                                 zone.style.borderColor = "";
+                                 zone.style.backgroundColor = "";
+                             });
+                             zone.addEventListener("drop", async (e) => {
+                                 e.preventDefault();
+                                 zone.style.borderColor = "";
+                                 zone.style.backgroundColor = "";
 
                                 let data;
                                 try { data = JSON.parse(e.dataTransfer.getData("text/plain")); }
