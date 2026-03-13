@@ -12,6 +12,141 @@ class FangLicense {
     }
 }
 
+/**
+ * Dedicated dialog for background customization.
+ */
+class FangBackgroundConfig extends HandlebarsApplicationMixin(ApplicationV2) {
+    static DEFAULT_OPTIONS = {
+        id: "fang-background-config",
+        classes: ["fang-app-window", "fang-config-dialog"],
+        position: { width: 420, height: "auto" },
+        window: {
+            title: "FANG.UI.Background.BackgroundConfigTitle",
+            resizable: false,
+            minimizable: false
+        }
+    };
+
+    static PARTS = {
+        main: { template: "modules/fang/templates/background-settings.hbs" }
+    };
+
+    constructor(fangApp, options = {}) {
+        super(options);
+        this.fangApp = fangApp;
+    }
+
+    async _prepareContext(options) {
+        const opacity = game.settings.get("fang", "canvasBackgroundOpacity");
+        return {
+            background: {
+                mode: game.settings.get("fang", "canvasBackgroundMode"),
+                color: game.settings.get("fang", "canvasBackgroundColor"),
+                image: game.settings.get("fang", "canvasBackgroundImage"),
+                blur: game.settings.get("fang", "canvasBackgroundBlur"),
+                opacity: opacity,
+                opacityPercent: Math.round(opacity * 100),
+                preset: game.settings.get("fang", "canvasBackgroundPreset")
+            },
+            colors: [
+                { hex: "#fdfbf7", name: game.i18n.localize("FANG.UI.Background.Palette.Parchment") },
+                { hex: "#f4ece1", name: game.i18n.localize("FANG.UI.Background.Palette.Linen") },
+                { hex: "#eee1c5", name: game.i18n.localize("FANG.UI.Background.Palette.WarmParchment") },
+                { hex: "#e6d5b8", name: game.i18n.localize("FANG.UI.Background.Palette.AntiquePaper") },
+                { hex: "#dcd0c0", name: game.i18n.localize("FANG.UI.Background.Palette.Canvas") },
+                { hex: "#c8b99a", name: game.i18n.localize("FANG.UI.Background.Palette.Sand") },
+                { hex: "#b9905e", name: game.i18n.localize("FANG.UI.Background.Palette.Leather") },
+                { hex: "#8b5e3c", name: game.i18n.localize("FANG.UI.Background.Palette.AutumnLeaf") },
+                { hex: "#a39171", name: game.i18n.localize("FANG.UI.Background.Palette.Sage") },
+                { hex: "#5d6d7e", name: game.i18n.localize("FANG.UI.Background.Palette.SteelBlue") },
+                { hex: "#0d1b2a", name: game.i18n.localize("FANG.UI.Background.Palette.Navy") },
+                { hex: "#1a0d2e", name: game.i18n.localize("FANG.UI.Background.Palette.Purple") },
+                { hex: "#2c3e50", name: game.i18n.localize("FANG.UI.Background.Palette.Midnight") },
+                { hex: "#1a0000", name: game.i18n.localize("FANG.UI.Background.Palette.Red") },
+                { hex: "#1c1c1e", name: game.i18n.localize("FANG.UI.Background.Palette.Grey") },
+                { hex: "#0b0a13", name: game.i18n.localize("FANG.UI.Background.Palette.Black") }
+            ]
+        };
+    }
+
+    _onRender(context, options) {
+        super._onRender(context, options);
+        const html = this.element;
+
+        // Mode Change
+        html.querySelector('select[name="bgMode"]').addEventListener("change", async (e) => {
+            const mode = e.target.value;
+            await game.settings.set("fang", "canvasBackgroundMode", mode);
+            this.render();
+            this.fangApp._applyBackground();
+            game.socket.emit("module.fang", { action: "applyBackground" });
+        });
+
+        // Color Palette (Single Click)
+        html.querySelectorAll(".color-patch").forEach(patch => {
+            patch.addEventListener("click", async (e) => {
+                const color = e.currentTarget.dataset.color;
+                await game.settings.set("fang", "canvasBackgroundColor", color);
+                this.render();
+                this.fangApp._applyBackground();
+                game.socket.emit("module.fang", { action: "applyBackground" });
+            });
+        });
+
+        // Image Selection (File Picker)
+        const imageInput = html.querySelector('input[name="bgImage"]');
+        imageInput.addEventListener("change", async (e) => {
+            await game.settings.set("fang", "canvasBackgroundImage", e.target.value);
+            this.fangApp._applyBackground();
+            game.socket.emit("module.fang", { action: "applyBackground" });
+        });
+
+        html.querySelector('.file-picker[data-target="bgImage"]').addEventListener("click", (e) => {
+            new FilePicker({
+                type: "image",
+                current: game.settings.get("fang", "canvasBackgroundImage"),
+                callback: async (path) => {
+                    imageInput.value = path;
+                    await game.settings.set("fang", "canvasBackgroundImage", path);
+                    this.fangApp._applyBackground();
+                    game.socket.emit("module.fang", { action: "applyBackground" });
+                }
+            }).render(true);
+        });
+
+        // Blur Slider
+        const blurInput = html.querySelector('input[name="bgBlur"]');
+        const blurVal = html.querySelector("#bgBlurVal");
+        blurInput.addEventListener("input", (e) => {
+            blurVal.innerText = `${e.target.value}px`;
+        });
+        blurInput.addEventListener("change", async (e) => {
+            await game.settings.set("fang", "canvasBackgroundBlur", parseInt(e.target.value));
+            this.fangApp._applyBackground();
+            game.socket.emit("module.fang", { action: "applyBackground" });
+        });
+
+        // Opacity Slider
+        const opacityInput = html.querySelector('input[name="bgOpacity"]');
+        const opacityVal = html.querySelector("#bgOpacityVal");
+        opacityInput.addEventListener("input", (e) => {
+            opacityVal.innerText = `${Math.round(e.target.value * 100)}%`;
+        });
+        opacityInput.addEventListener("change", async (e) => {
+            await game.settings.set("fang", "canvasBackgroundOpacity", parseFloat(e.target.value));
+            this.fangApp._applyBackground();
+            game.socket.emit("module.fang", { action: "applyBackground" });
+        });
+
+        // Preset Change
+        html.querySelector('select[name="bgPreset"]').addEventListener("change", async (e) => {
+            await game.settings.set("fang", "canvasBackgroundPreset", e.target.value);
+            this.fangApp._applyBackground();
+            game.socket.emit("module.fang", { action: "applyBackground" });
+        });
+    }
+}
+
 export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
     static DEFAULT_OPTIONS = {
         id: "fang-app",
@@ -288,99 +423,13 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 });
             }
 
-            // --- BACKGROUND EVENT LISTENERS (GM ONLY) ---
-            const bgModeSelect = this.element.querySelector("#bgModeSelect");
-            if (bgModeSelect) {
-                bgModeSelect.value = game.settings.get("fang", "canvasBackgroundMode");
-                bgModeSelect.addEventListener("change", async (e) => {
-                    await game.settings.set("fang", "canvasBackgroundMode", e.target.value);
-                    this._updateBackgroundUI();
-                    this._applyBackground();
-                    game.socket.emit("module.fang", { action: "applyBackground" });
+            // Background Configuration
+            const btnOpenBgConfig = this.element.querySelector("#btnOpenBackgroundConfig");
+            if (btnOpenBgConfig) {
+                btnOpenBgConfig.addEventListener("click", () => {
+                    new FangBackgroundConfig(this).render({ force: true });
                 });
             }
-
-            const bgPresetSelect = this.element.querySelector("#bgPresetSelect");
-            if (bgPresetSelect) {
-                bgPresetSelect.value = game.settings.get("fang", "canvasBackgroundPreset");
-                bgPresetSelect.addEventListener("change", async (e) => {
-                    await game.settings.set("fang", "canvasBackgroundPreset", e.target.value);
-                    this._applyBackground();
-                    game.socket.emit("module.fang", { action: "applyBackground" });
-                });
-            }
-
-            const colorPatches = this.element.querySelectorAll(".color-patch");
-            colorPatches.forEach(patch => {
-                patch.addEventListener("click", async (e) => {
-                    const color = e.currentTarget.dataset.color;
-                    await game.settings.set("fang", "canvasBackgroundColor", color);
-                    colorPatches.forEach(p => p.classList.remove("active"));
-                    e.currentTarget.classList.add("active");
-                    this._applyBackground();
-                    game.socket.emit("module.fang", { action: "applyBackground" });
-                });
-            });
-
-            // Image Selection
-            const btnBrowse = this.element.querySelector("#btnBrowseBg");
-            if (btnBrowse) {
-                btnBrowse.addEventListener("click", async () => {
-                    const current = game.settings.get("fang", "canvasBackgroundImage");
-                    new FilePicker({
-                        type: "image",
-                        current: current,
-                        callback: async (path) => {
-                            this.element.querySelector("#bgImageInput").value = path;
-                            await game.settings.set("fang", "canvasBackgroundImage", path);
-                            this._applyBackground();
-                            game.socket.emit("module.fang", { action: "applyBackground" });
-                        }
-                    }).render(true);
-                });
-            }
-
-            const bgImageInput = this.element.querySelector("#bgImageInput");
-            if (bgImageInput) {
-                bgImageInput.value = game.settings.get("fang", "canvasBackgroundImage");
-                bgImageInput.addEventListener("change", async (e) => {
-                    await game.settings.set("fang", "canvasBackgroundImage", e.target.value);
-                    this._applyBackground();
-                    game.socket.emit("module.fang", { action: "applyBackground" });
-                });
-            }
-
-            const rngBlur = this.element.querySelector("#rngBgBlur");
-            const bgBlurVal = this.element.querySelector("#bgBlurVal");
-            if (rngBlur) {
-                rngBlur.value = game.settings.get("fang", "canvasBackgroundBlur");
-                if (bgBlurVal) bgBlurVal.innerText = `${rngBlur.value}px`;
-                rngBlur.addEventListener("input", (e) => {
-                    if (bgBlurVal) bgBlurVal.innerText = `${e.target.value}px`;
-                });
-                rngBlur.addEventListener("change", async (e) => {
-                    await game.settings.set("fang", "canvasBackgroundBlur", parseInt(e.target.value));
-                    this._applyBackground();
-                    game.socket.emit("module.fang", { action: "applyBackground" });
-                });
-            }
-
-            const rngOpacity = this.element.querySelector("#rngBgOpacity");
-            const bgOpacityVal = this.element.querySelector("#bgOpacityVal");
-            if (rngOpacity) {
-                rngOpacity.value = game.settings.get("fang", "canvasBackgroundOpacity");
-                if (bgOpacityVal) bgOpacityVal.innerText = `${Math.round(rngOpacity.value * 100)}%`;
-                rngOpacity.addEventListener("input", (e) => {
-                    if (bgOpacityVal) bgOpacityVal.innerText = `${Math.round(e.target.value * 100)}%`;
-                });
-                rngOpacity.addEventListener("change", async (e) => {
-                    await game.settings.set("fang", "canvasBackgroundOpacity", parseFloat(e.target.value));
-                    this._applyBackground();
-                    game.socket.emit("module.fang", { action: "applyBackground" });
-                });
-            }
-
-            this._updateBackgroundUI();
         } else {
             setTimeout(() => this.resizeCanvas(), 50);
         }
@@ -715,7 +764,12 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 layer.style.backgroundSize = "cover";
                 layer.style.backgroundPosition = "center";
             }
-            if (blur > 0) layer.style.filter = `blur(${blur}px)`;
+            if (blur > 0) {
+                layer.style.filter = `blur(${blur}px)`;
+                layer.style.transform = "scale(1.1)"; // Hide white edges
+            } else {
+                layer.style.transform = "scale(1.0)";
+            }
             layer.style.opacity = opacity;
         } else if (mode === "preset") {
             const preset = game.settings.get("fang", "canvasBackgroundPreset");

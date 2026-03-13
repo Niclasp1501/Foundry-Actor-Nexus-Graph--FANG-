@@ -1,0 +1,78 @@
+<div class="background-config-container">
+    <p class="section-hint">{{localize "FANG.UI.Background.Hint"}}</p>
+
+    <div class="bg-config-section">
+        <label>{{localize "FANG.UI.Background.Mode"}}</label>
+        <select name="bgMode">
+            <option value="none" {{#if (eq background.mode "none")}}selected{{/if}}>{{localize "FANG.UI.Background.ModeNone"}}</option>
+            <option value="palette" {{#if (eq background.mode "palette")}}selected{{/if}}>{{localize "FANG.UI.Background.ModePalette"}}</option>
+            <option value="image" {{#if (eq background.mode "image")}}selected{{/if}}>{{localize "FANG.UI.Background.ModeImage"}}</option>
+            <option value="preset" {{#if (eq background.mode "preset")}}selected{{/if}}>{{localize "FANG.UI.Background.ModePreset"}}</option>
+        </select>
+    </div>
+
+    <hr>
+
+    {{#if (eq background.mode "palette")}}
+    <div class="bg-config-section">
+        <label>{{localize "FANG.UI.Background.PaletteTitle"}}</label>
+        <div class="color-palette-grid">
+            {{#each colors}}
+            <div class="color-patch {{#if (eq ../background.color this.hex)}}active{{/if}}" 
+                 style="background-color: {{this.hex}};" 
+                 data-color="{{this.hex}}"
+                 title="{{this.name}}">
+                {{#if (eq ../background.color this.hex)}}<i class="fas fa-check"></i>{{/if}}
+            </div>
+            {{/each}}
+        </div>
+    </div>
+    {{/if}}
+
+    {{#if (eq background.mode "image")}}
+    <div class="bg-config-section">
+        <label>{{localize "FANG.UI.Background.ImageTitle"}}</label>
+        <div class="flexrow gap-5">
+            <input type="text" name="bgImage" value="{{background.image}}" placeholder="path/to/image.webp">
+            <button type="button" class="file-picker small-btn" data-type="image" data-target="bgImage" title="Browse">
+                <i class="fas fa-file-import"></i>
+            </button>
+        </div>
+
+        <div class="slider-group">
+            <div class="slider-label">
+                <span>{{localize "FANG.UI.Background.Blur"}}</span>
+                <span id="bgBlurVal">{{background.blur}}px</span>
+            </div>
+            <input type="range" name="bgBlur" min="0" max="20" step="1" value="{{background.blur}}">
+        </div>
+
+        <div class="slider-group">
+            <div class="slider-label">
+                <span>{{localize "FANG.UI.Background.Opacity"}}</span>
+                <span id="bgOpacityVal">{{background.opacityPercent}}%</span>
+            </div>
+            <input type="range" name="bgOpacity" min="0" max="1" step="0.05" value="{{background.opacity}}">
+        </div>
+    </div>
+    {{/if}}
+
+    {{#if (eq background.mode "preset")}}
+    <div class="bg-config-section">
+        <label>{{localize "FANG.UI.Background.PresetTitle"}}</label>
+        <select name="bgPreset">
+            <option value="parchment" {{#if (eq background.preset "parchment")}}selected{{/if}}>{{localize "FANG.UI.Background.Preset.Parchment"}}</option>
+            <option value="dark" {{#if (eq background.preset "dark")}}selected{{/if}}>{{localize "FANG.UI.Background.Preset.Dark"}}</option>
+            <option value="starfield" {{#if (eq background.preset "starfield")}}selected{{/if}}>{{localize "FANG.UI.Background.Preset.Starfield"}}</option>
+            <option value="ethereal" {{#if (eq background.preset "ethereal")}}selected{{/if}}>{{localize "FANG.UI.Background.Preset.Ethereal"}}</option>
+            <option value="stone" {{#if (eq background.preset "stone")}}selected{{/if}}>{{localize "FANG.UI.Background.Preset.Stone"}}</option>
+            <option value="stars" {{#if (eq background.preset "stars")}}selected{{/if}}>{{localize "FANG.UI.Background.Preset.Stars"}}</option>
+        </select>
+    </div>
+    {{/if}}
+
+    <div class="premium-notice">
+        <div class="premium-badge">Premium Feature</div>
+        <p>{{localize "FANG.UI.Background.PremiumHint"}}</p>
+    </div>
+</div>

@@ -404,20 +404,20 @@
         <!-- Narrative Spotlight Overlay -->
         <div id="fang-narrative-overlay" class="fang-narrative-overlay hidden">
             <div class="narrative-card">
-                <div class="narrative-portrait-container hidden">
-                    <img id="narrative-portrait" src="">
+                <div class="narrative-left-side">
+                    <div class="narrative-portrait-container hidden">
+                        <img id="narrative-portrait" src="">
+                    </div>
+                    <div id="narrative-quests-container" class="hidden">
+                        <h4 class="narrative-quests-header"><i class="fas fa-scroll"></i> {{localize
+                            "FANG.UI.AvailableQuests"}}</h4>
+                        <ul id="narrative-quests-list"></ul>
+                    </div>
                 </div>
                 <div class="narrative-content">
                     <h2 id="narrative-title"></h2>
                     <div id="narrative-subtitle"></div>
-                    <div class="narrative-columns">
-                        <div id="narrative-text"></div>
-                        <div id="narrative-quests-container" class="hidden">
-                            <h4 class="narrative-quests-header"><i class="fas fa-scroll"></i> {{localize
-                                "FANG.UI.AvailableQuests"}}</h4>
-                            <ul id="narrative-quests-list"></ul>
-                        </div>
-                    </div>
+                    <div id="narrative-text"></div>
                 </div>
                 <div class="narrative-close">
                     <i class="fas fa-times"></i>
