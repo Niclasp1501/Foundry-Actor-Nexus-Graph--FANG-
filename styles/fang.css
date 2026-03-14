@@ -1953,8 +1953,8 @@ body.fang-actor-panel-open .application:not(.sidebar-popout):not(.fang-app-windo
         radial-gradient(circle at 24% 32%, rgba(0, 255, 208, 0.14) 0%, transparent 46%),
         radial-gradient(circle at 70% 62%, rgba(170, 80, 255, 0.18) 0%, transparent 52%),
         radial-gradient(circle at 85% 20%, rgba(255, 255, 255, 0.08) 0%, transparent 40%),
-        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='360' height='360'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='360' height='360' filter='url(%23n)' opacity='.16'/%3E%3C/svg%3E") !important,
-        radial-gradient(circle at 50% 55%, transparent 58%, rgba(0,0,0,0.40) 100%);
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='360' height='360'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='360' height='360' filter='url(%23n)' opacity='.16'/%3E%3C/svg%3E"),
+        radial-gradient(circle at 50% 55%, transparent 58%, rgba(0,0,0,0.40) 100%) !important;
     background-size: cover, cover, cover, 260px 260px, cover;
     background-blend-mode: screen, screen, screen, overlay, normal;
     opacity: 0.8;
@@ -2085,4 +2085,41 @@ body.fang-actor-panel-open .application:not(.sidebar-popout):not(.fang-app-windo
     padding-bottom: 5px;
     text-transform: uppercase;
     letter-spacing: 0.02em;
+}
+
+/* === Only-Sheet: Instant Side-Shift & Pinned Sidebar (BULLETPROOF V13 FIX) === */
+
+/* 1. FORCE PIN: Ensure the actor directory popout ALWAYS docks to the right sidebar area */
+/* This prevents the "centered window" bug even if JS fails to apply classes. */
+.actors-sidebar.sidebar-popout {
+    position: fixed !important;
+    right: 0px !important;
+    top: 0px !important;
+    left: auto !important; /* Force it out of the center */
+    width: 300px !important;
+    height: 100vh !important;
+    max-height: 100vh !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    z-index: 9999 !important;
+}
+
+/* 2. SHIFT: Shift main windows to the left when the actor panel exists AND actually has content.
+   Prevents Foundry v13 "ghost shells" (empty window-content) from triggering :has(). */
+body:has(.actors-sidebar.sidebar-popout:has(.window-content > *)) .application.sheet.actor:not(.sidebar-popout) {
+    max-width: calc(100vw - 300px) !important;
+    width: auto !important; /* Force expansion into the available space, preventing black gaps */
+    transition: none !important; /* Eliminate the toggle delay requested by user */
+}
+
+/* 3. RECOVERY: Forced full width when the panel is GONE (destroys the "black void") */
+body:not(:has(.actors-sidebar.sidebar-popout:has(.window-content > *))) .application.sheet.actor:not(.sidebar-popout) {
+    width: 100vw !important; /* Force true 100vw instead of just 100% */
+    max-width: 100vw !important;
+}
+
+/* 4. Color the FANG Actor button red when the panel is open */
+body:has(.actors-sidebar.sidebar-popout:has(.window-content > *)) #fang-so-actors-btn {
+    color: #ff3b3b !important;
+    text-shadow: 0 0 10px rgba(255, 59, 59, 0.4);
 }

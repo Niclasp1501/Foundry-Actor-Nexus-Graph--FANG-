@@ -3,6 +3,214 @@ import { FangApplication } from "./fang-app.js";
 // Singleton instance
 let fangApp = null;
 
+const FANG_ACTOR_DIRECTORY_POPOUT_SELECTOR = ".actors-sidebar.sidebar-popout";
+let _fangActorDirectoryShellSweepQueued = false;
+let _fangActorDirectoryPopout = null;
+
+function _fangGetActorDirectoryPopoutShells() {
+  return Array.from(document.querySelectorAll(FANG_ACTOR_DIRECTORY_POPOUT_SELECTOR));
+}
+
+function _fangIsGhostActorDirectoryShell(shell) {
+  if (!shell) return false;
+  const content = shell.querySelector(".window-content");
+  // Foundry's "ghost shell" reports: header remains, inner content gone.
+  if (!content) return true;
+  if (content.childElementCount === 0) return true;
+  if (!shell.querySelector(".directory, .directory-header, .directory-list, .directory-item")) return true;
+  return false;
+}
+
+function _fangForceRemoveActorDirectoryShells({ onlyGhost = false } = {}) {
+  const shells = _fangGetActorDirectoryPopoutShells();
+  for (const shell of shells) {
+    if (!onlyGhost || _fangIsGhostActorDirectoryShell(shell)) shell.remove();
+  }
+  return shells.length;
+}
+
+function _fangQueueActorDirectoryShellSweep(reason = "unknown", { onlyGhost = true, force = false } = {}) {
+  if (_fangActorDirectoryShellSweepQueued && !force) return;
+  _fangActorDirectoryShellSweepQueued = true;
+
+  const sweep = () => {
+    _fangForceRemoveActorDirectoryShells({ onlyGhost });
+  };
+
+  queueMicrotask(() => {
+    sweep();
+    _fangActorDirectoryShellSweepQueued = false;
+  });
+  setTimeout(sweep, 0);
+  setTimeout(sweep, 50);
+  setTimeout(sweep, 250);
+
+  let rafs = 0;
+  const rafSweep = () => {
+    sweep();
+    if (++rafs < 5) requestAnimationFrame(rafSweep);
+  };
+  requestAnimationFrame(rafSweep);
+
+  console.debug(`FANG | ActorDirectory shell sweep (${reason})`);
+}
+
+function _fangResolveActorDirectoryApp() {
+  const fromUi = ui?.actors ?? null;
+  if (fromUi && typeof fromUi.renderPopout === "function") return fromUi;
+
+  if (!game?.actors?.apps) return null;
+  const fromGame = Object.values(game.actors.apps).find((app) => {
+    if (typeof app?.renderPopout !== "function") return false;
+    if (app?.constructor?.name === "ActorDirectory") return true;
+    if (app?.id === "actors" || app?.tabName === "actors") return true;
+    return false;
+  });
+  return fromGame ?? null;
+}
+
+function _fangGetPopoutDomNode(popout) {
+  if (!popout) return null;
+  if (popout instanceof HTMLElement) return popout;
+  return popout.element?.[0] ?? popout.element ?? null;
+}
+
+function _fangHasLiveActorPopout() {
+  if (!_fangActorDirectoryPopout) return false;
+  const el = _fangGetPopoutDomNode(_fangActorDirectoryPopout);
+  if (!el || !document.body.contains(el)) {
+    _fangActorDirectoryPopout = null;
+    return false;
+  }
+  return true;
+}
+
+function _fangAttachActorPopoutListener(popout) {
+  const el = _fangGetPopoutDomNode(popout);
+  if (!el?.addEventListener) return;
+  el.addEventListener("close", () => {
+    _fangActorDirectoryPopout = null;
+    _fangQueueActorDirectoryShellSweep("event:close", { onlyGhost: false, force: true });
+  }, { once: true });
+}
+
+function _fangFindActorDirectoryPopoutApp() {
+  const windows = Object.values(ui?.windows ?? {});
+  const byElement = windows.find((app) => app?.element?.[0]?.matches?.(FANG_ACTOR_DIRECTORY_POPOUT_SELECTOR));
+  if (byElement) return byElement;
+  const byType = windows.find((app) => app?.constructor?.name === "ActorDirectory" && (app?.popOut || app?.options?.popOut));
+  return byType ?? null;
+}
+
+async function _fangOpenActorDirectoryPopout({ reason = "unknown" } = {}) {
+  _fangForceRemoveActorDirectoryShells({ onlyGhost: true });
+
+  if (_fangHasLiveActorPopout()) {
+    try {
+      _fangActorDirectoryPopout.bringToFront?.();
+    } catch {
+      // no-op
+    }
+    return;
+  }
+
+  const dirApp = _fangResolveActorDirectoryApp();
+  if (!dirApp) return;
+
+  try {
+    const popout = typeof dirApp.renderPopout === "function"
+      ? await dirApp.renderPopout()
+      : await dirApp.render(true, { popOut: true });
+
+    if (popout) {
+      _fangActorDirectoryPopout = popout;
+      _fangAttachActorPopoutListener(popout);
+      console.debug(`FANG | ActorDirectory popout opened (${reason})`);
+      return;
+    }
+  } catch (err) {
+    console.error("FANG | ActorDirectory open failed", err);
+  }
+
+  // Last-resort fallback using visible window tracking.
+  const app = _fangFindActorDirectoryPopoutApp();
+  if (app) {
+    _fangActorDirectoryPopout = app;
+    _fangAttachActorPopoutListener(app);
+  } else {
+    console.warn("FANG | ActorDirectory popout did not open", { reason });
+  }
+}
+
+async function _fangForceCloseActorDirectoryPopout({ reason = "unknown" } = {}) {
+  // 1) Close tracked popout first (same pattern as sheet-only journal/chat).
+  if (_fangHasLiveActorPopout() && typeof _fangActorDirectoryPopout?.close === "function") {
+    try {
+      await _fangActorDirectoryPopout.close();
+    } catch {
+      try {
+        await _fangActorDirectoryPopout.close({ force: true });
+      } catch {
+        // ignore
+      }
+    }
+  }
+  _fangActorDirectoryPopout = null;
+
+  // 2) Close any remaining ActorDirectory popout app discovered via ui.windows.
+  const app = _fangFindActorDirectoryPopoutApp();
+  if (app?.close) {
+    try {
+      await app.close();
+    } catch {
+      try {
+        await app.close({ force: true });
+      } catch {
+        // ignore
+      }
+    }
+  }
+
+  // 3) Hard-remove leftovers so CSS :has() cannot stick on ghost shells.
+  _fangQueueActorDirectoryShellSweep(reason, { onlyGhost: false, force: true });
+  console.debug(`FANG | ActorDirectory popout cleanup (${reason})`);
+}
+
+function _fangIsActorDirectoryOpen() {
+  if (_fangHasLiveActorPopout()) return true;
+  return !!document.querySelector(FANG_ACTOR_DIRECTORY_POPOUT_SELECTOR);
+}
+
+function _fangClearActorDirectoryPopoutRef() {
+  _fangActorDirectoryPopout = null;
+}
+
+function _fangMarkActorDirectoryPopout(popout) {
+  if (!popout) return;
+  _fangActorDirectoryPopout = popout;
+  _fangAttachActorPopoutListener(popout);
+}
+
+function _fangApplyActorDirectorySidebarStyle(app) {
+  const el = _fangGetPopoutDomNode(app);
+  if (!el) return;
+  Object.assign(el.style, {
+    position: "fixed",
+    right: "0px",
+    top: "0px",
+    left: "auto",
+    width: "300px",
+    height: "100vh",
+    maxHeight: "100vh",
+    margin: "0",
+    borderRadius: "0",
+    zIndex: "9999",
+    background: "rgba(11, 10, 19, 0.95)",
+    border: "1px solid rgb(48, 40, 49)",
+    boxShadow: "-4px 0 16px rgba(0,0,0,0.6)"
+  });
+}
+
 Hooks.once("init", () => {
   console.log("FANG | Initializing Foundry Actor Nexus Graph module");
 
@@ -212,6 +420,16 @@ Hooks.once("init", () => {
 });
 
 Hooks.once("ready", () => {
+  // Global, robust "Ghost Shell" cleanup for Foundry v13 Actor Directory popouts.
+  // Runs for players + GM, regardless of Only-Sheet usage.
+  if (!window._fangActorDirectoryGhostFixInstalled) {
+    Hooks.on("closeActorDirectory", () => {
+      _fangClearActorDirectoryPopoutRef();
+      _fangQueueActorDirectoryShellSweep("hook:closeActorDirectory", { onlyGhost: true, force: true });
+    });
+    window._fangActorDirectoryGhostFixInstalled = true;
+  }
+
   // Expose API for Macros
   const module = game.modules.get("fang");
   module.api = {
@@ -411,66 +629,19 @@ Hooks.once("ready", () => {
               _applyOnlySheetStyle(actorsBtn);
               actorsBtn.innerHTML = '<i class="fa-solid fa-user"></i>';
               // FIX: Robust toggle and close logic for V13 + Only-Sheet
-              actorsBtn.addEventListener("click", (e) => {
+              actorsBtn.addEventListener("click", async (e) => {
                 e.preventDefault();
 
-                // If already marked as open, find the app and close it. 
-                // The MutationObserver below will handle all state cleanup (!).
-                if (actorsBtn.dataset.fangOpen === "1") {
-                  const popout = document.querySelector(".actors-sidebar.sidebar-popout");
-                  if (popout) {
-                    const app = Object.values(ui.windows).find(w => w.element?.[0] === popout);
-                    if (app) app.close();
-                    else popout.remove();
-                  }
+                // Pre-clean: remove any already-empty ghost shells so state can't desync.
+                _fangForceRemoveActorDirectoryShells({ onlyGhost: true });
+
+                if (_fangIsActorDirectoryOpen()) {
+                  await _fangForceCloseActorDirectoryPopout({ reason: "only-sheet-toggle:close" });
                   return;
                 }
 
-                // Ensure the panel CSS is injected (immune to Foundry's _updatePosition)
-                const STYLE_ID = "fang-actor-panel-style";
-                if (!document.getElementById(STYLE_ID)) {
-                  const style = document.createElement("style");
-                  style.id = STYLE_ID;
-                  style.textContent = `
-                    .actors-sidebar.sidebar-popout {
-                      position: fixed !important;
-                      right: 0px !important;
-                      top: 0px !important;
-                      left: auto !important;
-                      width: 300px !important;
-                      height: 100vh !important;
-                      max-height: 100vh !important;
-                      margin: 0 !important;
-                      border-radius: 0 !important;
-                      z-index: 9999 !important;
-                      background: rgba(11, 10, 19, 0.95) !important;
-                      border: 1px solid rgb(48, 40, 49) !important;
-                      box-shadow: -4px 0 16px rgba(0,0,0,0.6) !important;
-                    }
-                  `;
-                  document.head.appendChild(style);
-                }
-
-                // Initial state update: mark as open and shift sheet left
-                actorsBtn.dataset.fangOpen = "1";
-                document.body.classList.add("fang-actor-panel-open");
-
-                // Render as popout (lowercase 'o' for V13 compatibility)
                 const dir = ui.actors;
-                if (!dir) return;
-                if (dir.renderPopout) dir.renderPopout();
-                else dir.render(true, { popout: true });
-
-                // SINGLE SOURCE OF TRUTH for cleanup: Watch for the panel removal from DOM.
-                // This handles X-button, our button-close, and external closes correctly.
-                const observer = new MutationObserver(() => {
-                  if (!document.querySelector(".actors-sidebar.sidebar-popout")) {
-                    document.body.classList.remove("fang-actor-panel-open");
-                    actorsBtn.removeAttribute("data-fang-open");
-                    observer.disconnect();
-                  }
-                });
-                observer.observe(document.body, { childList: true, subtree: true });
+                if (dir) await _fangOpenActorDirectoryPopout({ reason: "only-sheet-toggle:open" });
               });
               // Insert at same position as the original (first child)
               container.insertBefore(actorsBtn, container.firstChild);
@@ -525,25 +696,10 @@ Hooks.on("renderActorDirectory", (app, html, data) => {
 
   // If Only-Sheet is active and this is a popout, position it like the journal panel
   if (document.getElementById("so-main-buttons") && app.popOut) {
+    _fangMarkActorDirectoryPopout(app);
     // Small delay to let Foundry finish positioning first
     setTimeout(() => {
-      const el = app.element?.[0] ?? document.querySelector(".actors-sidebar.sidebar-popout, [class*='actor'][class*='popout']");
-      if (!el) return;
-      Object.assign(el.style, {
-        position: "fixed",
-        right: "0px",
-        top: "0px",
-        left: "auto",
-        width: "300px",
-        height: "100vh",
-        maxHeight: "100vh",
-        margin: "0",
-        borderRadius: "0",
-        zIndex: "9999",
-        background: "rgba(11, 10, 19, 0.95)",
-        border: "1px solid rgb(48, 40, 49)",
-        boxShadow: "-4px 0 16px rgba(0,0,0,0.6)"
-      });
+      _fangApplyActorDirectorySidebarStyle(app);
     }, 50);
   }
 });
