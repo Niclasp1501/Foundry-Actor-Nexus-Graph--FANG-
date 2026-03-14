@@ -3,6 +3,22 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2026-03-14
+### Added
+- **Background Settings (Live Sync)**: Customize the graph background via palette colors, custom images (blur/opacity), or style presets. Changes sync live to players/monitors.
+- **Quest Log Upgrades**: Link one *or multiple* Quest Journals per node and open them via context menu / in-canvas picker.
+- **Quest Spotlight**: New quest-focused Spotlight overlay (monitor auto-scroll + GM-driven scroll sync).
+- **Only-Sheet Integration**: Optional setting to replace the Only-Sheet actor button and inject quick-access buttons for Actors and FANG.
+
+### Changed
+- **Spoiler Protection**: Non-GMs only see actors/journals they have permission to access.
+- **Background Rendering**: Background now renders on a dedicated `#fang-bg-layer` behind the canvas.
+
+### Fixed
+- **Safer Deletion Flow**: Confirm dialogs for node/link deletion and more robust parsing of node/link identifiers.
+- **Selection / Centering Edge Cases**: Trimmed select parsing and normalized select values to prevent wrong sidebar selections.
+- **Background Image UX**: Prevents blur/zoom flashes while images load and adds live preview for blur/opacity without excessive settings writes.
+
 ## [1.2.7] - 2026-03-10
 ### Fixed
 - **UI Refinements**: Renamed "(Legacy) Quick Notes" to "Quick Lore Note", fixed Assign Journal dialog button alignment, and added explanatory tooltips.
@@ -114,10 +130,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - **Boss Nodes (Center Gravity)**: Mark important characters as "Centers" to have them gravitate to the middle with a golden aura.
 - **Cosmic Wind**: Added a subtle ambient animation to the graph nodes.
 
-## [1.0.7] - 2026-02-24
-### Added
-- **Drag & Drop**: Drag actors from the Foundry Sidebar directly onto the canvas.
-
 ## [1.1.1] - 2025-05-15
 ### Added
 - **Directional Links**: Support for arrows on relationship lines.
+
+## [1.0.7] - 2026-02-24
+### Added
+- **Drag & Drop**: Drag actors from the Foundry Sidebar directly onto the canvas.

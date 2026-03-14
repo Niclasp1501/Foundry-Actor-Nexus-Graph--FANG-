@@ -1,5 +1,7 @@
 # Ninjo's FANG (Foundry Actor Nexus Graph)
 
+**Current Version / Aktuelle Version:** 2.0.0
+
 An interactive, self-arranging Actor Graph module for visualizing Character & NPC Relationships natively in Foundry VTT V13. FANG enables Game Masters and players to dynamically map out self-building relationship networks inside their game world.
 
 *(Scroll down for German version / Scrolle weiter runter für die deutsche Version)*
@@ -27,6 +29,9 @@ An interactive, self-arranging Actor Graph module for visualizing Character & NP
 - **Visual Grouping:** Group actors (e.g., by location) with visual bounding boxes or cluster zones.
 - **Link Label Validation:** Ensures all connections have mandatory labels to prevent confusing "invisible" links.
 - **JSON Export & Import (Backup):** Save your entire graph (including token positions, factions, and visual settings) to a file. Perfect for backups or sharing templates.
+- **Customizable Backgrounds (Live Sync):** Customize the graph background via palette colors, custom images (blur/opacity), or style presets. Syncs live to players/monitors.
+- **Quest Log + Quest Spotlight:** Link one or multiple Quest Journals per node and open them via context menu / in-canvas picker. Quest Spotlights support monitor auto-scroll + synced scroll.
+- **Only-Sheet Compatibility:** Optional setting to replace the Only-Sheet actor button and inject quick-access buttons for Actors and FANG.
 - **Multi-Language Support (I18n):** Automatically translates to English or German based on Foundry settings.
 
 ### Installation
@@ -72,9 +77,12 @@ For the current development status and planned features, please refer to the [TO
 - **Präzises Drag & Drop:** Korrigierte Koordinaten-Berechnung sorgt dafür, dass Tokens beim Ziehen exakt unter der Maus bleiben, auch wenn du gezoomt hast.
 - **Rollen & Fraktionen:** Weise Rollen oder Fraktionen zu, um dem Netzwerk eine völlig neue Organisationstiefe zu verleihen.
 - **Zentrums-Gravitation (Boss-Knoten):** Verankere wichtige Akteure magnetisch in der Mitte des Graphen, inklusive leuchtender Aura.
-- **Visuelle Gruppierung:** Fassse Akteure (z.B. nach Standort) optisch in Gruppen oder Zonen zusammen.
+- **Visuelle Gruppierung:** Fasse Akteure (z.B. nach Standort) optisch in Gruppen oder Zonen zusammen.
 - **Verbindungs-Validierung:** Stellt sicher, dass jede Verbindung eine Beschriftung hat, um "unsichtbare" Linien zu vermeiden.
 - **JSON Export & Import (Backup):** Speichere deinen gesamten Graphen (inkl. Token-Positionen, Fraktionen und Einstellungen) in einer Datei. Ideal für Backups oder zum Teilen.
+- **Anpassbarer Hintergrund (Live-Sync):** Passe den Hintergrund über Farbpalette, eigene Bilder (Blur/Deckkraft) oder Stil-Presets an. Wird live an Spieler/Monitor synchronisiert.
+- **Quest Log + Quest Spotlight:** Verknüpfe ein oder mehrere Quest-Journale pro Knoten und öffne sie über Kontextmenü / In-Canvas-Auswahl. Quest-Spotlights unterstützen Monitor Auto-Scroll + synchronisiertes Scrollen.
+- **Only-Sheet Kompatibilität:** Optionale Einstellung, um den Only-Sheet Actor-Button zu ersetzen und Quick-Buttons für Akteure und FANG einzublenden.
 - **Mehrsprachigkeit (I18n):** Das Modul ist komplett auf Englisch und Deutsch verfügbar.
 
 ### Installation
