@@ -510,6 +510,85 @@ body.role-player .fang-app-container .gm-only {
     cursor: grabbing;
 }
 
+.fang-app-container .fang-search-floating {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    z-index: 901;
+    background: rgba(253, 251, 247, 0.9);
+    border: 1px solid rgba(212, 175, 55, 0.45);
+    border-radius: 8px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(2px);
+    padding: 6px 8px;
+}
+
+.fang-app-container .fang-search-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.fang-app-container .fang-search-row > i {
+    color: #7a2b2b;
+    font-size: 0.9rem;
+}
+
+.fang-app-container #fangSearchInput {
+    width: clamp(180px, 24vw, 320px);
+    margin: 0;
+    padding: 6px 8px;
+    height: 32px;
+    background: rgba(255, 255, 255, 0.92);
+}
+
+.fang-app-container .fang-search-isolate-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.8rem;
+    color: #2e2b29;
+    user-select: none;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.fang-app-container .fang-search-isolate-wrap input {
+    width: auto;
+    margin: 0;
+}
+
+.fang-app-container #fangSearchClear {
+    flex: 0 0 auto;
+    width: 32px;
+    min-width: 32px;
+    height: 32px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+body.fang-monitor .fang-app-container .fang-search-floating {
+    display: none !important;
+}
+
+@media (max-width: 980px) {
+    .fang-app-container .fang-search-floating {
+        left: 14px;
+        right: 14px;
+    }
+
+    .fang-app-container #fangSearchInput {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .fang-app-container .fang-search-isolate-wrap span {
+        display: none;
+    }
+}
+
 /* Custom Scrollbar */
 .fang-app-container .sidebar::-webkit-scrollbar {
     width: 8px;
@@ -1483,7 +1562,7 @@ body.fang-monitor .fang-app-container .narrative-close {
 body.fang-actor-panel-open .window-app:not(.sidebar-popout):not(.fang-app-window):not(.fang-dialog),
 body.fang-actor-panel-open .application:not(.sidebar-popout):not(.fang-app-window):not(.fang-dialog) {
     max-width: calc(100vw - 300px) !important;
-    transition: max-width 0.2s ease;
+    transition: none !important;
 }
 
 /* --- Background Settings & Premium Features --- */

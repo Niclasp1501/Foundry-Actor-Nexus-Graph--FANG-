@@ -140,6 +140,11 @@
                             style="border-color: var(--fang-accent-gold);">
                              <i class="fas fa-expand-arrows-alt"></i> {{localize "FANG.UI.CenterGraph"}}
                          </button>
+
+                        <button id="btnToggleSearchOverlay" class="btn action-btn"
+                            title="{{localize 'FANG.UI.SearchToggleHint'}}">
+                            <i class="fas fa-search"></i> {{localize "FANG.UI.SearchToggle"}}
+                        </button>
                      </div>
                  </div>
 
@@ -265,6 +270,19 @@
     <!-- Main Canvas Area -->
     <main class="canvas-container" style="position: relative;">
         <div id="fang-bg-layer"></div>
+        <div id="fang-search-floating" class="fang-search-floating hidden">
+            <div class="fang-search-row">
+                <i class="fas fa-search" aria-hidden="true"></i>
+                <input type="text" id="fangSearchInput" placeholder="{{localize 'FANG.UI.SearchPlaceholder'}}">
+                <label class="fang-search-isolate-wrap" for="fangSearchIsolate" title="{{localize 'FANG.UI.SearchOnlyMatches'}}">
+                    <input type="checkbox" id="fangSearchIsolate">
+                    <span>{{localize "FANG.UI.SearchOnlyMatches"}}</span>
+                </label>
+                <button id="fangSearchClear" class="btn action-btn" title="{{localize 'FANG.UI.SearchCloseHint'}}">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
         <div id="fang-canvas-lock-indicator" class="canvas-lock-indicator hidden">
             <i class="fas fa-user-edit"></i>
             <span id="canvas-lock-text"></span>

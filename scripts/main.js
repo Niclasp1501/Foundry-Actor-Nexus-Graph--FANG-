@@ -149,6 +149,9 @@ async function _fangOpenActorDirectoryPopout({ reason = "unknown" } = {}) {
 }
 
 async function _fangForceCloseActorDirectoryPopout({ reason = "unknown" } = {}) {
+  // Collapse layout immediately; technical close/cleanup can continue asynchronously.
+  _fangSetActorPanelOpenState(false);
+
   // 1) Close tracked popout first (same pattern as sheet-only journal/chat).
   if (_fangHasLiveActorPopout() && typeof _fangActorDirectoryPopout?.close === "function") {
     try {
@@ -162,7 +165,6 @@ async function _fangForceCloseActorDirectoryPopout({ reason = "unknown" } = {}) 
     }
   }
   _fangActorDirectoryPopout = null;
-  _fangSetActorPanelOpenState(false);
 
   // 2) Close any remaining ActorDirectory popout app discovered via ui.windows.
   const app = _fangFindActorDirectoryPopoutApp();

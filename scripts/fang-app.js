@@ -247,6 +247,11 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         this._remoteSyncing = false; // Guard to prevent feedback loops
         this._hoveredNodeId = null;
         this._bgImageLoaded = new Map();
+        this._searchQuery = "";
+        this._searchIsolate = false;
+        this._searchMatchedNodeIds = new Set();
+        this._searchMatchedLinkIndices = new Set();
+        this._searchUiVisible = false;
     }
 
     async _prepareContext(options) {
@@ -413,6 +418,44 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 if (!val) return;
                 const [type, id] = val.split("|").map(s => s.trim());
                 this._syncSidebarSelection(type, id);
+            });
+        }
+
+        const searchInput = this.element.querySelector("#fangSearchInput");
+        const searchIsolate = this.element.querySelector("#fangSearchIsolate");
+        const searchClear = this.element.querySelector("#fangSearchClear");
+        const btnToggleSearchOverlay = this.element.querySelector("#btnToggleSearchOverlay");
+        this._setSearchUiVisible(this._searchUiVisible);
+
+        if (searchInput) {
+            searchInput.value = this._searchQuery;
+            searchInput.addEventListener("input", (e) => {
+                this._searchQuery = e.target.value || "";
+                this._rebuildSearchMatches();
+                this.ticked();
+            });
+        }
+        if (searchIsolate) {
+            searchIsolate.checked = !!this._searchIsolate;
+            searchIsolate.addEventListener("change", (e) => {
+                this._searchIsolate = !!e.target.checked;
+                this.ticked();
+            });
+        }
+        if (searchClear) {
+            searchClear.addEventListener("click", () => {
+                this._clearSearchState();
+                this._setSearchUiVisible(false);
+            });
+        }
+        if (btnToggleSearchOverlay) {
+            btnToggleSearchOverlay.addEventListener("click", () => {
+                if (this._searchUiVisible) {
+                    this._clearSearchState();
+                    this._setSearchUiVisible(false);
+                } else {
+                    this._setSearchUiVisible(true, { focus: true });
+                }
             });
         }
 
@@ -903,6 +946,74 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
     // --- UI Interactivity ---
 
+    _normalizeSearchText(value) {
+        return String(value ?? "")
+            .toLowerCase()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "");
+    }
+
+    _setSearchUiVisible(visible, { focus = false } = {}) {
+        this._searchUiVisible = !!visible;
+        const panel = this.element?.querySelector("#fang-search-floating");
+        if (panel) panel.classList.toggle("hidden", !this._searchUiVisible);
+        if (focus && this._searchUiVisible) {
+            setTimeout(() => this.element?.querySelector("#fangSearchInput")?.focus(), 0);
+        }
+    }
+
+    _clearSearchState() {
+        this._searchQuery = "";
+        this._searchIsolate = false;
+        const searchInput = this.element?.querySelector("#fangSearchInput");
+        const searchIsolate = this.element?.querySelector("#fangSearchIsolate");
+        if (searchInput) searchInput.value = "";
+        if (searchIsolate) searchIsolate.checked = false;
+        this._rebuildSearchMatches();
+        this.ticked();
+    }
+
+    _rebuildSearchMatches() {
+        const query = this._normalizeSearchText(this._searchQuery).trim();
+        if (!query) {
+            this._searchMatchedNodeIds = new Set();
+            this._searchMatchedLinkIndices = new Set();
+            return;
+        }
+
+        const terms = query.split(/\s+/).filter(Boolean);
+        const matchAllTerms = (text) => {
+            const normalized = this._normalizeSearchText(text);
+            return terms.every(term => normalized.includes(term));
+        };
+
+        const factionsById = new Map((this.graphData.factions || []).map(f => [f.id, f]));
+
+        const matchedNodes = new Set();
+        const matchedLinks = new Set();
+
+        for (const node of this.graphData.nodes) {
+            const factionName = node.factionId ? factionsById.get(node.factionId)?.name || "" : "";
+            const nodeText = [
+                node.name,
+                node.originalName,
+                node.displayName,
+                node.role,
+                factionName
+            ].join(" ");
+            if (matchAllTerms(nodeText)) matchedNodes.add(node.id);
+        }
+
+        this.graphData.links.forEach((link, index) => {
+            const linkText = [link.label, link.info].join(" ");
+            if (!matchAllTerms(linkText)) return;
+            matchedLinks.add(index);
+        });
+
+        this._searchMatchedNodeIds = matchedNodes;
+        this._searchMatchedLinkIndices = matchedLinks;
+    }
+
     _populateActors() {
         // Populate Source/Target from game.actors
         const selectSource = this.element.querySelector("#sourceSelect");
@@ -1000,6 +1111,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 selectDelete.appendChild(optGroupL);
             }
         }
+
+        this._rebuildSearchMatches();
     }
 
     _canEditGraph(silent = false, allowGMOverride = false) {
@@ -2436,6 +2549,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             if (menu) menu.classList.add("hidden");
             const edgeMenu = this.element.querySelector("#fang-edge-context-menu");
             if (edgeMenu) edgeMenu.classList.add("hidden");
+
+            // Local quick access: right-click on empty canvas opens search overlay.
+            this._setSearchUiVisible(true, { focus: true });
         }
     }
 
@@ -3124,6 +3240,24 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             });
         }
 
+        const searchActive = !!this._normalizeSearchText(this._searchQuery).trim();
+        const isolateSearch = searchActive && !!this._searchIsolate;
+        const exactNodeMatches = this._searchMatchedNodeIds;
+        const exactLinkMatches = this._searchMatchedLinkIndices;
+        const visibleNodeIds = new Set();
+        const getId = (ref) => (typeof ref === "object" ? ref?.id : ref);
+
+        if (isolateSearch) {
+            exactNodeMatches.forEach(id => visibleNodeIds.add(id));
+            this.graphData.links.forEach((link, idx) => {
+                if (!exactLinkMatches.has(idx)) return;
+                const sId = getId(link.source);
+                const tId = getId(link.target);
+                if (sId) visibleNodeIds.add(sId);
+                if (tId) visibleNodeIds.add(tId);
+            });
+        }
+
         this.context.save();
         this.context.clearRect(0, 0, this.width, this.height);
         this.context.translate(this.transform.x, this.transform.y);
@@ -3174,6 +3308,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 for (let i = 0; i < sortedMembers.length; i++) {
                     const node1 = sortedMembers[i];
                     const node2 = sortedMembers[(i + 1) % sortedMembers.length];
+                    if (isolateSearch && (!visibleNodeIds.has(node1.id) || !visibleNodeIds.has(node2.id))) continue;
+
                     const m1 = renderPos[node1.id];
                     const m2 = renderPos[node2.id];
                     if (!m1 || !m2) continue;
@@ -3232,6 +3368,12 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             const linkIndex = pairInfo.links.indexOf(i);
             const totalParams = pairInfo.total;
 
+            const sIdRaw = typeof link.source === 'object' ? link.source.id : link.source;
+            const tIdRaw = typeof link.target === 'object' ? link.target.id : link.target;
+            const showLinkInIsolate = exactLinkMatches.has(i)
+                || (visibleNodeIds.has(sIdRaw) && visibleNodeIds.has(tIdRaw) && exactNodeMatches.has(sIdRaw) && exactNodeMatches.has(tIdRaw));
+            if (isolateSearch && !showLinkInIsolate) return;
+
             const sPos = renderPos[link.source.id];
             const tPos = renderPos[link.target.id];
 
@@ -3243,8 +3385,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
             let ctrlX, ctrlY, labelX, labelY;
 
-            const sId = typeof link.source === 'object' ? link.source.id : link.source;
-            const tId = typeof link.target === 'object' ? link.target.id : link.target;
+            const sId = sIdRaw;
+            const tId = tIdRaw;
             const isRelevantLink = hoveredNodeId ? (sId === hoveredNodeId || tId === hoveredNodeId) : true;
 
             this.context.save();
@@ -3446,6 +3588,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             const conditions = node.conditions || [];
             const isDeceased = conditions.includes("deceased");
             const isMissing = conditions.includes("missing");
+            if (isolateSearch && !visibleNodeIds.has(node.id)) return;
 
             const isRelevantNode = hoveredNodeId ? connectedNodeIds.has(node.id) : true;
 
@@ -3468,6 +3611,18 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 this.context.lineWidth = 4;
                 this.context.shadowBlur = 15;
                 this.context.shadowColor = `rgba(${auraR}, ${auraG}, ${auraB}, 1)`;
+                this.context.stroke();
+                this.context.shadowBlur = 0;
+            }
+
+            // Search highlight ring for exact node matches
+            if (searchActive && exactNodeMatches.has(node.id)) {
+                this.context.beginPath();
+                this.context.arc(pos.x, pos.y, radius + 8, 0, Math.PI * 2);
+                this.context.strokeStyle = "rgba(212, 175, 55, 0.95)";
+                this.context.lineWidth = 3;
+                this.context.shadowBlur = 14;
+                this.context.shadowColor = "rgba(212, 175, 55, 0.85)";
                 this.context.stroke();
                 this.context.shadowBlur = 0;
             }
