@@ -7,6 +7,10 @@ const FANG_ACTOR_DIRECTORY_POPOUT_SELECTOR = ".actors-sidebar.sidebar-popout";
 let _fangActorDirectoryShellSweepQueued = false;
 let _fangActorDirectoryPopout = null;
 
+function _fangSetActorPanelOpenState(isOpen) {
+  document.body?.classList?.toggle("fang-actor-panel-open", !!isOpen);
+}
+
 function _fangGetActorDirectoryPopoutShells() {
   return Array.from(document.querySelectorAll(FANG_ACTOR_DIRECTORY_POPOUT_SELECTOR));
 }
@@ -90,6 +94,7 @@ function _fangAttachActorPopoutListener(popout) {
   if (!el?.addEventListener) return;
   el.addEventListener("close", () => {
     _fangActorDirectoryPopout = null;
+    _fangSetActorPanelOpenState(false);
     _fangQueueActorDirectoryShellSweep("event:close", { onlyGhost: false, force: true });
   }, { once: true });
 }
@@ -125,6 +130,7 @@ async function _fangOpenActorDirectoryPopout({ reason = "unknown" } = {}) {
     if (popout) {
       _fangActorDirectoryPopout = popout;
       _fangAttachActorPopoutListener(popout);
+      _fangSetActorPanelOpenState(true);
       console.debug(`FANG | ActorDirectory popout opened (${reason})`);
       return;
     }
@@ -156,6 +162,7 @@ async function _fangForceCloseActorDirectoryPopout({ reason = "unknown" } = {}) 
     }
   }
   _fangActorDirectoryPopout = null;
+  _fangSetActorPanelOpenState(false);
 
   // 2) Close any remaining ActorDirectory popout app discovered via ui.windows.
   const app = _fangFindActorDirectoryPopoutApp();
@@ -183,11 +190,13 @@ function _fangIsActorDirectoryOpen() {
 
 function _fangClearActorDirectoryPopoutRef() {
   _fangActorDirectoryPopout = null;
+  _fangSetActorPanelOpenState(false);
 }
 
 function _fangMarkActorDirectoryPopout(popout) {
   if (!popout) return;
   _fangActorDirectoryPopout = popout;
+  _fangSetActorPanelOpenState(true);
   _fangAttachActorPopoutListener(popout);
 }
 
