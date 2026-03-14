@@ -1070,39 +1070,95 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
     async _onDeleteElement() {
         if (!this._canEditGraph()) return;
         const selectDelete = this.element.querySelector("#deleteSelect");
-        const val = selectDelete.value;
+        const val = selectDelete?.value;
 
         if (!val) {
             ui.notifications.warn(game.i18n.localize("FANG.Messages.WarningNoDeleteSelect"));
             return;
         }
 
-        const [type, id] = val.split("|");
+        const [selectedType, selectedId] = val.split("|").map(s => s.trim());
 
-        if (type === "node") {
-            // Remove node
-            this.graphData.nodes = this.graphData.nodes.filter(n => n.id !== id);
-            // Remove any links connected to this node
-            this.graphData.links = this.graphData.links.filter(l => {
-                const sId = typeof l.source === 'object' ? l.source.id : l.source;
-                const tId = typeof l.target === 'object' ? l.target.id : l.target;
-                return sId !== id && tId !== id;
-            });
-            ui.notifications.info(game.i18n.localize("FANG.Messages.DeletedNode"));
-        } else if (type === "link") {
-            // Remove specific link by index
-            const lIndex = parseInt(id, 10);
-            this.graphData.links.splice(lIndex, 1);
-            ui.notifications.info(game.i18n.localize("FANG.Messages.DeletedLink"));
+        const deleteElement = async (type, id) => {
+            if (type === "node") {
+                this.graphData.nodes = this.graphData.nodes.filter(n => n.id !== id);
+                this.graphData.links = this.graphData.links.filter(l => {
+                    const sId = typeof l.source === 'object' ? l.source.id : l.source;
+                    const tId = typeof l.target === 'object' ? l.target.id : l.target;
+                    return sId !== id && tId !== id;
+                });
+                ui.notifications.info(game.i18n.localize("FANG.Messages.DeletedNode"));
+            } else if (type === "link") {
+                const lIndex = parseInt(id, 10);
+                if (!Number.isNaN(lIndex)) {
+                    this.graphData.links.splice(lIndex, 1);
+                    ui.notifications.info(game.i18n.localize("FANG.Messages.DeletedLink"));
+                }
+            }
+
+            this._toggleNodeEditor(false);
+            this._toggleLinkEditor(-1);
+
+            this.initSimulation();
+            this.simulation.alpha(0.3).restart();
+            this._populateActors();
+            await this.saveData();
+        };
+
+        const dialogTitle = game.i18n.localize("FANG.Dialogs.DeleteConfirmTitle") || "Confirm Deletion";
+
+        if (selectedType === "node") {
+            const node = this.graphData.nodes.find(n => n.id === selectedId);
+            if (!node) return;
+
+            const dialogContent = game.i18n.localize("FANG.Dialogs.DeleteNodeContent")
+                || "Are you sure you want to delete this token from the graph? Your Player Lore notes will be kept safe.";
+
+            new Dialog({
+                title: dialogTitle,
+                content: `<p style="margin-bottom: 15px;">${dialogContent}</p>`,
+                buttons: {
+                    yes: {
+                        icon: '<i class="fas fa-check"></i>',
+                        label: game.i18n.localize("Yes"),
+                        callback: async () => deleteElement("node", selectedId)
+                    },
+                    no: {
+                        icon: '<i class="fas fa-times"></i>',
+                        label: game.i18n.localize("No"),
+                        className: "cancel"
+                    }
+                },
+                default: "no"
+            }, { classes: ["dialog", "fang-dialog"], width: 400 }).render(true);
+            return;
         }
 
-        this._toggleNodeEditor(false);
-        this._toggleLinkEditor(-1);
+        if (selectedType === "link") {
+            const linkIndex = parseInt(selectedId, 10);
+            if (Number.isNaN(linkIndex) || !this.graphData.links[linkIndex]) return;
 
-        this.initSimulation();
-        this.simulation.alpha(0.3).restart();
-        this._populateActors(); // Update dropdown
-        await this.saveData();
+            const dialogContent = game.i18n.localize("FANG.Dialogs.DeleteLinkContent")
+                || "Are you sure you want to delete this connection?";
+
+            new Dialog({
+                title: dialogTitle,
+                content: `<p style="margin-bottom: 15px;">${dialogContent}</p>`,
+                buttons: {
+                    yes: {
+                        icon: '<i class="fas fa-check"></i>',
+                        label: game.i18n.localize("Yes"),
+                        callback: async () => deleteElement("link", selectedId)
+                    },
+                    no: {
+                        icon: '<i class="fas fa-times"></i>',
+                        label: game.i18n.localize("No"),
+                        className: "cancel"
+                    }
+                },
+                default: "no"
+            }, { classes: ["dialog", "fang-dialog"], width: 400 }).render(true);
+        }
     }
 
     async _onToggleCenterNode() {
