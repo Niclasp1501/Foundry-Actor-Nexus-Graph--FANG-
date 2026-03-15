@@ -2454,7 +2454,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 </div>
                 <div style="margin-top: 10px;">
                     <button id="fang-btn-player-journal" class="btn action-btn" style="width: 100%; padding: 8px;" title="${node.playerLorePageId ? '' : btnConvertHint}">
-                        <i class="fas fa-book-open"></i> ${node.playerLorePageId ? btnOpenPlayerJournal : btnConvertPlayerJournal}
+                        <i class="fa-solid fa-book" aria-hidden="true"></i> ${node.playerLorePageId ? btnOpenPlayerJournal : btnConvertPlayerJournal}
                     </button>
                 </div>
                 ${gmHtml}
