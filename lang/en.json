@@ -18,6 +18,7 @@
             "LabelPlaceholder": "Label e.g. 'is related to'",
             "Directional": "Directional (Arrow)",
             "Connect": "Connect",
+            "AddPlaceholder": "Add Placeholder",
             "DeleteElement": "Delete Element",
             "ManageElements": "Manage Elements",
             "SearchTitle": "Search & Filter",
@@ -159,6 +160,7 @@
             "OpenQuest": "Open Quest Log",
             "Spotlight": "Narrative Spotlight",
             "Identity": "Identity",
+            "ReplacePlaceholder": "Replace with Actor",
             "Condition": "Condition",
             "DeleteNode": "Delete Actor from Graph",
             "EditConnection": "Edit Information",
@@ -266,6 +268,25 @@
             "CosmicWind": "Cosmic Wind (Floating Tokens)",
             "Strength": "Wind Strength",
             "Hint": "Determine how much the tokens drift across the graph."
+        },
+        "Placeholder": {
+            "Tag": "Placeholder",
+            "DefaultName": "Unknown Contact",
+            "CreateTitle": "Create Placeholder NPC",
+            "CreateBtn": "Create",
+            "Type": "Type",
+            "Name": "Display Name",
+            "ReplaceTitle": "Replace Placeholder",
+            "ReplaceBtn": "Replace",
+            "ReplaceHint": "Select an actor to replace <strong>{name}</strong>.",
+            "SelectActor": "Actor",
+            "KeepAlias": "Keep current display name",
+            "KeepRoleFaction": "Keep role and faction",
+            "NoActorAvailable": "No actor available for replacement.",
+            "DropTitle": "Actor dropped on placeholder",
+            "DropContent": "Do you want to replace <strong>{target}</strong> with <strong>{actor}</strong>, or create a relationship?",
+            "DropReplace": "Replace placeholder",
+            "DropConnect": "Create relationship"
         }
     }
 }

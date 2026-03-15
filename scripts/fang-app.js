@@ -1,5 +1,8 @@
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
+const FANG_DEFAULT_PLACEHOLDER_IMG = "modules/fang/assets/placeholder-npc-default.webp";
+const FANG_FALLBACK_PLACEHOLDER_IMG = "modules/fang/assets/placeholder-npc.svg";
+
 /**
  * Helper class for future premium features.
  * Currently returns true for all checks, but ready for license validation.
@@ -362,6 +365,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
         // 3. Re-attach Event Listeners (Universal)
         this.element.querySelector("#btnAddLink").addEventListener("click", this._onAddLink.bind(this));
+        const btnAddPlaceholder = this.element.querySelector("#btnAddPlaceholder");
+        if (btnAddPlaceholder) btnAddPlaceholder.addEventListener("click", this._onAddPlaceholder.bind(this));
         const btnDelete = this.element.querySelector("#btnDeleteElement");
         if (btnDelete) btnDelete.addEventListener("click", this._onDeleteElement.bind(this));
         const btnUpdateLink = this.element.querySelector("#btnUpdateLink");
@@ -718,6 +723,10 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 // Migration: Identity & Conditions fields
                 this.graphData.nodes.forEach(node => {
                     if (!node.originalName) node.originalName = node.name;
+                    if (node.actorId === undefined) node.actorId = game.actors.get(node.id) ? node.id : null;
+                    if (node.isPlaceholder === undefined) node.isPlaceholder = !node.actorId;
+                    if (node.placeholderType === undefined) node.placeholderType = node.isPlaceholder ? "legacy" : null;
+                    if (node.img === undefined || node.img === null) node.img = null;
                     if (node.hidden === undefined) node.hidden = false;
                     if (!node.displayName) node.displayName = "";
                     if (!node.conditions) node.conditions = [];
@@ -754,6 +763,10 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const exportData = {
             nodes: this.graphData.nodes.map(n => ({
                 id: n.id,
+                actorId: n.actorId || null,
+                isPlaceholder: !!n.isPlaceholder,
+                placeholderType: n.placeholderType || null,
+                img: n.img || null,
                 name: n.name,
                 originalName: n.originalName || n.name,
                 role: n.role,
@@ -953,6 +966,200 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             .replace(/[\u0300-\u036f]/g, "");
     }
 
+    _getNodeActor(node) {
+        if (!node) return null;
+        if (node.actorId) return game.actors.get(node.actorId) || null;
+        return game.actors.get(node.id) || null;
+    }
+
+    _getNodeImageSource(node) {
+        const actor = this._getNodeActor(node);
+        if (node?.isPlaceholder) {
+            return node?.img || FANG_DEFAULT_PLACEHOLDER_IMG;
+        }
+        return node?.img || actor?.prototypeToken?.texture?.src || actor?.img || "icons/svg/mystery-man.svg";
+    }
+
+    _buildPlaceholderNode({
+        name,
+        role = null,
+        factionId = null,
+        img = FANG_DEFAULT_PLACEHOLDER_IMG,
+        placeholderType = "custom",
+        x,
+        y
+    }) {
+        return {
+            id: `ph-${foundry.utils.randomID()}`,
+            actorId: null,
+            isPlaceholder: true,
+            placeholderType,
+            img,
+            name,
+            originalName: name,
+            role,
+            factionId,
+            x,
+            y,
+            hidden: game.settings.get("fang", "defaultHiddenMode"),
+            displayName: "",
+            conditions: [],
+            playerLorePageId: null,
+            journalUuid: null,
+            questUuids: []
+        };
+    }
+
+    async _onAddPlaceholder() {
+        if (!this._canEditGraph()) return;
+        if (!game.user.isGM) return;
+
+        const factions = this.graphData.factions || [];
+        const factionOptions = [`<option value="">-- None --</option>`]
+            .concat(factions.map(f => `<option value="${f.id}">${f.name}</option>`))
+            .join("");
+        const defaultName = game.i18n.localize("FANG.Placeholder.DefaultName") || "Unknown Contact";
+
+        new Dialog({
+            title: game.i18n.localize("FANG.Placeholder.CreateTitle") || "Create Placeholder NPC",
+            content: `
+                <div class="form-group">
+                    <label>${game.i18n.localize("FANG.Placeholder.Name") || "Display Name"}:</label>
+                    <div class="form-fields">
+                        <input type="text" id="fang-placeholder-name" value="${defaultName}" style="width: 100%;">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>${game.i18n.localize("FANG.Dialogs.RoleInput") || "Role"}:</label>
+                    <div class="form-fields">
+                        <input type="text" id="fang-placeholder-role" value="" style="width: 100%;">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>${game.i18n.localize("FANG.Dialogs.FactionInput") || "Faction"}:</label>
+                    <div class="form-fields">
+                        <select id="fang-placeholder-faction" style="width: 100%;">${factionOptions}</select>
+                    </div>
+                </div>
+            `,
+            buttons: {
+                create: {
+                    icon: '<i class="fas fa-user-secret"></i>',
+                    label: game.i18n.localize("FANG.Placeholder.CreateBtn") || "Create",
+                    callback: async (html) => {
+                        const name = html.find("#fang-placeholder-name").val().trim() || (game.i18n.localize("FANG.Placeholder.DefaultName") || "Unknown Contact");
+                        const roleVal = html.find("#fang-placeholder-role").val().trim();
+                        const role = roleVal || null;
+                        const factionIdVal = html.find("#fang-placeholder-faction").val();
+                        const factionId = factionIdVal || null;
+
+                        const x = this.transform ? this.transform.invertX(this.width / 2) : (this.width / 2);
+                        const y = this.transform ? this.transform.invertY(this.height / 2) : (this.height / 2);
+                        const node = this._buildPlaceholderNode({
+                            name,
+                            role,
+                            factionId,
+                            img: FANG_DEFAULT_PLACEHOLDER_IMG,
+                            placeholderType: "default",
+                            x: x + (Math.random() - 0.5) * 20,
+                            y: y + (Math.random() - 0.5) * 20
+                        });
+
+                        this.graphData.nodes.push(node);
+                        this.initSimulation();
+                        this.simulation.alpha(0.5).restart();
+                        this._populateActors();
+                        await this.saveData();
+                    }
+                },
+                cancel: { icon: '<i class="fas fa-times"></i>', label: game.i18n.localize("FANG.Dialogs.BtnCancel") || "Cancel" }
+            },
+            default: "create"
+        }, { classes: ["dialog", "fang-dialog"], width: 420 }).render(true);
+    }
+
+    async _applyActorToPlaceholder(node, actor, { keepName = false, keepRole = true, keepAlias = true } = {}) {
+        node.actorId = actor.id;
+        node.isPlaceholder = false;
+        node.placeholderType = null;
+        node.originalName = actor.name;
+        node.img = actor.prototypeToken?.texture?.src || actor.img || node.img;
+        // Force token portrait refresh; otherwise cached placeholder image can survive replacement.
+        node.imgElement = null;
+        if (!keepName) {
+            node.name = actor.name;
+            if (!keepAlias) node.displayName = "";
+        }
+        if (!keepRole) {
+            node.role = null;
+            node.factionId = null;
+        }
+        this.initSimulation();
+        this.simulation.alpha(0.25).restart();
+        this._populateActors();
+        await this.saveData();
+    }
+
+    async _onReplacePlaceholder(node) {
+        if (!game.user.isGM) return;
+        if (!node?.isPlaceholder) return;
+        if (!this._canEditGraph()) return;
+
+        const usedActorIds = new Set(this.graphData.nodes.filter(n => n.id !== node.id).map(n => n.actorId || n.id));
+        const actorOptions = game.actors.contents
+            .filter(a => !usedActorIds.has(a.id))
+            .sort((a, b) => a.name.localeCompare(b.name))
+            .map(a => `<option value="${a.id}">${a.name}</option>`)
+            .join("");
+
+        if (!actorOptions) {
+            ui.notifications.warn(game.i18n.localize("FANG.Placeholder.NoActorAvailable") || "No actor available for replacement.");
+            return;
+        }
+
+        new Dialog({
+            title: game.i18n.localize("FANG.Placeholder.ReplaceTitle") || "Replace Placeholder",
+            content: `
+                <p>${(game.i18n.localize("FANG.Placeholder.ReplaceHint") || "Select an actor to replace <strong>{name}</strong>.").replace("{name}", node.name)}</p>
+                <div class="form-group">
+                    <label>${game.i18n.localize("FANG.Placeholder.SelectActor") || "Actor"}:</label>
+                    <div class="form-fields">
+                        <select id="fang-replace-placeholder-actor" style="width: 100%;">${actorOptions}</select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label style="display:flex;align-items:center;gap:8px;">
+                        <input type="checkbox" id="fang-replace-keep-name" checked style="width:auto;margin:0;">
+                        <span>${game.i18n.localize("FANG.Placeholder.KeepAlias") || "Keep current display name"}</span>
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label style="display:flex;align-items:center;gap:8px;">
+                        <input type="checkbox" id="fang-replace-keep-role" checked style="width:auto;margin:0;">
+                        <span>${game.i18n.localize("FANG.Placeholder.KeepRoleFaction") || "Keep role and faction"}</span>
+                    </label>
+                </div>
+            `,
+            buttons: {
+                replace: {
+                    icon: '<i class="fas fa-random"></i>',
+                    label: game.i18n.localize("FANG.Placeholder.ReplaceBtn") || "Replace",
+                    callback: async (html) => {
+                        const actorId = html.find("#fang-replace-placeholder-actor").val();
+                        const actor = game.actors.get(actorId);
+                        if (!actor) return;
+
+                        const keepName = html.find("#fang-replace-keep-name").is(":checked");
+                        const keepRole = html.find("#fang-replace-keep-role").is(":checked");
+                        await this._applyActorToPlaceholder(node, actor, { keepName, keepRole, keepAlias: true });
+                    }
+                },
+                cancel: { icon: '<i class="fas fa-times"></i>', label: game.i18n.localize("FANG.Dialogs.BtnCancel") || "Cancel" }
+            },
+            default: "replace"
+        }, { classes: ["dialog", "fang-dialog"], width: 440 }).render(true);
+    }
+
     _setSearchUiVisible(visible, { focus = false } = {}) {
         this._searchUiVisible = !!visible;
         const panel = this.element?.querySelector("#fang-search-floating");
@@ -1023,26 +1230,20 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             selectSource.innerHTML = `<option value="" disabled selected>${game.i18n.localize("FANG.UI.SelectSource")}</option>`;
             selectTarget.innerHTML = `<option value="" disabled selected>${game.i18n.localize("FANG.UI.SelectTarget")}</option>`;
 
-            // Partition actors into two groups: On Canvas vs Others
-            const canvasActorIds = new Set(this.graphData.nodes.map(n => n.id));
-            const onCanvasActors = [];
+            // Partition actors into groups
+            const canvasActorIds = new Set(this.graphData.nodes.map(n => n.actorId || n.id));
             const otherActors = [];
 
             game.actors.contents.forEach(actor => {
-                // If it's already on the canvas, everyone can see it in that optgroup
-                if (canvasActorIds.has(actor.id)) {
-                    onCanvasActors.push(actor);
-                } else {
-                    // Spoiling Protection: Only GMs see ALL other actors.
-                    // Players only see actors they have at least Observer permission for.
-                    if (game.user.isGM || actor.testUserPermission(game.user, "OBSERVER")) {
-                        otherActors.push(actor);
-                    }
+                if (canvasActorIds.has(actor.id)) return;
+                // Spoiling Protection: Only GMs see ALL other actors.
+                // Players only see actors they have at least Observer permission for.
+                if (game.user.isGM || actor.testUserPermission(game.user, "OBSERVER")) {
+                    otherActors.push(actor);
                 }
             });
 
             const sortByString = (a, b) => a.name.localeCompare(b.name);
-            onCanvasActors.sort(sortByString);
             otherActors.sort(sortByString);
 
             // Populate Helper
@@ -1059,13 +1260,35 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 selectElem.appendChild(optgroup);
             };
 
-            const lblCanvas = game.i18n.localize("FANG.Dropdowns.GroupCanvas");
+            const appendCanvasNodeGroup = (selectElem) => {
+                const optgroup = document.createElement("optgroup");
+                optgroup.label = game.i18n.localize("FANG.Dropdowns.GroupCanvas");
+                let hasEntries = false;
+                const sortedNodes = [...this.graphData.nodes].sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+                const isPlayerView = !game.user.isGM;
+                sortedNodes.forEach(node => {
+                    const shownName = (isPlayerView && node.hidden)
+                        ? (node.displayName || game.i18n.localize("FANG.Dropdowns.Unknown"))
+                        : (node.name || game.i18n.localize("FANG.Dropdowns.Unknown"));
+                    const actor = this._getNodeActor(node);
+                    const suffix = game.user.isGM
+                        ? (node.isPlaceholder ? ` (${game.i18n.localize("FANG.Placeholder.Tag") || "Placeholder"})` : (actor ? "" : " (?)"))
+                        : "";
+                    const opt = document.createElement("option");
+                    opt.value = node.id;
+                    opt.textContent = `${shownName}${suffix}`;
+                    optgroup.appendChild(opt);
+                    hasEntries = true;
+                });
+                if (hasEntries) selectElem.appendChild(optgroup);
+            };
+
             const lblDirectory = game.i18n.localize("FANG.Dropdowns.GroupDirectory");
 
-            appendOptGroup(selectSource, lblCanvas, onCanvasActors);
+            appendCanvasNodeGroup(selectSource);
             appendOptGroup(selectSource, lblDirectory, otherActors);
 
-            appendOptGroup(selectTarget, lblCanvas, onCanvasActors);
+            appendCanvasNodeGroup(selectTarget);
             appendOptGroup(selectTarget, lblDirectory, otherActors);
         }
         // Populate Delete Dropdown from current graph data
@@ -1155,8 +1378,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 if (!this.graphData.nodes.find(n => n.id === id)) {
                     const actor = game.actors.get(id);
                     if (actor) {
-                        this.graphData.nodes.push({
-                            id: id, name: actor.name, originalName: actor.name,
+                            this.graphData.nodes.push({
+                            id: id, actorId: actor.id, isPlaceholder: false, placeholderType: null, img: actor.prototypeToken?.texture?.src || actor.img || null,
+                            name: actor.name, originalName: actor.name,
                             hidden: game.settings.get("fang", "defaultHiddenMode"),
                             displayName: "", conditions: []
                         });
@@ -1600,102 +1824,137 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const actor = droppedDoc;
 
         if (targetNode) {
-            // Scenario 2: Dropped on an existing node -> Ask for link details natively
-            if (targetNode.id === actor.id) {
-                ui.notifications.warn(game.i18n.localize("FANG.Messages.WarningSelfLink"));
-                return;
-            }
+            const openFastLinkDialog = () => {
+                if (targetNode.id === actor.id || targetNode.actorId === actor.id) {
+                    ui.notifications.warn(game.i18n.localize("FANG.Messages.WarningSelfLink"));
+                    return;
+                }
 
-            const title = game.i18n.localize("FANG.Dialogs.FastLinkTitle");
-            const contentString = game.i18n.localize("FANG.Dialogs.FastLinkContent")
-                .replace("{source}", actor.name)
-                .replace("{target}", targetNode.name);
-            const lblLabel = game.i18n.localize("FANG.Dialogs.LabelInput");
-            const lblDir = game.i18n.localize("FANG.Dialogs.DirectionalInput");
-            const btnConn = game.i18n.localize("FANG.Dialogs.BtnConnect");
-            const btnCancel = game.i18n.localize("FANG.Dialogs.BtnCancel");
+                const title = game.i18n.localize("FANG.Dialogs.FastLinkTitle");
+                const contentString = game.i18n.localize("FANG.Dialogs.FastLinkContent")
+                    .replace("{source}", actor.name)
+                    .replace("{target}", targetNode.name);
+                const lblLabel = game.i18n.localize("FANG.Dialogs.LabelInput");
+                const lblDir = game.i18n.localize("FANG.Dialogs.DirectionalInput");
+                const btnConn = game.i18n.localize("FANG.Dialogs.BtnConnect");
+                const btnCancel = game.i18n.localize("FANG.Dialogs.BtnCancel");
 
-            const dialogContent = `
-                <p><strong>${contentString}</strong></p>
-                <div class="form-group">
-                    <label>${lblLabel}:</label>
-                    <div class="form-fields">
-                        <input type="text" id="fang-fast-label" style="width: 100%;">
+                const dialogContent = `
+                    <p><strong>${contentString}</strong></p>
+                    <div class="form-group">
+                        <label>${lblLabel}:</label>
+                        <div class="form-fields">
+                            <input type="text" id="fang-fast-label" style="width: 100%;">
+                        </div>
                     </div>
-                </div>
-                <div class="form-group">
-                    <label>${lblDir}:</label>
-                    <div class="form-fields">
-                        <input type="checkbox" id="fang-fast-dir">
+                    <div class="form-group">
+                        <label>${lblDir}:</label>
+                        <div class="form-fields">
+                            <input type="checkbox" id="fang-fast-dir">
+                        </div>
                     </div>
-                </div>
-            `;
+                `;
 
-            new Dialog({
-                title: title,
-                content: dialogContent,
-                buttons: {
-                    connect: {
-                        icon: '<i class="fas fa-link"></i>',
-                        label: btnConn,
-                        callback: async (html) => {
-                            const labelStr = html.find("#fang-fast-label").val().trim();
-                            const isDir = html.find("#fang-fast-dir").is(":checked");
+                new Dialog({
+                    title: title,
+                    content: dialogContent,
+                    buttons: {
+                        connect: {
+                            icon: '<i class="fas fa-link"></i>',
+                            label: btnConn,
+                            callback: async (html) => {
+                                const labelStr = html.find("#fang-fast-label").val().trim();
+                                const isDir = html.find("#fang-fast-dir").is(":checked");
 
-                            // Find or create the source node
-                            let sourceNode = this.graphData.nodes.find(n => n.id === actor.id);
-                            if (!sourceNode) {
-                                // Add near target to make the simulation look nice
-                                let generatedLorePageId = null;
-                                const entry = await this.getJournalEntry();
-                                if (entry) {
-                                    const matchingPage = entry.pages.find(p => p.name === "Lore: " + actor.name);
-                                    if (matchingPage) generatedLorePageId = matchingPage.id;
+                                // Find or create the source node
+                                let sourceNode = this.graphData.nodes.find(n => n.id === actor.id || n.actorId === actor.id);
+                                if (!sourceNode) {
+                                    // Add near target to make the simulation look nice
+                                    let generatedLorePageId = null;
+                                    const entry = await this.getJournalEntry();
+                                    if (entry) {
+                                        const matchingPage = entry.pages.find(p => p.name === "Lore: " + actor.name);
+                                        if (matchingPage) generatedLorePageId = matchingPage.id;
+                                    }
+
+                                    sourceNode = {
+                                        id: actor.id, actorId: actor.id, isPlaceholder: false, placeholderType: null, img: actor.prototypeToken?.texture?.src || actor.img || null,
+                                        name: actor.name, originalName: actor.name,
+                                        x: x - 20, y: y - 20,
+                                        hidden: game.settings.get("fang", "defaultHiddenMode"),
+                                        displayName: "", conditions: [],
+                                        playerLorePageId: generatedLorePageId
+                                    };
+
+                                    if (!generatedLorePageId) {
+                                        const legacyLore = actor.getFlag("fang", "legacyLore");
+                                        if (legacyLore) sourceNode.lore = legacyLore;
+                                    }
+
+                                    this.graphData.nodes.push(sourceNode);
                                 }
 
-                                sourceNode = {
-                                    id: actor.id, name: actor.name, originalName: actor.name,
-                                    x: x - 20, y: y - 20,
-                                    hidden: game.settings.get("fang", "defaultHiddenMode"),
-                                    displayName: "", conditions: [],
-                                    playerLorePageId: generatedLorePageId
-                                };
+                                this.graphData.links.push({
+                                    source: sourceNode.id,
+                                    target: targetNode.id,
+                                    label: labelStr,
+                                    directional: isDir
+                                });
 
-                                if (!generatedLorePageId) {
-                                    const legacyLore = actor.getFlag("fang", "legacyLore");
-                                    if (legacyLore) sourceNode.lore = legacyLore;
-                                }
-
-                                this.graphData.nodes.push(sourceNode);
+                                this.initSimulation();
+                                this.simulation.alpha(0.3).restart();
+                                this._populateActors();
+                                await this.saveData();
                             }
-
-                            this.graphData.links.push({
-                                source: sourceNode.id,
-                                target: targetNode.id,
-                                label: labelStr,
-                                directional: isDir
-                            });
-
-                            this.initSimulation();
-                            this.simulation.alpha(0.3).restart();
-                            this._populateActors();
-                            await this.saveData();
+                        },
+                        cancel: {
+                            icon: '<i class="fas fa-times"></i>',
+                            label: btnCancel
                         }
                     },
-                    cancel: {
-                        icon: '<i class="fas fa-times"></i>',
-                        label: btnCancel
-                    }
-                },
-                default: "connect"
-            }, {
-                classes: ["dialog", "fang-dialog"],
-                width: 400
-            }).render(true);
+                    default: "connect"
+                }, {
+                    classes: ["dialog", "fang-dialog"],
+                    width: 400
+                }).render(true);
+            };
+
+            const actorAlreadyOnCanvas = this.graphData.nodes.some(n =>
+                n.id !== targetNode.id && (n.id === actor.id || n.actorId === actor.id)
+            );
+
+            if (targetNode.isPlaceholder && game.user.isGM && !actorAlreadyOnCanvas) {
+                const title = game.i18n.localize("FANG.Placeholder.DropTitle") || "Actor dropped on placeholder";
+                const content = (game.i18n.localize("FANG.Placeholder.DropContent") || "Do you want to replace <strong>{target}</strong> with <strong>{actor}</strong>, or create a relationship?")
+                    .replace("{target}", targetNode.name)
+                    .replace("{actor}", actor.name);
+                new Dialog({
+                    title,
+                    content: `<p>${content}</p>`,
+                    buttons: {
+                        replace: {
+                            icon: '<i class="fas fa-random"></i>',
+                            label: game.i18n.localize("FANG.Placeholder.DropReplace") || "Replace placeholder",
+                            callback: async () => {
+                                await this._applyActorToPlaceholder(targetNode, actor, { keepName: false, keepRole: true, keepAlias: true });
+                            }
+                        },
+                        connect: {
+                            icon: '<i class="fas fa-link"></i>',
+                            label: game.i18n.localize("FANG.Placeholder.DropConnect") || "Create relationship",
+                            callback: () => openFastLinkDialog()
+                        },
+                        cancel: { icon: '<i class="fas fa-times"></i>', label: game.i18n.localize("FANG.Dialogs.BtnCancel") || "Cancel" }
+                    },
+                    default: "replace"
+                }, { classes: ["dialog", "fang-dialog"], width: 460 }).render(true);
+            } else {
+                openFastLinkDialog();
+            }
 
         } else {
             // Scenario 1: Dropped on empty canvas -> Add the node immediately without prompting
-            let existingNode = this.graphData.nodes.find(n => n.id === actor.id);
+            let existingNode = this.graphData.nodes.find(n => n.id === actor.id || n.actorId === actor.id);
             if (existingNode) {
                 // If it already exists, just move it to the new mouse location
                 existingNode.x = x;
@@ -1719,6 +1978,10 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
                 const newNode = {
                     id: actor.id,
+                    actorId: actor.id,
+                    isPlaceholder: false,
+                    placeholderType: null,
+                    img: actor.prototypeToken?.texture?.src || actor.img || null,
                     name: actor.name,
                     originalName: actor.name,
                     role: null,
@@ -1774,7 +2037,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         }
 
         if (clickedNode) {
-            const actor = game.actors.get(clickedNode.id);
+            const actor = this._getNodeActor(clickedNode);
             if (actor) {
                 actor.sheet.render(true);
             } else {
@@ -1799,6 +2062,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const btnOpenQuest = menu.querySelector("#ctxOpenQuest");
         const btnSpotlight = menu.querySelector("#ctxSpotlight");
         const btnIdentity = menu.querySelector("#ctxIdentity");
+        const btnReplacePlaceholder = menu.querySelector("#ctxReplacePlaceholder");
         const btnCondition = menu.querySelector("#ctxCondition");
         const btnDelete = menu.querySelector("#ctxDeleteNode");
 
@@ -1809,6 +2073,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const newBtnOpenQuest = btnOpenQuest ? btnOpenQuest.cloneNode(true) : null;
         const newBtnSpotlight = btnSpotlight.cloneNode(true);
         const newBtnIdentity = btnIdentity ? btnIdentity.cloneNode(true) : null;
+        const newBtnReplacePlaceholder = btnReplacePlaceholder ? btnReplacePlaceholder.cloneNode(true) : null;
         const newBtnCondition = btnCondition ? btnCondition.cloneNode(true) : null;
         const newBtnDelete = btnDelete.cloneNode(true);
 
@@ -1818,6 +2083,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         if (btnOpenQuest && newBtnOpenQuest) btnOpenQuest.parentNode.replaceChild(newBtnOpenQuest, btnOpenQuest);
         btnSpotlight.parentNode.replaceChild(newBtnSpotlight, btnSpotlight);
         if (btnIdentity && newBtnIdentity) btnIdentity.parentNode.replaceChild(newBtnIdentity, btnIdentity);
+        if (btnReplacePlaceholder && newBtnReplacePlaceholder) btnReplacePlaceholder.parentNode.replaceChild(newBtnReplacePlaceholder, btnReplacePlaceholder);
         if (btnCondition && newBtnCondition) btnCondition.parentNode.replaceChild(newBtnCondition, btnCondition);
         btnDelete.parentNode.replaceChild(newBtnDelete, btnDelete);
 
@@ -1832,6 +2098,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         if (newBtnOpenQuest) newBtnOpenQuest.style.display = (node.questUuids && node.questUuids.length > 0) ? "block" : "none";
         newBtnDelete.style.display = hasLock ? "block" : "none";
         if (newBtnIdentity) newBtnIdentity.style.display = (game.user.isGM && hasLock) ? "block" : "none";
+        if (newBtnReplacePlaceholder) newBtnReplacePlaceholder.style.display = (game.user.isGM && hasLock && node.isPlaceholder) ? "block" : "none";
         if (newBtnCondition) newBtnCondition.style.display = (game.user.isGM && hasLock) ? "block" : "none";
 
         // Protection: Hide info buttons for players viewing hidden tokens
@@ -1853,6 +2120,13 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             }
             this._onSpotlight(node);
         });
+
+        if (newBtnReplacePlaceholder) {
+            newBtnReplacePlaceholder.addEventListener("click", () => {
+                menu.classList.add("hidden");
+                this._onReplacePlaceholder(node);
+            });
+        }
 
         // --- Context Action: Open GM Journal ---
         if (newBtnOpenJournal) {
@@ -2224,7 +2498,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                             node.playerLorePageId = newPage.id;
                             node.lore = ""; // Clear legacy text
 
-                            const actorContext = game.actors.get(node.id);
+                            const actorContext = this._getNodeActor(node);
                             if (actorContext) await actorContext.unsetFlag("fang", "legacyLore");
 
                             await this.saveData();
@@ -2378,7 +2652,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                                 const newLore = html.find("#fang-edit-lore").val().trim();
                                 node.lore = newLore !== "" ? newLore : null;
 
-                                const actorContext = game.actors.get(node.id);
+                                const actorContext = this._getNodeActor(node);
                                 if (actorContext) {
                                     if (node.lore) await actorContext.setFlag("fang", "legacyLore", node.lore);
                                     else await actorContext.unsetFlag("fang", "legacyLore");
@@ -3040,10 +3314,16 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
             // Cache token image
             if (!nInfo.imgElement) {
-                const actor = game.actors.get(nInfo.id);
-                // Try prototypeToken texture first, fallback to standard img
-                const imgSrc = actor ? (actor.prototypeToken?.texture?.src || actor.img) : "icons/svg/mystery-man.svg";
+                const imgSrc = this._getNodeImageSource(nInfo);
                 const img = new Image();
+                img.onerror = () => {
+                    // Placeholder default image may not exist yet; keep a hard fallback.
+                    if (nInfo?.isPlaceholder && img.src !== FANG_FALLBACK_PLACEHOLDER_IMG) {
+                        img.src = FANG_FALLBACK_PLACEHOLDER_IMG;
+                        return;
+                    }
+                    img.src = "icons/svg/mystery-man.svg";
+                };
                 img.src = imgSrc;
                 img.onload = () => { if (this.simulation) this.simulation.alpha(0.05).restart(); };
                 nInfo.imgElement = img;
@@ -4289,6 +4569,10 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const exportData = {
             nodes: this.graphData.nodes.map(n => ({
                 id: n.id,
+                actorId: n.actorId || null,
+                isPlaceholder: !!n.isPlaceholder,
+                placeholderType: n.placeholderType || null,
+                img: n.img || null,
                 name: n.name,
                 isCenter: n.isCenter || false,
                 lore: n.lore || "",
@@ -4390,6 +4674,20 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 }
                 if (importedData.showFactionLines === undefined) importedData.showFactionLines = true;
                 if (importedData.showFactionLegend === undefined) importedData.showFactionLegend = true;
+                importedData.nodes = importedData.nodes.map(node => ({
+                    actorId: null,
+                    isPlaceholder: false,
+                    placeholderType: null,
+                    img: null,
+                    ...node
+                }));
+                importedData.nodes.forEach(node => {
+                    if (node.actorId === undefined || node.actorId === null) {
+                        node.actorId = game.actors.get(node.id) ? node.id : null;
+                    }
+                    if (node.isPlaceholder === undefined) node.isPlaceholder = !node.actorId;
+                    if (node.placeholderType === undefined) node.placeholderType = node.isPlaceholder ? "import" : null;
+                });
 
                 // Update internal state
                 this.graphData = importedData;
@@ -4459,8 +4757,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             return;
         }
 
-        const sActor = game.actors.get(sourceNode.id);
-        const tActor = game.actors.get(targetNode.id);
+        const sActor = this._getNodeActor(sourceNode);
+        const tActor = this._getNodeActor(targetNode);
 
         const sourceImg = sActor?.img || sourceNode.img || sourceNode.imgElement?.src || "icons/svg/mystery-man.svg";
         const targetImg = tActor?.img || targetNode.img || targetNode.imgElement?.src || "icons/svg/mystery-man.svg";
@@ -4549,7 +4847,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         // Spotlight can be used by anyone who can right-click (no lock required)
 
         // Broadcast spotlight event
-        const actor = game.actors.get(node.id);
+        const actor = this._getNodeActor(node);
         const imgSrc = actor?.img || node.img || "icons/svg/mystery-man.svg";
         const role = node.role || "";
         const factionObj = this.graphData.factions.find(f => f.id === node.factionId);

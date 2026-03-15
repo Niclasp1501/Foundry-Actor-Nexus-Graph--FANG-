@@ -1,0 +1,8 @@
+Neutral fantasy NPC portrait token, androgynous hooded commoner, muted earth tones, painterly illustration style,
+no weapon, no heraldry, no obvious class/faction identity, calm expression, centered bust portrait,
+clean silhouette readable at small token size, soft rim light, plain textured background, non-photorealistic.
+
+Technical:
+- Square composition (1:1), at least 1024x1024.
+- Keep head and shoulders large in frame (token readability).
+- Export as WEBP to: modules/fang/assets/placeholder-npc-default.webp

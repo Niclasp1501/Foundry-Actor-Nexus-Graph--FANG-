@@ -18,6 +18,7 @@
             "LabelPlaceholder": "Label z.B. 'ist verwandt mit'",
             "Directional": "Gerichtet (Pfeil)",
             "Connect": "Verbinden",
+            "AddPlaceholder": "Platzhalter hinzufügen",
             "DeleteElement": "Element löschen",
             "ManageElements": "Elemente verwalten",
             "SearchTitle": "Suche & Filter",
@@ -159,6 +160,7 @@
             "OpenQuest": "Quest Log öffnen",
             "Spotlight": "Narratives Spotlight",
             "Identity": "Identität",
+            "ReplacePlaceholder": "Durch Actor ersetzen",
             "Condition": "Zustand",
             "DeleteNode": "Akteur vom Graphen löschen",
             "EditConnection": "Informationen bearbeiten",
@@ -266,6 +268,25 @@
             "CosmicWind": "Kosmischer Wind (Tokens schweben)",
             "Strength": "Stärke des Winds",
             "Hint": "Bestimme, wie stark die Tokens auf dem Graphen driften."
+        },
+        "Placeholder": {
+            "Tag": "Platzhalter",
+            "DefaultName": "Unbekannter Kontakt",
+            "CreateTitle": "Platzhalter-NPC erstellen",
+            "CreateBtn": "Erstellen",
+            "Type": "Typ",
+            "Name": "Anzeigename",
+            "ReplaceTitle": "Platzhalter ersetzen",
+            "ReplaceBtn": "Ersetzen",
+            "ReplaceHint": "Wähle einen Actor, um <strong>{name}</strong> zu ersetzen.",
+            "SelectActor": "Actor",
+            "KeepAlias": "Aktuellen Anzeigenamen behalten",
+            "KeepRoleFaction": "Rolle und Fraktion behalten",
+            "NoActorAvailable": "Kein verfügbarer Actor zum Ersetzen.",
+            "DropTitle": "Actor auf Platzhalter abgelegt",
+            "DropContent": "Soll <strong>{target}</strong> durch <strong>{actor}</strong> ersetzt werden, oder möchtest du eine Beziehung erstellen?",
+            "DropReplace": "Platzhalter ersetzen",
+            "DropConnect": "Beziehung erstellen"
         }
     }
 }
