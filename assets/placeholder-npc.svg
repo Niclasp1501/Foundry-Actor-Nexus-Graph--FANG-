@@ -1,22 +1,43 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
   <defs>
-    <radialGradient id="bg" cx="50%" cy="40%" r="65%">
-      <stop offset="0%" stop-color="#e7dfcf"/>
-      <stop offset="100%" stop-color="#b9ab90"/>
+    <radialGradient id="portraitBg" cx="50%" cy="32%" r="72%">
+      <stop offset="0%" stop-color="#dcd5c8"/>
+      <stop offset="100%" stop-color="#948874"/>
     </radialGradient>
-    <linearGradient id="hood" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#4f4a58"/>
-      <stop offset="100%" stop-color="#2f2a36"/>
+    <linearGradient id="cloak" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#4a4654"/>
+      <stop offset="100%" stop-color="#23202b"/>
     </linearGradient>
+    <radialGradient id="head" cx="50%" cy="42%" r="66%">
+      <stop offset="0%" stop-color="#d8c7ab"/>
+      <stop offset="100%" stop-color="#b39a78"/>
+    </radialGradient>
+    <linearGradient id="ring" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#d9be67"/>
+      <stop offset="100%" stop-color="#9b7a2f"/>
+    </linearGradient>
+    <clipPath id="portraitClip">
+      <circle cx="256" cy="256" r="198"/>
+    </clipPath>
   </defs>
-  <rect width="512" height="512" fill="url(#bg)"/>
-  <circle cx="256" cy="256" r="214" fill="#1f1f24" opacity="0.12"/>
-  <path d="M108 410c18-114 80-196 148-226 68 30 130 112 148 226z" fill="url(#hood)"/>
-  <ellipse cx="256" cy="238" rx="86" ry="94" fill="#d8c8ab"/>
-  <path d="M150 206c18-70 62-118 106-132 44 14 88 62 106 132-32-40-66-56-106-56s-74 16-106 56z" fill="#393442"/>
-  <circle cx="224" cy="234" r="10" fill="#2f2a2a"/>
-  <circle cx="288" cy="234" r="10" fill="#2f2a2a"/>
-  <path d="M224 286c20 14 44 14 64 0" fill="none" stroke="#6e5444" stroke-width="8" stroke-linecap="round"/>
-  <circle cx="392" cy="126" r="46" fill="#d4af37" stroke="#8b0000" stroke-width="6"/>
-  <path d="M392 102v48M368 126h48" stroke="#8b0000" stroke-width="9" stroke-linecap="round"/>
+
+  <!-- Transparent outside; only a round token remains -->
+  <g clip-path="url(#portraitClip)">
+    <circle cx="256" cy="256" r="205" fill="url(#portraitBg)"/>
+    <circle cx="256" cy="256" r="198" fill="#1d1a21" opacity="0.14"/>
+
+    <!-- neutral, anonymous bust -->
+    <path d="M122 430c14-104 68-166 134-188 66 22 120 84 134 188z" fill="url(#cloak)"/>
+    <path d="M164 250c16-58 50-98 92-112 42 14 76 54 92 112-24-20-54-34-92-34s-68 14-92 34z" fill="#353043"/>
+    <circle cx="256" cy="228" r="46" fill="url(#head)"/>
+    <ellipse cx="256" cy="220" rx="42" ry="30" fill="#e5d7bf" opacity="0.42"/>
+    <path d="M224 268c20 10 44 10 64 0" fill="none" stroke="#6c5745" stroke-width="5" stroke-linecap="round" opacity="0.35"/>
+
+    <ellipse cx="256" cy="442" rx="114" ry="20" fill="#16131a" opacity="0.18"/>
+  </g>
+
+  <!-- Round token border -->
+  <circle cx="256" cy="256" r="228" fill="none" stroke="#1a171f" stroke-width="16"/>
+  <circle cx="256" cy="256" r="223" fill="none" stroke="url(#ring)" stroke-width="8"/>
+  <circle cx="256" cy="256" r="210" fill="none" stroke="#2a252f" stroke-width="6" opacity="0.9"/>
 </svg>

@@ -3454,6 +3454,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
     ticked() {
         if (!this.context) return;
+        const transform = this.transform || globalThis.d3?.zoomIdentity || { x: 0, y: 0, k: 1 };
+        if (!this.transform) this.transform = transform;
 
         // Visual Cosmic Wind Calculation (Does NOT affect D3 math)
         const cosmicWindEnabled = game.settings.get("fang", "enableCosmicWind");
@@ -3540,8 +3542,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
         this.context.save();
         this.context.clearRect(0, 0, this.width, this.height);
-        this.context.translate(this.transform.x, this.transform.y);
-        this.context.scale(this.transform.k, this.transform.k);
+        this.context.translate(transform.x, transform.y);
+        this.context.scale(transform.k, transform.k);
 
         // --- Draw Direct Faction Member Links (Ring Topology + Adaptive Rendering) ---
         // Drawing these FIRST ensures they are UNDERNEATH regular links and nodes
@@ -5236,6 +5238,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         super._onClose(options);
         if (this._spotlightTimeout) clearTimeout(this._spotlightTimeout);
         if (this._spotlightOverlayTimeout) clearTimeout(this._spotlightOverlayTimeout);
+        if (this._animationFrameId) cancelAnimationFrame(this._animationFrameId);
+        if (this.simulation) this.simulation.stop();
+        this._animationFrameId = null;
         this._initialZoomApplied = false;
         this.transform = null;
 
