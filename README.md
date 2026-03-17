@@ -1,6 +1,6 @@
 # Ninjo's FANG (Foundry Actor Nexus Graph)
 
-**Current Version / Aktuelle Version:** 2.0.2
+**Current Version / Aktuelle Version:** 2.0.3
 
 An interactive, self-arranging Actor Graph module for visualizing Character & NPC Relationships natively in Foundry VTT V13. FANG enables Game Masters and players to dynamically map out self-building relationship networks inside their game world.
 
