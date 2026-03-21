@@ -3,6 +3,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.6] - 2026-03-21
+### Changed
+- **Release Version Bump**: Advanced the project to v2.0.6 across module metadata, README, changelog, and task tracking files for the next patch release.
+- **Repository Sync Check**: Verified that no additional feature or fix commits landed after v2.0.5 before preparing this release push.
+
 ## [2.0.5] - 2026-03-20
 ### Changed
 - **Version Bump**: Advanced the project to v2.0.5 across the release metadata, README, changelog, and task tracking files for the next patch release.
