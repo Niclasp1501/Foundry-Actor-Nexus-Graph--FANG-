@@ -1,6 +1,6 @@
 # FANG (Foundry Actor Nexus Graph) - TODO & Feature Requests
 
-Diese Liste ist auf den Stand von v2.0.6 gebracht.
+Diese Liste ist auf den Stand von v2.0.7 gebracht.
 
 ## 1. Neue Features & Verbesserungen
 
