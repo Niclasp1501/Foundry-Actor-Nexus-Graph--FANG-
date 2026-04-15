@@ -3,6 +3,26 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.11] - 2026-04-15
+### Added
+- **DiploGlass One-Way Faction Sync (Optional):** Added a FANG-side integration that imports and syncs DiploGlass factions into FANG (name, icon, and metadata such as journal/rolltable references) without modifying DiploGlass.
+- **First-Run GM Prompt:** Added a one-time prompt when DiploGlass is detected, allowing GMs to enable or skip faction sync directly at startup.
+- **Sync Metadata Persistence:** Imported factions now store external source references to keep updates and removals consistent on subsequent sync runs.
+
+### Changed
+- **Version Bump:** Advanced the module version to v2.0.11 for this feature release.
+
+### Credits
+- Thanks to **GM MattCat** for bringing in the DiploGlass sync idea.
+
+## [2.0.10] - 2026-04-03
+### Changed
+- **Dual-Version Compatibility Metadata**: Updated module compatibility to target Foundry VTT 13 through 14 (`minimum: 13`, `verified: 14`, `maximum: 14`) and refreshed user-facing version text.
+- **Actor Directory Popout Detection**: Hardened popout detection to support both v13 (`popOut`) and v14 (`isPopout` / `popout`) code paths for Only-Sheet integration and cleanup logic.
+
+### Fixed
+- **v14 Popout Cleanup Reliability**: Added a `closeApplicationV2` fallback hook for Actor Directory popouts to improve close-state synchronization and ghost-shell cleanup under Foundry VTT 14.
+
 ## [2.0.9] - 2026-03-28
 ### Changed
 - **Release Version Bump**: Advanced the project to v2.0.9 across module metadata, README, changelog, and task tracking files for the next patch release.

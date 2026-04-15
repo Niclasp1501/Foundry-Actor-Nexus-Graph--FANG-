@@ -223,7 +223,11 @@
             "BtnConvertPlayerJournal": "In Spieler-Journal umwandeln",
             "BtnConvertPlayerJournalHint": "Wandelt diese einfache Textnotiz in ein dediziertes, vom Spieler bearbeitbares Foundry-Journal um. Dies gibt dir und dem Spieler volle Textformatierungsfreiheit.",
             "QuestLogAddBtn": "Quest-Journal hinzufügen (hier ablegen)",
-            "SelectQuestContent": "Wähle ein Quest-Journal zum Öffnen:"
+            "SelectQuestContent": "Wähle ein Quest-Journal zum Öffnen:",
+            "DiploGlassSyncTitle": "DiploGlass-Fraktionssync aktivieren?",
+            "DiploGlassSyncContent": "DiploGlass wurde erkannt. Soll FANG Fraktionen automatisch aus DiploGlass synchronisieren (einseitig)?",
+            "DiploGlassSyncEnable": "Sync aktivieren",
+            "DiploGlassSyncSkip": "Jetzt nicht"
         },
         "Settings": {
             "TokenSize": {
@@ -261,6 +265,10 @@
             "ReplaceOnlySheetActor": {
                 "Name": "Only-Sheet: Actor-Button ersetzen",
                 "Hint": "Wenn das 'Only-Sheet'-Modul aktiv ist, versteckt FANG den originalen Button zum Öffnen des Akteurdirektoriums und ersetzt ihn durch einen eigenen Button, der das standard Foundry Akteurverzeichnis öffnet."
+            },
+            "DiploGlassOneWaySync": {
+                "Name": "DiploGlass Einweg-Fraktionsabgleich",
+                "Hint": "Wenn aktiv, importiert und aktualisiert FANG Fraktionen automatisch aus den DiploGlass-Welteinstellungen (nur in eine Richtung)."
             }
         },
         "Physics": {

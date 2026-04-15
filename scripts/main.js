@@ -79,6 +79,31 @@ function _fangGetPopoutDomNode(popout) {
   return popout.element?.[0] ?? popout.element ?? null;
 }
 
+function _fangIsActorDirectoryApp(app) {
+  if (!app) return false;
+  if (app?.constructor?.name === "ActorDirectory") return true;
+  if (app?.id === "actors" || app?.tabName === "actors") return true;
+  return false;
+}
+
+function _fangIsActorDirectoryPopoutApp(app) {
+  if (!_fangIsActorDirectoryApp(app)) return false;
+  // v14: ApplicationV2 popout state
+  if (app?.isPopout === true) return true;
+  // v13 + legacy fallback
+  if (app?.popOut === true || app?.options?.popOut === true) return true;
+  return false;
+}
+
+function _fangGetActorDirectoryPopoutFromUi() {
+  const dir = ui?.actors ?? null;
+  if (!dir) return null;
+  const popout = dir?.popout ?? dir?.popOut ?? null;
+  if (!popout) return null;
+  const el = _fangGetPopoutDomNode(popout);
+  return el ? popout : null;
+}
+
 function _fangHasLiveActorPopout() {
   if (!_fangActorDirectoryPopout) return false;
   const el = _fangGetPopoutDomNode(_fangActorDirectoryPopout);
@@ -100,10 +125,13 @@ function _fangAttachActorPopoutListener(popout) {
 }
 
 function _fangFindActorDirectoryPopoutApp() {
+  const fromUiPopout = _fangGetActorDirectoryPopoutFromUi();
+  if (fromUiPopout) return fromUiPopout;
+
   const windows = Object.values(ui?.windows ?? {});
-  const byElement = windows.find((app) => app?.element?.[0]?.matches?.(FANG_ACTOR_DIRECTORY_POPOUT_SELECTOR));
+  const byElement = windows.find((app) => _fangGetPopoutDomNode(app)?.matches?.(FANG_ACTOR_DIRECTORY_POPOUT_SELECTOR));
   if (byElement) return byElement;
-  const byType = windows.find((app) => app?.constructor?.name === "ActorDirectory" && (app?.popOut || app?.options?.popOut));
+  const byType = windows.find((app) => _fangIsActorDirectoryPopoutApp(app));
   return byType ?? null;
 }
 
@@ -125,7 +153,7 @@ async function _fangOpenActorDirectoryPopout({ reason = "unknown" } = {}) {
   try {
     const popout = typeof dirApp.renderPopout === "function"
       ? await dirApp.renderPopout()
-      : await dirApp.render(true, { popOut: true });
+      : await dirApp.render(true, { popOut: true, isPopout: true });
 
     if (popout) {
       _fangActorDirectoryPopout = popout;
@@ -166,7 +194,7 @@ async function _fangForceCloseActorDirectoryPopout({ reason = "unknown" } = {}) 
   }
   _fangActorDirectoryPopout = null;
 
-  // 2) Close any remaining ActorDirectory popout app discovered via ui.windows.
+  // 2) Close any remaining ActorDirectory popout app discovered via ui/ui.windows.
   const app = _fangFindActorDirectoryPopoutApp();
   if (app?.close) {
     try {
@@ -386,6 +414,37 @@ Hooks.once("init", () => {
     }
   });
 
+  game.settings.register("fang", "diploglassOneWaySync", {
+    name: "FANG.Settings.DiploGlassOneWaySync.Name",
+    hint: "FANG.Settings.DiploGlassOneWaySync.Hint",
+    scope: "world",
+    config: true,
+    type: Boolean,
+    default: false,
+    onChange: async (enabled) => {
+      if (!enabled || !game.user.isGM) return;
+      if (!game.modules.get("diploglass")?.active) return;
+      if (!game.journal.getName("FANG Graph")) return;
+      try {
+        if (!fangApp) fangApp = new FangApplication();
+        await fangApp.loadData();
+        if (fangApp.rendered) {
+          fangApp.initSimulation();
+          fangApp._populateActors();
+        }
+      } catch (err) {
+        console.error("FANG | DiploGlass one-way sync init failed", err);
+      }
+    }
+  });
+
+  game.settings.register("fang", "diploglassSyncPromptSeen", {
+    scope: "world",
+    config: false,
+    type: Boolean,
+    default: false
+  });
+
   // --- BACKGROUND SETTINGS ---
   game.settings.register("fang", "canvasBackgroundMode", {
     scope: "world",
@@ -430,13 +489,18 @@ Hooks.once("init", () => {
   });
 });
 
-Hooks.once("ready", () => {
-  // Global, robust "Ghost Shell" cleanup for Foundry v13 Actor Directory popouts.
+Hooks.once("ready", async () => {
+  // Global, robust "Ghost Shell" cleanup for Foundry v13/v14 Actor Directory popouts.
   // Runs for players + GM, regardless of Only-Sheet usage.
   if (!window._fangActorDirectoryGhostFixInstalled) {
     Hooks.on("closeActorDirectory", () => {
       _fangClearActorDirectoryPopoutRef();
       _fangQueueActorDirectoryShellSweep("hook:closeActorDirectory", { onlyGhost: true, force: true });
+    });
+    Hooks.on("closeApplicationV2", (app) => {
+      if (!_fangIsActorDirectoryPopoutApp(app)) return;
+      _fangClearActorDirectoryPopoutRef();
+      _fangQueueActorDirectoryShellSweep("hook:closeApplicationV2", { onlyGhost: true, force: true });
     });
     window._fangActorDirectoryGhostFixInstalled = true;
   }
@@ -453,6 +517,68 @@ Hooks.once("ready", () => {
       }
     }
   };
+
+  // First-time prompt for optional DiploGlass sync.
+  if (game.user.isGM && game.modules.get("diploglass")?.active) {
+    const syncEnabled = game.settings.get("fang", "diploglassOneWaySync");
+    const promptSeen = game.settings.get("fang", "diploglassSyncPromptSeen");
+
+    // If sync was manually enabled earlier, suppress future prompts.
+    if (syncEnabled && !promptSeen) {
+      await game.settings.set("fang", "diploglassSyncPromptSeen", true);
+    }
+
+    if (!game.settings.get("fang", "diploglassSyncPromptSeen")) {
+      await new Promise((resolve) => {
+        new Dialog({
+          title: game.i18n.localize("FANG.Dialogs.DiploGlassSyncTitle"),
+          content: `<p>${game.i18n.localize("FANG.Dialogs.DiploGlassSyncContent")}</p>`,
+          buttons: {
+            enable: {
+              icon: '<i class="fas fa-check"></i>',
+              label: game.i18n.localize("FANG.Dialogs.DiploGlassSyncEnable"),
+              callback: async () => {
+                await game.settings.set("fang", "diploglassSyncPromptSeen", true);
+                await game.settings.set("fang", "diploglassOneWaySync", true);
+                resolve(true);
+              }
+            },
+            skip: {
+              icon: '<i class="fas fa-times"></i>',
+              label: game.i18n.localize("FANG.Dialogs.DiploGlassSyncSkip"),
+              callback: async () => {
+                await game.settings.set("fang", "diploglassSyncPromptSeen", true);
+                resolve(false);
+              }
+            }
+          },
+          default: "enable",
+          close: () => resolve(false)
+        }, {
+          classes: ["dialog", "fang-dialog"],
+          width: 440
+        }).render(true);
+      });
+    }
+  }
+
+  // Startup sync for existing worlds (without forcing journal auto-creation).
+  const shouldStartupSyncDiplo = game.user.isGM
+    && game.settings.get("fang", "diploglassOneWaySync")
+    && game.modules.get("diploglass")?.active
+    && !!game.journal.getName("FANG Graph");
+  if (shouldStartupSyncDiplo) {
+    try {
+      if (!fangApp) fangApp = new FangApplication();
+      await fangApp.loadData();
+      if (fangApp.rendered) {
+        fangApp.initSimulation();
+        fangApp._populateActors();
+      }
+    } catch (err) {
+      console.error("FANG | DiploGlass startup sync failed", err);
+    }
+  }
 
   // Listen for GM share events natively on ready
   console.log("FANG | Registering socket listener for module.fang");
@@ -675,6 +801,26 @@ Hooks.once("ready", () => {
     }
   });
   observer.observe(document.body, { childList: true, subtree: true });
+
+  // Optional one-way background sync: DiploGlass factions -> FANG factions.
+  Hooks.on("updateSetting", async (setting) => {
+    if (!game.user.isGM) return;
+    if (!game.settings.get("fang", "diploglassOneWaySync")) return;
+    if (!game.modules.get("diploglass")?.active) return;
+    if (!game.journal.getName("FANG Graph")) return;
+    if (setting?.key !== "diploglass.factions") return;
+
+    try {
+      if (!fangApp) fangApp = new FangApplication();
+      await fangApp.loadData();
+      if (fangApp.rendered) {
+        fangApp.initSimulation();
+        fangApp._populateActors();
+      }
+    } catch (err) {
+      console.error("FANG | DiploGlass updateSetting sync failed", err);
+    }
+  });
 });
 
 Hooks.on("renderActorDirectory", (app, html, data) => {
@@ -706,7 +852,7 @@ Hooks.on("renderActorDirectory", (app, html, data) => {
   $(html).find(".directory-header .header-actions").append(button);
 
   // If Only-Sheet is active and this is a popout, position it like the journal panel
-  if (document.getElementById("so-main-buttons") && app.popOut) {
+  if (document.getElementById("so-main-buttons") && _fangIsActorDirectoryPopoutApp(app)) {
     _fangMarkActorDirectoryPopout(app);
     // Small delay to let Foundry finish positioning first
     setTimeout(() => {

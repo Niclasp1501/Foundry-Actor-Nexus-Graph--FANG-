@@ -223,7 +223,11 @@
             "BtnConvertPlayerJournal": "Convert & Open in Player Journal",
             "BtnConvertPlayerJournalHint": "Converts this simple text note into a dedicated, player-editable Foundry Journal. This gives you and the player full text formatting freedom.",
             "QuestLogAddBtn": "Add Quest Journal (Drag & Drop here)",
-            "SelectQuestContent": "Choose a Quest Journal to open:"
+            "SelectQuestContent": "Choose a Quest Journal to open:",
+            "DiploGlassSyncTitle": "Enable DiploGlass Faction Sync?",
+            "DiploGlassSyncContent": "DiploGlass was detected. Do you want FANG to automatically sync factions from DiploGlass (one-way)?",
+            "DiploGlassSyncEnable": "Enable Sync",
+            "DiploGlassSyncSkip": "Not Now"
         },
         "Settings": {
             "TokenSize": {
@@ -261,6 +265,10 @@
             "ReplaceOnlySheetActor": {
                 "Name": "Only-Sheet: Replace Actor Button",
                 "Hint": "If the 'Only-Sheet' module is active, FANG will hide the original actor open button and replace it with a custom button that opens the standard Foundry Actor Directory."
+            },
+            "DiploGlassOneWaySync": {
+                "Name": "DiploGlass One-Way Faction Sync",
+                "Hint": "If enabled, FANG automatically imports and updates factions from DiploGlass world settings (one-way only)."
             }
         },
         "Physics": {

@@ -1,8 +1,8 @@
 # Ninjo's FANG (Foundry Actor Nexus Graph)
 
-**Current Version / Aktuelle Version:** 2.0.9
+**Current Version / Aktuelle Version:** 2.0.11
 
-An interactive, self-arranging Actor Graph module for visualizing Character & NPC Relationships natively in Foundry VTT V13. FANG enables Game Masters and players to dynamically map out self-building relationship networks inside their game world.
+An interactive, self-arranging Actor Graph module for visualizing Character & NPC Relationships natively in Foundry VTT V13 and V14. FANG enables Game Masters and players to dynamically map out self-building relationship networks inside their game world.
 
 *(Scroll down for German version / Scrolle weiter runter für die deutsche Version)*
 
@@ -34,6 +34,7 @@ An interactive, self-arranging Actor Graph module for visualizing Character & NP
 - **Placeholder NPC Workflow:** Add placeholder contacts directly on the canvas, then replace them later with real Actors via drag-and-drop or the context menu while keeping graph links intact.
 - **Quest Log + Quest Spotlight:** Link one or multiple Quest Journals per node and open them via context menu / in-canvas picker. Quest Spotlights support monitor auto-scroll + synced scroll.
 - **Only-Sheet Compatibility:** Optional setting to replace the Only-Sheet actor button and inject quick-access buttons for Actors and FANG.
+- **DiploGlass One-Way Faction Sync (Optional):** If DiploGlass is installed, FANG can import/sync factions (name, icon, journal/rolltable refs) one-way into FANG. Includes a first-time GM prompt to enable or skip.
 - **Multi-Language Support (I18n):** Automatically translates to English or German based on Foundry settings.
 
 ### Installation
@@ -87,6 +88,7 @@ For the current development status and planned features, please refer to the [TO
 - **Platzhalter-NPC-Workflow:** Lege Platzhalter direkt im Graphen an und ersetze sie spaeter per Drag & Drop oder Kontextmenue durch echte Akteure, ohne Verbindungen neu bauen zu muessen.
 - **Quest Log + Quest Spotlight:** Verknüpfe ein oder mehrere Quest-Journale pro Knoten und öffne sie über Kontextmenü / In-Canvas-Auswahl. Quest-Spotlights unterstützen Monitor Auto-Scroll + synchronisiertes Scrollen.
 - **Only-Sheet Kompatibilität:** Optionale Einstellung, um den Only-Sheet Actor-Button zu ersetzen und Quick-Buttons für Akteure und FANG einzublenden.
+- **DiploGlass Einweg-Fraktionssync (Optional):** Wenn DiploGlass installiert ist, kann FANG Fraktionen (Name, Icon, Journal-/RollTable-Referenzen) einseitig nach FANG importieren/synchronisieren. Enthält einen einmaligen GM-Dialog zum Aktivieren oder Überspringen.
 - **Mehrsprachigkeit (I18n):** Das Modul ist komplett auf Englisch und Deutsch verfügbar.
 
 ### Installation
@@ -115,6 +117,8 @@ Den aktuellen Stand der Entwicklung und geplante Features findest du in der Date
 ---
 
 ## Credits & Third-Party Libraries
+Special thanks to **GM MattCat** for bringing in the DiploGlass faction sync idea.
+
 This module leverages the following open-source libraries:
 * [D3.js](https://d3js.org/) - Licensed under the ISC License.
 

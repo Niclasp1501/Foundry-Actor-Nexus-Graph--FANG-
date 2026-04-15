@@ -754,6 +754,143 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         } else {
             this.graphData = { nodes: [], links: [], factions: [] };
         }
+
+        if (!this.graphData.factions) this.graphData.factions = [];
+        await this._syncDiploGlassFactions({ saveIfChanged: true, triggerSync: true });
+    }
+
+    _getDiploGlassMetaFromFaction(sourceFaction) {
+        return {
+            journalId: sourceFaction?.journalId ?? null,
+            rollTableId: sourceFaction?.rollTableId ?? null,
+            steps: Number.isFinite(sourceFaction?.steps) ? Number(sourceFaction.steps) : null,
+            usePerPlayerReputation: typeof sourceFaction?.usePerPlayerReputation === "boolean"
+                ? sourceFaction.usePerPlayerReputation
+                : null
+        };
+    }
+
+    _getDiploGlassColor(seed) {
+        const str = String(seed ?? "");
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+            hash = ((hash << 5) - hash) + str.charCodeAt(i);
+            hash |= 0;
+        }
+        const colorInt = (Math.abs(hash * 2654435761) % 0xFFFFFF) || 0x8b5e3c;
+        return `#${colorInt.toString(16).padStart(6, "0")}`;
+    }
+
+    async _syncDiploGlassFactions({ saveIfChanged = true, triggerSync = true } = {}) {
+        if (!game.user.isGM) return false;
+        if (!game.settings.get("fang", "diploglassOneWaySync")) return false;
+        if (!game.modules.get("diploglass")?.active) return false;
+
+        let rawFactions;
+        try {
+            rawFactions = game.settings.get("diploglass", "factions") || {};
+        } catch (err) {
+            console.warn("FANG | Could not read DiploGlass factions for sync", err);
+            return false;
+        }
+
+        const sourceFactions = Object.values(rawFactions).filter((f) => {
+            if (!f || typeof f !== "object") return false;
+            if (!f.id) return false;
+            return typeof f.name === "string" && f.name.trim().length > 0;
+        });
+
+        const existingFactions = Array.isArray(this.graphData.factions) ? this.graphData.factions : [];
+        let nextFactions = [...existingFactions];
+        const importedByExternalId = new Map(
+            nextFactions
+                .filter((f) => f?.externalSource?.module === "diploglass" && f?.externalSource?.id != null)
+                .map((f) => [String(f.externalSource.id), f])
+        );
+        const seenExternalIds = new Set();
+        let changed = false;
+
+        for (const source of sourceFactions) {
+            const externalId = String(source.id);
+            const sourceName = String(source.name).trim();
+            const sourceIcon = source.icon || null;
+            const nextMeta = this._getDiploGlassMetaFromFaction(source);
+            seenExternalIds.add(externalId);
+
+            const existing = importedByExternalId.get(externalId);
+            if (existing) {
+                if (existing.name !== sourceName) {
+                    existing.name = sourceName;
+                    changed = true;
+                }
+                if ((existing.icon || null) !== sourceIcon) {
+                    existing.icon = sourceIcon;
+                    changed = true;
+                }
+                if (!existing.color) {
+                    existing.color = this._getDiploGlassColor(externalId);
+                    changed = true;
+                }
+                if (existing.x === undefined || existing.y === undefined) {
+                    existing.x = (this.width || 800) / 2 + (Math.random() - 0.5) * 150;
+                    existing.y = (this.height || 600) / 2 + (Math.random() - 0.5) * 150;
+                    changed = true;
+                }
+
+                const prevSource = existing.externalSource || null;
+                const nextSource = { module: "diploglass", id: externalId };
+                if (JSON.stringify(prevSource) !== JSON.stringify(nextSource)) {
+                    existing.externalSource = nextSource;
+                    changed = true;
+                }
+
+                const prevMeta = existing.externalMeta || null;
+                if (JSON.stringify(prevMeta) !== JSON.stringify(nextMeta)) {
+                    existing.externalMeta = nextMeta;
+                    changed = true;
+                }
+            } else {
+                nextFactions.push({
+                    id: foundry.utils.randomID(),
+                    name: sourceName,
+                    icon: sourceIcon,
+                    color: this._getDiploGlassColor(externalId),
+                    x: (this.width || 800) / 2 + (Math.random() - 0.5) * 150,
+                    y: (this.height || 600) / 2 + (Math.random() - 0.5) * 150,
+                    externalSource: { module: "diploglass", id: externalId },
+                    externalMeta: nextMeta
+                });
+                changed = true;
+            }
+        }
+
+        const staleImportedFactionIds = new Set(
+            nextFactions
+                .filter((f) => f?.externalSource?.module === "diploglass")
+                .filter((f) => !seenExternalIds.has(String(f.externalSource.id)))
+                .map((f) => f.id)
+        );
+
+        if (staleImportedFactionIds.size > 0) {
+            const before = nextFactions.length;
+            nextFactions = nextFactions.filter((f) => !staleImportedFactionIds.has(f.id));
+            if (nextFactions.length !== before) changed = true;
+
+            for (const node of (this.graphData.nodes || [])) {
+                if (node.factionId && staleImportedFactionIds.has(node.factionId)) {
+                    node.factionId = null;
+                    changed = true;
+                }
+            }
+        }
+
+        if (!changed) return false;
+
+        this.graphData.factions = nextFactions;
+        if (saveIfChanged) {
+            await this.saveData(triggerSync);
+        }
+        return true;
     }
 
     async saveData(triggerSync = true) {
@@ -797,7 +934,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 icon: f.icon,
                 color: f.color,
                 x: f.x,
-                y: f.y
+                y: f.y,
+                externalSource: f.externalSource ? foundry.utils.duplicate(f.externalSource) : null,
+                externalMeta: f.externalMeta ? foundry.utils.duplicate(f.externalMeta) : null
             })),
             showFactionLines: this.graphData.showFactionLines !== false,
             showFactionLegend: this.graphData.showFactionLegend !== false
@@ -1671,7 +1810,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                                     color: color,
                                     icon: icon !== "" ? icon : null,
                                     x: existingFaction && existingFaction.x !== undefined ? existingFaction.x : this.width / 2 + (Math.random() - 0.5) * 100,
-                                    y: existingFaction && existingFaction.y !== undefined ? existingFaction.y : this.height / 2 + (Math.random() - 0.5) * 100
+                                    y: existingFaction && existingFaction.y !== undefined ? existingFaction.y : this.height / 2 + (Math.random() - 0.5) * 100,
+                                    externalSource: existingFaction?.externalSource ? foundry.utils.duplicate(existingFaction.externalSource) : null,
+                                    externalMeta: existingFaction?.externalMeta ? foundry.utils.duplicate(existingFaction.externalMeta) : null
                                 });
                             }
                         });
@@ -4597,7 +4738,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 icon: f.icon,
                 color: f.color,
                 x: f.x,
-                y: f.y
+                y: f.y,
+                externalSource: f.externalSource ? foundry.utils.duplicate(f.externalSource) : null,
+                externalMeta: f.externalMeta ? foundry.utils.duplicate(f.externalMeta) : null
             })),
             showFactionLines: this.graphData.showFactionLines !== false,
             showFactionLegend: this.graphData.showFactionLegend !== false
