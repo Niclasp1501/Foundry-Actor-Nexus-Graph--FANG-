@@ -808,7 +808,13 @@ Hooks.once("ready", async () => {
     if (!game.settings.get("fang", "diploglassOneWaySync")) return;
     if (!game.modules.get("diploglass")?.active) return;
     if (!game.journal.getName("FANG Graph")) return;
-    if (setting?.key !== "diploglass.factions") return;
+    const syncKeys = new Set([
+      "diploglass.factions",
+      "diploglass.playerReputations",
+      "diploglass.globalReputations",
+      "diploglass.usePerPlayerReputation"
+    ]);
+    if (!syncKeys.has(setting?.key)) return;
 
     try {
       if (!fangApp) fangApp = new FangApplication();

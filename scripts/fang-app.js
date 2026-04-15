@@ -787,8 +787,12 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         if (!game.modules.get("diploglass")?.active) return false;
 
         let rawFactions;
+        let playerReputations;
+        let globalPerPlayerMode = true;
         try {
             rawFactions = game.settings.get("diploglass", "factions") || {};
+            playerReputations = game.settings.get("diploglass", "playerReputations") || {};
+            globalPerPlayerMode = !!game.settings.get("diploglass", "usePerPlayerReputation");
         } catch (err) {
             console.warn("FANG | Could not read DiploGlass factions for sync", err);
             return false;
@@ -802,6 +806,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
         const existingFactions = Array.isArray(this.graphData.factions) ? this.graphData.factions : [];
         let nextFactions = [...existingFactions];
+        const factionById = new Map(nextFactions.map((f) => [f.id, f]));
         const importedByExternalId = new Map(
             nextFactions
                 .filter((f) => f?.externalSource?.module === "diploglass" && f?.externalSource?.id != null)
@@ -850,7 +855,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     changed = true;
                 }
             } else {
-                nextFactions.push({
+                const newFaction = {
                     id: foundry.utils.randomID(),
                     name: sourceName,
                     icon: sourceIcon,
@@ -859,7 +864,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     y: (this.height || 600) / 2 + (Math.random() - 0.5) * 150,
                     externalSource: { module: "diploglass", id: externalId },
                     externalMeta: nextMeta
-                });
+                };
+                nextFactions.push(newFaction);
+                factionById.set(newFaction.id, newFaction);
                 changed = true;
             }
         }
@@ -875,12 +882,90 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             const before = nextFactions.length;
             nextFactions = nextFactions.filter((f) => !staleImportedFactionIds.has(f.id));
             if (nextFactions.length !== before) changed = true;
+            factionById.clear();
+            nextFactions.forEach((f) => factionById.set(f.id, f));
 
             for (const node of (this.graphData.nodes || [])) {
                 if (node.factionId && staleImportedFactionIds.has(node.factionId)) {
                     node.factionId = null;
                     changed = true;
                 }
+            }
+        }
+
+        // Optional actor/token assignment from DiploGlass per-character reputation:
+        // choose the faction with the highest positive reputation value.
+        const assignmentMinValue = 1;
+        const diploExternalToFangId = new Map(
+            nextFactions
+                .filter((f) => f?.externalSource?.module === "diploglass" && f?.externalSource?.id != null)
+                .filter((f) => {
+                    const sourceFaction = rawFactions?.[String(f.externalSource.id)];
+                    const usePerPlayer = (typeof sourceFaction?.usePerPlayerReputation === "boolean")
+                        ? sourceFaction.usePerPlayerReputation
+                        : globalPerPlayerMode;
+                    return !!usePerPlayer;
+                })
+                .map((f) => [String(f.externalSource.id), f.id])
+        );
+
+        for (const node of (this.graphData.nodes || [])) {
+            if (!node?.actorId || node?.isPlaceholder) continue;
+            const actor = game.actors?.get?.(node.actorId) ?? null;
+
+            const repBuckets = [];
+            const directActorRep = playerReputations?.[node.actorId];
+            if (directActorRep && typeof directActorRep === "object") {
+                repBuckets.push(directActorRep);
+            }
+
+            if (actor?.ownership && typeof actor.ownership === "object") {
+                for (const [ownerId, level] of Object.entries(actor.ownership)) {
+                    if (Number(level) < 3) continue;
+                    const ownerRep = playerReputations?.[ownerId];
+                    if (ownerRep && typeof ownerRep === "object") {
+                        repBuckets.push(ownerRep);
+                    }
+                }
+            }
+
+            const bestByExternalId = new Map();
+            for (const bucket of repBuckets) {
+                for (const [externalIdRaw, valueRaw] of Object.entries(bucket)) {
+                    const externalId = String(externalIdRaw);
+                    if (!diploExternalToFangId.has(externalId)) continue;
+                    const value = Number(valueRaw);
+                    if (!Number.isFinite(value)) continue;
+                    const prev = bestByExternalId.get(externalId);
+                    if (prev === undefined || value > prev) {
+                        bestByExternalId.set(externalId, value);
+                    }
+                }
+            }
+
+            let bestExternalId = null;
+            let bestValue = -Infinity;
+            for (const [externalId, value] of bestByExternalId.entries()) {
+                if (value > bestValue) {
+                    bestValue = value;
+                    bestExternalId = externalId;
+                }
+            }
+
+            const nextFactionId = (bestExternalId && bestValue >= assignmentMinValue)
+                ? diploExternalToFangId.get(bestExternalId)
+                : null;
+            const currentFaction = node.factionId ? factionById.get(node.factionId) : null;
+            const currentIsDiploFaction = currentFaction?.externalSource?.module === "diploglass";
+
+            if (nextFactionId) {
+                if (node.factionId !== nextFactionId) {
+                    node.factionId = nextFactionId;
+                    changed = true;
+                }
+            } else if (currentIsDiploFaction && node.factionId) {
+                node.factionId = null;
+                changed = true;
             }
         }
 

@@ -3,6 +3,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.12] - 2026-04-16
+### Added
+- **DiploGlass Character-to-Faction Assignment:** FANG now assigns graph nodes to imported DiploGlass factions based on per-character reputation values (highest positive value wins).
+
+### Changed
+- **DiploGlass Sync Triggers:** One-way sync now also reacts to DiploGlass reputation/mode setting changes (`playerReputations`, `globalReputations`, `usePerPlayerReputation`) in addition to faction updates.
+- **README Update:** Documented the new automatic assignment behavior in the DiploGlass feature section.
+- **Version Bump:** Advanced the module version to v2.0.12.
+
 ## [2.0.11] - 2026-04-15
 ### Added
 - **DiploGlass One-Way Faction Sync (Optional):** Added a FANG-side integration that imports and syncs DiploGlass factions into FANG (name, icon, and metadata such as journal/rolltable references) without modifying DiploGlass.
