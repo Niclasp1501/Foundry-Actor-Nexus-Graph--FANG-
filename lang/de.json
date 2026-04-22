@@ -254,6 +254,10 @@
                 "Name": "Standardmäßig verborgen",
                 "Hint": "Wenn aktiviert, werden neue Tokens automatisch für Spieler verborgen. Du kannst sie später über das Kontextmenü aufdecken."
             },
+            "CyberpunkTheme": {
+                "Name": "Cyberpunk-Theme aktivieren",
+                "Hint": "Aktiviert ein optionales Neon-Cyberpunk-Design im FANG-Fenster für alle Nutzer."
+            },
             "InPersonGaming": {
                 "Name": "In-Person Gaming Modus",
                 "Hint": "Aktiviert spezielle Monitor-Steuerungen für das Spielen vor Ort am Tisch (z.B. zweiter Monitor)."

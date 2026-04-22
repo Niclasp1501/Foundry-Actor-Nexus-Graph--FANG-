@@ -398,6 +398,18 @@ Hooks.once("init", () => {
     default: false
   });
 
+  game.settings.register("fang", "cyberpunkTheme", {
+    name: "FANG.Settings.CyberpunkTheme.Name",
+    hint: "FANG.Settings.CyberpunkTheme.Hint",
+    scope: "world",
+    config: true,
+    type: Boolean,
+    default: false,
+    onChange: () => {
+      if (fangApp && fangApp.rendered) fangApp._applyVisualTheme();
+    }
+  });
+
   game.settings.register("fang", "replaceOnlySheetActor", {
     name: "FANG.Settings.ReplaceOnlySheetActor.Name",
     hint: "FANG.Settings.ReplaceOnlySheetActor.Hint",

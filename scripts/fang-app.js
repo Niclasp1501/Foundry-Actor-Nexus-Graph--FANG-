@@ -299,6 +299,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
     _onRender(context, options) {
         super._onRender(context, options);
+        this._applyVisualTheme();
 
         const monitorName = game.settings.get("fang", "monitorDisplayName").toLowerCase();
 
@@ -565,6 +566,13 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         spotlightCloses.forEach(btn => {
             btn.addEventListener("click", () => this.stopSpotlight());
         });
+    }
+
+    _applyVisualTheme() {
+        const container = this.element?.querySelector?.(".fang-app-container");
+        if (!container) return;
+        const cyberpunkEnabled = game.settings.get("fang", "cyberpunkTheme");
+        container.classList.toggle("fang-theme-cyberpunk", !!cyberpunkEnabled);
     }
 
     _onClose(options) {

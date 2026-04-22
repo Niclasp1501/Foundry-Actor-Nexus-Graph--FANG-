@@ -66,6 +66,115 @@
     box-sizing: border-box;
 }
 
+/* Optional Theme: Cyberpunk (enabled via standard module settings) */
+.fang-app-container.fang-theme-cyberpunk {
+    --fang-bg-color: #071019;
+    --fang-text-color: #d9ecff;
+    --fang-card-bg: #0b1622;
+    --fang-nav-bg: #0a1320;
+    --fang-border-color: #1f3a56;
+    --fang-primary-red: #ff2e88;
+    --fang-accent-gold: #33d9ff;
+    --fang-header-text: #e8fbff;
+    --fang-canvas-bg: #040911;
+    --fang-font-main: "Rajdhani", "Trebuchet MS", "Segoe UI", sans-serif;
+}
+
+.fang-app-container.fang-theme-cyberpunk .sidebar {
+    border-right-color: #33d9ff;
+    box-shadow: 0 0 22px rgba(51, 217, 255, 0.16), inset 0 0 0 1px rgba(255, 46, 136, 0.12);
+}
+
+.fang-app-container.fang-theme-cyberpunk .sidebar-header {
+    background: linear-gradient(135deg, #170920 0%, #0d2032 52%, #0a1320 100%);
+    border-bottom-color: #33d9ff;
+}
+
+.fang-app-container.fang-theme-cyberpunk .sidebar-header p {
+    color: #b9e8ff;
+}
+
+.fang-app-container.fang-theme-cyberpunk .tab-btn {
+    color: #7fa4c8;
+}
+
+.fang-app-container.fang-theme-cyberpunk .tab-btn:hover {
+    color: #d9ecff;
+    background: rgba(51, 217, 255, 0.08);
+}
+
+.fang-app-container.fang-theme-cyberpunk .tab-btn.active {
+    color: #f8fbff;
+    border-bottom-color: #33d9ff;
+    background: rgba(51, 217, 255, 0.08);
+}
+
+.fang-app-container.fang-theme-cyberpunk .control-group h3 {
+    color: #7feaff;
+}
+
+.fang-app-container.fang-theme-cyberpunk input[type="text"],
+.fang-app-container.fang-theme-cyberpunk select {
+    background: #0c1b2a;
+    border-color: #27506f;
+    color: #d9ecff;
+}
+
+.fang-app-container.fang-theme-cyberpunk input[type="text"]:focus,
+.fang-app-container.fang-theme-cyberpunk select:focus {
+    border-color: #33d9ff;
+    box-shadow: 0 0 0 2px rgba(51, 217, 255, 0.24);
+}
+
+.fang-app-container.fang-theme-cyberpunk .action-btn,
+.fang-app-container.fang-theme-cyberpunk .secondary-btn {
+    background: linear-gradient(180deg, #13293d 0%, #0d2031 100%);
+    border-color: #2c5a7d;
+    color: #d9ecff;
+}
+
+.fang-app-container.fang-theme-cyberpunk .action-btn:hover,
+.fang-app-container.fang-theme-cyberpunk .secondary-btn:hover {
+    background: linear-gradient(180deg, #1a3a57 0%, #132a40 100%);
+}
+
+.fang-app-container.fang-theme-cyberpunk .fang-lock-btn {
+    background: linear-gradient(180deg, #ff2e88 0%, #b61f63 100%);
+    border-color: #33d9ff;
+    color: #f7fdff;
+}
+
+.fang-app-container.fang-theme-cyberpunk .fang-lock-btn.active {
+    background: linear-gradient(180deg, #33d9ff 0%, #1497bc 100%);
+    color: #041019;
+}
+
+.fang-app-container.fang-theme-cyberpunk .canvas-container {
+    background-color: #040911;
+    background-image:
+        linear-gradient(transparent 24px, rgba(51, 217, 255, 0.06) 25px, transparent 26px),
+        linear-gradient(90deg, transparent 24px, rgba(255, 46, 136, 0.045) 25px, transparent 26px),
+        radial-gradient(circle at 18% 24%, rgba(255, 46, 136, 0.12) 0%, transparent 42%),
+        radial-gradient(circle at 84% 76%, rgba(51, 217, 255, 0.13) 0%, transparent 46%),
+        radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.04) 0%, transparent 60%);
+    background-size: 25px 25px, 25px 25px, cover, cover, cover;
+    box-shadow: inset 0 0 70px rgba(3, 8, 15, 0.95);
+}
+
+.fang-app-container.fang-theme-cyberpunk .narrative-card,
+.fang-app-container.fang-theme-cyberpunk .quest-spotlight-card,
+.fang-app-container.fang-theme-cyberpunk .edge-spotlight-card {
+    background: linear-gradient(140deg, #0b1623 0%, #0b1724 55%, #11243a 100%);
+    border-color: #33d9ff;
+    box-shadow: 0 0 35px rgba(51, 217, 255, 0.16), 0 18px 45px rgba(0, 0, 0, 0.45);
+}
+
+.fang-app-container.fang-theme-cyberpunk #narrative-title,
+.fang-app-container.fang-theme-cyberpunk #edge-narrative-title,
+.fang-app-container.fang-theme-cyberpunk #quest-spotlight-title {
+    color: #7feaff;
+}
+
 /* GM Only Elements */
 body.role-player .fang-app-container .gm-only {
     display: none !important;

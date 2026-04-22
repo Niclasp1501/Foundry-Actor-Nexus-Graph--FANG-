@@ -3,6 +3,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.16] - 2026-04-22
+### Added
+- **Optional Cyberpunk Theme (Settings):** Added a new world setting (`Enable Cyberpunk Theme`) in the normal Foundry module settings to switch FANG into a neon cyberpunk visual style.
+
+### Changed
+- **Live Theme Application:** The selected theme is now applied immediately to already open FANG windows without reopening the app.
+- **Version Bump:** Advanced the module version to v2.0.16.
+
 ## [2.0.15] - 2026-04-22
 ### Changed
 - **Foundry Compatibility Visibility:** Beta builds now include the Foundry compatibility range in the version string (`-beta.<run>.fvtt12-14`) to make supported generations immediately visible.
