@@ -1,5 +1,4 @@
 Foundry Actor Nexus Graph (FANG).code-workspace
-TODO.md
 
 # Node / Playwright local tooling
 node_modules/
@@ -9,6 +8,9 @@ test-results/
 # Local smoke-test artifacts
 tools/fang-smoke-failure.png
 tools/*.local.json
+tools/*.tmp
+tools/*.log
+tools/*.bak
 
 # Local beta build artifacts
 module-beta.json
