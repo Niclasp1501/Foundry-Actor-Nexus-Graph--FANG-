@@ -1,6 +1,6 @@
 # Ninjo's FANG (Foundry Actor Nexus Graph)
 
-**Current Version / Aktuelle Version:** 2.0.13
+**Current Version / Aktuelle Version:** 2.0.14
 
 An interactive, self-arranging Actor Graph module for visualizing Character & NPC Relationships natively in Foundry VTT V13 and V14. FANG enables Game Masters and players to dynamically map out self-building relationship networks inside their game world.
 
@@ -40,8 +40,11 @@ An interactive, self-arranging Actor Graph module for visualizing Character & NP
 ### Installation
 1. Start Foundry VTT and navigate to the **Add-on Modules** tab.
 2. Click **Install Module**.
-3. Paste the following Manifest URL: `https://github.com/Niclasp1501/Foundry-Actor-Nexus-Graph--FANG-/releases/latest/download/module.json`
+3. Choose your channel and paste one of these Manifest URLs:
+   - **Stable:** `https://github.com/Niclasp1501/Foundry-Actor-Nexus-Graph--FANG-/releases/latest/download/module.json`
+   - **Beta:** `https://github.com/Niclasp1501/Foundry-Actor-Nexus-Graph--FANG-/releases/download/beta-latest/module-beta.json`
 4. Restart Foundry and enable **Foundry Actor Nexus Graph (FANG)** in your World's module settings.
+5. Channel note: both links install the same module id (`fang`). Use one channel per world (no parallel stable+beta install in the same world).
 
 ### Usage
 #### For the Game Master (GM)
@@ -94,8 +97,11 @@ For the current development status and planned features, please refer to the [TO
 ### Installation
 1. Starte Foundry VTT und wechsle in den **Zusatzmodule** Reiter.
 2. Klicke auf **Modul installieren**.
-3. Füge die folgende Manifest URL ein: `https://github.com/Niclasp1501/Foundry-Actor-Nexus-Graph--FANG-/releases/latest/download/module.json`
+3. Wähle deinen Kanal und füge eine dieser Manifest-URLs ein:
+   - **Stable:** `https://github.com/Niclasp1501/Foundry-Actor-Nexus-Graph--FANG-/releases/latest/download/module.json`
+   - **Beta:** `https://github.com/Niclasp1501/Foundry-Actor-Nexus-Graph--FANG-/releases/download/beta-latest/module-beta.json`
 4. Starte Foundry neu und aktiviere **Foundry Actor Nexus Graph (FANG)** in den Modul-Einstellungen deiner Welt.
+5. Kanal-Hinweis: Beide Links verwenden dieselbe Modul-ID (`fang`). Pro Welt sollte nur ein Kanal genutzt werden (kein paralleles Stable+Beta in derselben Welt).
 
 ### Anleitung
 #### Für den Spielleiter (GM)

@@ -3,10 +3,11 @@ name: Release Creation
 on:
   push:
     tags:
-      - 'v*' # Löst aus, wenn ein Tag wie v1.0.0 gepusht wird
+      - "v*" # triggers on tags like v1.0.0
 
 jobs:
   build:
+    if: ${{ startsWith(github.ref_name, 'v') && !contains(github.ref_name, 'beta') }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code

@@ -3,6 +3,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.14] - 2026-04-22
+### Added
+- **Beta Release Channel:** Added an automated beta release workflow (`.github/workflows/release-beta.yml`) that builds from the `beta` branch and updates a fixed prerelease tag `beta-latest`.
+- **Fixed Beta Install Link:** Beta testers can install using a permanent manifest URL (`releases/download/beta-latest/module-beta.json`).
+
+### Changed
+- **Beta Manifest Generation:** Beta builds now generate `module-beta.json` at runtime with version suffix `-beta.<run_number>` and compatibility range `12` to `14`.
+- **README Install Docs:** Added explicit Stable/Beta installation channels in English and German, including guidance that both channels use the same module id (`fang`).
+- **Stable Workflow Hardening:** Added a guard in `release.yml` so only version tags are treated as stable releases.
+- **Version Bump:** Advanced the module version to v2.0.14.
+
 ## [2.0.13] - 2026-04-22
 ### Added
 - **Browser Smoke-Test Script:** Added `tools/fang-smoke-test.mjs` to run a fast Foundry login/module smoke test flow (ready-state, module API, FANG window open, Actor Directory button injection).

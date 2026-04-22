@@ -9,3 +9,9 @@ test-results/
 # Local smoke-test artifacts
 tools/fang-smoke-failure.png
 tools/*.local.json
+
+# Local beta build artifacts
+module-beta.json
+module-beta.zip
+dist-beta/
+.beta-dist/

@@ -1,0 +1,86 @@
+name: Beta Release Channel
+
+on:
+  push:
+    branches:
+      - beta
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-beta:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Prepare Beta Manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          base_version="$(jq -r '.version' module.json)"
+          base_version="${base_version%%-beta.*}"
+          beta_version="${base_version}-beta.${GITHUB_RUN_NUMBER}"
+
+          jq \
+            --arg betaVersion "$beta_version" \
+            --arg manifestUrl "https://github.com/Niclasp1501/Foundry-Actor-Nexus-Graph--FANG-/releases/download/beta-latest/module-beta.json" \
+            --arg downloadUrl "https://github.com/Niclasp1501/Foundry-Actor-Nexus-Graph--FANG-/releases/download/beta-latest/module-beta.zip" \
+            '.version = $betaVersion
+             | .compatibility.minimum = "12"
+             | .compatibility.verified = "14"
+             | .compatibility.maximum = "14"
+             | .manifest = $manifestUrl
+             | .download = $downloadUrl' \
+            module.json > module-beta.json
+
+      - name: Build Beta Archive
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          rm -rf .beta-dist module-beta.zip
+          mkdir -p .beta-dist
+
+          rsync -a ./ ./.beta-dist/ \
+            --exclude ".git" \
+            --exclude ".github" \
+            --exclude ".beta-dist" \
+            --exclude "module-beta.json" \
+            --exclude "module-beta.zip" \
+            --exclude "README.md" \
+            --exclude "CHANGELOG.md"
+
+          cp module-beta.json .beta-dist/module.json
+
+          (
+            cd .beta-dist
+            zip -r ../module-beta.zip .
+          )
+
+      - name: Update beta-latest tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -f beta-latest
+          git push origin refs/tags/beta-latest --force
+
+      - name: Create/Update Beta GitHub Prerelease
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: beta-latest
+          name: Beta latest
+          draft: false
+          prerelease: true
+          make_latest: false
+          overwrite_files: true
+          files: |
+            module-beta.json
+            module-beta.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
