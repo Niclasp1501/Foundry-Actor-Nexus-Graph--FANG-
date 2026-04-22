@@ -568,11 +568,13 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         });
     }
 
-    _applyVisualTheme() {
+    _applyVisualTheme(themeVariant = null) {
         const container = this.element?.querySelector?.(".fang-app-container");
         if (!container) return;
-        const cyberpunkEnabled = game.settings.get("fang", "cyberpunkTheme");
-        container.classList.toggle("fang-theme-cyberpunk", !!cyberpunkEnabled);
+        const selectedTheme = themeVariant ?? game.settings.get("fang", "themeVariant");
+        const normalizedTheme = (selectedTheme === "cyberpunk" || selectedTheme === true) ? "cyberpunk" : "fantasy";
+        container.classList.toggle("fang-theme-cyberpunk", normalizedTheme === "cyberpunk");
+        container.dataset.fangTheme = normalizedTheme;
     }
 
     _onClose(options) {

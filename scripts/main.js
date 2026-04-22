@@ -11,6 +11,29 @@ function _fangSetActorPanelOpenState(isOpen) {
   document.body?.classList?.toggle("fang-actor-panel-open", !!isOpen);
 }
 
+function _fangGetThemeVariant() {
+  const selected = game.settings.get("fang", "themeVariant");
+  if (selected === "cyberpunk" || selected === true) return "cyberpunk";
+  return "fantasy";
+}
+
+function _fangGetRenderedFangApps() {
+  const apps = new Set();
+  if (fangApp?.rendered) apps.add(fangApp);
+  for (const app of Object.values(ui?.windows ?? {})) {
+    if (app?.rendered && app instanceof FangApplication) apps.add(app);
+  }
+  return Array.from(apps);
+}
+
+function _fangApplyVisualThemeToOpenApps() {
+  const themeVariant = _fangGetThemeVariant();
+  document.body?.classList?.toggle("fang-theme-cyberpunk", themeVariant === "cyberpunk");
+  for (const app of _fangGetRenderedFangApps()) {
+    if (typeof app._applyVisualTheme === "function") app._applyVisualTheme(themeVariant);
+  }
+}
+
 function _fangGetActorDirectoryPopoutShells() {
   return Array.from(document.querySelectorAll(FANG_ACTOR_DIRECTORY_POPOUT_SELECTOR));
 }
@@ -398,16 +421,28 @@ Hooks.once("init", () => {
     default: false
   });
 
-  game.settings.register("fang", "cyberpunkTheme", {
-    name: "FANG.Settings.CyberpunkTheme.Name",
-    hint: "FANG.Settings.CyberpunkTheme.Hint",
+  game.settings.register("fang", "themeVariant", {
+    name: "FANG.Settings.ThemeVariant.Name",
+    hint: "FANG.Settings.ThemeVariant.Hint",
     scope: "world",
     config: true,
-    type: Boolean,
-    default: false,
+    type: String,
+    choices: {
+      fantasy: game.i18n.localize("FANG.Settings.ThemeVariant.Choices.Fantasy"),
+      cyberpunk: game.i18n.localize("FANG.Settings.ThemeVariant.Choices.Cyberpunk")
+    },
+    default: "fantasy",
     onChange: () => {
-      if (fangApp && fangApp.rendered) fangApp._applyVisualTheme();
+      _fangApplyVisualThemeToOpenApps();
     }
+  });
+
+  // Legacy setting retained for migration from older worlds.
+  game.settings.register("fang", "cyberpunkTheme", {
+    scope: "world",
+    config: false,
+    type: Boolean,
+    default: false
   });
 
   game.settings.register("fang", "replaceOnlySheetActor", {
@@ -529,6 +564,16 @@ Hooks.once("ready", async () => {
       }
     }
   };
+
+  // One-time migration from legacy boolean theme setting to dropdown variant.
+  if (game.user.isGM) {
+    const legacyCyberpunkEnabled = game.settings.get("fang", "cyberpunkTheme");
+    const activeTheme = game.settings.get("fang", "themeVariant");
+    if (legacyCyberpunkEnabled && activeTheme !== "cyberpunk") {
+      await game.settings.set("fang", "themeVariant", "cyberpunk");
+    }
+  }
+  _fangApplyVisualThemeToOpenApps();
 
   // First-time prompt for optional DiploGlass sync.
   if (game.user.isGM && game.modules.get("diploglass")?.active) {
@@ -816,6 +861,10 @@ Hooks.once("ready", async () => {
 
   // Optional one-way background sync: DiploGlass factions -> FANG factions.
   Hooks.on("updateSetting", async (setting) => {
+    if (setting?.key === "fang.themeVariant" || setting?.key === "fang.cyberpunkTheme") {
+      _fangApplyVisualThemeToOpenApps();
+    }
+
     if (!game.user.isGM) return;
     if (!game.settings.get("fang", "diploglassOneWaySync")) return;
     if (!game.modules.get("diploglass")?.active) return;

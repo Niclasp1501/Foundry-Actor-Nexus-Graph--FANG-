@@ -24,11 +24,10 @@ jobs:
           fvtt_min="12"
           fvtt_verified="14"
           fvtt_max="14"
-          fvtt_label="fvtt${fvtt_min}-${fvtt_max}"
 
           base_version="$(jq -r '.version' module.json)"
           base_version="${base_version%%-beta.*}"
-          beta_version="${base_version}-beta.${GITHUB_RUN_NUMBER}.${fvtt_label}"
+          beta_version="${base_version}-beta.${GITHUB_RUN_NUMBER}"
 
           jq \
             --arg betaVersion "$beta_version" \
