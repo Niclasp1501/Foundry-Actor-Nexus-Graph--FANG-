@@ -1,2 +1,11 @@
 Foundry Actor Nexus Graph (FANG).code-workspace
 TODO.md
+
+# Node / Playwright local tooling
+node_modules/
+playwright-report/
+test-results/
+
+# Local smoke-test artifacts
+tools/fang-smoke-failure.png
+tools/*.local.json

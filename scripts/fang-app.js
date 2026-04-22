@@ -1,7 +1,15 @@
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
-const FANG_DEFAULT_PLACEHOLDER_IMG = "modules/fang/assets/placeholder-npc-default.webp";
+const FANG_DEFAULT_PLACEHOLDER_IMG = "modules/fang/assets/placeholder-npc.svg";
 const FANG_FALLBACK_PLACEHOLDER_IMG = "modules/fang/assets/placeholder-npc.svg";
+const FANG_LEGACY_PLACEHOLDER_IMG_REGEX = /(?:^|\/)modules\/fang\/assets\/placeholder-npc-default\.webp(?:\?.*)?$/i;
+
+function normalizeLegacyPlaceholderImagePath(path) {
+    if (typeof path !== "string") return path;
+    const trimmed = path.trim();
+    if (!trimmed) return trimmed;
+    return FANG_LEGACY_PLACEHOLDER_IMG_REGEX.test(trimmed) ? FANG_DEFAULT_PLACEHOLDER_IMG : trimmed;
+}
 
 /**
  * Helper class for future premium features.
@@ -727,6 +735,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     if (node.isPlaceholder === undefined) node.isPlaceholder = !node.actorId;
                     if (node.placeholderType === undefined) node.placeholderType = node.isPlaceholder ? "legacy" : null;
                     if (node.img === undefined || node.img === null) node.img = null;
+                    node.img = normalizeLegacyPlaceholderImagePath(node.img);
                     if (node.hidden === undefined) node.hidden = false;
                     if (!node.displayName) node.displayName = "";
                     if (!node.conditions) node.conditions = [];
@@ -1198,10 +1207,11 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
     _getNodeImageSource(node) {
         const actor = this._getNodeActor(node);
+        const normalizedNodeImg = normalizeLegacyPlaceholderImagePath(node?.img);
         if (node?.isPlaceholder) {
-            return node?.img || FANG_DEFAULT_PLACEHOLDER_IMG;
+            return normalizedNodeImg || FANG_DEFAULT_PLACEHOLDER_IMG;
         }
-        return node?.img || actor?.prototypeToken?.texture?.src || actor?.img || "icons/svg/mystery-man.svg";
+        return normalizedNodeImg || actor?.prototypeToken?.texture?.src || actor?.img || "icons/svg/mystery-man.svg";
     }
 
     _buildPlaceholderNode({
@@ -4990,8 +5000,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const sActor = this._getNodeActor(sourceNode);
         const tActor = this._getNodeActor(targetNode);
 
-        const sourceImg = sActor?.img || sourceNode.img || sourceNode.imgElement?.src || "icons/svg/mystery-man.svg";
-        const targetImg = tActor?.img || targetNode.img || targetNode.imgElement?.src || "icons/svg/mystery-man.svg";
+        const sourceImg = this._getNodeImageSource(sourceNode) || sourceNode.imgElement?.src || "icons/svg/mystery-man.svg";
+        const targetImg = this._getNodeImageSource(targetNode) || targetNode.imgElement?.src || "icons/svg/mystery-man.svg";
 
         game.socket.emit("module.fang", {
             action: "spotlightEdgeStart",
@@ -5077,8 +5087,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         // Spotlight can be used by anyone who can right-click (no lock required)
 
         // Broadcast spotlight event
-        const actor = this._getNodeActor(node);
-        const imgSrc = actor?.img || node.img || "icons/svg/mystery-man.svg";
+        const imgSrc = this._getNodeImageSource(node);
         const role = node.role || "";
         const factionObj = this.graphData.factions.find(f => f.id === node.factionId);
         const faction = factionObj ? factionObj.name : "";

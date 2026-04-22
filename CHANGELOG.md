@@ -3,6 +3,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.13] - 2026-04-22
+### Added
+- **Browser Smoke-Test Script:** Added `tools/fang-smoke-test.mjs` to run a fast Foundry login/module smoke test flow (ready-state, module API, FANG window open, Actor Directory button injection).
+
+### Fixed
+- **Placeholder Image 404:** Switched the default placeholder image path to the shipped SVG asset and added legacy path normalization for `placeholder-npc-default.webp` values stored in older graph data.
+- **Spotlight Image Resolution:** Normalized spotlight portrait sourcing to use the same node image resolver, preventing stale legacy placeholder paths from surfacing during spotlight events.
+
+### Changed
+- **Version Bump:** Advanced the module version to v2.0.13.
+
 ## [2.0.12] - 2026-04-16
 ### Added
 - **DiploGlass Character-to-Faction Assignment:** FANG now assigns graph nodes to imported DiploGlass factions based on per-character reputation values (highest positive value wins).
