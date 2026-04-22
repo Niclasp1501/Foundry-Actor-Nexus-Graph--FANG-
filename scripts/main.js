@@ -28,7 +28,9 @@ function _fangGetRenderedFangApps() {
 
 function _fangApplyVisualThemeToOpenApps() {
   const themeVariant = _fangGetThemeVariant();
-  document.body?.classList?.toggle("fang-theme-cyberpunk", themeVariant === "cyberpunk");
+  const enabled = themeVariant === "cyberpunk";
+  document.documentElement?.classList?.toggle("fang-theme-cyberpunk", enabled);
+  document.body?.classList?.toggle("fang-theme-cyberpunk", enabled);
   for (const app of _fangGetRenderedFangApps()) {
     if (typeof app._applyVisualTheme === "function") app._applyVisualTheme(themeVariant);
   }
@@ -437,14 +439,6 @@ Hooks.once("init", () => {
     }
   });
 
-  // Legacy setting retained for migration from older worlds.
-  game.settings.register("fang", "cyberpunkTheme", {
-    scope: "world",
-    config: false,
-    type: Boolean,
-    default: false
-  });
-
   game.settings.register("fang", "replaceOnlySheetActor", {
     name: "FANG.Settings.ReplaceOnlySheetActor.Name",
     hint: "FANG.Settings.ReplaceOnlySheetActor.Hint",
@@ -565,14 +559,6 @@ Hooks.once("ready", async () => {
     }
   };
 
-  // One-time migration from legacy boolean theme setting to dropdown variant.
-  if (game.user.isGM) {
-    const legacyCyberpunkEnabled = game.settings.get("fang", "cyberpunkTheme");
-    const activeTheme = game.settings.get("fang", "themeVariant");
-    if (legacyCyberpunkEnabled && activeTheme !== "cyberpunk") {
-      await game.settings.set("fang", "themeVariant", "cyberpunk");
-    }
-  }
   _fangApplyVisualThemeToOpenApps();
 
   // First-time prompt for optional DiploGlass sync.
@@ -861,7 +847,7 @@ Hooks.once("ready", async () => {
 
   // Optional one-way background sync: DiploGlass factions -> FANG factions.
   Hooks.on("updateSetting", async (setting) => {
-    if (setting?.key === "fang.themeVariant" || setting?.key === "fang.cyberpunkTheme") {
+    if (setting?.key === "fang.themeVariant") {
       _fangApplyVisualThemeToOpenApps();
     }
 

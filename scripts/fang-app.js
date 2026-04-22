@@ -572,7 +572,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const container = this.element?.querySelector?.(".fang-app-container");
         if (!container) return;
         const selectedTheme = themeVariant ?? game.settings.get("fang", "themeVariant");
-        const normalizedTheme = (selectedTheme === "cyberpunk" || selectedTheme === true) ? "cyberpunk" : "fantasy";
+        const normalizedTheme = selectedTheme === "cyberpunk" ? "cyberpunk" : "fantasy";
         container.classList.toggle("fang-theme-cyberpunk", normalizedTheme === "cyberpunk");
         container.dataset.fangTheme = normalizedTheme;
     }
@@ -1799,18 +1799,18 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         }
 
         let factionsHtml = this.graphData.factions.map((f, index) => `
-            <div class="fang-faction-item" style="display: flex; gap: 5px; align-items: center; margin-bottom: 5px;">
+            <div class="fang-faction-item">
                 <input type="hidden" class="faction-id" value="${f.id}">
-                <input type="color" class="faction-color" data-index="${index}" value="${f.color}" title="${game.i18n.localize('FANG.UI.Color') || 'Farbe'}" style="flex: 0 0 30px; height: 30px; padding: 0;">
-                <input type="text" class="faction-name" data-index="${index}" value="${f.name}" placeholder="Fraktionsname" style="flex: 1;">
-                <div class="faction-icon-preview" style="flex: 0 0 30px; height: 30px; border: 1px solid rgba(0,0,0,0.2); border-radius: 3px; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.1); overflow: hidden;">
+                <input type="color" class="faction-color" data-index="${index}" value="${f.color}" title="${game.i18n.localize('FANG.UI.Color') || 'Farbe'}">
+                <input type="text" class="faction-name" data-index="${index}" value="${f.name}" placeholder="Fraktionsname">
+                <div class="faction-icon-preview">
                     <img src="${f.icon || ''}" id="preview-icon-${index}" style="max-width: 100%; max-height: 100%; display: ${f.icon ? 'block' : 'none'}; object-fit: contain;">
                 </div>
-                <button type="button" class="btn file-picker" data-type="image" data-target="faction-icon-${index}" title="Icon auswählen" style="flex: 0 0 30px; padding: 0;">
+                <button type="button" class="btn file-picker fang-faction-icon-btn" data-type="image" data-target="faction-icon-${index}" title="Icon auswählen">
                     <i class="fas fa-file-image"></i>
                 </button>
                 <input type="hidden" class="faction-icon" id="faction-icon-${index}" data-index="${index}" value="${f.icon || ''}">
-                <button type="button" class="btn danger-btn btn-delete-faction" data-index="${index}" title="Fraktion löschen" style="flex: 0 0 30px; padding: 0;">
+                <button type="button" class="btn danger-btn btn-delete-faction fang-faction-delete-btn" data-index="${index}" title="Fraktion löschen">
                     <i class="fas fa-trash"></i>
                 </button>
             </div>
@@ -1827,10 +1827,10 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     <input type="checkbox" id="fang-show-faction-legend" ${this.graphData.showFactionLegend !== false ? 'checked' : ''}>
                     <label for="fang-show-faction-legend">${game.i18n.localize("FANG.Dialogs.ShowFactionLegend")}</label>
                 </div>
-                <div id="fang-factions-list" style="flex: 1 1 auto; overflow-y: auto; overflow-x: hidden; margin-bottom: 10px; min-height: 150px; border: 1px solid rgba(0,0,0,0.2); padding: 5px;">
+                <div id="fang-factions-list">
                     ${factionsHtml}
                 </div>
-                <button type="button" id="fang-add-faction-btn" class="btn" style="flex: 0 0 auto; width: 100%; margin-bottom: 10px; border: 1px solid #d4af37; background: rgba(139, 0, 0, 0.05); font-weight: bold; color: #4b443c;">
+                <button type="button" id="fang-add-faction-btn" class="btn fang-add-faction-btn">
                     <i class="fas fa-plus"></i> ${game.i18n.localize("FANG.Dialogs.BtnAddFaction") || 'Fraktion hinzufügen'}
                 </button>
             </div>
@@ -1845,18 +1845,18 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     const newIndex = list.children().length;
                     const randomColor = '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
                     list.append(`
-                        <div class="fang-faction-item" style="display: flex; gap: 5px; align-items: center; margin-bottom: 5px;">
+                        <div class="fang-faction-item">
                             <input type="hidden" class="faction-id" value="">
-                            <input type="color" class="faction-color" data-index="${newIndex}" value="${randomColor}" title="Farbe" style="flex: 0 0 30px; height: 30px; padding: 0;">
-                            <input type="text" class="faction-name" data-index="${newIndex}" value="Neue Fraktion" placeholder="Fraktionsname" style="flex: 1;">
-                            <div class="faction-icon-preview" style="flex: 0 0 30px; height: 30px; border: 1px solid rgba(0,0,0,0.2); border-radius: 3px; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.1); overflow: hidden;">
+                            <input type="color" class="faction-color" data-index="${newIndex}" value="${randomColor}" title="Farbe">
+                            <input type="text" class="faction-name" data-index="${newIndex}" value="Neue Fraktion" placeholder="Fraktionsname">
+                            <div class="faction-icon-preview">
                                 <img src="" id="preview-icon-${newIndex}" style="max-width: 100%; max-height: 100%; display: none; object-fit: contain;">
                             </div>
-                            <button type="button" class="btn file-picker" data-type="image" data-target="faction-icon-${newIndex}" title="Icon auswählen" style="flex: 0 0 30px; padding: 0;">
+                            <button type="button" class="btn file-picker fang-faction-icon-btn" data-type="image" data-target="faction-icon-${newIndex}" title="Icon auswählen">
                                 <i class="fas fa-file-image"></i>
                             </button>
                             <input type="hidden" class="faction-icon" id="faction-icon-${newIndex}" data-index="${newIndex}" value="">
-                            <button type="button" class="btn danger-btn btn-delete-faction" data-index="${newIndex}" title="Fraktion löschen" style="flex: 0 0 30px; padding: 0;">
+                            <button type="button" class="btn danger-btn btn-delete-faction fang-faction-delete-btn" data-index="${newIndex}" title="Fraktion löschen">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </div>
