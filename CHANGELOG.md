@@ -3,6 +3,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [14.0.19] - 2026-04-22
+### Added
+- **Expanded Localization Pack:** Added full i18n files for French (`fr`), Spanish (`es`), Portuguese Brazil (`pt-BR`), Italian (`it`), Polish (`pl`), Russian (`ru`), Czech (`cs`), and Dutch (`nl`).
+- **Translation Automation Script:** Added `tools/translate_i18n_vertex.py` and `tools/vertex_endpoint_client.py` to generate/refresh locale files via the same Vertex/Gemini approach used in your translation toolkit.
+
+### Changed
+- **Module Language Metadata:** Updated `module.json` language entries so Foundry can offer all new locales in the UI.
+- **Docs/Planning Sync:** Updated README and TODO to reflect multilingual availability.
+
 ## [14.0.18] - 2026-04-22
 ### Fixed
 - **Theme On All FANG Windows:** The selected theme now applies consistently to open FANG dialogs, including **Background Settings** and **Manage Factions** windows.
