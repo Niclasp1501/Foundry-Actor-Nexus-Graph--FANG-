@@ -46,6 +46,7 @@ An interactive, self-arranging Actor Graph module for visualizing Character & NP
    - **Beta:** `https://github.com/Niclasp1501/Foundry-Actor-Nexus-Graph--FANG-/releases/download/beta-latest/module-beta.json`
 4. Restart Foundry and enable **Foundry Actor Nexus Graph (FANG)** in your World's module settings.
 5. Channel note: both links install the same module id (`fang`). Use one channel per world (no parallel stable+beta install in the same world).
+6. **Beta participation notice (at your own risk):** Beta builds may contain regressions or breaking behavior. Before installing/updating beta, create a full backup of your world first.
 
 ### Usage
 #### For the Game Master (GM)
@@ -104,6 +105,7 @@ For the current development status and planned features, please refer to the [TO
    - **Beta:** `https://github.com/Niclasp1501/Foundry-Actor-Nexus-Graph--FANG-/releases/download/beta-latest/module-beta.json`
 4. Starte Foundry neu und aktiviere **Foundry Actor Nexus Graph (FANG)** in den Modul-Einstellungen deiner Welt.
 5. Kanal-Hinweis: Beide Links verwenden dieselbe Modul-ID (`fang`). Pro Welt sollte nur ein Kanal genutzt werden (kein paralleles Stable+Beta in derselben Welt).
+6. **Beta-Hinweis (Teilnahme auf eigenes Risiko):** Beta-Builds koennen Fehler oder unerwartete Auswirkungen haben. Erstelle vor Installation/Update der Beta unbedingt ein vollstaendiges Backup deiner Welt.
 
 ### Anleitung
 #### Für den Spielleiter (GM)
