@@ -1,6 +1,6 @@
 # Ninjo's FANG (Foundry Actor Nexus Graph)
 
-**Current Version / Aktuelle Version:** 2.0.16
+**Current Version / Aktuelle Version:** 14.0.17
 
 An interactive, self-arranging Actor Graph module for visualizing Character & NPC Relationships natively in Foundry VTT V13 and V14. FANG enables Game Masters and players to dynamically map out self-building relationship networks inside their game world.
 
@@ -30,6 +30,7 @@ An interactive, self-arranging Actor Graph module for visualizing Character & NP
 - **Link Label Validation:** Ensures all connections have mandatory labels to prevent confusing "invisible" links.
 - **JSON Export & Import (Backup):** Save your entire graph (including token positions, factions, and visual settings) to a file. Perfect for backups or sharing templates.
 - **Customizable Backgrounds (Live Sync):** Customize the graph background via palette colors, custom images (blur/opacity), or style presets. Syncs live to players/monitors.
+- **Theme Dropdown (Fantasy/Cyberpunk):** Choose the FANG visual style in normal module settings. The selected theme is applied live to already open FANG windows.
 - **Search & Filter Overlay:** Search nodes, roles, factions, or links locally inside the graph, highlight exact matches, and optionally isolate only the relevant results.
 - **Placeholder NPC Workflow:** Add placeholder contacts directly on the canvas, then replace them later with real Actors via drag-and-drop or the context menu while keeping graph links intact.
 - **Quest Log + Quest Spotlight:** Link one or multiple Quest Journals per node and open them via context menu / in-canvas picker. Quest Spotlights support monitor auto-scroll + synced scroll.
@@ -87,6 +88,7 @@ For the current development status and planned features, please refer to the [TO
 - **Verbindungs-Validierung:** Stellt sicher, dass jede Verbindung eine Beschriftung hat, um "unsichtbare" Linien zu vermeiden.
 - **JSON Export & Import (Backup):** Speichere deinen gesamten Graphen (inkl. Token-Positionen, Fraktionen und Einstellungen) in einer Datei. Ideal für Backups oder zum Teilen.
 - **Anpassbarer Hintergrund (Live-Sync):** Passe den Hintergrund über Farbpalette, eigene Bilder (Blur/Deckkraft) oder Stil-Presets an. Wird live an Spieler/Monitor synchronisiert.
+- **Theme-Dropdown (Fantasy/Cyberpunk):** Waehle das FANG-Design in den normalen Modul-Einstellungen. Das aktive Theme wird live auf bereits geoeffnete FANG-Fenster angewandt.
 - **Such- & Filter-Overlay:** Durchsuche Knoten, Rollen, Fraktionen oder Verbindungen direkt im Graphen, hebe Treffer hervor und isoliere bei Bedarf nur die relevanten Ergebnisse.
 - **Platzhalter-NPC-Workflow:** Lege Platzhalter direkt im Graphen an und ersetze sie spaeter per Drag & Drop oder Kontextmenue durch echte Akteure, ohne Verbindungen neu bauen zu muessen.
 - **Quest Log + Quest Spotlight:** Verknüpfe ein oder mehrere Quest-Journale pro Knoten und öffne sie über Kontextmenü / In-Canvas-Auswahl. Quest-Spotlights unterstützen Monitor Auto-Scroll + synchronisiertes Scrollen.

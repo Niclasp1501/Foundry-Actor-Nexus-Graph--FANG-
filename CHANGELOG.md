@@ -3,6 +3,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [14.0.17] - 2026-04-22
+### Added
+- **Theme Variant Dropdown (Module Settings):** Replaced the single Cyberpunk toggle with a normal module-settings dropdown (`Fantasy` / `Cyberpunk`) for world-wide theme selection.
+
+### Changed
+- **Theme Live Sync Across Open Windows:** Theme changes now re-apply immediately to all currently open FANG windows on each client, including already opened player/monitor views.
+- **Legacy Theme Migration:** Existing worlds that used the previous `cyberpunkTheme` boolean are automatically migrated to the new dropdown setting.
+- **Versioning Scheme:** Switched the module to a pure `14.x.xx` version scheme.
+- **Beta Version Format:** Beta workflow now generates versions as `14.x.xx-beta.<run_number>`.
+
 ## [2.0.16] - 2026-04-22
 ### Added
 - **Optional Cyberpunk Theme (Settings):** Added a new world setting (`Enable Cyberpunk Theme`) in the normal Foundry module settings to switch FANG into a neon cyberpunk visual style.
