@@ -3,6 +3,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [14.0.18] - 2026-04-22
+### Fixed
+- **Theme On All FANG Windows:** The selected theme now applies consistently to open FANG dialogs, including **Background Settings** and **Manage Factions** windows.
+- **Cyberpunk Dialog Styling:** Added dedicated cyberpunk styling for dialog inputs, buttons, faction rows, and premium/background-config elements so the windows no longer keep the old fantasy look.
+
+### Changed
+- **No Legacy Theme Flag:** Removed the hidden legacy `cyberpunkTheme` setting and kept a single direct source of truth via `themeVariant`.
+- **Global Theme Variables:** Cyberpunk theme variables are now applied globally on the document root/body, ensuring all FANG windows inherit the active design instantly.
+
 ## [14.0.17] - 2026-04-22
 ### Added
 - **Theme Variant Dropdown (Module Settings):** Replaced the single Cyberpunk toggle with a normal module-settings dropdown (`Fantasy` / `Cyberpunk`) for world-wide theme selection.

@@ -67,6 +67,20 @@
 }
 
 /* Optional Theme: Cyberpunk (enabled via standard module settings) */
+:root.fang-theme-cyberpunk,
+body.fang-theme-cyberpunk {
+    --fang-bg-color: #071019;
+    --fang-text-color: #d9ecff;
+    --fang-card-bg: #0b1622;
+    --fang-nav-bg: #0a1320;
+    --fang-border-color: #1f3a56;
+    --fang-primary-red: #ff2e88;
+    --fang-accent-gold: #33d9ff;
+    --fang-header-text: #e8fbff;
+    --fang-canvas-bg: #040911;
+    --fang-font-main: "Rajdhani", "Trebuchet MS", "Segoe UI", sans-serif;
+}
+
 .fang-app-container.fang-theme-cyberpunk {
     --fang-bg-color: #071019;
     --fang-text-color: #d9ecff;
@@ -1058,6 +1072,112 @@ body.fang-monitor .fang-app-container .narrative-close {
 
 .fang-dialog .dialog-buttons button.cancel:hover {
     background-color: #ebe5dc;
+}
+
+.fang-dialog #fang-factions-list {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    overflow-x: hidden;
+    margin-bottom: 10px;
+    min-height: 150px;
+    border: 1px solid var(--fang-border-color);
+    border-radius: 4px;
+    padding: 6px;
+    background: rgba(0, 0, 0, 0.03);
+}
+
+.fang-dialog .fang-faction-item {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+.fang-dialog .fang-faction-item .faction-color {
+    flex: 0 0 30px;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border: 1px solid var(--fang-border-color);
+}
+
+.fang-dialog .fang-faction-item .faction-name {
+    flex: 1;
+}
+
+.fang-dialog .faction-icon-preview {
+    flex: 0 0 30px;
+    height: 30px;
+    border: 1px solid var(--fang-border-color);
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+}
+
+.fang-dialog .fang-faction-icon-btn,
+.fang-dialog .fang-faction-delete-btn {
+    flex: 0 0 30px;
+    width: 30px;
+    padding: 0;
+}
+
+.fang-dialog .fang-add-faction-btn {
+    flex: 0 0 auto;
+    width: 100%;
+    margin-bottom: 10px;
+    border: 1px solid var(--fang-accent-gold);
+    background: rgba(139, 0, 0, 0.05);
+    color: var(--fang-text-color);
+    font-weight: 700;
+}
+
+:root.fang-theme-cyberpunk .fang-dialog input[type="text"],
+:root.fang-theme-cyberpunk .fang-dialog select,
+:root.fang-theme-cyberpunk .fang-dialog textarea,
+body.fang-theme-cyberpunk .fang-dialog input[type="text"],
+body.fang-theme-cyberpunk .fang-dialog select,
+body.fang-theme-cyberpunk .fang-dialog textarea {
+    background: #0c1b2a;
+    color: #d9ecff;
+    border-color: #27506f;
+}
+
+:root.fang-theme-cyberpunk .fang-dialog input[type="checkbox"],
+body.fang-theme-cyberpunk .fang-dialog input[type="checkbox"] {
+    accent-color: #33d9ff;
+}
+
+:root.fang-theme-cyberpunk .fang-dialog .dialog-buttons button.cancel,
+body.fang-theme-cyberpunk .fang-dialog .dialog-buttons button.cancel {
+    background-color: #0d2031;
+    color: #33d9ff;
+    border-color: #2c5a7d;
+}
+
+:root.fang-theme-cyberpunk .fang-dialog .dialog-buttons button.cancel:hover,
+body.fang-theme-cyberpunk .fang-dialog .dialog-buttons button.cancel:hover {
+    background-color: #15324b;
+}
+
+:root.fang-theme-cyberpunk .fang-dialog #fang-factions-list,
+body.fang-theme-cyberpunk .fang-dialog #fang-factions-list {
+    background: rgba(8, 18, 30, 0.65);
+    border-color: #2c5a7d;
+}
+
+:root.fang-theme-cyberpunk .fang-dialog .fang-add-faction-btn,
+body.fang-theme-cyberpunk .fang-dialog .fang-add-faction-btn {
+    background: rgba(51, 217, 255, 0.08);
+    color: #d9ecff;
+}
+
+:root.fang-theme-cyberpunk .fang-dialog .faction-icon-preview,
+body.fang-theme-cyberpunk .fang-dialog .faction-icon-preview {
+    border-color: #2c5a7d;
+    background: rgba(10, 26, 42, 0.9);
 }
 
 /* --- Floating Context Menu --- */
@@ -2089,6 +2209,55 @@ body.fang-actor-panel-open .application:not(.sidebar-popout):not(.fang-app-windo
     margin: 0;
     font-style: italic;
     line-height: 1.4;
+}
+
+:root.fang-theme-cyberpunk .background-config-container .bg-config-section label,
+body.fang-theme-cyberpunk .background-config-container .bg-config-section label {
+    color: #7feaff;
+}
+
+:root.fang-theme-cyberpunk .background-config-container select,
+:root.fang-theme-cyberpunk .background-config-container input[type="text"],
+body.fang-theme-cyberpunk .background-config-container select,
+body.fang-theme-cyberpunk .background-config-container input[type="text"] {
+    background: #0c1b2a;
+    color: #d9ecff;
+    border-color: #27506f;
+}
+
+:root.fang-theme-cyberpunk .background-config-container .file-picker.small-btn,
+body.fang-theme-cyberpunk .background-config-container .file-picker.small-btn {
+    background: #0f2234;
+    color: #d9ecff;
+    border-color: #2c5a7d;
+}
+
+:root.fang-theme-cyberpunk .background-config-container .slider-group,
+body.fang-theme-cyberpunk .background-config-container .slider-group {
+    border-top-color: rgba(51, 217, 255, 0.24);
+}
+
+:root.fang-theme-cyberpunk .background-config-container .slider-label,
+body.fang-theme-cyberpunk .background-config-container .slider-label {
+    color: #9ec6e8;
+}
+
+:root.fang-theme-cyberpunk .background-config-container .premium-notice,
+body.fang-theme-cyberpunk .background-config-container .premium-notice {
+    background: rgba(51, 217, 255, 0.08);
+    border-color: rgba(51, 217, 255, 0.4);
+}
+
+:root.fang-theme-cyberpunk .background-config-container .premium-badge,
+body.fang-theme-cyberpunk .background-config-container .premium-badge {
+    background: linear-gradient(180deg, #33d9ff 0%, #1497bc 100%);
+    color: #041019;
+    box-shadow: 0 0 12px rgba(51, 217, 255, 0.55);
+}
+
+:root.fang-theme-cyberpunk .background-config-container .premium-notice p,
+body.fang-theme-cyberpunk .background-config-container .premium-notice p {
+    color: #9ec6e8;
 }
 
 @keyframes fangSlideIn {
