@@ -254,6 +254,10 @@
                 "Name": "Default Hidden Mode",
                 "Hint": "If enabled, new tokens dragged onto the graph are automatically hidden for players. You can reveal them later via the context menu."
             },
+            "CyberpunkTheme": {
+                "Name": "Enable Cyberpunk Theme",
+                "Hint": "Applies an optional neon cyberpunk visual style to the FANG window for all users."
+            },
             "InPersonGaming": {
                 "Name": "In-Person Gaming Mode",
                 "Hint": "Enables special monitor controls for tabletop gaming (e.g., second screen monitoring)."
