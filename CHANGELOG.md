@@ -3,6 +3,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.15] - 2026-04-22
+### Changed
+- **Foundry Compatibility Visibility:** Beta builds now include the Foundry compatibility range in the version string (`-beta.<run>.fvtt12-14`) to make supported generations immediately visible.
+- **Release Naming:** GitHub release names now include the Foundry compatibility target (`Release vX.Y.Z (FVTT 13-14)` and `Beta latest (FVTT 12-14)`).
+- **Version Bump:** Advanced the module version to v2.0.15.
+
 ## [2.0.14] - 2026-04-22
 ### Added
 - **Beta Release Channel:** Added an automated beta release workflow (`.github/workflows/release-beta.yml`) that builds from the `beta` branch and updates a fixed prerelease tag `beta-latest`.
