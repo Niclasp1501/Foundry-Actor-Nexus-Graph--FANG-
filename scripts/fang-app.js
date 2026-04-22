@@ -3154,7 +3154,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             new Dialog({
                 title: title,
                 content: `
-                                < p > <strong>${contentString}</strong></p >
+                    <p><strong>${contentString}</strong></p>
                     <div class="form-group" style="margin-bottom: 10px;">
                         <div class="form-fields">
                             <input type="text" id="fang-edit-link-name" value="${link.label || ""}" placeholder="${lblName}" style="width: 100%; font-family: var(--fang-font-main); padding: 5px;">
@@ -4874,7 +4874,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const confirm = await new Promise(resolve => {
             new Dialog({
                 title: game.i18n.localize("FANG.UI.Import"),
-                content: `< p > ${game.i18n.localize("FANG.Messages.ConfirmImport")}</p > `,
+                content: `<p>${game.i18n.localize("FANG.Messages.ConfirmImport")}</p>`,
                 buttons: {
                     yes: {
                         icon: '<i class="fas fa-check"></i>',
