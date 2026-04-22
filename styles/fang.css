@@ -1036,9 +1036,34 @@ body.fang-monitor .fang-app-container .narrative-close {
     height: auto;
 }
 
+.fang-dialog select {
+    width: 100%;
+    padding: 8px 10px;
+    background-color: #fff;
+    border: 1px solid var(--fang-border-color);
+    border-radius: 2px;
+    color: var(--fang-text-color);
+    font-family: var(--fang-font-main);
+    outline: none;
+    transition: all 0.2s;
+    height: auto;
+}
+
 .fang-dialog input[type="text"]:focus {
     border-color: var(--fang-accent-gold);
     box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.2);
+}
+
+.fang-dialog select:focus {
+    border-color: var(--fang-accent-gold);
+    box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.2);
+}
+
+/* Native dropdown list contrast fallback */
+.fang-dialog select option,
+.fang-dialog select optgroup {
+    background: #f4f7fb;
+    color: #0f1720;
 }
 
 .fang-dialog .dialog-buttons button {
@@ -1143,6 +1168,14 @@ body.fang-theme-cyberpunk .fang-dialog textarea {
     background: #0c1b2a;
     color: #d9ecff;
     border-color: #27506f;
+}
+
+:root.fang-theme-cyberpunk .fang-dialog select option,
+:root.fang-theme-cyberpunk .fang-dialog select optgroup,
+body.fang-theme-cyberpunk .fang-dialog select option,
+body.fang-theme-cyberpunk .fang-dialog select optgroup {
+    background: #f4f7fb;
+    color: #0f1720;
 }
 
 :root.fang-theme-cyberpunk .fang-dialog input[type="checkbox"],
