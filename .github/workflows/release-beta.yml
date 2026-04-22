@@ -21,18 +21,26 @@ jobs:
         run: |
           set -euo pipefail
 
+          fvtt_min="12"
+          fvtt_verified="14"
+          fvtt_max="14"
+          fvtt_label="fvtt${fvtt_min}-${fvtt_max}"
+
           base_version="$(jq -r '.version' module.json)"
           base_version="${base_version%%-beta.*}"
-          beta_version="${base_version}-beta.${GITHUB_RUN_NUMBER}"
+          beta_version="${base_version}-beta.${GITHUB_RUN_NUMBER}.${fvtt_label}"
 
           jq \
             --arg betaVersion "$beta_version" \
+            --arg fvttMin "$fvtt_min" \
+            --arg fvttVerified "$fvtt_verified" \
+            --arg fvttMax "$fvtt_max" \
             --arg manifestUrl "https://github.com/Niclasp1501/Foundry-Actor-Nexus-Graph--FANG-/releases/download/beta-latest/module-beta.json" \
             --arg downloadUrl "https://github.com/Niclasp1501/Foundry-Actor-Nexus-Graph--FANG-/releases/download/beta-latest/module-beta.zip" \
             '.version = $betaVersion
-             | .compatibility.minimum = "12"
-             | .compatibility.verified = "14"
-             | .compatibility.maximum = "14"
+             | .compatibility.minimum = $fvttMin
+             | .compatibility.verified = $fvttVerified
+             | .compatibility.maximum = $fvttMax
              | .manifest = $manifestUrl
              | .download = $downloadUrl' \
             module.json > module-beta.json
@@ -74,7 +82,7 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           tag_name: beta-latest
-          name: Beta latest
+          name: Beta latest (FVTT 12-14)
           draft: false
           prerelease: true
           make_latest: false

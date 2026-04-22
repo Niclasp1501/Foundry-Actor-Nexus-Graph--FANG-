@@ -24,7 +24,7 @@ jobs:
             module.json
             module.zip
           tag_name: ${{ github.ref_name }}
-          name: Release ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }} (FVTT 13-14)
           draft: false
           prerelease: false
         env:
