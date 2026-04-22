@@ -11,6 +11,8 @@ tools/*.local.json
 tools/*.tmp
 tools/*.log
 tools/*.bak
+tools/__pycache__/
+tools/i18n-translation-report.json
 
 # Local beta build artifacts
 module-beta.json

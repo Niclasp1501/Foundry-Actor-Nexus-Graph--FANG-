@@ -28,7 +28,7 @@ Status synced to `v14.0.18` / Stand synchronisiert auf `v14.0.18`.
 
 ## 3. Internationalization and Misc / Internationalisierung und Sonstiges
 
-- [ ] **3.1 Additional languages / Weitere Sprachen:** Community translations (e.g. Spanish, French) / Community-Uebersetzungen (z. B. Spanisch, Franzoesisch).
+- [x] **3.1 Additional languages / Weitere Sprachen:** Added French, Spanish, Portuguese (Brazil), Italian, Polish, Russian, Czech, and Dutch / Hinzugefuegt: Franzoesisch, Spanisch, Portugiesisch (Brasilien), Italienisch, Polnisch, Russisch, Tschechisch und Niederlaendisch.
 
 ## Removed from Roadmap / Aus der Planung entfernt
 
