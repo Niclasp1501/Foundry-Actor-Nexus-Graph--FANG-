@@ -152,6 +152,12 @@ body.fang-theme-cyberpunk {
     background: linear-gradient(180deg, #1a3a57 0%, #132a40 100%);
 }
 
+.fang-app-container.fang-theme-cyberpunk .action-btn.active {
+    background: linear-gradient(180deg, #33d9ff 0%, #1497bc 100%);
+    border-color: #ff2e88;
+    color: #041019;
+}
+
 .fang-app-container.fang-theme-cyberpunk .fang-lock-btn {
     background: linear-gradient(180deg, #ff2e88 0%, #b61f63 100%);
     border-color: #33d9ff;
@@ -598,6 +604,12 @@ body.role-player .fang-app-container .gm-only {
 .fang-app-container .action-btn:hover {
     background-color: #ebe5dc;
     box-shadow: none;
+}
+
+.fang-app-container .action-btn.active {
+    background-color: #f1dfba;
+    border-color: var(--fang-accent-gold);
+    color: var(--fang-primary-red);
 }
 
 .fang-app-container .file-label {
