@@ -400,15 +400,19 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         canvas.addEventListener("contextmenu", this._onCanvasRightClick.bind(this));
         canvas.addEventListener("mousemove", this._handleCanvasMouseMove.bind(this));
 
-        // Tab Navigation Logic
+        // Tab Navigation Logic (with ARIA state sync)
         const tabBtns = this.element.querySelectorAll(".tab-btn");
         const tabContents = this.element.querySelectorAll(".tab-content");
         tabBtns.forEach(btn => {
             btn.addEventListener("click", (e) => {
                 const targetTab = e.currentTarget.dataset.tab;
-                tabBtns.forEach(b => b.classList.remove("active"));
+                tabBtns.forEach(b => {
+                    b.classList.remove("active");
+                    if (b.hasAttribute("role")) b.setAttribute("aria-selected", "false");
+                });
                 tabContents.forEach(c => c.classList.remove("active"));
                 e.currentTarget.classList.add("active");
+                if (e.currentTarget.hasAttribute("role")) e.currentTarget.setAttribute("aria-selected", "true");
                 const targetContent = this.element.querySelector(`.tab-content[data-tab="${targetTab}"]`);
                 if (targetContent) targetContent.classList.add("active");
             });

@@ -3,6 +3,34 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [14.1.0-beta.1] - 2026-05-04
+### Beta — Design System Pass
+A focused design refactor; no functional/gameplay changes. Marked **beta** because the surface area touched is large.
+
+### Added
+- **Design Tokens:** New CSS custom properties for spacing (`--fang-space-1..6`), radius (`--fang-radius-sm/md/lg/pill`), text sizes (`--fang-text-xs..3xl`), shadows (`--fang-shadow-lg/xl`), motion (`--fang-anim-fast/base/slow`) and z-index layers (`--fang-z-bg/tooltip/context-menu/spectator/overlay/fullscreen`).
+- **Color Tokens:** Promoted hardcoded values to variables — `--fang-primary-red-hover`, `--fang-primary-red-light`, `--fang-text-muted/soft/faint/helper/mute-warm`, `--fang-bg-alt`, `--fang-bg-banner`, `--fang-border-hover`, `--fang-danger`, `--fang-danger-bg`.
+- **Utility Classes:** Added `.fang-form-row`, `.fang-form-label[--small]`, `.fang-inline-checkbox`, `.fang-help-text[--tight]`, `.fang-section-hint`, `.fang-edit-group`, `.fang-button-row-tight`, `.fang-slider[-group/-meta]`, `.fang-visually-hidden`, `.fang-quest-picker[-header/-list]`, `.btn--block`, `.btn--accent`.
+- **Accessibility:** Tab navigation now uses real `<button role="tab">` elements with `aria-selected` (synced via JS) and `aria-label` for icon-only tabs. `<i>` icons carry `aria-hidden="true"`. Added `:focus-visible` outlines for tabs, buttons, inputs, selects, lock-button and context-menu items. Added `prefers-reduced-motion` media query that disables all animations/transitions for affected users.
+
+### Changed
+- **CSS deduplication:** Removed ~250 lines of duplicate definitions for `.narrative-quest-item`, `.narrative-quests-header`, `#narrative-quests-container`, `.narrative-close`, `.edge-spotlight-card`, `.spectator-active-indicator`, `.button-group-nest` and the `@keyframes fangPulseIndicator` block. Single source of truth restored.
+- **Background presets:** Merged the duplicated `.preset-tile.preset-*` (config dialog) and `#fang-bg-layer.fang-bg-preset-*` (canvas layer) declarations into shared selectors. Saved 6 large `data:` SVG noise URLs from being parsed twice.
+- **Cyberpunk theme:** Three separate selectors (`:root`, `body`, `.fang-app-container`) merged into a single grouped selector. Theme also now provides muted-text overrides for cyberpunk palette.
+- **Tab markup:** `<a class="tab-btn">` → `<button type="button" class="tab-btn" role="tab">`. Properly keyboard-focusable; CSS resets the native button look.
+- **Z-index sanity:** Replaced literal `2147483647` with the `--fang-z-fullscreen` token (`200000`).
+- **`will-change` discipline:** `#fang-bg-layer` no longer permanently advertises `will-change: opacity, transform, filter`. Promotion is now opt-in via `.is-animating`.
+- **Inline styles removed:** All `style="…"` attributes inside `templates/fang-app.hbs` (≈ 25 instances) replaced with utility classes — including the large quest-picker block and the edge-directional indicator. Easier to theme & override.
+- **Danger button:** `.btn.danger-btn` is now a defined CSS variant (was previously inline-styled per-button).
+
+### Fixed
+- **Mixed `font-weight` on `.button-group-nest h4`:** removed conflicting `font-weight: 800` and `font-weight: 600` overrides — header now has a single, intentional weight.
+- **Conflicting checkbox styles:** Inline checkbox markup had `style="width:auto; margin:0; cursor:pointer"` repeated 8× — now a single `.fang-inline-checkbox` class.
+
+### Notes
+- File size: `styles/fang.css` shrunk from **2518 → ~2500** lines while gaining new utilities (net −250 duplicate lines, +250 token/utility/a11y lines).
+- No JS API changes. Foundry compatibility unchanged (V13 / V14).
+
 ## [14.0.19] - 2026-04-22
 ### Added
 - **Expanded Localization Pack:** Added full i18n files for French (`fr`), Spanish (`es`), Portuguese Brazil (`pt-BR`), Italian (`it`), Polish (`pl`), Russian (`ru`), Czech (`cs`), and Dutch (`nl`).

@@ -1,24 +1,79 @@
 :root {
-    /* D&D Reference Design - Strict Red/Gold Theme */
+    /* === D&D Reference Design - Strict Red/Gold Theme === */
     --fang-bg-color: #fdfbf7;
     /* Parchment Light */
     --fang-text-color: #1a1a1a;
     --fang-card-bg: #ffffff;
     --fang-nav-bg: #f4f1ea;
+    --fang-bg-alt: #ebe5dc;
+    --fang-bg-banner: #e9e4d9;
     --fang-border-color: #dcd6cc;
+    --fang-border-hover: #c0b9ae;
 
-    /* Strict Theme Colors */
+    /* === Theme Colors === */
     --fang-primary-red: #8B0000;
-    /* Dark D&D Red */
+    --fang-primary-red-hover: #600000;
+    --fang-primary-red-light: #a00000;
     --fang-accent-gold: #D4AF37;
-    /* Metallic Gold */
+    --fang-accent-gold-soft: rgba(212, 175, 55, 0.2);
     --fang-header-text: #ffffff;
     --fang-canvas-bg: #fbf9f4;
-    /* Slightly darker parchment for canvas */
+    --fang-danger: #ff4d4d;
+    --fang-danger-bg: #ffe6e6;
 
+    /* === Text colors === */
+    --fang-text-muted: #666;
+    --fang-text-soft: #888;
+    --fang-text-faint: #aaa;
+    --fang-text-helper: #444;
+    --fang-text-mute-warm: #887b66;
+
+    /* === Typography === */
     --fang-font-main: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    --fang-font-display: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    --fang-text-xs: 0.7rem;
+    --fang-text-sm: 0.8rem;
+    --fang-text-md: 0.9rem;
+    --fang-text-base: 0.95rem;
+    --fang-text-lg: 1.1rem;
+    --fang-text-xl: 1.25rem;
+    --fang-text-2xl: 1.4rem;
+    --fang-text-3xl: 2rem;
+
+    /* === Spacing scale === */
+    --fang-space-1: 4px;
+    --fang-space-2: 8px;
+    --fang-space-3: 12px;
+    --fang-space-4: 15px;
+    --fang-space-5: 20px;
+    --fang-space-6: 30px;
+
+    /* === Radius scale === */
+    --fang-radius-sm: 2px;
+    --fang-radius-md: 4px;
+    --fang-radius-lg: 8px;
+    --fang-radius-pill: 25px;
+
+    /* === Shadows === */
     --fang-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
     --fang-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+    --fang-shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.15);
+    --fang-shadow-xl: 0 20px 50px rgba(0, 0, 0, 0.5);
+
+    /* === Z-index layers === */
+    --fang-z-bg: 0;
+    --fang-z-canvas-overlay: 1;
+    --fang-z-tooltip: 999;
+    --fang-z-context-menu: 1000;
+    --fang-z-canvas-lock: 1000;
+    --fang-z-spectator: 1500;
+    --fang-z-overlay: 2000;
+    --fang-z-fullscreen: 200000;
+
+    /* === Motion === */
+    --fang-anim-fast: 0.15s ease;
+    --fang-anim-base: 0.2s ease;
+    --fang-anim-slow: 0.3s ease;
 }
 
 .fang-app-window .fang-content {
@@ -66,31 +121,28 @@
     box-sizing: border-box;
 }
 
-/* Optional Theme: Cyberpunk (enabled via standard module settings) */
+/* === Optional Theme: Cyberpunk (enabled via module settings) === */
 :root.fang-theme-cyberpunk,
-body.fang-theme-cyberpunk {
-    --fang-bg-color: #071019;
-    --fang-text-color: #d9ecff;
-    --fang-card-bg: #0b1622;
-    --fang-nav-bg: #0a1320;
-    --fang-border-color: #1f3a56;
-    --fang-primary-red: #ff2e88;
-    --fang-accent-gold: #33d9ff;
-    --fang-header-text: #e8fbff;
-    --fang-canvas-bg: #040911;
-    --fang-font-main: "Rajdhani", "Trebuchet MS", "Segoe UI", sans-serif;
-}
-
+body.fang-theme-cyberpunk,
 .fang-app-container.fang-theme-cyberpunk {
     --fang-bg-color: #071019;
     --fang-text-color: #d9ecff;
     --fang-card-bg: #0b1622;
     --fang-nav-bg: #0a1320;
+    --fang-bg-alt: #15324b;
+    --fang-bg-banner: #0c1b2a;
     --fang-border-color: #1f3a56;
+    --fang-border-hover: #2c5a7d;
     --fang-primary-red: #ff2e88;
+    --fang-primary-red-hover: #b61f63;
+    --fang-primary-red-light: #ff5ca4;
     --fang-accent-gold: #33d9ff;
+    --fang-accent-gold-soft: rgba(51, 217, 255, 0.24);
     --fang-header-text: #e8fbff;
     --fang-canvas-bg: #040911;
+    --fang-text-muted: #9ec6e8;
+    --fang-text-soft: #7fa4c8;
+    --fang-text-helper: #b9e8ff;
     --fang-font-main: "Rajdhani", "Trebuchet MS", "Segoe UI", sans-serif;
 }
 
@@ -393,11 +445,14 @@ body.role-player .fang-app-container .gm-only {
     padding: 10px 5px;
     text-align: center;
     cursor: pointer;
+    font-family: inherit;
     font-weight: 700;
     font-size: 0.85rem;
-    color: #666;
+    color: var(--fang-text-muted);
+    background: transparent;
+    border: none;
     border-bottom: 3px solid transparent;
-    transition: all 0.2s ease;
+    transition: color var(--fang-anim-base), background-color var(--fang-anim-base), border-color var(--fang-anim-base);
     text-transform: uppercase;
 }
 
@@ -745,8 +800,8 @@ body #fang-app.fang-app-window.fang-fullscreen-player {
     border: none !important;
     box-shadow: none !important;
     border-radius: 0 !important;
-    z-index: 2147483647 !important;
-    /* Maximum possible z-index to cover Monk's Display */
+    z-index: var(--fang-z-fullscreen) !important;
+    /* High but sane z-index to cover Monk's Display etc. */
     overflow: hidden !important;
 }
 
@@ -1594,221 +1649,26 @@ body.fang-theme-cyberpunk .fang-dialog .faction-icon-preview {
 .fang-app-container .button-group-nest {
     display: flex;
     flex-direction: column;
-    gap: 4px;
-    padding: 8px 10px;
+    gap: var(--fang-space-1);
+    padding: var(--fang-space-2) 10px;
     background: rgba(0, 0, 0, 0.03);
     border: 1px solid var(--fang-border-color);
     border-left: 3px solid var(--fang-accent-gold);
-    border-radius: 4px;
-    margin-bottom: 8px;
-    transition: all 0.2s ease;
+    border-radius: var(--fang-radius-md);
+    margin-bottom: var(--fang-space-2);
+    transition: background var(--fang-anim-base), border-color var(--fang-anim-base);
 }
 
 .fang-app-container .button-group-nest:hover {
     background: rgba(0, 0, 0, 0.05);
-    border-color: #c0b9ae;
+    border-color: var(--fang-border-hover);
 }
 
 .fang-app-container .button-group-nest h4 {
-    font-size: 0.7rem;
+    font-size: var(--fang-text-xs);
     font-weight: 800;
     text-transform: uppercase;
-    color: #888;
-    margin: 0 0 6px 0;
-    letter-spacing: 0.8px;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-    font-style: italic;
-    margin-bottom: 10px;
-    font-weight: 600;
-    word-break: break-word;
-    overflow-wrap: break-word;
-}
-
-#narrative-text,
-#edge-narrative-text {
-    font-family: var(--fang-font-main);
-    font-size: 1.25rem;
-    line-height: 1.7;
-    color: #222;
-    font-style: italic;
-    white-space: pre-wrap;
-    word-break: break-word;
-    overflow-wrap: break-word;
-    margin-top: 10px;
-}
-
-.fang-app-container #narrative-quests-container {
-    flex: 0 0 auto;
-    width: 100%;
-    border-top: 1px solid var(--fang-accent-gold);
-    padding-top: 15px;
-    display: flex;
-    flex-direction: column;
-}
-
-.fang-app-container #narrative-quests-container.hidden {
-    display: none;
-}
-
-.fang-app-container .narrative-quests-header {
-    font-size: 1.25rem;
-    font-weight: 800;
-    text-transform: uppercase;
-    color: var(--fang-primary-red);
-    margin-bottom: 15px;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-    padding-bottom: 6px;
-    letter-spacing: 0.5px;
-}
-
-.fang-app-container #narrative-quests-list {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-}
-
-.fang-app-container .narrative-quest-item {
-    font-family: var(--fang-font-main);
-    font-size: 1.05rem;
-    padding: 8px 12px;
-    margin-bottom: 6px;
-    background: rgba(0, 0, 0, 0.03);
-    border-radius: 4px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    border-left: 3px solid transparent;
-}
-
-.fang-app-container .narrative-quest-item:hover {
-    background: rgba(212, 175, 55, 0.08);
-    border-left-color: var(--fang-primary-red);
-    transform: translateX(4px);
-    color: var(--fang-primary-red);
-}
-
-.fang-app-container .narrative-quest-item i {
-    color: var(--fang-accent-gold);
-}
-
-/* --- Edge Specific Override for Spotlight --- */
-.fang-app-container .edge-spotlight-card {
-    max-width: 900px;
-    /* Wider for dual portraits */
-    justify-content: space-between;
-    align-items: center;
-}
-
-.fang-app-container .edge-spotlight-card .edge-content {
-    text-align: center;
-    padding: 0 20px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-}
-
-.fang-app-container .edge-spotlight-card h2#edge-narrative-title {
-    font-size: 2rem;
-    color: var(--fang-primary-red);
-    margin: 0 0 15px 0;
-    border-bottom: 2px solid var(--fang-accent-gold);
-    padding-bottom: 5px;
-    font-weight: 800;
-    display: inline-block;
-    align-self: center;
-    text-align: center;
-    word-break: break-word;
-    overflow-wrap: break-word;
-}
-
-.fang-app-container .narrative-close {
-    position: absolute;
-    top: 15px;
-    right: 15px;
-    color: #888;
-    cursor: pointer;
-    font-size: 1.4rem;
-    transition: color 0.2s;
-    z-index: 10;
-}
-
-.fang-app-container .narrative-close:hover {
-    color: var(--fang-primary-red);
-}
-
-/* Spectator Mode Indicator */
-.fang-app-container .spectator-active-indicator {
-    position: absolute;
-    bottom: 20px;
-    right: 20px;
-    background: rgba(139, 0, 0, 0.85);
-    color: white;
-    padding: 8px 20px;
-    border-radius: 25px;
-    font-size: 0.85rem;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 1.2px;
-    z-index: 1500;
-    pointer-events: none;
-    display: none;
-    /* Shown via JS */
-    align-items: center;
-    gap: 10px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4), 0 0 10px rgba(139, 0, 0, 0.4);
-    border: 1px solid var(--fang-accent-gold);
-}
-
-.fang-app-container .spectator-active-indicator.active {
-    display: flex;
-    animation: fangFadeIn 0.3s ease;
-}
-
-.fang-app-container .spectator-active-indicator i {
-    animation: fangPulseIndicator 1.5s linear infinite;
-    color: #ff4d4d;
-}
-
-@keyframes fangPulseIndicator {
-    0% {
-        opacity: 1;
-    }
-
-    50% {
-        opacity: 0.3;
-    }
-
-    100% {
-        opacity: 1;
-    }
-}
-
-/* --- UI Button Grouping Nest --- */
-.fang-app-container .button-group-nest {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    padding: 8px 10px;
-    background: rgba(0, 0, 0, 0.03);
-    border: 1px solid var(--fang-border-color);
-    border-left: 3px solid var(--fang-accent-gold);
-    border-radius: 4px;
-    margin-bottom: 8px;
-    transition: all 0.2s ease;
-}
-
-.fang-app-container .button-group-nest:hover {
-    background: rgba(0, 0, 0, 0.05);
-    border-color: #c0b9ae;
-}
-
-.fang-app-container .button-group-nest h4 {
-    font-size: 0.7rem;
-    font-weight: 800;
-    text-transform: uppercase;
-    color: #888;
+    color: var(--fang-text-soft);
     margin: 0 0 6px 0;
     letter-spacing: 0.8px;
     border-bottom: 1px solid rgba(0, 0, 0, 0.05);
@@ -1834,12 +1694,16 @@ body.fang-actor-panel-open .application:not(.sidebar-popout):not(.fang-app-windo
     left: 0;
     width: 100%;
     height: 100%;
-    z-index: 0;
+    z-index: var(--fang-z-bg);
     pointer-events: none;
     transition: background-color 0.25s ease, opacity 0.25s ease;
     transform-origin: center;
-    will-change: opacity, transform, filter;
     backface-visibility: hidden;
+}
+
+/* Promote to its own layer only while animating/transitioning */
+.fang-app-container #fang-bg-layer.is-animating {
+    will-change: opacity, transform, filter;
 }
 
 .fang-app-container #fang-bg-layer.no-transition {
@@ -2131,7 +1995,9 @@ body.fang-actor-panel-open .application:not(.sidebar-popout):not(.fang-app-windo
     text-align: left;
 }
 
-.background-config-container .preset-tile.preset-parchment {
+/* === Background Presets — shared visuals for tile thumbnails AND #fang-bg-layer === */
+.background-config-container .preset-tile.preset-parchment,
+.fang-app-container #fang-bg-layer.fang-bg-preset-parchment {
     background-color: #f3e6cf;
     background-image:
         radial-gradient(circle at 18% 38%, rgba(120, 75, 35, 0.10) 0%, transparent 58%),
@@ -2142,8 +2008,12 @@ body.fang-actor-panel-open .application:not(.sidebar-popout):not(.fang-app-windo
         radial-gradient(circle at 50% 55%, transparent 62%, rgba(60, 40, 20, 0.18) 100%);
     background-blend-mode: multiply, multiply, normal, normal, overlay, normal;
 }
+.fang-app-container #fang-bg-layer.fang-bg-preset-parchment {
+    filter: sepia(0.25) contrast(1.05);
+}
 
-.background-config-container .preset-tile.preset-dark {
+.background-config-container .preset-tile.preset-dark,
+.fang-app-container #fang-bg-layer.fang-bg-preset-dark {
     background: linear-gradient(135deg, #0f2a16 0%, #1f3b1e 55%, #2b2012 100%);
     background-image:
         radial-gradient(circle at 22% 30%, rgba(255, 238, 180, 0.13) 0%, transparent 45%),
@@ -2155,7 +2025,8 @@ body.fang-actor-panel-open .application:not(.sidebar-popout):not(.fang-app-windo
     background-blend-mode: screen, screen, multiply, overlay, normal;
 }
 
-.background-config-container .preset-tile.preset-starfield {
+.background-config-container .preset-tile.preset-starfield,
+.fang-app-container #fang-bg-layer.fang-bg-preset-starfield {
     background-color: #020205;
     background-image:
         radial-gradient(circle at 18% 28%, rgba(170, 80, 255, 0.28) 0%, transparent 48%),
@@ -2169,7 +2040,8 @@ body.fang-actor-panel-open .application:not(.sidebar-popout):not(.fang-app-windo
     background-blend-mode: screen, screen, screen, overlay, normal, normal;
 }
 
-.background-config-container .preset-tile.preset-ethereal {
+.background-config-container .preset-tile.preset-ethereal,
+.fang-app-container #fang-bg-layer.fang-bg-preset-ethereal {
     background: linear-gradient(135deg, #1a0d2e 0%, #0c2b3b 55%, #10341f 100%);
     background-image:
         radial-gradient(circle at 24% 32%, rgba(0, 255, 208, 0.14) 0%, transparent 46%),
@@ -2180,8 +2052,12 @@ body.fang-actor-panel-open .application:not(.sidebar-popout):not(.fang-app-windo
     background-size: cover, cover, cover, 260px 260px, cover;
     background-blend-mode: screen, screen, screen, overlay, normal;
 }
+.fang-app-container #fang-bg-layer.fang-bg-preset-ethereal {
+    opacity: 0.8;
+}
 
-.background-config-container .preset-tile.preset-stone {
+.background-config-container .preset-tile.preset-stone,
+.fang-app-container #fang-bg-layer.fang-bg-preset-stone {
     background-color: #2a2a2a;
     background-image:
         repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.045) 0 1px, rgba(0, 0, 0, 0) 1px 9px),
@@ -2190,7 +2066,8 @@ body.fang-actor-panel-open .application:not(.sidebar-popout):not(.fang-app-windo
     background-blend-mode: overlay;
 }
 
-.background-config-container .preset-tile.preset-stars {
+.background-config-container .preset-tile.preset-stars,
+.fang-app-container #fang-bg-layer.fang-bg-preset-stars {
     background-color: #000;
     background-image:
         radial-gradient(white, rgba(255,255,255,.2) 2px, transparent 40px),
@@ -2297,76 +2174,7 @@ body.fang-theme-cyberpunk .background-config-container .premium-notice p {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
 }
-/* Background Presets - Enhanced Visuals */
-.fang-app-container #fang-bg-layer.fang-bg-preset-parchment {
-    background-color: #f3e6cf;
-    background-image: 
-        radial-gradient(circle at 18% 38%, rgba(120, 75, 35, 0.10) 0%, transparent 58%),
-        radial-gradient(circle at 78% 62%, rgba(120, 75, 35, 0.08) 0%, transparent 62%),
-        linear-gradient(0deg, rgba(90, 60, 30, 0.04), rgba(255,255,255,0) 45%),
-        repeating-linear-gradient(90deg, rgba(120, 90, 50, 0.018) 0 2px, rgba(255, 255, 255, 0) 2px 7px),
-        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.95' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='260' height='260' filter='url(%23n)' opacity='.10'/%3E%3C/svg%3E"),
-        radial-gradient(circle at 50% 55%, transparent 62%, rgba(60, 40, 20, 0.18) 100%);
-    background-blend-mode: multiply, multiply, normal, normal, overlay, normal;
-    filter: sepia(0.25) contrast(1.05);
-}
-
-.fang-app-container #fang-bg-layer.fang-bg-preset-dark {
-    background: linear-gradient(135deg, #0f2a16 0%, #1f3b1e 55%, #2b2012 100%);
-    background-image:
-        radial-gradient(circle at 22% 30%, rgba(255, 238, 180, 0.13) 0%, transparent 45%),
-        radial-gradient(circle at 74% 68%, rgba(255, 238, 180, 0.10) 0%, transparent 52%),
-        radial-gradient(circle at 50% 55%, rgba(0, 0, 0, 0.35) 0%, transparent 65%),
-        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='320' height='320' filter='url(%23n)' opacity='.14'/%3E%3C/svg%3E"),
-        radial-gradient(circle at 50% 50%, transparent 58%, rgba(0,0,0,0.45) 100%);
-    background-size: cover, cover, cover, 260px 260px, cover;
-    background-blend-mode: screen, screen, multiply, overlay, normal;
-}
-
-.fang-app-container #fang-bg-layer.fang-bg-preset-starfield {
-    background-color: #020205 !important;
-    background-image: 
-        radial-gradient(circle at 18% 28%, rgba(170, 80, 255, 0.28) 0%, transparent 48%),
-        radial-gradient(circle at 78% 68%, rgba(60, 140, 255, 0.22) 0%, transparent 52%),
-        radial-gradient(circle at 88% 22%, rgba(0, 200, 180, 0.10) 0%, transparent 45%),
-        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='320' height='320' filter='url(%23n)' opacity='.22'/%3E%3C/svg%3E"),
-        radial-gradient(rgba(255,255,255,0.85) 0.9px, transparent 1.1px),
-        radial-gradient(rgba(255,255,255,0.55) 0.7px, transparent 0.9px);
-    background-size: cover, cover, cover, 260px 260px, 170px 170px, 260px 260px;
-    background-position: center, center, center, 0 0, 10px 30px, 60px 90px;
-    background-blend-mode: screen, screen, screen, overlay, normal, normal;
-}
-
-.fang-app-container #fang-bg-layer.fang-bg-preset-ethereal {
-    background: linear-gradient(135deg, #1a0d2e 0%, #0c2b3b 55%, #10341f 100%) !important;
-    background-image:
-        radial-gradient(circle at 24% 32%, rgba(0, 255, 208, 0.14) 0%, transparent 46%),
-        radial-gradient(circle at 70% 62%, rgba(170, 80, 255, 0.18) 0%, transparent 52%),
-        radial-gradient(circle at 85% 20%, rgba(255, 255, 255, 0.08) 0%, transparent 40%),
-        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='360' height='360'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='360' height='360' filter='url(%23n)' opacity='.16'/%3E%3C/svg%3E"),
-        radial-gradient(circle at 50% 55%, transparent 58%, rgba(0,0,0,0.40) 100%) !important;
-    background-size: cover, cover, cover, 260px 260px, cover;
-    background-blend-mode: screen, screen, screen, overlay, normal;
-    opacity: 0.8;
-}
-
-.fang-app-container #fang-bg-layer.fang-bg-preset-stone {
-    background-color: #2a2a2a !important;
-    background-image: 
-        repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.045) 0 1px, rgba(0, 0, 0, 0) 1px 9px),
-        radial-gradient(circle at 35% 35%, rgba(0, 0, 0, 0.35) 0%, transparent 55%),
-        linear-gradient(rgba(0,0,0,0.28), rgba(0,0,0,0.28)) !important;
-    background-blend-mode: overlay;
-}
-
-.fang-app-container #fang-bg-layer.fang-bg-preset-stars {
-      background-color: #000 !important;
-      background-image: 
-        radial-gradient(white, rgba(255,255,255,.2) 2px, transparent 40px),
-        radial-gradient(white, rgba(255,255,255,.15) 1px, transparent 30px) !important;
-    background-size: 550px 550px, 350px 350px !important;
-    background-position: 40px 60px, 130px 270px !important;
-}
+/* Background Presets - shared visuals are defined in the .preset-tile/* selectors above */
 
 /* --- Narrative Sidebar & Quest Quests --- */
 .fang-app-container .narrative-left-side {
@@ -2515,4 +2323,216 @@ body.fang-actor-panel-open #fang-so-actors-btn,
 body:has(.actors-sidebar.sidebar-popout:has(.window-content > *)) #fang-so-actors-btn {
     color: #ff3b3b !important;
     text-shadow: 0 0 10px rgba(255, 59, 59, 0.4);
+}
+
+/* ===========================================================================
+ * UTILITY CLASSES (replace inline styles in templates)
+ * =========================================================================== */
+
+/* Sidebar form rows (label + checkbox/control) */
+.fang-app-container .fang-form-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--fang-space-1);
+    padding: var(--fang-space-1) 0;
+    gap: var(--fang-space-2);
+}
+
+.fang-app-container .fang-form-row.compact {
+    margin-bottom: 5px;
+    margin-top: 5px;
+}
+
+.fang-app-container .fang-form-label {
+    font-size: var(--fang-text-md);
+    font-weight: 700;
+    cursor: pointer;
+    margin: 0;
+}
+
+.fang-app-container .fang-form-label--small {
+    font-size: var(--fang-text-md);
+    cursor: pointer;
+}
+
+.fang-app-container .fang-inline-checkbox {
+    width: auto;
+    margin: 0;
+    cursor: pointer;
+}
+
+.fang-app-container .fang-help-text {
+    font-size: var(--fang-text-sm);
+    color: var(--fang-text-muted);
+    margin: 0 0 5px 0;
+    line-height: 1.3;
+}
+
+.fang-app-container .fang-help-text--tight {
+    margin-top: 0;
+    margin-bottom: 5px;
+    line-height: 1.2;
+}
+
+.fang-app-container .fang-section-hint {
+    margin-top: 5px;
+    font-size: var(--fang-text-sm);
+    opacity: 0.8;
+}
+
+/* Stretch a button to full width */
+.fang-app-container .btn--block {
+    width: 100%;
+}
+
+/* Highlighted action button (gold border accent) */
+.fang-app-container .btn--accent {
+    border-color: var(--fang-accent-gold);
+}
+
+/* Danger button variant — single source of truth */
+.fang-app-container .btn.danger-btn {
+    background: var(--fang-primary-red);
+    color: var(--fang-header-text);
+    border: 1px solid var(--fang-primary-red-hover);
+    border-bottom: 2px solid rgba(0, 0, 0, 0.2);
+}
+
+.fang-app-container .btn.danger-btn:hover {
+    background: var(--fang-primary-red-hover);
+    box-shadow: none;
+}
+
+/* Inline edit groups (Node/Link Edit) */
+.fang-app-container .fang-edit-group {
+    margin-top: var(--fang-space-4);
+    border-top: 1px solid var(--fang-accent-gold);
+    padding-top: 10px;
+}
+
+.fang-app-container .fang-edit-group h3 {
+    font-size: var(--fang-text-lg);
+    color: var(--fang-accent-gold);
+    margin-bottom: 5px;
+}
+
+.fang-app-container .fang-button-row-tight {
+    display: flex;
+    gap: 5px;
+}
+
+/* Range slider pill */
+.fang-app-container .fang-slider-group {
+    margin-bottom: 5px;
+}
+
+.fang-app-container .fang-slider-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: var(--fang-text-sm);
+    color: var(--fang-text-muted);
+    margin-bottom: 2px;
+}
+
+.fang-app-container input[type="range"].fang-slider {
+    width: 100%;
+    height: 6px;
+    margin: 5px 0;
+}
+
+/* Hidden file input (used by Import) */
+.fang-app-container .fang-visually-hidden,
+.fang-app-container input[type="file"].fang-visually-hidden {
+    display: none;
+}
+
+/* Quest picker panel (in-canvas) */
+.fang-quest-picker {
+    position: absolute;
+    z-index: var(--fang-z-context-menu);
+    min-width: 220px;
+    max-width: 300px;
+    background: var(--fang-card-bg);
+    border: 1px solid var(--fang-border-color);
+    border-radius: 6px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25), 0 0 10px rgba(212, 175, 55, 0.12);
+    font-family: var(--fang-font-main);
+    overflow: hidden;
+}
+
+.fang-quest-picker-header {
+    padding: 9px 12px;
+    background: var(--fang-primary-red);
+    color: var(--fang-header-text);
+    border-bottom: 2px solid var(--fang-accent-gold);
+    font-size: 0.85rem;
+    font-weight: bold;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: var(--fang-space-2);
+}
+
+.fang-quest-picker-header i {
+    color: var(--fang-accent-gold);
+}
+
+.fang-quest-picker-list {
+    list-style: none;
+    margin: 0;
+    padding: 5px 0;
+}
+
+/* Edge directional indicator (centered between portraits) */
+.fang-app-container .edge-directional-indicator {
+    align-self: center;
+    font-size: 2.5em;
+    color: var(--fang-accent-gold);
+    margin: 0 var(--fang-space-4);
+    opacity: 0.8;
+    text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+/* ===========================================================================
+ * Accessibility — focus-visible, reduced motion, ARIA hooks
+ * =========================================================================== */
+
+.fang-app-container .tab-btn:focus-visible,
+.fang-app-container .btn:focus-visible,
+.fang-app-container input[type="text"]:focus-visible,
+.fang-app-container select:focus-visible,
+.fang-lock-btn:focus-visible {
+    outline: 2px solid var(--fang-accent-gold);
+    outline-offset: 2px;
+}
+
+.fang-app-container .ctx-item:focus-visible {
+    outline: 2px solid var(--fang-accent-gold);
+    outline-offset: -2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+
+    .fang-app-container .tab-btn.active i {
+        animation: none;
+    }
+}
+
+/* Mark icons as decorative for screen readers */
+.fang-app-container .ctx-item i,
+.fang-app-container .tab-btn i,
+.fang-app-container .narrative-quest-item i,
+.fang-app-container .btn i {
+    /* JS/template should add aria-hidden="true"; this is a visual fallback */
+    pointer-events: none;
 }
