@@ -263,6 +263,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         this._searchMatchedNodeIds = new Set();
         this._searchMatchedLinkIndices = new Set();
         this._searchUiVisible = false;
+        this._isFactionGroupingActive = false;
+        this._factionClusterTargets = null;
     }
 
     async _prepareContext(options) {
@@ -495,6 +497,12 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 game.socket.emit("module.fang", { action: "centerGraph" });
             });
 
+            const btnGroupByFaction = this.element.querySelector("#btnGroupByFaction");
+            if (btnGroupByFaction) btnGroupByFaction.addEventListener("click", (e) => {
+                e.preventDefault();
+                this._onToggleGroupByFaction();
+            });
+
             const cbAllowPlayerEdit = this.element.querySelector("#cbAllowPlayerEdit");
             if (cbAllowPlayerEdit) {
                 cbAllowPlayerEdit.checked = game.settings.get("fang", "allowPlayerEditing");
@@ -557,6 +565,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         } else {
             setTimeout(() => this.resizeCanvas(), 50);
         }
+
+        this._updateGroupByFactionButtonState();
 
         // Apply background initially for all users
         this._applyBackground();
@@ -3479,8 +3489,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         this.canvas.height = this.height;
         if (this.simulation) {
             this.simulation.force("center", d3.forceCenter(this.width / 2, this.height / 2));
-            this.simulation.force("x", d3.forceX(this.width / 2).strength(node => node.isCenter ? 0.4 : 0.025));
-            this.simulation.force("y", d3.forceY(this.height / 2).strength(node => node.isCenter ? 0.4 : 0.025));
+            this._applyAxisForces();
             this.simulation.alpha(0.1).restart(); // Lower alpha bump on resize to prevent wild scattering
         }
 
@@ -3527,6 +3536,113 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             // Delay slightly to allow simulation to get initial positions and container to settle
             setTimeout(() => this.zoomToFit(false), 200);
         }
+    }
+
+    _getNodeTargetX(node) {
+        if (node?.isCenter) return this.width / 2;
+        const groupedTarget = this._factionClusterTargets?.get(node?.id);
+        return groupedTarget ? groupedTarget.x : this.width / 2;
+    }
+
+    _getNodeTargetY(node) {
+        if (node?.isCenter) return this.height / 2;
+        const groupedTarget = this._factionClusterTargets?.get(node?.id);
+        return groupedTarget ? groupedTarget.y : this.height / 2;
+    }
+
+    _getNodeAxisStrength(node) {
+        if (node?.isCenter) return 0.4;
+        if (this._isFactionGroupingActive && this._factionClusterTargets?.has(node?.id)) return 0.11;
+        return 0.025;
+    }
+
+    _applyAxisForces() {
+        if (!this.simulation) return;
+        this.simulation
+            .force("x", d3.forceX(node => this._getNodeTargetX(node)).strength(node => this._getNodeAxisStrength(node)))
+            .force("y", d3.forceY(node => this._getNodeTargetY(node)).strength(node => this._getNodeAxisStrength(node)));
+    }
+
+    _buildFactionClusterTargets() {
+        const factionsById = new Set((this.graphData.factions || []).map(f => f.id));
+        const buckets = new Map();
+        const allNodes = Array.isArray(this.graphData.nodes) ? this.graphData.nodes : [];
+
+        for (const node of allNodes) {
+            if (!node || node.isCenter) continue;
+            if (!node.factionId || !factionsById.has(node.factionId)) continue;
+            if (!buckets.has(node.factionId)) buckets.set(node.factionId, []);
+            buckets.get(node.factionId).push(node);
+        }
+
+        const groupedEntries = Array.from(buckets.entries()).filter(([, nodes]) => nodes.length > 0);
+        if (groupedEntries.length < 2) return null;
+
+        const targets = new Map();
+        const orbitRadius = Math.max(180, Math.min(this.width, this.height) * 0.3);
+
+        groupedEntries.forEach(([, members], clusterIndex) => {
+            const clusterAngle = ((Math.PI * 2) * clusterIndex / groupedEntries.length) - (Math.PI / 2);
+            const clusterX = (this.width / 2) + Math.cos(clusterAngle) * orbitRadius;
+            const clusterY = (this.height / 2) + Math.sin(clusterAngle) * orbitRadius;
+
+            if (members.length === 1) {
+                targets.set(members[0].id, { x: clusterX, y: clusterY });
+                return;
+            }
+
+            const memberRadius = Math.max(38, Math.min(150, 22 + Math.sqrt(members.length) * 24));
+            members.forEach((member, memberIndex) => {
+                const memberAngle = (Math.PI * 2) * memberIndex / members.length;
+                targets.set(member.id, {
+                    x: clusterX + Math.cos(memberAngle) * memberRadius,
+                    y: clusterY + Math.sin(memberAngle) * memberRadius
+                });
+            });
+        });
+
+        return targets;
+    }
+
+    _updateGroupByFactionButtonState() {
+        const button = this.element?.querySelector?.("#btnGroupByFaction");
+        if (!button) return;
+
+        const textKey = this._isFactionGroupingActive ? "FANG.UI.ResetFactionGrouping" : "FANG.UI.GroupByFaction";
+        const hintKey = this._isFactionGroupingActive ? "FANG.UI.ResetFactionGroupingHint" : "FANG.UI.GroupByFactionHint";
+        const iconClass = this._isFactionGroupingActive ? "fa-rotate-left" : "fa-object-group";
+
+        button.classList.toggle("active", this._isFactionGroupingActive);
+        button.disabled = !game.user.isGM;
+        button.title = game.i18n.localize(hintKey);
+        button.innerHTML = `<i class="fas ${iconClass}"></i> ${game.i18n.localize(textKey)}`;
+    }
+
+    _onToggleGroupByFaction() {
+        if (!this.simulation) return;
+
+        if (this._isFactionGroupingActive) {
+            this._isFactionGroupingActive = false;
+            this._factionClusterTargets = null;
+            this._applyAxisForces();
+            this.simulation.alpha(0.6).restart();
+            this._updateGroupByFactionButtonState();
+            ui.notifications.info(game.i18n.localize("FANG.Messages.FactionGroupingReset"));
+            return;
+        }
+
+        const targets = this._buildFactionClusterTargets();
+        if (!targets) {
+            ui.notifications.warn(game.i18n.localize("FANG.Messages.FactionGroupingInsufficient"));
+            return;
+        }
+
+        this._factionClusterTargets = targets;
+        this._isFactionGroupingActive = true;
+        this._applyAxisForces();
+        this.simulation.alpha(0.9).restart();
+        this._updateGroupByFactionButtonState();
+        ui.notifications.info(game.i18n.localize("FANG.Messages.FactionGroupingApplied"));
     }
 
     initSimulation() {
@@ -3579,6 +3695,16 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             return nInfo;
         });
 
+        if (this._isFactionGroupingActive) {
+            const refreshedTargets = this._buildFactionClusterTargets();
+            if (refreshedTargets) {
+                this._factionClusterTargets = refreshedTargets;
+            } else {
+                this._isFactionGroupingActive = false;
+                this._factionClusterTargets = null;
+            }
+        }
+
         const cosmicWindEnabled = game.settings.get("fang", "enableCosmicWind");
 
         if (this.simulation) this.simulation.stop();
@@ -3586,8 +3712,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             .force("charge", d3.forceManyBody().strength(-1000))
             .force("link", d3.forceLink(links).id(d => d.id).distance(game.settings.get("fang", "tokenSize") * 4 + 140))
             .force("center", d3.forceCenter(this.width / 2, this.height / 2))
-            .force("x", d3.forceX(this.width / 2).strength(node => node.isCenter ? 0.4 : 0.025))
-            .force("y", d3.forceY(this.height / 2).strength(node => node.isCenter ? 0.4 : 0.025))
+            .force("x", d3.forceX(node => this._getNodeTargetX(node)).strength(node => this._getNodeAxisStrength(node)))
+            .force("y", d3.forceY(node => this._getNodeTargetY(node)).strength(node => this._getNodeAxisStrength(node)))
             .force("collide", d3.forceCollide().radius(game.settings.get("fang", "tokenSize") + 120))
             .force("link-avoidance", this._createLinkRepulsionForce())
             .on("tick", this.ticked.bind(this));
@@ -3606,6 +3732,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         renderLoop();
 
         this.graphData.nodes = nodes;
+        this._updateGroupByFactionButtonState();
 
         // --- Monitor View Auto-Centering (on Sync) ---
         if (game.user.name.toLowerCase().includes("monitor")) {
