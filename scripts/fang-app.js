@@ -316,12 +316,12 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
     _shouldShowFactionLinesToCurrentUser(faction) {
         if (!this._isFactionVisibleToCurrentUser(faction)) return false;
-        return game.user.isGM || faction.showLinesForPlayers !== false;
+        return faction.showLinesForPlayers !== false;
     }
 
     _shouldShowFactionInLegendToCurrentUser(faction) {
         if (!this._isFactionVisibleToCurrentUser(faction)) return false;
-        return game.user.isGM || faction.showInLegendForPlayers !== false;
+        return faction.showInLegendForPlayers !== false;
     }
 
     _onRender(context, options) {
