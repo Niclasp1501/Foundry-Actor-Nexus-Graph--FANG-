@@ -1125,9 +1125,19 @@ body.fang-monitor .fang-app-container .narrative-close {
 
 .fang-dialog .fang-faction-item {
     display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 6px;
+    padding: 8px;
+    border: 1px solid rgba(139, 0, 0, 0.14);
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.025);
+}
+
+.fang-dialog .fang-faction-main-row {
+    display: flex;
     gap: 5px;
     align-items: center;
-    margin-bottom: 6px;
 }
 
 .fang-dialog .fang-faction-item .faction-color {
@@ -1140,6 +1150,26 @@ body.fang-monitor .fang-app-container .narrative-close {
 
 .fang-dialog .fang-faction-item .faction-name {
     flex: 1;
+}
+
+.fang-dialog .fang-faction-item .faction-description {
+    width: 100%;
+    min-height: 48px;
+    resize: vertical;
+}
+
+.fang-dialog .fang-faction-visibility-row {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    font-size: 0.82rem;
+}
+
+.fang-dialog .fang-faction-visibility-row label {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
 }
 
 .fang-dialog .faction-icon-preview {
