@@ -7,6 +7,17 @@ const FANG_ACTOR_DIRECTORY_POPOUT_SELECTOR = ".actors-sidebar.sidebar-popout";
 let _fangActorDirectoryShellSweepQueued = false;
 let _fangActorDirectoryPopout = null;
 
+function _fangOpenGraphFromJournalButtonEvent(event) {
+  const button = event?.target?.closest?.(".fang-open-btn");
+  if (!button) return;
+
+  event.preventDefault();
+  event.stopPropagation();
+
+  const toggleGraph = game.modules.get("fang")?.api?.toggleGraph;
+  if (typeof toggleGraph === "function") toggleGraph();
+}
+
 function _fangSetActorPanelOpenState(isOpen) {
   document.body?.classList?.toggle("fang-actor-panel-open", !!isOpen);
 }
@@ -531,6 +542,11 @@ Hooks.once("init", () => {
 });
 
 Hooks.once("ready", async () => {
+  if (!window._fangJournalOpenButtonFixInstalled) {
+    document.addEventListener("click", _fangOpenGraphFromJournalButtonEvent, true);
+    window._fangJournalOpenButtonFixInstalled = true;
+  }
+
   // Global, robust "Ghost Shell" cleanup for Foundry v13/v14 Actor Directory popouts.
   // Runs for players + GM, regardless of Only-Sheet usage.
   if (!window._fangActorDirectoryGhostFixInstalled) {
@@ -918,12 +934,7 @@ Hooks.on("renderActorDirectory", (app, html, data) => {
 Hooks.on("renderJournalTextPageSheet", (app, html, data) => {
   // Foundry sanitizes onclick attributes for security. We attach the listener here safely.
   const $html = $(html);
-  $html.find(".fang-open-btn").on("click", (e) => {
-    e.preventDefault();
-    if (game.modules.get("fang")?.api?.toggleGraph) {
-      game.modules.get("fang").api.toggleGraph();
-    }
-  });
+  $html.find(".fang-open-btn").on("click", _fangOpenGraphFromJournalButtonEvent);
 });
 
 // Auto-Release lock on Disconnect
