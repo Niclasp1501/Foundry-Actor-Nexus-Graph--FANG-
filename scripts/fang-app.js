@@ -3205,6 +3205,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             const contentString = game.i18n.localize("FANG.Dialogs.EditConnectionContent") || "Zusätzliche Details für die Verbindung:";
             const lblName = game.i18n.localize("FANG.Dialogs.LabelInput") || "Bezeichnung (Label)";
             const lblInfo = game.i18n.localize("FANG.Dialogs.InfoInput") || "Notizen";
+            const lblDirectional = game.i18n.localize("FANG.Dialogs.DirectionalInput") || "Gerichtet (Pfeil)";
 
             new Dialog({
                 title: title,
@@ -3218,6 +3219,10 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     <div class="form-group" style="height: 150px;">
                         <textarea id="fang-edit-link-info" placeholder="${lblInfo}" style="width: 100%; height: 100%; resize: none; font-family: var(--fang-font-main); padding: 5px;">${link.info || ""}</textarea>
                     </div>
+                    <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; margin-top: 10px;">
+                        <label for="fang-edit-link-directional" style="cursor: pointer;">${lblDirectional}</label>
+                        <input type="checkbox" id="fang-edit-link-directional" ${link.directional ? "checked" : ""} style="width: auto; margin: 0; cursor: pointer;">
+                    </div>
                 `,
                 buttons: {
                     save: {
@@ -3226,8 +3231,10 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                         callback: async (html) => {
                             const newLabel = html.find("#fang-edit-link-name").val().trim();
                             const newInfo = html.find("#fang-edit-link-info").val().trim();
+                            const newDirectional = html.find("#fang-edit-link-directional").is(":checked");
                             if (newLabel) link.label = newLabel;
                             link.info = newInfo !== "" ? newInfo : null;
+                            link.directional = newDirectional;
 
                             this.initSimulation();
                             this.simulation.alpha(0.05).restart();
