@@ -4519,6 +4519,33 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         // Draw Nodes
         const radius = game.settings.get("fang", "tokenSize") || 33;
         const isGM = game.user.isGM;
+        const drawUnknownContactIcon = (context, x, y, size) => {
+            const scale = size / 32;
+
+            context.save();
+            context.fillStyle = "rgba(232, 224, 212, 0.94)";
+
+            // Anonymous contact silhouette: head plus shoulders.
+            context.beginPath();
+            context.arc(x - 4 * scale, y - 6 * scale, 6 * scale, 0, Math.PI * 2);
+            context.fill();
+
+            context.beginPath();
+            context.moveTo(x - 17 * scale, y + 13 * scale);
+            context.bezierCurveTo(x - 14 * scale, y + 3 * scale, x - 8 * scale, y + 1 * scale, x - 4 * scale, y + 1 * scale);
+            context.bezierCurveTo(x + 5 * scale, y + 1 * scale, x + 11 * scale, y + 5 * scale, x + 13 * scale, y + 14 * scale);
+            context.closePath();
+            context.fill();
+
+            // Question mark on top makes the token read as an unknown person, not just hidden.
+            context.fillStyle = "rgba(10, 12, 18, 0.9)";
+            context.font = `900 ${Math.max(9, size * 0.55)}px "Signika", "Palatino Linotype", serif`;
+            context.textAlign = "center";
+            context.textBaseline = "middle";
+            context.fillText("?", x + 8 * scale, y - 2 * scale);
+
+            context.restore();
+        };
 
         this.graphData.nodes.forEach(node => {
             const pos = renderPos[node.id];
@@ -4603,11 +4630,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 this.context.lineWidth = 2;
                 this.context.strokeStyle = "rgba(212, 175, 55, 0.55)";
                 this.context.stroke();
-                this.context.fillStyle = "rgba(232, 224, 212, 0.9)";
-                this.context.font = `900 ${Math.max(18, radius * 0.8)}px "Font Awesome 6 Pro", "Font Awesome 6 Free", "FontAwesome"`;
-                this.context.textAlign = "center";
-                this.context.textBaseline = "middle";
-                this.context.fillText("\uf070", pos.x, pos.y);
+                drawUnknownContactIcon(this.context, pos.x, pos.y, Math.max(28, radius * 1.05));
             }
 
             // --- Faction Icon (Top-Left corner) ---
@@ -4666,12 +4689,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 this.context.strokeStyle = "rgba(255,255,255,0.15)";
                 this.context.stroke();
 
-                // Eye-slash icon (FontAwesome)
-                this.context.fillStyle = "#e8e0d4";
-                this.context.font = '900 12px "Font Awesome 6 Pro", "Font Awesome 6 Free", "FontAwesome"';
-                this.context.textAlign = "center";
-                this.context.textBaseline = "middle";
-                this.context.fillText("\uf070", hbx, hby); // fa-eye-slash
+                drawUnknownContactIcon(this.context, hbx, hby, 14);
             }
 
             // --- Determine displayed name ---
