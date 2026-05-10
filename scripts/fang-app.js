@@ -2081,15 +2081,24 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
         const factionsHtml = this.graphData.factions.map((f, index) => renderFactionRow(f, index)).join("");
         const dialogContent = `
-            <div style="display: flex; flex-direction: column; height: 100%;">
-                <p style="flex: 0 0 auto;">${game.i18n.localize("FANG.UI.ManageFactionsHint")}</p>
-                <div style="flex: 0 0 auto; margin-bottom: 10px; display: flex; align-items: center; gap: 10px;">
-                    <input type="checkbox" id="fang-show-faction-lines" ${this.graphData.showFactionLines !== false ? 'checked' : ''}>
-                    <label for="fang-show-faction-lines">${game.i18n.localize("FANG.Dialogs.ShowFactionLines")}</label>
-                </div>
-                <div style="flex: 0 0 auto; margin-bottom: 10px; display: flex; align-items: center; gap: 10px;">
-                    <input type="checkbox" id="fang-show-faction-legend" ${this.graphData.showFactionLegend !== false ? 'checked' : ''}>
-                    <label for="fang-show-faction-legend">${game.i18n.localize("FANG.Dialogs.ShowFactionLegend")}</label>
+            <div class="fang-faction-manager">
+                <header class="fang-faction-manager__header">
+                    <div>
+                        <strong>${game.i18n.localize("FANG.UI.ManageFactions")}</strong>
+                        <p>${game.i18n.localize("FANG.UI.ManageFactionsHint")}</p>
+                    </div>
+                </header>
+                <div class="fang-faction-manager__toggles">
+                    <label class="fang-toggle-card" for="fang-show-faction-lines">
+                        <input type="checkbox" id="fang-show-faction-lines" ${this.graphData.showFactionLines !== false ? 'checked' : ''}>
+                        <span class="fang-toggle-card__icon"><i class="fas fa-project-diagram"></i></span>
+                        <span>${game.i18n.localize("FANG.Dialogs.ShowFactionLines")}</span>
+                    </label>
+                    <label class="fang-toggle-card" for="fang-show-faction-legend">
+                        <input type="checkbox" id="fang-show-faction-legend" ${this.graphData.showFactionLegend !== false ? 'checked' : ''}>
+                        <span class="fang-toggle-card__icon"><i class="fas fa-list"></i></span>
+                        <span>${game.i18n.localize("FANG.Dialogs.ShowFactionLegend")}</span>
+                    </label>
                 </div>
                 <div id="fang-factions-list">${factionsHtml}</div>
                 <button type="button" id="fang-add-faction-btn" class="btn fang-add-faction-btn">
