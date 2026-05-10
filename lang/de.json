@@ -215,6 +215,7 @@
             "FactionLinesForPlayers": "Fraktionslinien anzeigen",
             "ChooseFactionIcon": "Icon auswaehlen",
             "DeleteFaction": "Fraktion loeschen",
+            "DeleteFactionConfirm": "Fraktion {name} wirklich l?schen? Tokens dieser Fraktion verlieren ihre Zuordnung.",
             "NewFaction": "Neue Fraktion",
             "ShowFactionLines": "Fraktionslinien anzeigen",
             "ShowFactionLegend": "Legende anzeigen",

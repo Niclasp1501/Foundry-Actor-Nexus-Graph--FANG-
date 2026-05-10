@@ -215,6 +215,7 @@
       "FactionLinesForPlayers": "Factielijnen tonen",
       "ChooseFactionIcon": "Icoon kiezen",
       "DeleteFaction": "Factie verwijderen",
+            "DeleteFactionConfirm": "Fractie {name} echt verwijderen? Tokens in deze fractie verliezen hun toewijzing.",
       "NewFaction": "Nieuwe factie",
       "ShowFactionLines": "Factielijnen tonen",
       "ShowFactionLegend": "Factie legende tonen",

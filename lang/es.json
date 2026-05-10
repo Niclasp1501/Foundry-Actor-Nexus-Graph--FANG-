@@ -215,6 +215,7 @@
       "FactionLinesForPlayers": "Mostrar l?neas de facci?n",
       "ChooseFactionIcon": "Elegir icono",
       "DeleteFaction": "Eliminar facci?n",
+            "DeleteFactionConfirm": "?Eliminar realmente la facci?n {name}? Los tokens de esta facci?n perder?n su asignaci?n.",
       "NewFaction": "Nueva facci?n",
       "ShowFactionLines": "Mostrar Líneas de Facción",
       "ShowFactionLegend": "Mostrar Leyenda de Facción",

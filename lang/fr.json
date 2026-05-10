@@ -215,6 +215,7 @@
       "FactionLinesForPlayers": "Afficher les lignes de faction",
       "ChooseFactionIcon": "Choisir une ic?ne",
       "DeleteFaction": "Supprimer la faction",
+            "DeleteFactionConfirm": "Supprimer vraiment la faction {name} ? Les tokens de cette faction perdront leur affectation.",
       "NewFaction": "Nouvelle faction",
       "ShowFactionLines": "Afficher les lignes de faction",
       "ShowFactionLegend": "Afficher la légende des factions",

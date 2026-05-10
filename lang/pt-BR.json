@@ -215,6 +215,7 @@
       "FactionLinesForPlayers": "Mostrar linhas da fac??o",
       "ChooseFactionIcon": "Escolher ?cone",
       "DeleteFaction": "Excluir fac??o",
+            "DeleteFactionConfirm": "Excluir realmente a fac??o {name}? Os tokens desta fac??o perder?o a atribui??o.",
       "NewFaction": "Nova fac??o",
       "ShowFactionLines": "Mostrar Linhas de Facção",
       "ShowFactionLegend": "Mostrar Legenda de Facção",

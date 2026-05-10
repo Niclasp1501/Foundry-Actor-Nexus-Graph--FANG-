@@ -215,6 +215,7 @@
       "FactionLinesForPlayers": "Poka? linie frakcji",
       "ChooseFactionIcon": "Wybierz ikon?",
       "DeleteFaction": "Usu? frakcj?",
+            "DeleteFactionConfirm": "Na pewno usun?? frakcj? {name}? Tokeny tej frakcji utrac? przypisanie.",
       "NewFaction": "Nowa frakcja",
       "ShowFactionLines": "Pokaż linie frakcji",
       "ShowFactionLegend": "Pokaż legendę frakcji",

@@ -1431,7 +1431,7 @@ body.fang-monitor .fang-app-container .narrative-close {
 
 .fang-dialog .fang-faction-manager__header {
     flex: 0 0 auto;
-    padding: 12px 14px;
+    padding: 10px 14px;
     border: 1px solid rgba(139, 0, 0, 0.16);
     border-left: 4px solid var(--fang-primary-red);
     border-radius: 12px;
@@ -1468,9 +1468,9 @@ body.fang-monitor .fang-app-container .narrative-close {
     grid-template-columns: auto 34px minmax(0, 1fr);
     align-items: center;
     gap: 9px;
-    min-height: 48px;
+    min-height: 42px;
     margin: 0;
-    padding: 9px 11px;
+    padding: 7px 10px;
     border: 1px solid rgba(139, 0, 0, 0.18);
     border-radius: 12px;
     background: rgba(255, 252, 244, 0.9);
@@ -1500,7 +1500,8 @@ body.fang-monitor .fang-app-container .narrative-close {
     overflow-y: auto;
     overflow-x: hidden;
     margin-bottom: 10px;
-    min-height: 150px;
+    min-height: 300px;
+    max-height: none;
     border: 1px solid rgba(139, 0, 0, 0.14);
     border-radius: 14px;
     padding: 10px;
@@ -1510,9 +1511,9 @@ body.fang-monitor .fang-app-container .narrative-close {
 .fang-dialog .fang-faction-item {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    margin-bottom: 10px;
-    padding: 10px;
+    gap: 7px;
+    margin-bottom: 9px;
+    padding: 9px;
     border: 1px solid rgba(139, 0, 0, 0.16);
     border-radius: 12px;
     background: rgba(255, 255, 255, 0.72);
@@ -1547,7 +1548,7 @@ body.fang-monitor .fang-app-container .narrative-close {
 
 .fang-dialog .fang-faction-item .faction-description {
     width: 100%;
-    min-height: 48px;
+    min-height: 42px;
     padding: 8px 10px;
     border-radius: 10px;
     resize: vertical;
@@ -1574,6 +1575,11 @@ body.fang-monitor .fang-app-container .narrative-close {
     font-weight: 700;
 }
 
+.fang-dialog .fang-faction-actions-row {
+    display: flex;
+    justify-content: flex-end;
+}
+
 .fang-dialog .faction-icon-preview {
     flex: 0 0 34px;
     height: 34px;
@@ -1586,13 +1592,28 @@ body.fang-monitor .fang-app-container .narrative-close {
     overflow: hidden;
 }
 
-.fang-dialog .fang-faction-icon-btn,
-.fang-dialog .fang-faction-delete-btn {
+.fang-dialog .fang-faction-icon-btn {
     flex: 0 0 34px;
     width: 34px;
     height: 34px;
     padding: 0;
     border-radius: 9px;
+}
+
+.fang-dialog .fang-faction-delete-btn {
+    width: auto;
+    min-height: 32px;
+    padding: 5px 10px;
+    border: 1px solid rgba(139, 0, 0, 0.45);
+    border-radius: 9px;
+    background: rgba(139, 0, 0, 0.1);
+    color: var(--fang-primary-red);
+    font-weight: 800;
+}
+
+.fang-dialog .fang-faction-delete-btn:hover {
+    background: var(--fang-primary-red);
+    color: #fff;
 }
 
 .fang-dialog .fang-add-faction-btn {

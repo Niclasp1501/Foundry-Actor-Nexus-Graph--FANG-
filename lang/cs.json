@@ -215,6 +215,7 @@
       "FactionLinesForPlayers": "Zobrazit linie frakce",
       "ChooseFactionIcon": "Vybrat ikonu",
       "DeleteFaction": "Smazat frakci",
+            "DeleteFactionConfirm": "Opravdu chcete odstranit frakci {name}? Tokeny t?to frakce ztrat? p?i?azen?.",
       "NewFaction": "Nov? frakce",
       "ShowFactionLines": "Zobrazit linie frakcí",
       "ShowFactionLegend": "Zobrazit legendu frakcí",

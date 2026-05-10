@@ -2051,6 +2051,18 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             "\"": "&quot;",
             "'": "&#39;"
         }[char])));
+        const confirmRemoveFactionRow = (row) => {
+            if (!row) return;
+            const name = row.querySelector(".faction-name")?.value?.trim() || localize("FANG.Dialogs.NewFaction", "New Faction");
+            const title = game.i18n.localize("FANG.Dialogs.DeleteConfirmTitle") || "Confirm Deletion";
+            const content = localize("FANG.Dialogs.DeleteFactionConfirm", "Delete this faction?");
+            Dialog.confirm({
+                title,
+                content: `<p>${content.replace("{name}", `<strong>${escapeHtml(name)}</strong>`)}</p>`,
+                yes: () => row.remove(),
+                no: () => {}
+            });
+        };
         const renderFactionRow = (faction, index) => {
             const f = this._normalizeFaction(faction);
             return `
@@ -2066,15 +2078,17 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                             <i class="fas fa-file-image"></i>
                         </button>
                         <input type="hidden" class="faction-icon" id="faction-icon-${index}" data-index="${index}" value="${escapeHtml(f.icon || "")}">
-                        <button type="button" class="btn danger-btn btn-delete-faction fang-faction-delete-btn" data-index="${index}" title="${localize("FANG.Dialogs.DeleteFaction", "Delete faction")}">
-                            <i class="fas fa-trash"></i>
-                        </button>
                     </div>
                     <textarea class="faction-description" rows="2" placeholder="${localize("FANG.Dialogs.FactionDescriptionPlaceholder", "Short description")}">${escapeHtml(f.description || "")}</textarea>
                     <div class="fang-faction-visibility-row">
                         <label><input type="checkbox" class="faction-player-visible" ${f.playerVisible !== false ? 'checked' : ''}> ${localize("FANG.Dialogs.FactionVisibleToPlayers", "Visible to players")}</label>
                         <label><input type="checkbox" class="faction-show-legend-player" ${f.showInLegendForPlayers !== false ? 'checked' : ''}> ${localize("FANG.Dialogs.FactionLegendForPlayers", "Player legend")}</label>
                         <label><input type="checkbox" class="faction-show-lines-player" ${f.showLinesForPlayers !== false ? 'checked' : ''}> ${localize("FANG.Dialogs.FactionLinesForPlayers", "Player lines")}</label>
+                    </div>
+                    <div class="fang-faction-actions-row">
+                        <button type="button" class="btn danger-btn btn-delete-faction fang-faction-delete-btn" data-index="${index}" title="${localize("FANG.Dialogs.DeleteFaction", "Delete faction")}">
+                            <i class="fas fa-trash"></i> ${localize("FANG.Dialogs.DeleteFaction", "Delete faction")}
+                        </button>
                     </div>
                 </div>
             `;
@@ -2128,7 +2142,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     }, newIndex));
 
                     html.find(`.btn-delete-faction[data-index='${newIndex}']`).on("click", (e) => {
-                        $(e.currentTarget).closest(".fang-faction-item").remove();
+                        confirmRemoveFactionRow(e.currentTarget.closest(".fang-faction-item"));
                     });
                 });
 
@@ -2149,7 +2163,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 });
 
                 html.find(".btn-delete-faction").on("click", (e) => {
-                    $(e.currentTarget).closest(".fang-faction-item").remove();
+                    confirmRemoveFactionRow(e.currentTarget.closest(".fang-faction-item"));
                 });
             },
             buttons: {

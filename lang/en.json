@@ -215,6 +215,7 @@
             "FactionLinesForPlayers": "Show faction lines",
             "ChooseFactionIcon": "Choose icon",
             "DeleteFaction": "Delete faction",
+            "DeleteFactionConfirm": "Really delete faction {name}? Tokens in this faction will lose their assignment.",
             "NewFaction": "New Faction",
             "ShowFactionLines": "Show Faction Lines",
             "ShowFactionLegend": "Show Faction Legend",
