@@ -227,6 +227,7 @@
       "InfoInput": "Notities",
       "LabelInput": "Naam (Label)",
       "DirectionalInput": "Directioneel (Pijl)",
+            "ReverseDirectionInput": "Richting omkeren",
       "BtnConnect": "Verbinden",
       "BtnAdd": "Toevoegen",
       "BtnAddFaction": "Factie toevoegen",
@@ -269,6 +270,10 @@
       "DiploGlassSyncEnable": "Synchronisatie inschakelen",
       "DiploGlassSyncSkip": "Niet nu",
       "QuestSearchPlaceholder": "Quest-journals zoeken...",
+            "QuestPickerTitle": "Of kies uit de journaallijst",
+            "QuestDropTitle": "Sleep journaal hierheen",
+            "QuestAttachTitle": "Koppel nog een questjournaal",
+            "QuestLinkedTitle": "Gekoppelde quests",
       "QuestDropHint": "Sleep hier een journal naartoe om het als verborgen quest toe te voegen."
     },
     "Settings": {

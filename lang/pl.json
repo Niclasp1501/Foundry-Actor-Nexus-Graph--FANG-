@@ -227,6 +227,7 @@
       "InfoInput": "Notatki",
       "LabelInput": "Nazwa (Etykieta)",
       "DirectionalInput": "Kierunkowy (Strzałka)",
+            "ReverseDirectionInput": "Odwr?? kierunek",
       "BtnConnect": "Połącz",
       "BtnAdd": "Dodaj",
       "BtnAddFaction": "Dodaj Frakcję",
@@ -269,6 +270,10 @@
       "DiploGlassSyncEnable": "Włącz synchronizację",
       "DiploGlassSyncSkip": "Nie teraz",
       "QuestSearchPlaceholder": "Szukaj dziennik?w zada?...",
+            "QuestPickerTitle": "Albo wybierz z listy dzienników",
+            "QuestDropTitle": "Upuść dziennik tutaj",
+            "QuestAttachTitle": "Dołącz kolejny dziennik zadania",
+            "QuestLinkedTitle": "Powiązane zadania",
       "QuestDropHint": "Upu?? tutaj dziennik, aby doda? go jako ukryte zadanie."
     },
     "Settings": {

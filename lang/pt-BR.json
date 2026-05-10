@@ -227,6 +227,7 @@
       "InfoInput": "Notas",
       "LabelInput": "Nome (Rótulo)",
       "DirectionalInput": "Direcional (Seta)",
+            "ReverseDirectionInput": "Inverter dire??o",
       "BtnConnect": "Conectar",
       "BtnAdd": "Adicionar",
       "BtnAddFaction": "Adicionar Facção",
@@ -269,6 +270,10 @@
       "DiploGlassSyncEnable": "Habilitar Sincronização",
       "DiploGlassSyncSkip": "Agora Não",
       "QuestSearchPlaceholder": "Buscar di?rios de miss?o...",
+            "QuestPickerTitle": "Ou escolha na lista de diários",
+            "QuestDropTitle": "Solte o diário aqui",
+            "QuestAttachTitle": "Anexar outro diário de missão",
+            "QuestLinkedTitle": "Missões vinculadas",
       "QuestDropHint": "Solte um di?rio aqui para adicion?-lo como miss?o oculta."
     },
     "Settings": {

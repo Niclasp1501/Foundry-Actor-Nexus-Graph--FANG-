@@ -227,6 +227,7 @@
       "InfoInput": "Poznámky",
       "LabelInput": "Název (Štítek)",
       "DirectionalInput": "Směrové (Šipka)",
+            "ReverseDirectionInput": "Obr?tit sm?r",
       "BtnConnect": "Propojit",
       "BtnAdd": "Přidat",
       "BtnAddFaction": "Přidat frakci",
@@ -269,6 +270,10 @@
       "DiploGlassSyncEnable": "Povolit synchronizaci",
       "DiploGlassSyncSkip": "Zatím ne",
       "QuestSearchPlaceholder": "Hledat den?ky ?kol?...",
+            "QuestPickerTitle": "Nebo vyberte ze seznamu deníků",
+            "QuestDropTitle": "Sem pusťte deník",
+            "QuestAttachTitle": "Připojit další deník úkolu",
+            "QuestLinkedTitle": "Propojené úkoly",
       "QuestDropHint": "P?et?hn?te sem den?k a p?idejte ho jako skryt? ?kol."
     },
     "Settings": {

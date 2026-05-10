@@ -227,6 +227,7 @@
             "InfoInput": "Notes",
             "LabelInput": "Name (Label)",
             "DirectionalInput": "Directional (Arrow)",
+            "ReverseDirectionInput": "Reverse direction",
             "BtnConnect": "Connect",
             "BtnAdd": "Add",
             "BtnAddFaction": "Add Faction",
@@ -269,6 +270,10 @@
             "DiploGlassSyncEnable": "Enable Sync",
             "DiploGlassSyncSkip": "Not Now",
             "QuestSearchPlaceholder": "Search quest journals...",
+            "QuestPickerTitle": "Or choose from journal list",
+            "QuestDropTitle": "Drop Journal here",
+            "QuestAttachTitle": "Attach another quest journal",
+            "QuestLinkedTitle": "Linked quests",
             "QuestDropHint": "Drop a Journal here to add it as a hidden quest."
         },
         "Settings": {

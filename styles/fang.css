@@ -490,6 +490,22 @@ body.role-player .fang-app-container .gm-only {
     line-height: 1.25;
 }
 
+.fang-quest-section-title,
+.fang-quest-add-heading {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--fang-primary-red);
+    font-family: var(--fang-font-header);
+    font-size: 0.98rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+}
+
+.fang-quest-section-title {
+    margin-bottom: 8px;
+}
+
 .fang-quest-manager ul {
     list-style: none;
     margin: 0;
@@ -572,29 +588,73 @@ body.role-player .fang-app-container .gm-only {
 
 .fang-quest-add {
     display: grid;
-    gap: 8px;
-    margin-top: 12px;
-    padding-top: 12px;
+    gap: 10px;
+    margin-top: 14px;
+    padding-top: 14px;
     border-top: 1px solid var(--fang-border-color);
 }
 
 .fang-quest-drop-zone {
-    display: flex;
+    display: grid;
+    grid-template-columns: 42px minmax(0, 1fr);
+    grid-template-areas:
+        "icon title"
+        "icon hint";
     align-items: center;
-    justify-content: center;
-    gap: 8px;
-    min-height: 42px;
-    padding: 8px 10px;
-    border: 1px dashed var(--fang-accent-gold);
-    border-radius: 10px;
-    background: rgba(212, 175, 55, 0.08);
+    gap: 2px 10px;
+    min-height: 70px;
+    padding: 12px 14px;
+    border: 2px dashed var(--fang-accent-gold);
+    border-radius: 14px;
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.12), rgba(139, 0, 0, 0.04));
     color: var(--fang-primary-red);
-    font-weight: 800;
+}
+
+.fang-quest-drop-zone i {
+    grid-area: icon;
+    display: inline-grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    background: rgba(139, 0, 0, 0.1);
+    font-size: 1.25rem;
+}
+
+.fang-quest-drop-zone strong {
+    grid-area: title;
+    font-weight: 900;
+}
+
+.fang-quest-drop-zone span {
+    grid-area: hint;
+    color: rgba(43, 34, 26, 0.74);
+    font-size: 0.86rem;
+    line-height: 1.25;
 }
 
 .fang-quest-drop-zone.drag-over {
     background: rgba(212, 175, 55, 0.2);
     box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.16);
+}
+
+.fang-quest-add-picker {
+    display: grid;
+    gap: 8px;
+    padding: 12px;
+    border: 1px solid rgba(139, 0, 0, 0.14);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.46);
+}
+
+.fang-quest-add-picker > label:first-child {
+    margin: 0;
+    color: var(--fang-text-color);
+    font-weight: 800;
+}
+
+.fang-quest-add-picker .action-btn {
+    min-height: 40px;
 }
 
 /* Add a gold accent line */

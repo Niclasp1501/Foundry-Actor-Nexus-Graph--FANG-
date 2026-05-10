@@ -227,6 +227,7 @@
       "InfoInput": "Notes",
       "LabelInput": "Nom (Étiquette)",
       "DirectionalInput": "Directionnel (Flèche)",
+            "ReverseDirectionInput": "Inverser la direction",
       "BtnConnect": "Connecter",
       "BtnAdd": "Ajouter",
       "BtnAddFaction": "Ajouter une faction",
@@ -269,6 +270,10 @@
       "DiploGlassSyncEnable": "Activer la synchronisation",
       "DiploGlassSyncSkip": "Pas maintenant",
       "QuestSearchPlaceholder": "Rechercher des journaux de qu?te...",
+            "QuestPickerTitle": "Ou choisir dans la liste des journaux",
+            "QuestDropTitle": "Déposez le journal ici",
+            "QuestAttachTitle": "Lier un autre journal de quête",
+            "QuestLinkedTitle": "Quêtes liées",
       "QuestDropHint": "D?posez un journal ici pour l?ajouter comme qu?te masqu?e."
     },
     "Settings": {

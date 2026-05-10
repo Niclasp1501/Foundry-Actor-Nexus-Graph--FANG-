@@ -257,6 +257,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         this._isSyncCameraActive = false;
         this._remoteSyncing = false; // Guard to prevent feedback loops
         this._hoveredNodeId = null;
+        this._hoverLoreTooltipEnabled = false;
         this._bgImageLoaded = new Map();
         this._searchQuery = "";
         this._searchIsolate = false;
@@ -2827,21 +2828,28 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             : `<li class="fang-quest-manager-empty">${escapeHtml(emptyText)}</li>`;
         const addQuestForm = canEdit
             ? `<div class="fang-quest-add">
-                    <label><i class="fas fa-plus"></i> ${localize("FANG.Dialogs.QuestLogAddBtn", "Add Quest Journal")}</label>
+                    <div class="fang-quest-add-heading">
+                        <i class="fas fa-link"></i>
+                        <span>${localize("FANG.Dialogs.QuestAttachTitle", "Attach another quest journal")}</span>
+                    </div>
                     <div class="fang-quest-drop-zone" data-drop-zone="quest">
-                        <i class="fas fa-arrow-down"></i>
+                        <i class="fas fa-file-import"></i>
+                        <strong>${localize("FANG.Dialogs.QuestDropTitle", "Drop Journal here")}</strong>
                         <span>${localize("FANG.Dialogs.QuestDropHint", "Drop a Journal here to add it as a hidden quest.")}</span>
                     </div>
-                    <input type="search" id="fang-quest-search" placeholder="${localize("FANG.Dialogs.QuestSearchPlaceholder", "Search quest journals...")}">
-                    <select id="fang-quest-add-select">
-                        <option value="">-- ${localize("FANG.Dialogs.SelectQuestContent", "Choose a Quest Journal to open:")} --</option>
-                        ${journalOptions}
-                    </select>
-                    <label class="fang-editor-check">
-                        <input type="checkbox" id="fang-quest-add-visible">
-                        ${localize("FANG.Dialogs.QuestVisibleToPlayers", "Visible to players")}
-                    </label>
-                    <button type="button" id="fang-quest-add-btn" class="btn action-btn"><i class="fas fa-plus"></i> ${localize("FANG.Dialogs.QuestLogAddBtn", "Add Quest Journal")}</button>
+                    <div class="fang-quest-add-picker">
+                        <label for="fang-quest-add-select">${localize("FANG.Dialogs.QuestPickerTitle", "Or choose from journal list")}</label>
+                        <input type="search" id="fang-quest-search" placeholder="${localize("FANG.Dialogs.QuestSearchPlaceholder", "Search quest journals...")}">
+                        <select id="fang-quest-add-select">
+                            <option value="">-- ${localize("FANG.Dialogs.SelectQuestContent", "Choose a Quest Journal to open:")} --</option>
+                            ${journalOptions}
+                        </select>
+                        <label class="fang-editor-check">
+                            <input type="checkbox" id="fang-quest-add-visible">
+                            ${localize("FANG.Dialogs.QuestVisibleToPlayers", "Visible to players")}
+                        </label>
+                        <button type="button" id="fang-quest-add-btn" class="btn action-btn"><i class="fas fa-link"></i> ${localize("FANG.Dialogs.QuestLogAddBtn", "Add Quest Journal")}</button>
+                    </div>
                     <p class="hint">${localize("FANG.Dialogs.QuestAddHiddenHint", "New quests are hidden from players until you reveal them.")}</p>
                 </div>`
             : "";
@@ -2851,6 +2859,10 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             title: `${localize("FANG.UI.Quests", "Quests")}: ${escapeHtml(node.name || "")}`,
             content: `
                 <div class="fang-quest-manager">
+                    <div class="fang-quest-section-title">
+                        <i class="fas fa-scroll"></i>
+                        <span>${localize("FANG.Dialogs.QuestLinkedTitle", "Linked quests")}</span>
+                    </div>
                     <ul>${rows}</ul>
                     ${addQuestForm}
                 </div>`,
@@ -3334,6 +3346,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             const lblName = game.i18n.localize("FANG.Dialogs.LabelInput") || "Bezeichnung (Label)";
             const lblInfo = game.i18n.localize("FANG.Dialogs.InfoInput") || "Notizen";
             const lblDirectional = game.i18n.localize("FANG.Dialogs.DirectionalInput") || "Gerichtet (Pfeil)";
+            const lblReverseDirection = game.i18n.localize("FANG.Dialogs.ReverseDirectionInput") || "Richtung umkehren";
 
             new Dialog({
                 title: title,
@@ -3351,6 +3364,10 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                         <label for="fang-edit-link-directional" style="cursor: pointer;">${lblDirectional}</label>
                         <input type="checkbox" id="fang-edit-link-directional" ${link.directional ? "checked" : ""} style="width: auto; margin: 0; cursor: pointer;">
                     </div>
+                    <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; margin-top: 8px;">
+                        <label for="fang-edit-link-reverse" style="cursor: pointer;">${lblReverseDirection}</label>
+                        <input type="checkbox" id="fang-edit-link-reverse" style="width: auto; margin: 0; cursor: pointer;">
+                    </div>
                 `,
                 buttons: {
                     save: {
@@ -3360,9 +3377,15 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                             const newLabel = html.find("#fang-edit-link-name").val().trim();
                             const newInfo = html.find("#fang-edit-link-info").val().trim();
                             const newDirectional = html.find("#fang-edit-link-directional").is(":checked");
+                            const reverseDirection = html.find("#fang-edit-link-reverse").is(":checked");
                             if (newLabel) link.label = newLabel;
                             link.info = newInfo !== "" ? newInfo : null;
-                            link.directional = newDirectional;
+                            link.directional = reverseDirection ? true : newDirectional;
+                            if (reverseDirection) {
+                                const oldSource = link.source;
+                                link.source = link.target;
+                                link.target = oldSource;
+                            }
 
                             this.initSimulation();
                             this.simulation.alpha(0.05).restart();
@@ -4957,6 +4980,17 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
         const tooltip = this.element.querySelector("#fang-tooltip");
         if (!tooltip) return;
+
+        if (!this._hoverLoreTooltipEnabled) {
+            if (this._hoverTimeout) {
+                clearTimeout(this._hoverTimeout);
+                this._hoverTimeout = null;
+            }
+            this._tooltipVisibleForNode = null;
+            tooltip.classList.add("hidden");
+            this.canvas.style.cursor = hoveredNode ? "pointer" : "grab";
+            return;
+        }
 
         // If the hovered node changed or we stopped hovering:
         if (this._hoveredNodeId !== (hoveredNode ? hoveredNode.id : null)) {
