@@ -202,14 +202,15 @@ body.role-player .fang-app-container .gm-only {
 
 /* Sidebar Styling */
 .fang-app-container .sidebar {
-    width: 340px;
+    width: 76px;
     background-color: var(--fang-nav-bg);
     border-right: 2px solid var(--fang-primary-red);
     box-shadow: var(--fang-shadow-sm);
     display: flex;
     flex-direction: column;
     z-index: 10;
-    overflow-y: auto;
+    overflow: visible;
+    position: relative;
 }
 
 .fang-app-container .sidebar-header {
@@ -217,6 +218,42 @@ body.role-player .fang-app-container .gm-only {
     color: var(--fang-header-text);
     padding: 15px 20px;
     border-bottom: 2px solid var(--fang-accent-gold);
+}
+
+.fang-app-container .sidebar-header h1,
+.fang-app-container .sidebar-header p,
+.fang-app-container .tabs-nav {
+    display: none;
+}
+
+.fang-app-container .fang-rail {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px;
+    align-items: stretch;
+}
+
+.fang-app-container .fang-rail-btn {
+    width: 52px;
+    height: 52px;
+    border: 1px solid var(--fang-border-color);
+    border-radius: 14px;
+    background: var(--fang-card-bg);
+    color: var(--fang-primary-red);
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    font-size: 1.1rem;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+    transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.fang-app-container .fang-rail-btn:hover,
+.fang-app-container .fang-rail-btn.active {
+    transform: translateX(3px);
+    border-color: var(--fang-accent-gold);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18), 0 0 14px rgba(212, 175, 55, 0.25);
 }
 
 .fang-app-container .sidebar-header h1 {
@@ -246,6 +283,27 @@ body.role-player .fang-app-container .gm-only {
 
 .fang-app-container .fang-sidebar-status .lock-banner {
     border-bottom: 2px solid var(--fang-border-color);
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px 6px;
+    font-size: 0.72rem;
+    text-align: center;
+}
+
+.fang-app-container .fang-sidebar-status .lock-info {
+    justify-content: center;
+    gap: 4px;
+}
+
+.fang-app-container .fang-sidebar-status #lock-text,
+.fang-app-container .fang-sidebar-status #lock-btn-text {
+    display: none;
+}
+
+.fang-app-container .fang-sidebar-status .fang-lock-btn {
+    min-width: 44px;
+    justify-content: center;
+    padding: 7px;
 }
 
 .fang-app-container .lock-banner.no-editor {
@@ -443,8 +501,22 @@ body.role-player .fang-app-container .gm-only {
 }
 
 .fang-app-container .tabs-container {
-    flex: 1;
+    position: absolute;
+    left: 88px;
+    top: 12px;
+    width: 340px;
+    max-height: calc(100% - 24px);
     overflow-y: auto;
+    display: none;
+    border: 1px solid var(--fang-border-color);
+    border-radius: 14px;
+    box-shadow: 0 18px 42px rgba(0, 0, 0, 0.28);
+    background: var(--fang-card-bg);
+    z-index: 1200;
+}
+
+.fang-app-container.sidebar-panel-open .tabs-container {
+    display: block;
 }
 
 .fang-app-container .tab-content {
@@ -1307,19 +1379,6 @@ body.fang-theme-cyberpunk .fang-dialog .faction-icon-preview {
     border-left: 3px solid transparent;
 }
 
-.fang-app-container .ctx-item.ctx-secondary {
-    display: none;
-}
-
-#fang-context-menu.show-more .ctx-item.ctx-secondary {
-    display: flex;
-}
-
-#fang-context-menu.show-more #ctxMore {
-    background: var(--fang-nav-bg);
-    border-left-color: var(--fang-accent-gold);
-}
-
 .fang-app-container .ctx-item.ctx-primary {
     font-weight: 800;
 }
@@ -1344,6 +1403,97 @@ body.fang-theme-cyberpunk .fang-dialog .faction-icon-preview {
 
 .fang-app-container .ctx-item.danger i {
     color: #ff4d4d;
+}
+
+.fang-actor-editor-dialog .window-content {
+    padding: 0;
+}
+
+.fang-actor-editor {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    padding: 18px;
+    background:
+        radial-gradient(circle at top left, rgba(212, 175, 55, 0.14), transparent 34%),
+        var(--fang-card-bg);
+}
+
+.fang-actor-editor .fang-editor-section,
+.fang-actor-editor .fang-editor-actions {
+    background: rgba(255, 255, 255, 0.72);
+    border: 1px solid var(--fang-border-color);
+    border-radius: 12px;
+    padding: 14px;
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.08);
+}
+
+.fang-actor-editor .fang-editor-section h3 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 10px;
+    border: 0;
+    color: var(--fang-primary-red);
+    font-size: 0.95rem;
+    text-transform: uppercase;
+}
+
+.fang-actor-editor label {
+    display: block;
+    margin: 8px 0 4px;
+    font-weight: 700;
+}
+
+.fang-actor-editor input[type="text"],
+.fang-actor-editor select,
+.fang-actor-editor textarea {
+    width: 100%;
+}
+
+.fang-actor-editor textarea {
+    min-height: 130px;
+    resize: vertical;
+}
+
+.fang-actor-editor .fang-editor-notes,
+.fang-actor-editor .fang-editor-actions {
+    grid-column: 1 / -1;
+}
+
+.fang-actor-editor .fang-condition-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.fang-actor-editor .fang-editor-check,
+.fang-actor-editor .fang-condition-grid label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 36px;
+}
+
+.fang-actor-editor .fang-editor-actions {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+}
+
+@media (max-width: 800px) {
+    .fang-actor-editor {
+        grid-template-columns: 1fr;
+    }
+
+    .fang-actor-editor .fang-editor-notes,
+    .fang-actor-editor .fang-editor-actions {
+        grid-column: auto;
+    }
+
+    .fang-actor-editor .fang-editor-actions {
+        grid-template-columns: 1fr;
+    }
 }
 
 /* --- Floating Hover Lore Tooltip --- */

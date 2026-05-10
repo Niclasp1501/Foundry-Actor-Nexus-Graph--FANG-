@@ -21,6 +21,7 @@
       "AddPlaceholder": "Aggiungi Segnaposto",
       "DeleteElement": "Elimina Elemento",
       "ManageElements": "Gestisci Elementi",
+            "ClosePanel": "Chiudi pannello",
             "Inspector": "Ispettore",
       "SearchTitle": "Cerca e Filtra",
       "SearchPlaceholder": "Cerca nome, ruolo, fazione, link...",
@@ -154,10 +155,16 @@
       "SpotlightHiddenBlocked": "Mostra prima il personaggio prima di usare lo Spotlight!",
       "MonitorViewClosed": "Vista monitor chiusa."
     },
+        "ActorEditor": {
+            "Title": "Modifica attore",
+            "Profile": "Profilo",
+            "PlayerView": "Vista giocatori",
+            "Conditions": "Condizioni",
+            "Notes": "Note"
+        },
     "ContextMenu": {
             "Info": "Vedi info",
             "Edit": "Modifica",
-            "More": "Altro...",
       "EditRole": "Ruolo / Organizzazione",
       "EditLore": "Modifica Informazioni",
       "OpenJournal": "Apri Journal del GM",

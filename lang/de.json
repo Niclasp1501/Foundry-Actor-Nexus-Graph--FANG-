@@ -23,6 +23,7 @@
             "AddPlaceholder": "Platzhalter hinzufügen",
             "DeleteElement": "Element löschen",
             "ManageElements": "Elemente verwalten",
+            "ClosePanel": "Panel schlie?en",
             "Inspector": "Inspektor",
             "SearchTitle": "Suche & Filter",
             "SearchPlaceholder": "Name, Rolle, Fraktion, Verbindung suchen...",
@@ -170,10 +171,16 @@
             "QuickConnectLabelContent": "Beziehung von {source} zu {target}:",
             "QuickConnectLabelPlaceholder": "Label z.B. 'kennt'"
         },
+        "ActorEditor": {
+            "Title": "Akteur bearbeiten",
+            "Profile": "Profil",
+            "PlayerView": "Spieleransicht",
+            "Conditions": "Zust?nde",
+            "Notes": "Notizen"
+        },
         "ContextMenu": {
             "Info": "Info ansehen",
             "Edit": "Bearbeiten",
-            "More": "Mehr...",
             "EditRole": "Rolle / Organisation",
             "EditLore": "Informationen bearbeiten",
             "OpenJournal": "GM Journal öffnen",

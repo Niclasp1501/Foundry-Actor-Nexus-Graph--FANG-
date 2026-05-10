@@ -13,6 +13,27 @@
             <a class="tab-btn gm-only" data-tab="advanced"><i class="fas fa-cogs"></i> {{localize "FANG.UI.TabAdvanced"}}</a>
         </nav>
 
+        <nav class="fang-rail" aria-label="FANG tools">
+            <button type="button" id="fangRailSearch" class="fang-rail-btn" title="{{localize 'FANG.UI.SearchToggle'}}">
+                <i class="fas fa-search"></i>
+            </button>
+            <button type="button" id="fangRailQuickConnect" class="fang-rail-btn" title="{{localize 'FANG.UI.QuickConnect'}}">
+                <i class="fas fa-route"></i>
+            </button>
+            <button type="button" id="fangRailPlaceholder" class="fang-rail-btn" title="{{localize 'FANG.UI.AddPlaceholder'}}">
+                <i class="fas fa-user-plus"></i>
+            </button>
+            <button type="button" id="fangRailPresentation" class="fang-rail-btn gm-only" title="{{localize 'FANG.UI.Presentation'}}">
+                <i class="fas fa-display"></i>
+            </button>
+            <button type="button" id="fangRailManage" class="fang-rail-btn gm-only" title="{{localize 'FANG.UI.TabAdvanced'}}">
+                <i class="fas fa-sliders"></i>
+            </button>
+            <button type="button" id="fangRailClosePanel" class="fang-rail-btn" title="{{localize 'FANG.UI.ClosePanel'}}">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+        </nav>
+
         <div class="fang-sidebar-status">
             <!-- Edit Lock Banner -->
             <div id="fang-lock-banner" class="lock-banner no-editor">
@@ -318,31 +339,10 @@
                 <li id="ctxSpotlight" class="ctx-item ctx-primary">
                     <i class="fas fa-compass"></i> {{localize "FANG.ContextMenu.Spotlight"}}
                 </li>
-                <li id="ctxEditLore" class="ctx-item ctx-primary">
+                <li id="ctxEditActor" class="ctx-item ctx-primary">
                     <i class="fas fa-pen-to-square"></i> {{localize "FANG.ContextMenu.Edit"}}
                 </li>
-                <li id="ctxMore" class="ctx-item ctx-primary">
-                    <i class="fas fa-ellipsis"></i> {{localize "FANG.ContextMenu.More"}}
-                </li>
-                <li id="ctxEditRole" class="ctx-item ctx-secondary">
-                    <i class="fas fa-theater-masks"></i> {{localize "FANG.ContextMenu.EditRole"}}
-                </li>
-                <li id="ctxOpenJournal" class="ctx-item ctx-secondary gm-only">
-                    <i class="fas fa-book"></i> {{localize "FANG.ContextMenu.OpenJournal"}}
-                </li>
-                <li id="ctxOpenQuest" class="ctx-item ctx-secondary">
-                    <i class="fas fa-scroll"></i> {{localize "FANG.ContextMenu.OpenQuest"}}
-                </li>
-                <li id="ctxIdentity" class="ctx-item ctx-secondary">
-                    <i class="fas fa-user-secret"></i> {{localize "FANG.ContextMenu.Identity"}}
-                </li>
-                <li id="ctxReplacePlaceholder" class="ctx-item ctx-secondary gm-only">
-                    <i class="fas fa-random"></i> {{localize "FANG.ContextMenu.ReplacePlaceholder"}}
-                </li>
-                <li id="ctxCondition" class="ctx-item ctx-secondary">
-                    <i class="fas fa-tag"></i> {{localize "FANG.ContextMenu.Condition"}}
-                </li>
-                <li id="ctxDeleteNode" class="ctx-item ctx-secondary danger">
+                <li id="ctxDeleteNode" class="ctx-item danger">
                     <i class="fas fa-trash"></i> {{localize "FANG.ContextMenu.DeleteNode"}}
                 </li>
             </ul>

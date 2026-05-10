@@ -23,6 +23,7 @@
             "AddPlaceholder": "Add Placeholder",
             "DeleteElement": "Delete Element",
             "ManageElements": "Manage Elements",
+            "ClosePanel": "Close panel",
             "Inspector": "Inspector",
             "SearchTitle": "Search & Filter",
             "SearchPlaceholder": "Search name, role, faction, link...",
@@ -170,10 +171,16 @@
             "QuickConnectLabelContent": "Relationship from {source} to {target}:",
             "QuickConnectLabelPlaceholder": "Label e.g. 'knows'"
         },
+        "ActorEditor": {
+            "Title": "Edit Actor",
+            "Profile": "Profile",
+            "PlayerView": "Player View",
+            "Conditions": "Conditions",
+            "Notes": "Notes"
+        },
         "ContextMenu": {
             "Info": "View Info",
             "Edit": "Edit",
-            "More": "More...",
             "EditRole": "Role / Organization",
             "EditLore": "Edit Information",
             "OpenJournal": "Open GM Journal",

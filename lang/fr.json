@@ -21,6 +21,7 @@
       "AddPlaceholder": "Ajouter un espace réservé",
       "DeleteElement": "Supprimer l'élément",
       "ManageElements": "Gérer les éléments",
+            "ClosePanel": "Fermer le panneau",
             "Inspector": "Inspecteur",
       "SearchTitle": "Recherche & Filtrage",
       "SearchPlaceholder": "Rechercher nom, rôle, faction, lien...",
@@ -154,10 +155,16 @@
       "SpotlightHiddenBlocked": "Révélez d'abord le personnage avant d'utiliser la mise en lumière !",
       "MonitorViewClosed": "Vue du moniteur fermée."
     },
+        "ActorEditor": {
+            "Title": "Modifier l?acteur",
+            "Profile": "Profil",
+            "PlayerView": "Vue joueurs",
+            "Conditions": "?tats",
+            "Notes": "Notes"
+        },
     "ContextMenu": {
             "Info": "Voir les infos",
             "Edit": "Modifier",
-            "More": "Plus...",
       "EditRole": "Rôle / Organisation",
       "EditLore": "Modifier les informations",
       "OpenJournal": "Ouvrir le journal du MJ",

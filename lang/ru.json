@@ -21,6 +21,7 @@
       "AddPlaceholder": "Добавить плейсхолдер",
       "DeleteElement": "Удалить элемент",
       "ManageElements": "Управление элементами",
+            "ClosePanel": "??????? ??????",
             "Inspector": "?????????",
       "SearchTitle": "Поиск и фильтр",
       "SearchPlaceholder": "Искать имя, роль, фракцию, связь...",
@@ -154,10 +155,16 @@
       "SpotlightHiddenBlocked": "Сначала покажите персонажа, прежде чем использовать Spotlight!",
       "MonitorViewClosed": "Окно монитора закрыто."
     },
+        "ActorEditor": {
+            "Title": "????????????? ??????",
+            "Profile": "???????",
+            "PlayerView": "??? ???????",
+            "Conditions": "?????????",
+            "Notes": "???????"
+        },
     "ContextMenu": {
             "Info": "???????? ????????",
             "Edit": "???????",
-            "More": "???...",
       "EditRole": "Роль / Организация",
       "EditLore": "Редактировать информацию",
       "OpenJournal": "Открыть журнал GM",

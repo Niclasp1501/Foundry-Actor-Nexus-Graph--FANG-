@@ -21,6 +21,7 @@
       "AddPlaceholder": "Placeholder toevoegen",
       "DeleteElement": "Element verwijderen",
       "ManageElements": "Elementen beheren",
+            "ClosePanel": "Paneel sluiten",
             "Inspector": "Inspector",
       "SearchTitle": "Zoeken & Filteren",
       "SearchPlaceholder": "Zoek naam, rol, factie, link...",
@@ -154,10 +155,16 @@
       "SpotlightHiddenBlocked": "Maak het personage eerst zichtbaar voordat je Spotlight gebruikt!",
       "MonitorViewClosed": "Monitorweergave gesloten."
     },
+        "ActorEditor": {
+            "Title": "Actor bewerken",
+            "Profile": "Profiel",
+            "PlayerView": "Spelersweergave",
+            "Conditions": "Toestanden",
+            "Notes": "Notities"
+        },
     "ContextMenu": {
             "Info": "Info bekijken",
             "Edit": "Bewerken",
-            "More": "Meer...",
       "EditRole": "Rol / Organisatie",
       "EditLore": "Informatie bewerken",
       "OpenJournal": "GM Journal openen",

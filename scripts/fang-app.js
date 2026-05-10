@@ -511,6 +511,24 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             });
         }
 
+        const railSearch = this.element.querySelector("#fangRailSearch");
+        if (railSearch) railSearch.addEventListener("click", () => this._setSearchUiVisible(true, { focus: true }));
+
+        const railQuickConnect = this.element.querySelector("#fangRailQuickConnect");
+        if (railQuickConnect) railQuickConnect.addEventListener("click", (event) => this._onToggleQuickConnectMode(event));
+
+        const railPlaceholder = this.element.querySelector("#fangRailPlaceholder");
+        if (railPlaceholder) railPlaceholder.addEventListener("click", () => this._onAddPlaceholder());
+
+        const railPresentation = this.element.querySelector("#fangRailPresentation");
+        if (railPresentation) railPresentation.addEventListener("click", () => this._openSidebarPanel("view"));
+
+        const railManage = this.element.querySelector("#fangRailManage");
+        if (railManage) railManage.addEventListener("click", () => this._openSidebarPanel("advanced"));
+
+        const railClose = this.element.querySelector("#fangRailClosePanel");
+        if (railClose) railClose.addEventListener("click", () => this._closeSidebarPanel());
+
         // 4. GM-specific or Player-specific Logic
         if (game.user.isGM) {
             // GM-only Event Listeners
@@ -1468,6 +1486,24 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         if (focus && this._searchUiVisible) {
             setTimeout(() => this.element?.querySelector("#fangSearchInput")?.focus(), 0);
         }
+    }
+
+    _openSidebarPanel(tabName) {
+        const appContainer = this.element.querySelector(".fang-app-container") || this.element;
+        const tabBtns = this.element.querySelectorAll(".tab-btn");
+        const tabContents = this.element.querySelectorAll(".tab-content");
+        tabBtns.forEach(btn => btn.classList.toggle("active", btn.dataset.tab === tabName));
+        tabContents.forEach(content => content.classList.toggle("active", content.dataset.tab === tabName));
+        appContainer.classList.add("sidebar-panel-open");
+        this.element.querySelectorAll(".fang-rail-btn").forEach(btn => btn.classList.remove("active"));
+        const activeRail = tabName === "view" ? "#fangRailPresentation" : "#fangRailManage";
+        this.element.querySelector(activeRail)?.classList.add("active");
+    }
+
+    _closeSidebarPanel() {
+        const appContainer = this.element.querySelector(".fang-app-container") || this.element;
+        appContainer.classList.remove("sidebar-panel-open");
+        this.element.querySelectorAll(".fang-rail-btn").forEach(btn => btn.classList.remove("active"));
     }
 
     _clearSearchState() {
@@ -2539,101 +2575,43 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     _showContextMenu(node, mouseX, mouseY) {
-
         const menu = this.element.querySelector("#fang-context-menu");
         if (!menu) return;
 
-        menu.classList.remove("show-more");
-        // Position menu at cursor; final clamping happens after visibility/actions are set.
         menu.style.left = `${mouseX}px`;
         menu.style.top = `${mouseY}px`;
         menu.classList.remove("hidden");
 
         const btnInfo = menu.querySelector("#ctxInfo");
-        const btnRole = menu.querySelector("#ctxEditRole");
-        const btnLore = menu.querySelector("#ctxEditLore");
-        const btnOpenJournal = menu.querySelector("#ctxOpenJournal");
-        const btnOpenQuest = menu.querySelector("#ctxOpenQuest");
+        const btnEdit = menu.querySelector("#ctxEditActor");
         const btnSpotlight = menu.querySelector("#ctxSpotlight");
-        const btnMore = menu.querySelector("#ctxMore");
-        const btnIdentity = menu.querySelector("#ctxIdentity");
-        const btnReplacePlaceholder = menu.querySelector("#ctxReplacePlaceholder");
-        const btnCondition = menu.querySelector("#ctxCondition");
         const btnDelete = menu.querySelector("#ctxDeleteNode");
 
-        // Clear previous listeners by cloning nodes
         const newBtnInfo = btnInfo ? btnInfo.cloneNode(true) : null;
-        const newBtnRole = btnRole.cloneNode(true);
-        const newBtnLore = btnLore.cloneNode(true);
-        const newBtnOpenJournal = btnOpenJournal ? btnOpenJournal.cloneNode(true) : null;
-        const newBtnOpenQuest = btnOpenQuest ? btnOpenQuest.cloneNode(true) : null;
-        const newBtnSpotlight = btnSpotlight.cloneNode(true);
-        const newBtnMore = btnMore ? btnMore.cloneNode(true) : null;
-        const newBtnIdentity = btnIdentity ? btnIdentity.cloneNode(true) : null;
-        const newBtnReplacePlaceholder = btnReplacePlaceholder ? btnReplacePlaceholder.cloneNode(true) : null;
-        const newBtnCondition = btnCondition ? btnCondition.cloneNode(true) : null;
-        const newBtnDelete = btnDelete.cloneNode(true);
+        const newBtnEdit = btnEdit ? btnEdit.cloneNode(true) : null;
+        const newBtnSpotlight = btnSpotlight ? btnSpotlight.cloneNode(true) : null;
+        const newBtnDelete = btnDelete ? btnDelete.cloneNode(true) : null;
 
         if (btnInfo && newBtnInfo) btnInfo.parentNode.replaceChild(newBtnInfo, btnInfo);
-        btnRole.parentNode.replaceChild(newBtnRole, btnRole);
-        btnLore.parentNode.replaceChild(newBtnLore, btnLore);
-        if (btnOpenJournal && newBtnOpenJournal) btnOpenJournal.parentNode.replaceChild(newBtnOpenJournal, btnOpenJournal);
-        if (btnOpenQuest && newBtnOpenQuest) btnOpenQuest.parentNode.replaceChild(newBtnOpenQuest, btnOpenQuest);
-        btnSpotlight.parentNode.replaceChild(newBtnSpotlight, btnSpotlight);
-        if (btnMore && newBtnMore) btnMore.parentNode.replaceChild(newBtnMore, btnMore);
-        if (btnIdentity && newBtnIdentity) btnIdentity.parentNode.replaceChild(newBtnIdentity, btnIdentity);
-        if (btnReplacePlaceholder && newBtnReplacePlaceholder) btnReplacePlaceholder.parentNode.replaceChild(newBtnReplacePlaceholder, btnReplacePlaceholder);
-        if (btnCondition && newBtnCondition) btnCondition.parentNode.replaceChild(newBtnCondition, btnCondition);
-        btnDelete.parentNode.replaceChild(newBtnDelete, btnDelete);
+        if (btnEdit && newBtnEdit) btnEdit.parentNode.replaceChild(newBtnEdit, btnEdit);
+        if (btnSpotlight && newBtnSpotlight) btnSpotlight.parentNode.replaceChild(newBtnSpotlight, btnSpotlight);
+        if (btnDelete && newBtnDelete) btnDelete.parentNode.replaceChild(newBtnDelete, btnDelete);
 
-        // --- Permission Logic ---
         const hasLock = this._canEditGraph(true);
         const isPlayerView = !game.user.isGM;
-        const tokenIsHidden = node.hidden;
+        const tokenIsHidden = !!node.hidden;
 
-        if (newBtnInfo) newBtnInfo.style.display = tokenIsHidden && isPlayerView ? "none" : "block";
-        newBtnRole.style.display = hasLock ? "" : "none";
-        newBtnLore.style.display = hasLock ? "block" : "none";
-        if (newBtnOpenJournal) newBtnOpenJournal.style.display = (game.user.isGM && node.journalUuid) ? "" : "none";
-        if (newBtnOpenQuest) newBtnOpenQuest.style.display = (node.questUuids && node.questUuids.length > 0) ? "" : "none";
-        newBtnDelete.style.display = hasLock ? "" : "none";
-        if (newBtnIdentity) newBtnIdentity.style.display = (game.user.isGM && hasLock) ? "" : "none";
-        if (newBtnReplacePlaceholder) newBtnReplacePlaceholder.style.display = (game.user.isGM && hasLock && node.isPlaceholder) ? "" : "none";
-        if (newBtnCondition) newBtnCondition.style.display = (game.user.isGM && hasLock) ? "" : "none";
+        if (newBtnInfo) newBtnInfo.style.display = (isPlayerView && tokenIsHidden) ? "none" : "flex";
+        if (newBtnSpotlight) newBtnSpotlight.style.display = (isPlayerView && tokenIsHidden) ? "none" : "flex";
+        if (newBtnEdit) newBtnEdit.style.display = hasLock ? "flex" : "none";
+        if (newBtnDelete) newBtnDelete.style.display = hasLock ? "flex" : "none";
 
-        // Protection: Hide info buttons for players viewing hidden tokens
-        if (isPlayerView && tokenIsHidden) {
-            newBtnRole.style.display = "none";
-            newBtnLore.style.display = "none";
-            if (newBtnOpenQuest) newBtnOpenQuest.style.display = "none";
-        }
+        newBtnInfo?.addEventListener("click", () => {
+            menu.classList.add("hidden");
+            this._openLocalNodeInfo(node);
+        });
 
-        // Spotlight is explicit broadcast, but hidden player-facing nodes must not expose actions.
-        newBtnSpotlight.style.display = (isPlayerView && tokenIsHidden) ? "none" : "block";
-
-        const secondaryButtons = [newBtnRole, newBtnOpenJournal, newBtnOpenQuest, newBtnIdentity, newBtnReplacePlaceholder, newBtnCondition, newBtnDelete]
-            .filter(Boolean);
-        const hasSecondaryActions = secondaryButtons.some(btn => btn.style.display !== "none");
-        if (newBtnMore) newBtnMore.style.display = hasSecondaryActions ? "block" : "none";
-
-        if (newBtnInfo) {
-            newBtnInfo.addEventListener("click", () => {
-                menu.classList.add("hidden");
-                this._openLocalNodeInfo(node);
-            });
-        }
-
-        if (newBtnMore) {
-            newBtnMore.addEventListener("click", (event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                menu.classList.toggle("show-more");
-                this._positionFloatingMenu(menu, mouseX, mouseY);
-            });
-        }
-
-        // --- Context Action: Spotlight ---
-        newBtnSpotlight.addEventListener("click", () => {
+        newBtnSpotlight?.addEventListener("click", () => {
             menu.classList.add("hidden");
             if (node.hidden) {
                 ui.notifications.warn(game.i18n.localize("FANG.Messages.SpotlightHiddenBlocked") || "Reveal the character first before using Spotlight!");
@@ -2642,607 +2620,212 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             this._onSpotlight(node);
         });
 
+        newBtnEdit?.addEventListener("click", () => {
+            menu.classList.add("hidden");
+            this._onEditActorProfile(node);
+        });
+
+        newBtnDelete?.addEventListener("click", () => {
+            menu.classList.add("hidden");
+            this._confirmDeleteNode(node);
+        });
+
         this._positionFloatingMenu(menu, mouseX, mouseY);
-
-        if (newBtnReplacePlaceholder) {
-            newBtnReplacePlaceholder.addEventListener("click", () => {
-                menu.classList.add("hidden");
-                this._onReplacePlaceholder(node);
-            });
-        }
-
-        // --- Context Action: Open GM Journal ---
-        if (newBtnOpenJournal) {
-            newBtnOpenJournal.addEventListener("click", async () => {
-                menu.classList.add("hidden");
-                if (!node.journalUuid) return;
-                const doc = await fromUuid(node.journalUuid);
-                if (doc) doc.sheet.render(true);
-            });
-        }
-
-        // --- Context Action: Open Quest Log ---
-        if (newBtnOpenQuest) {
-            newBtnOpenQuest.addEventListener("click", async (evt) => {
-                menu.classList.add("hidden");
-                if (!node.questUuids || node.questUuids.length === 0) return;
-
-                if (node.questUuids.length === 1) {
-                    // Only one quest – open directly
-                    const doc = await fromUuid(node.questUuids[0].uuid);
-                    if (doc) doc.sheet.render(true);
-                    else if (!game.user.isGM) ui.notifications.warn("Quest Journal not found or you lack permissions.");
-                    return;
-                }
-
-                // Multiple quests – show the in-canvas quest picker panel
-                const picker = this.element.querySelector("#fang-quest-picker");
-                const pickerTitle = picker.querySelector("#fang-quest-picker-title");
-                const pickerList = picker.querySelector("#fang-quest-picker-list");
-                if (!picker) return;
-
-                // Set header text: character name
-                pickerTitle.textContent = node.name;
-
-                // Build the list of quests
-                pickerList.innerHTML = node.questUuids.map((q, i) => `
-                    <li class="fang-quest-pick-item ctx-item" data-idx="${i}" style="padding: 9px 14px; cursor: pointer; display: flex; align-items: center; gap: 10px; border-left: 3px solid transparent; transition: background 0.15s, border-color 0.15s;">
-                        <i class="fas fa-scroll" style="color: var(--fang-accent-gold); width:16px; text-align:center;"></i>
-                        <span style="font-size:0.92rem;">${q.name || "Quest " + (i + 1)}</span>
-                    </li>
-                `).join("");
-
-                // Position next to cursor, within canvas bounds
-                const canvasBounds = this.canvas.getBoundingClientRect();
-                const containerBounds = this.element.querySelector("main").getBoundingClientRect();
-                let px = mouseX + 10;
-                let py = mouseY;
-                picker.classList.remove("hidden");
-                // Clamp to canvas
-                const pw = picker.offsetWidth || 240;
-                const ph = picker.offsetHeight || 150;
-                if (px + pw > containerBounds.width) px = mouseX - pw - 10;
-                if (py + ph > containerBounds.height) py = containerBounds.height - ph - 10;
-                picker.style.left = `${px}px`;
-                picker.style.top = `${py}px`;
-
-                // Click handlers on items
-                picker.querySelectorAll(".fang-quest-pick-item").forEach(el => {
-                    el.addEventListener("click", async () => {
-                        picker.classList.add("hidden");
-                        const idx = parseInt(el.dataset.idx);
-                        const q = node.questUuids[idx];
-                        if (!q) return;
-                        const doc = await fromUuid(q.uuid);
-                        if (doc) doc.sheet.render(true);
-                        else ui.notifications.warn("Quest Journal not found or you lack permissions.");
-                    });
-                    el.addEventListener("mouseover", () => {
-                        el.style.background = "var(--fang-nav-bg)";
-                        el.style.borderLeftColor = "var(--fang-primary-red)";
-                        el.style.color = "var(--fang-primary-red)";
-                    });
-                    el.addEventListener("mouseout", () => {
-                        el.style.background = "";
-                        el.style.borderLeftColor = "transparent";
-                        el.style.color = "";
-                    });
-                });
-
-                // Close on outside click
-                const closePicker = (e) => {
-                    if (!picker.contains(e.target)) {
-                        picker.classList.add("hidden");
-                        document.removeEventListener("click", closePicker, true);
-                    }
-                };
-                setTimeout(() => document.addEventListener("click", closePicker, true), 50);
-            });
-        }
-
-
-
-        // --- Context Action: Identity ---
-        if (newBtnIdentity) {
-            newBtnIdentity.addEventListener("click", () => {
-                menu.classList.add("hidden");
-                if (!this._canEditGraph()) return;
-
-                const title = game.i18n.localize("FANG.Dialogs.IdentityTitle") || "Identity";
-                const lblName = game.i18n.localize("FANG.Dialogs.IdentityName") || "Displayed Name";
-                const lblOriginal = (game.i18n.localize("FANG.Dialogs.IdentityOriginal") || "Original: {name}").replace("{name}", node.originalName || node.name);
-                const lblHidden = game.i18n.localize("FANG.Dialogs.IdentityHidden") || "Hidden for Players";
-                const lblAlias = game.i18n.localize("FANG.Dialogs.IdentityAlias") || "Alias (when hidden)";
-
-                new Dialog({
-                    title: title,
-                    content: `
-                        <div class="form-group">
-                            <label>${lblName}:</label>
-                            <div class="form-fields">
-                                <input type="text" id="fang-identity-name" value="${node.name || ""}" style="width: 100%;">
-                            </div>
-                            <p style="font-size: 0.8em; color: #888; margin: 2px 0 8px 0;">${lblOriginal}</p>
-                        </div>
-                        <div class="form-group">
-                            <label>${lblHidden}:</label>
-                            <div class="form-fields">
-                                <input type="checkbox" id="fang-identity-hidden" ${node.hidden ? "checked" : ""} style="width: auto;">
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label>${lblAlias}:</label>
-                            <div class="form-fields">
-                                <input type="text" id="fang-identity-alias" value="${node.displayName || ""}" placeholder="???" style="width: 100%;">
-                            </div>
-                        </div>
-                    `,
-                    buttons: {
-                        save: {
-                            icon: '<i class="fas fa-save"></i>',
-                            label: game.i18n.localize("FANG.Dialogs.BtnSave") || "Save",
-                            callback: async (html) => {
-                                const newName = html.find("#fang-identity-name").val().trim();
-                                const isHidden = html.find("#fang-identity-hidden").is(":checked");
-                                const newAlias = html.find("#fang-identity-alias").val().trim();
-                                if (newName) node.name = newName;
-                                node.hidden = isHidden;
-                                node.displayName = newAlias;
-                                this.ticked();
-                                this._populateActors();
-                                await this.saveData();
-                            }
-                        },
-                        cancel: { icon: '<i class="fas fa-times"></i>', label: game.i18n.localize("FANG.Dialogs.BtnCancel") || "Cancel" }
-                    },
-                    default: "save"
-                }, { classes: ["dialog", "fang-dialog"], width: 420 }).render(true);
-            });
-        }
-
-        // --- Context Action: Condition ---
-        if (newBtnCondition) {
-            newBtnCondition.addEventListener("click", () => {
-                menu.classList.add("hidden");
-                if (!this._canEditGraph()) return;
-
-                const title = game.i18n.localize("FANG.Dialogs.ConditionTitle") || "Set Condition";
-                const conditions = node.conditions || [];
-                const conditionDefs = [
-                    { id: "deceased", label: game.i18n.localize("FANG.Dialogs.ConditionDeceased") || "Deceased", icon: "fa-skull" },
-                    { id: "missing", label: game.i18n.localize("FANG.Dialogs.ConditionMissing") || "Missing", icon: "fa-question-circle" },
-                    { id: "captured", label: game.i18n.localize("FANG.Dialogs.ConditionCaptured") || "Captured", icon: "fa-link" },
-                    { id: "questgiver", label: game.i18n.localize("FANG.Dialogs.ConditionQuestgiver") || "Quest Giver", icon: "fa-scroll" }
-                ];
-
-                const checkboxes = conditionDefs.map(c => {
-                    const checked = conditions.includes(c.id) ? "checked" : "";
-                    return `<div style="display: flex; align-items: center; gap: 8px; padding: 4px 0;">
-                        <input type="checkbox" id="fang-cond-${c.id}" ${checked} style="width: auto; margin: 0;">
-                        <i class="fas ${c.icon}" style="width: 18px; text-align: center;"></i>
-                        <label for="fang-cond-${c.id}" style="cursor: pointer;">${c.label}</label>
-                    </div>`;
-                }).join("");
-
-                new Dialog({
-                    title: title,
-                    content: `
-                        <p><strong>${(game.i18n.localize("FANG.Dialogs.ConditionContent") || "Conditions for {actor}:").replace("{actor}", node.name)}</strong></p>
-                        <div class="form-group" style="flex-direction: column; gap: 2px;">${checkboxes}</div>
-                    `,
-                    buttons: {
-                        save: {
-                            icon: '<i class="fas fa-save"></i>',
-                            label: game.i18n.localize("FANG.Dialogs.BtnSave") || "Save",
-                            callback: async (html) => {
-                                const newConditions = [];
-                                conditionDefs.forEach(c => {
-                                    if (html.find(`#fang-cond-${c.id}`).is(":checked")) newConditions.push(c.id);
-                                });
-                                node.conditions = newConditions;
-                                this.ticked();
-                                await this.saveData();
-                            }
-                        },
-                        cancel: { icon: '<i class="fas fa-times"></i>', label: game.i18n.localize("FANG.Dialogs.BtnCancel") || "Cancel" }
-                    },
-                    default: "save"
-                }, { classes: ["dialog", "fang-dialog"], width: 380 }).render(true);
-            });
-        }
-
-        // --- Context Action: Edit Role ---
-        newBtnRole.addEventListener("click", () => {
-            menu.classList.add("hidden");
-            if (!this._canEditGraph()) return;
-
-            const title = game.i18n.localize("FANG.Dialogs.EditRoleTitle") || "Details bearbeiten";
-            const contentString = (game.i18n.localize("FANG.Dialogs.EditRoleContent") || "Details für {actor}:").replace("{actor}", node.name);
-            const lblRole = game.i18n.localize("FANG.Dialogs.RoleInput") || "Rolle";
-
-            const factionOptions = this.graphData.factions
-                .map(f => this._normalizeFaction(f))
-                .filter(f => this._isFactionVisibleToCurrentUser(f) || f.id === node.factionId)
-                .map(f => {
-                const selected = f.id === node.factionId ? "selected" : "";
-                return `<option value="${f.id}" ${selected}>${f.name}</option>`;
-            }).join("");
-
-            new Dialog({
-                title: title,
-                content: `
-                    <p><strong>${contentString}</strong></p>
-                    <div class="form-group">
-                        <label>${lblRole}:</label>
-                        <div class="form-fields">
-                            <input type="text" id="fang-edit-role" value="${node.role || ""}" style="width: 100%;">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>${game.i18n.localize("FANG.Dialogs.FactionInput") || "Fraktion"}:</label>
-                        <div class="form-fields">
-                            <select id="fang-edit-faction" style="width: 100%;">
-                                <option value="">-- Keine --</option>
-                                ${factionOptions}
-                            </select>
-                        </div>
-                    </div>
-                `,
-                buttons: {
-                    save: {
-                        icon: '<i class="fas fa-save"></i>',
-                        label: game.i18n.localize("FANG.Dialogs.BtnSave") || "Speichern",
-                        callback: async (html) => {
-                            const newRole = html.find("#fang-edit-role").val().trim();
-                            const newFactionId = html.find("#fang-edit-faction").val();
-                            node.role = newRole !== "" ? newRole : null;
-                            node.factionId = newFactionId !== "" ? newFactionId : null;
-                            this.initSimulation();
-                            this.simulation.alpha(0.05).restart();
-                            await this.saveData();
-                        }
-                    },
-                    cancel: { icon: '<i class="fas fa-times"></i>', label: game.i18n.localize("FANG.Dialogs.BtnCancel") || "Abbrechen" }
-                },
-                default: "save"
-            }, { classes: ["dialog", "fang-dialog"], width: 400 }).render(true);
-        });
-
-        // --- Context Action: Edit Lore / Journals ---
-        newBtnLore.addEventListener("click", () => {
-            menu.classList.add("hidden");
-            if (!this._canEditGraph()) return;
-
-            const title = game.i18n.localize("FANG.Dialogs.EditLoreTitle") || "Edit Information & Journals";
-            const contentString = (game.i18n.localize("FANG.Dialogs.EditLoreContent") || "Manage details and journals for {actor}:").replace("{actor}", node.name);
-            const isGM = game.user.isGM;
-
-            // Prepare GM sections HTML
-            let gmHtml = "";
-            if (isGM) {
-                // Translations
-                const gmNotesTitle = game.i18n.localize("FANG.Dialogs.GMNotesTitle") || "GM Private Notes";
-                const gmNotesHint = game.i18n.localize("FANG.Dialogs.GMNotesHint") || "Drag & Drop a Journal Entry here, or click to open.";
-                const questLogTitle = game.i18n.localize("FANG.Dialogs.QuestLogTitle") || "Public Quest Log";
-                const questLogHint = game.i18n.localize("FANG.Dialogs.QuestLogHint") || "Visible to players as a Questgiver mark. Drop Journal here.";
-                const dropJournalHere = game.i18n.localize("FANG.Dialogs.DropJournalHere") || "Drop Journal Here";
-
-                // GM Private Notes Section
-                const gmJournalName = node.journalUuid ? (node._gmJournalName || "Linked Journal") : "None";
-                 const gmSection = `
-                     <div class="fang-dialog-section">
-                         <h3 style="margin-bottom: 5px; color: var(--fang-accent-gold);"><i class="fas fa-book"></i> ${gmNotesTitle}</h3>
-                         <p style="font-size: 0.8em; color: #888; margin-bottom: 5px;">${gmNotesHint}</p>
-                         <div id="fang-drop-gm" class="fang-drop-zone ${node.journalUuid ? 'has-link' : ''}">
-                             <span id="fang-gm-link-text">${node.journalUuid ? '<i class="fas fa-link"></i> ' + gmJournalName : dropJournalHere}</span>
-                             <button id="fang-remove-gm" class="btn danger-btn fang-drop-remove ${node.journalUuid ? '' : 'hidden'}" title="Remove Link">
-                                 <i class="fas fa-times"></i>
-                             </button>
-                         </div>
-                     </div>
-                 `;
-
-                // Public Quest Log Section (dynamic multi-entry list)
-                const addQuestBtn = game.i18n.localize("FANG.Dialogs.QuestLogAddBtn") || "Add Quest Journal";
-                 const existingQuestItems = (node.questUuids || []).map((q, i) => `
-                     <div id="fang-quest-item-${i}" class="fang-quest-item">
-                         <i class="fas fa-scroll" style="color: var(--fang-accent-gold);"></i>
-                         <span style="flex:1; font-size:0.9em;">${q.name}</span>
-                         <button class="btn danger-btn fang-quest-remove" data-idx="${i}" style="padding: 2px 6px; width: auto;" title="Remove">
-                             <i class="fas fa-times"></i>
-                         </button>
-                     </div>
-                 `).join("");
-
-                 const questSection = `
-                     <div class="fang-dialog-section">
-                         <h3 style="margin-bottom: 5px; color: var(--fang-accent-gold);"><i class="fas fa-scroll"></i> ${questLogTitle}</h3>
-                         <p style="font-size: 0.8em; color: #888; margin-bottom: 5px;">${questLogHint}</p>
-                         <div id="fang-quest-list">${existingQuestItems}</div>
-                         <div id="fang-drop-quest-new" class="fang-drop-zone fang-drop-zone-add" style="color: #888; font-size: 0.9em;">
-                             <i class="fas fa-plus"></i> ${addQuestBtn}
-                         </div>
-                     </div>
-                 `;
-                gmHtml = gmSection + questSection;
-            }
-
-            const legacyNotesLabel = game.i18n.localize("FANG.Dialogs.LegacyNotes") || "Quick Lore Note:";
-            const btnOpenPlayerJournal = game.i18n.localize("FANG.Dialogs.BtnOpenPlayerJournal") || "Open Player Notes Journal";
-            const btnConvertPlayerJournal = game.i18n.localize("FANG.Dialogs.BtnConvertPlayerJournal") || "Convert & Open in Player Journal";
-            const btnConvertHint = game.i18n.localize("FANG.Dialogs.BtnConvertPlayerJournalHint") || "Converts this simple text note into a dedicated, player-editable Foundry Journal. This gives you and the player full text formatting freedom.";
-
-            const dialogContent = `
-                <p><strong>${contentString}</strong></p>
-                <div class="form-group" style="height: 120px; display: ${node.playerLorePageId ? 'none' : 'block'};">
-                    <label style="font-size:0.8em; color:#888;">${legacyNotesLabel}</label>
-                    <textarea id="fang-edit-lore" style="width: 100%; height: 100%; resize: none; font-family: var(--fang-font-main); padding: 5px;">${node.lore || ""}</textarea>
-                </div>
-                <div style="margin-top: 10px;">
-                    <button id="fang-btn-player-journal" class="btn action-btn" style="width: 100%; padding: 8px;" title="${node.playerLorePageId ? '' : btnConvertHint}">
-                        <i class="fa-solid fa-book" aria-hidden="true"></i> ${node.playerLorePageId ? btnOpenPlayerJournal : btnConvertPlayerJournal}
-                    </button>
-                </div>
-                ${gmHtml}
-                <div style="margin-bottom: 15px;"></div>
-            `;
-
-            let d = new Dialog({
-                title: title,
-                content: dialogContent,
-                render: (html) => {
-                    // --- Player Journal Button ---
-                    html.find("#fang-btn-player-journal").click(async (ev) => {
-                        ev.preventDefault();
-                        const legacyText = html.find("#fang-edit-lore").val();
-                        if (legacyText !== node.lore) node.lore = legacyText; // Save temp state
-                        d.close();
-
-                        // Handle Journal Page Creation/Opening
-                        const entry = await this.getJournalEntry();
-                        if (!entry) return;
-
-                        if (node.playerLorePageId) {
-                            // Try to open existing
-                            const page = entry.pages.get(node.playerLorePageId);
-                            if (page) {
-                                entry.sheet.render(true, { pageId: node.playerLorePageId });
-                                return;
-                            }
-                            // If missing, fall through to create new
-                        }
-
-                        // Create new page
-                        if (game.user.isGM) {
-                            const newPage = await JournalEntryPage.create({
-                                name: "Lore: " + node.name,
-                                type: "text",
-                                text: { content: node.lore ? "<p>" + node.lore.replace(/\n/g, '<br>') + "</p>" : "" },
-                                ownership: { default: 3 } // Allow players to edit the page
-                            }, { parent: entry });
-
-                            node.playerLorePageId = newPage.id;
-                            node.lore = ""; // Clear legacy text
-
-                            const actorContext = this._getNodeActor(node);
-                            if (actorContext) await actorContext.unsetFlag("fang", "legacyLore");
-
-                            await this.saveData();
-                            entry.sheet.render(true, { pageId: newPage.id });
-                        } else {
-                            ui.notifications.warn("Only a GM can create the initial journal page for this node. Ask them to click 'Convert & Open' first.");
-                        }
-                    });
-
-                    // --- GM Drag & Drop Logic ---
-                    if (isGM) {
-                        const setupDropZone = (zoneId, textId, removeBtnId, fieldName, cacheName) => {
-                            const zone = html.find(`#${zoneId}`)[0];
-                            if (!zone) return;
-
-                            // Handle Clicks to open
-                            zone.addEventListener("click", async (e) => {
-                                if (e.target.closest(`#${removeBtnId}`)) return; // Ignore if clicking remove
-                                const uuid = node[fieldName];
-                                if (uuid) {
-                                    const doc = await fromUuid(uuid);
-                                    if (doc) doc.sheet.render(true);
-                                }
-                            });
-
-                            // Handle Removals
-                            html.find(`#${removeBtnId}`).click((e) => {
-                                e.stopPropagation();
-                                e.preventDefault();
-                                node[fieldName] = null;
-                                delete node[cacheName];
-                                 html.find(`#${textId}`).text("Drop Journal Here");
-                                 html.find(`#${removeBtnId}`).addClass("hidden");
-                                 zone.classList.remove("has-link");
-                                 zone.style.borderColor = "";
-                             });
-
-                            // Drag & Drop
-                            zone.addEventListener("dragover", (e) => {
-                                e.preventDefault();
-                                zone.style.borderColor = "var(--fang-accent-gold)";
-                                zone.style.backgroundColor = "rgba(212, 175, 55, 0.1)";
-                            });
-                             zone.addEventListener("dragleave", (e) => {
-                                 e.preventDefault();
-                                 zone.style.borderColor = "";
-                                 zone.style.backgroundColor = "";
-                             });
-                             zone.addEventListener("drop", async (e) => {
-                                 e.preventDefault();
-                                 zone.style.borderColor = "";
-                                 zone.style.backgroundColor = "";
-
-                                let data;
-                                try { data = JSON.parse(e.dataTransfer.getData("text/plain")); }
-                                catch (err) { return; }
-
-                                if (data.type !== "JournalEntry" && data.type !== "JournalEntryPage") {
-                                    ui.notifications.warn("Please drop a Journal Entry or Journal Page here.");
-                                    return;
-                                }
-
-                                const doc = await fromUuid(data.uuid);
-                                if (!doc) return;
-
-                                node[fieldName] = data.uuid;
-                                node[cacheName] = doc.name;
-
-                                html.find(`#${textId}`).html(`<i class="fas fa-link"></i> ${doc.name}`);
-                                html.find(`#${removeBtnId}`).removeClass("hidden");
-                                zone.classList.add("has-link");
-                            });
-                        };
-
-                        setupDropZone("fang-drop-gm", "fang-gm-link-text", "fang-remove-gm", "journalUuid", "_gmJournalName");
-
-                        // Multi-Quest Drop Zone
-                        const questListEl = html.find("#fang-quest-list")[0];
-                        const newQuestZone = html.find("#fang-drop-quest-new")[0];
-
-                        const refreshQuestRemoveButtons = () => {
-                            html.find(".fang-quest-remove").off("click").on("click", (e) => {
-                                e.stopPropagation();
-                                e.preventDefault();
-                                const idx = parseInt($(e.currentTarget).data("idx"));
-                                node.questUuids.splice(idx, 1);
-                                // Re-render list
-                                questListEl.innerHTML = (node.questUuids).map((q, i) => `
-                                     <div id="fang-quest-item-${i}" class="fang-quest-item">
-                                         <i class="fas fa-scroll" style="color:var(--fang-accent-gold);"></i>
-                                         <span style="flex:1;font-size:0.9em;">${q.name}</span>
-                                         <button class="btn danger-btn fang-quest-remove" data-idx="${i}" style="padding:2px 6px;width:auto;" title="Remove">
-                                             <i class="fas fa-times"></i>
-                                         </button>
-                                     </div>
-                                 `).join("");
-                                refreshQuestRemoveButtons();
-                            });
-                        };
-                        refreshQuestRemoveButtons();
-
-                        if (newQuestZone) {
-                            newQuestZone.addEventListener("dragover", (e) => {
-                                e.preventDefault();
-                                newQuestZone.style.borderColor = "var(--fang-accent-gold)";
-                                newQuestZone.style.backgroundColor = "rgba(212,175,55,0.1)";
-                            });
-                            newQuestZone.addEventListener("dragleave", () => {
-                                newQuestZone.style.borderColor = "";
-                                newQuestZone.style.backgroundColor = "";
-                            });
-                            newQuestZone.addEventListener("drop", async (e) => {
-                                e.preventDefault();
-                                newQuestZone.style.borderColor = "";
-                                newQuestZone.style.backgroundColor = "";
-                                let dropData;
-                                try { dropData = JSON.parse(e.dataTransfer.getData("text/plain")); } catch { return; }
-                                if (dropData.type !== "JournalEntry" && dropData.type !== "JournalEntryPage") {
-                                    ui.notifications.warn("Please drop a Journal Entry or Journal Page here.");
-                                    return;
-                                }
-                                const doc = await fromUuid(dropData.uuid);
-                                if (!doc) return;
-                                if (!node.questUuids) node.questUuids = [];
-                                if (!node.questUuids.some(q => q.uuid === dropData.uuid)) {
-                                    node.questUuids.push({ uuid: dropData.uuid, name: doc.name });
-                                    const idx = node.questUuids.length - 1;
-                                    questListEl.insertAdjacentHTML("beforeend", `
-                                        <div id="fang-quest-item-${idx}" class="fang-quest-item">
-                                            <i class="fas fa-scroll" style="color:var(--fang-accent-gold);"></i>
-                                            <span style="flex:1;font-size:0.9em;">${doc.name}</span>
-                                            <button class="btn danger-btn fang-quest-remove" data-idx="${idx}" style="padding:2px 6px;width:auto;" title="Remove">
-                                                <i class="fas fa-times"></i>
-                                            </button>
-                                        </div>
-                                    `);
-                                    refreshQuestRemoveButtons();
-                                } else {
-                                    ui.notifications.info("This Quest Journal is already linked.");
-                                }
-                            });
-                        }
-                    }
-                },
-                buttons: {
-                    save: {
-                        icon: '<i class="fas fa-save"></i>',
-                        label: game.i18n.localize("FANG.Dialogs.BtnSave") || "Save & Close",
-                        callback: async (html) => {
-                            if (!node.playerLorePageId) {
-                                const newLore = html.find("#fang-edit-lore").val().trim();
-                                node.lore = newLore !== "" ? newLore : null;
-
-                                const actorContext = this._getNodeActor(node);
-                                if (actorContext) {
-                                    if (node.lore) await actorContext.setFlag("fang", "legacyLore", node.lore);
-                                    else await actorContext.unsetFlag("fang", "legacyLore");
-                                }
-                            }
-
-                            // Re-evaluate Questgiver condition
-                            if (node.questUuids && node.questUuids.length > 0 && !node.conditions.includes("questgiver")) {
-                                node.conditions.push("questgiver");
-                            } else if ((!node.questUuids || node.questUuids.length === 0) && node.conditions.includes("questgiver")) {
-                                node.conditions = node.conditions.filter(c => c !== "questgiver");
-                            }
-
-                            this.ticked(); // Refresh visuals for questgiver
-                            await this.saveData();
-                        }
-                    },
-                    cancel: { icon: '<i class="fas fa-times"></i>', label: game.i18n.localize("FANG.Dialogs.BtnCancel") || "Cancel" }
-                },
-                default: "save"
-            }, { classes: ["dialog", "fang-dialog"], width: 450 }).render(true);
-        });
-
-        // --- Context Action: Delete Node ---
-        newBtnDelete.addEventListener("click", async () => {
-            menu.classList.add("hidden");
-            if (!this._canEditGraph()) return;
-
-            const dialogTitle = game.i18n.localize("FANG.Dialogs.DeleteConfirmTitle") || "Confirm Deletion";
-            const dialogContent = game.i18n.localize("FANG.Dialogs.DeleteNodeContent") || "Are you sure you want to delete this token from the graph? Your Player Lore notes will be kept safe.";
-
-            new Dialog({
-                title: dialogTitle,
-                content: `<p style="margin-bottom: 15px;">${dialogContent}</p>`,
-                buttons: {
-                    yes: {
-                        icon: '<i class="fas fa-check"></i>',
-                        label: game.i18n.localize("Yes"),
-                        callback: async () => {
-                            this.graphData.nodes = this.graphData.nodes.filter(n => n.id !== node.id);
-                            this.graphData.links = this.graphData.links.filter(l => {
-                                const sId = typeof l.source === 'object' ? l.source.id : l.source;
-                                const tId = typeof l.target === 'object' ? l.target.id : l.target;
-                                return sId !== node.id && tId !== node.id;
-                            });
-
-                            ui.notifications.info(game.i18n.localize("FANG.Messages.DeletedNode"));
-                            this.initSimulation();
-                            this.simulation.alpha(0.3).restart();
-                            this._populateActors();
-                            await this.saveData();
-                        }
-                    },
-                    no: {
-                        icon: '<i class="fas fa-times"></i>',
-                        label: game.i18n.localize("No"),
-                        className: "cancel" // Applies the white/grey FANG cancel styling
-                    }
-                },
-                default: "no"
-            }, { classes: ["dialog", "fang-dialog"], width: 400 }).render(true);
-        });
     }
 
+    _confirmDeleteNode(node) {
+        if (!this._canEditGraph()) return;
+        const dialogTitle = game.i18n.localize("FANG.Dialogs.DeleteConfirmTitle") || "Confirm Deletion";
+        const dialogContent = game.i18n.localize("FANG.Dialogs.DeleteNodeContent") || "Are you sure you want to delete this token from the graph? Your Player Lore notes will be kept safe.";
+
+        new Dialog({
+            title: dialogTitle,
+            content: `<p style="margin-bottom: 15px;">${dialogContent}</p>`,
+            buttons: {
+                yes: {
+                    icon: '<i class="fas fa-check"></i>',
+                    label: game.i18n.localize("Yes"),
+                    callback: async () => {
+                        this.graphData.nodes = this.graphData.nodes.filter(n => n.id !== node.id);
+                        this.graphData.links = this.graphData.links.filter(l => {
+                            const sId = typeof l.source === "object" ? l.source.id : l.source;
+                            const tId = typeof l.target === "object" ? l.target.id : l.target;
+                            return sId !== node.id && tId !== node.id;
+                        });
+
+                        ui.notifications.info(game.i18n.localize("FANG.Messages.DeletedNode"));
+                        this.initSimulation();
+                        this.simulation.alpha(0.3).restart();
+                        this._populateActors();
+                        await this.saveData();
+                    }
+                },
+                no: {
+                    icon: '<i class="fas fa-times"></i>',
+                    label: game.i18n.localize("No"),
+                    className: "cancel"
+                }
+            },
+            default: "no"
+        }, { classes: ["dialog", "fang-dialog"], width: 400 }).render(true);
+    }
+
+    async _openNodeJournal(node) {
+        if (!node?.journalUuid) return;
+        const doc = await fromUuid(node.journalUuid);
+        if (doc) doc.sheet.render(true);
+    }
+
+    async _openNodeQuest(node) {
+        if (!node?.questUuids?.length) return;
+        const quest = node.questUuids[0];
+        const doc = await fromUuid(quest.uuid);
+        if (doc) doc.sheet.render(true);
+        else if (!game.user.isGM) ui.notifications.warn("Quest Journal not found or you lack permissions.");
+    }
+
+    async _onEditActorProfile(node) {
+        if (!this._canEditGraph()) return;
+        const escapeHtml = foundry.utils.escapeHTML ?? ((value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#39;"
+        }[char])));
+        const localize = (key, fallback) => {
+            const value = game.i18n.localize(key);
+            return value && value !== key ? value : fallback;
+        };
+        const conditions = new Set(node.conditions || []);
+        const factionOptions = (this.graphData.factions || [])
+            .map(f => this._normalizeFaction(f))
+            .filter(f => this._isFactionVisibleToCurrentUser(f) || f.id === node.factionId)
+            .map(f => `<option value="${escapeHtml(f.id)}" ${f.id === node.factionId ? "selected" : ""}>${escapeHtml(f.name)}</option>`)
+            .join("");
+        const gmJournalLabel = node.journalUuid ? localize("FANG.ContextMenu.OpenJournal", "Open GM Journal") : "GM Journal";
+        const questLabel = node.questUuids?.length ? localize("FANG.ContextMenu.OpenQuest", "Open Quest Log") : "Quest Log";
+        const playerLoreLabel = node.playerLorePageId
+            ? localize("FANG.Dialogs.OpenPlayerJournal", "Open Player Lore")
+            : localize("FANG.Dialogs.ConvertPlayerJournal", "Create Player Lore");
+
+        const content = `
+            <div class="fang-actor-editor">
+                <section class="fang-editor-section">
+                    <h3><i class="fas fa-id-card"></i> ${localize("FANG.ActorEditor.Profile", "Profile")}</h3>
+                    <label>${localize("FANG.Dialogs.IdentityName", "Displayed Name")}</label>
+                    <input type="text" id="fang-profile-name" value="${escapeHtml(node.name || "")}">
+                    <label>${localize("FANG.Dialogs.RoleInput", "Role")}</label>
+                    <input type="text" id="fang-profile-role" value="${escapeHtml(node.role || "")}">
+                    <label>${localize("FANG.Dialogs.FactionInput", "Faction")}</label>
+                    <select id="fang-profile-faction">
+                        <option value="">-- None --</option>
+                        ${factionOptions}
+                    </select>
+                </section>
+                <section class="fang-editor-section">
+                    <h3><i class="fas fa-user-secret"></i> ${localize("FANG.ActorEditor.PlayerView", "Player View")}</h3>
+                    <label class="fang-editor-check"><input type="checkbox" id="fang-profile-hidden" ${node.hidden ? "checked" : ""}> ${localize("FANG.Dialogs.IdentityHidden", "Hidden for Players")}</label>
+                    <label>${localize("FANG.Dialogs.IdentityAlias", "Alias")}</label>
+                    <input type="text" id="fang-profile-alias" value="${escapeHtml(node.displayName || "")}" placeholder="???">
+                    <button type="button" id="fang-profile-player-lore" class="btn action-btn"><i class="fas fa-book-open"></i> ${playerLoreLabel}</button>
+                </section>
+                <section class="fang-editor-section">
+                    <h3><i class="fas fa-tags"></i> ${localize("FANG.ActorEditor.Conditions", "Conditions")}</h3>
+                    <div class="fang-condition-grid">
+                        <label><input type="checkbox" data-condition="deceased" ${conditions.has("deceased") ? "checked" : ""}> ${localize("FANG.Dialogs.ConditionDeceased", "Deceased")}</label>
+                        <label><input type="checkbox" data-condition="missing" ${conditions.has("missing") ? "checked" : ""}> ${localize("FANG.Dialogs.ConditionMissing", "Missing")}</label>
+                        <label><input type="checkbox" data-condition="captured" ${conditions.has("captured") ? "checked" : ""}> ${localize("FANG.Dialogs.ConditionCaptured", "Captured")}</label>
+                        <label><input type="checkbox" data-condition="questgiver" ${conditions.has("questgiver") ? "checked" : ""}> ${localize("FANG.Dialogs.ConditionQuestgiver", "Quest Giver")}</label>
+                    </div>
+                </section>
+                <section class="fang-editor-section fang-editor-notes">
+                    <h3><i class="fas fa-feather"></i> ${localize("FANG.ActorEditor.Notes", "Notes")}</h3>
+                    <textarea id="fang-profile-lore" placeholder="${localize("FANG.Dialogs.InfoInput", "Notes")}">${escapeHtml(node.lore || "")}</textarea>
+                </section>
+                <section class="fang-editor-actions">
+                    <button type="button" id="fang-profile-gm-journal" class="btn action-btn" ${node.journalUuid ? "" : "disabled"}><i class="fas fa-book"></i> ${gmJournalLabel}</button>
+                    <button type="button" id="fang-profile-quest" class="btn action-btn" ${node.questUuids?.length ? "" : "disabled"}><i class="fas fa-scroll"></i> ${questLabel}</button>
+                    <button type="button" id="fang-profile-replace" class="btn action-btn" ${node.isPlaceholder && game.user.isGM ? "" : "disabled"}><i class="fas fa-random"></i> ${localize("FANG.ContextMenu.ReplacePlaceholder", "Replace with Actor")}</button>
+                    <button type="button" id="fang-profile-delete" class="btn danger-btn"><i class="fas fa-trash"></i> ${localize("FANG.ContextMenu.DeleteNode", "Delete Actor")}</button>
+                </section>
+            </div>`;
+
+        let dialog;
+        dialog = new Dialog({
+            title: localize("FANG.ActorEditor.Title", "Edit Actor"),
+            content,
+            buttons: {
+                save: {
+                    icon: '<i class="fas fa-save"></i>',
+                    label: localize("FANG.Dialogs.BtnSave", "Save"),
+                    callback: async (html) => {
+                        const newName = html.find("#fang-profile-name").val().trim();
+                        const newRole = html.find("#fang-profile-role").val().trim();
+                        const newFactionId = html.find("#fang-profile-faction").val();
+                        const newAlias = html.find("#fang-profile-alias").val().trim();
+                        const newLore = html.find("#fang-profile-lore").val().trim();
+                        const newConditions = [];
+                        html.find("[data-condition]").each((_, el) => {
+                            if (el.checked) newConditions.push(el.dataset.condition);
+                        });
+
+                        if (newName) node.name = newName;
+                        node.role = newRole || null;
+                        node.factionId = newFactionId || null;
+                        node.hidden = html.find("#fang-profile-hidden").is(":checked");
+                        node.displayName = newAlias;
+                        node.lore = newLore || null;
+                        node.conditions = newConditions;
+
+                        this.ticked();
+                        this._populateActors();
+                        await this.saveData();
+                    }
+                },
+                cancel: {
+                    icon: '<i class="fas fa-times"></i>',
+                    label: localize("FANG.Dialogs.BtnCancel", "Cancel")
+                }
+            },
+            default: "save",
+            render: (html) => {
+                html.find("#fang-profile-gm-journal").on("click", async () => this._openNodeJournal(node));
+                html.find("#fang-profile-quest").on("click", async () => this._openNodeQuest(node));
+                html.find("#fang-profile-replace").on("click", async () => {
+                    dialog.close();
+                    await this._onReplacePlaceholder(node);
+                });
+                html.find("#fang-profile-delete").on("click", () => {
+                    dialog.close();
+                    this._confirmDeleteNode(node);
+                });
+                html.find("#fang-profile-player-lore").on("click", async () => {
+                    const entry = await this.getJournalEntry();
+                    if (!entry) return;
+                    if (node.playerLorePageId) {
+                        const page = entry.pages.get(node.playerLorePageId);
+                        if (page) entry.sheet.render(true, { pageId: node.playerLorePageId });
+                        return;
+                    }
+                    if (!game.user.isGM) {
+                        ui.notifications.warn("Only a GM can create the initial player lore page.");
+                        return;
+                    }
+                    const newPage = await JournalEntryPage.create({
+                        name: "Lore: " + (node.name || "Unknown"),
+                        type: "text",
+                        text: { content: node.lore ? "<p>" + node.lore.replace(/\n/g, "<br>") + "</p>" : "" },
+                        ownership: { default: 3 }
+                    }, { parent: entry });
+                    node.playerLorePageId = newPage.id;
+                    node.lore = "";
+                    await this.saveData();
+                    entry.sheet.render(true, { pageId: newPage.id });
+                });
+            }
+        }, { classes: ["dialog", "fang-dialog", "fang-actor-editor-dialog"], width: 760 }).render(true);
+    }
     _onCanvasPointerDown(event) {
         if (event.pointerType !== "touch" && event.pointerType !== "pen") return;
         const pos = this._getCanvasPointerPosition(event);
@@ -3490,7 +3073,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             if (!this._canEditGraph()) return;
 
             const title = game.i18n.localize("FANG.Dialogs.EditConnectionTitle") || "Informationen bearbeiten";
-            const contentString = game.i18n.localize("FANG.Dialogs.EditConnectionContent") || "Zusätzliche Details für die Verbindung:";
+            const contentString = game.i18n.localize("FANG.Dialogs.EditConnectionContent") || "ZusÃ¤tzliche Details fÃ¼r die Verbindung:";
             const lblName = game.i18n.localize("FANG.Dialogs.LabelInput") || "Bezeichnung (Label)";
             const lblInfo = game.i18n.localize("FANG.Dialogs.InfoInput") || "Notizen";
             const lblDirectional = game.i18n.localize("FANG.Dialogs.DirectionalInput") || "Gerichtet (Pfeil)";
@@ -5002,14 +4585,15 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
     // @param {boolean} transition - Whether to animate the transition.
     zoomToFit(transition = true) {
         const isMonitor = game.user.name.toLowerCase().includes("monitor");
-        // Centering is a view-only operation — no edit lock required
+        // Centering is a view-only operation â€” no edit lock required
         if (!this.canvas || !this.zoom || !this.graphData.nodes.length) return;
 
         const padding = 60;
         const width = isMonitor ? window.innerWidth : this.width;
         const height = isMonitor ? window.innerHeight : this.height;
         const sidebar = this.element ? this.element.querySelector(".sidebar") : null;
-        const actualWidth = (sidebar && sidebar.style.display !== "none") ? width - 300 : width;
+        const sidebarWidth = (sidebar && sidebar.style.display !== "none") ? sidebar.getBoundingClientRect().width : 0;
+        const actualWidth = Math.max(100, width - sidebarWidth);
 
         let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
         this.graphData.nodes.forEach(d => {
@@ -6057,7 +5641,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     userName: game.user.name,
                     time: Date.now()
                 });
-                ui.notifications.info(game.user.name + " " + game.i18n.localize("FANG.Messages.LockAcquired") || "hat die Bearbeitung übernommen.");
+                ui.notifications.info(game.user.name + " " + game.i18n.localize("FANG.Messages.LockAcquired") || "hat die Bearbeitung Ã¼bernommen.");
                 game.socket.emit("module.fang", { action: "lockStatusUpdate" });
                 this.render();
             } else {

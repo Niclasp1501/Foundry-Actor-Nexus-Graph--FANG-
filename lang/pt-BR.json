@@ -21,6 +21,7 @@
       "AddPlaceholder": "Adicionar Marcador",
       "DeleteElement": "Excluir Elemento",
       "ManageElements": "Gerenciar Elementos",
+            "ClosePanel": "Fechar painel",
             "Inspector": "Inspetor",
       "SearchTitle": "Pesquisar e Filtrar",
       "SearchPlaceholder": "Pesquisar nome, papel, facção, link...",
@@ -154,10 +155,16 @@
       "SpotlightHiddenBlocked": "Revele o personagem primeiro antes de usar o Destaque!",
       "MonitorViewClosed": "Janela do monitor fechada."
     },
+        "ActorEditor": {
+            "Title": "Editar ator",
+            "Profile": "Perfil",
+            "PlayerView": "Vis?o dos jogadores",
+            "Conditions": "Condi??es",
+            "Notes": "Notas"
+        },
     "ContextMenu": {
             "Info": "Ver informa??es",
             "Edit": "Editar",
-            "More": "Mais...",
       "EditRole": "Papel / Organização",
       "EditLore": "Editar Informação",
       "OpenJournal": "Abrir Diário do Mestre",

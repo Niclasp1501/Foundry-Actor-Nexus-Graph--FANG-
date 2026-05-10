@@ -21,6 +21,7 @@
       "AddPlaceholder": "Dodaj placeholder",
       "DeleteElement": "Usuń element",
       "ManageElements": "Zarządzaj elementami",
+            "ClosePanel": "Zamknij panel",
             "Inspector": "Inspektor",
       "SearchTitle": "Szukaj i filtruj",
       "SearchPlaceholder": "Szukaj nazwy, roli, frakcji, powiązania...",
@@ -154,10 +155,16 @@
       "SpotlightHiddenBlocked": "Najpierw odkryj postać, zanim użyjesz reflektora!",
       "MonitorViewClosed": "Widok monitorowania zamknięty."
     },
+        "ActorEditor": {
+            "Title": "Edytuj aktora",
+            "Profile": "Profil",
+            "PlayerView": "Widok graczy",
+            "Conditions": "Stany",
+            "Notes": "Notatki"
+        },
     "ContextMenu": {
             "Info": "Poka? informacje",
             "Edit": "Edytuj",
-            "More": "Wi?cej...",
       "EditRole": "Rola / Organizacja",
       "EditLore": "Edytuj informacje",
       "OpenJournal": "Otwórz dziennik MG",

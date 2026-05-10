@@ -21,6 +21,7 @@
       "AddPlaceholder": "Přidat zástupný symbol",
       "DeleteElement": "Smazat prvek",
       "ManageElements": "Spravovat prvky",
+            "ClosePanel": "Zav??t panel",
             "Inspector": "Inspektor",
       "SearchTitle": "Hledání a filtrování",
       "SearchPlaceholder": "Hledat jméno, roli, frakci, spojení...",
@@ -154,10 +155,16 @@
       "SpotlightHiddenBlocked": "Nejprve odhalte postavu, než použijete Reflektor!",
       "MonitorViewClosed": "Monitorovací okno zavřeno."
     },
+        "ActorEditor": {
+            "Title": "Upravit akt?ra",
+            "Profile": "Profil",
+            "PlayerView": "Pohled hr???",
+            "Conditions": "Stavy",
+            "Notes": "Pozn?mky"
+        },
     "ContextMenu": {
             "Info": "Zobrazit info",
             "Edit": "Upravit",
-            "More": "V?ce...",
       "EditRole": "Role / Organizace",
       "EditLore": "Upravit informace",
       "OpenJournal": "Otevřít GM deník",
