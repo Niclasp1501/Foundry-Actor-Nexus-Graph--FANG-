@@ -208,7 +208,7 @@ body.role-player .fang-app-container .gm-only {
     box-shadow: var(--fang-shadow-sm);
     display: flex;
     flex-direction: column;
-    z-index: 10;
+    z-index: 1600;
     overflow: visible;
     position: relative;
 }
@@ -490,6 +490,113 @@ body.role-player .fang-app-container .gm-only {
     line-height: 1.25;
 }
 
+.fang-quest-manager ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 6px;
+}
+
+.fang-quest-manager-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 9px;
+    border: 1px solid var(--fang-border-color);
+    border-radius: 10px;
+    background: var(--fang-bg-color);
+}
+
+.fang-quest-title {
+    font-weight: 800;
+    color: var(--fang-primary-red);
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.fang-quest-manager-actions {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 4px;
+    justify-content: flex-end;
+}
+
+.fang-icon-btn {
+    width: 30px;
+    height: 30px;
+    display: inline-grid;
+    place-items: center;
+    border: 1px solid var(--fang-border-color);
+    border-radius: 8px;
+    background: #fffaf0;
+    color: var(--fang-primary-red);
+    cursor: pointer;
+}
+
+.fang-icon-btn:hover {
+    border-color: var(--fang-accent-gold);
+    transform: translateY(-1px);
+}
+
+.fang-icon-btn.danger {
+    color: #8b0000;
+    background: rgba(139, 0, 0, 0.08);
+}
+
+.fang-quest-manager-empty {
+    padding: 14px;
+    border: 1px dashed var(--fang-border-color);
+    border-radius: 12px;
+    color: #666;
+    background: rgba(255, 255, 255, 0.45);
+}
+
+.fang-quest-visibility {
+    align-self: center;
+    padding: 3px 7px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 800;
+    background: rgba(25, 135, 84, 0.12);
+    color: #198754;
+}
+
+.fang-quest-visibility.is-hidden {
+    background: rgba(139, 0, 0, 0.1);
+    color: var(--fang-primary-red);
+}
+
+.fang-quest-add {
+    display: grid;
+    gap: 8px;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--fang-border-color);
+}
+
+.fang-quest-drop-zone {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 42px;
+    padding: 8px 10px;
+    border: 1px dashed var(--fang-accent-gold);
+    border-radius: 10px;
+    background: rgba(212, 175, 55, 0.08);
+    color: var(--fang-primary-red);
+    font-weight: 800;
+}
+
+.fang-quest-drop-zone.drag-over {
+    background: rgba(212, 175, 55, 0.2);
+    box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.16);
+}
+
 /* Add a gold accent line */
 .fang-app-container .sidebar-header h1::before {
     content: "";
@@ -571,7 +678,7 @@ body.role-player .fang-app-container .gm-only {
     border-radius: 14px;
     box-shadow: 0 18px 42px rgba(0, 0, 0, 0.28);
     background: var(--fang-card-bg);
-    z-index: 1200;
+    z-index: 1700;
 }
 
 .fang-app-container.sidebar-panel-open .tabs-container {
@@ -585,6 +692,12 @@ body.role-player .fang-app-container .gm-only {
 
 .fang-app-container .tab-content.active {
     display: block;
+}
+
+.fang-app-container .fang-legacy-editor-tab,
+.fang-app-container .fang-legacy-editor-panel,
+.fang-app-container .fang-legacy-editor-panel.active {
+    display: none !important;
 }
 
 @keyframes fangFadeIn {

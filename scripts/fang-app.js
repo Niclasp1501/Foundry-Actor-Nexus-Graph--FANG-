@@ -523,6 +523,13 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const railPresentation = this.element.querySelector("#fangRailPresentation");
         if (railPresentation) railPresentation.addEventListener("click", () => this._openSidebarPanel("view"));
 
+        const railFactions = this.element.querySelector("#fangRailFactions");
+        if (railFactions) railFactions.addEventListener("click", (event) => {
+            event.preventDefault();
+            this._closeSidebarPanel();
+            this._onManageFactions();
+        });
+
         const railManage = this.element.querySelector("#fangRailManage");
         if (railManage) railManage.addEventListener("click", () => this._openSidebarPanel("advanced"));
 
@@ -817,11 +824,16 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     if (node.journalUuid === undefined) node.journalUuid = null;
                     // Migration: questUuid (single) -> questUuids (array)
                     if (node.questUuid !== undefined && !node.questUuids) {
-                        node.questUuids = node.questUuid ? [{ uuid: node.questUuid, name: node._questJournalName || "Quest Journal" }] : [];
+                        node.questUuids = node.questUuid ? [{ uuid: node.questUuid, name: node._questJournalName || "Quest Journal", visibleToPlayers: true }] : [];
                         delete node.questUuid;
                         delete node._questJournalName;
                     }
                     if (!node.questUuids) node.questUuids = [];
+                    node.questUuids = node.questUuids.map(q => ({
+                        uuid: q.uuid,
+                        name: q.name || "Quest Journal",
+                        visibleToPlayers: q.visibleToPlayers !== false
+                    }));
                 });
 
                 if (this.graphData.showFactionLines === undefined) {
@@ -1088,7 +1100,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 lore: n.lore || "",
                 playerLorePageId: n.playerLorePageId || null,
                 journalUuid: n.journalUuid || null,
-                questUuids: (n.questUuids || []).map(q => ({ uuid: q.uuid, name: q.name })),
+                questUuids: (n.questUuids || []).map(q => ({ uuid: q.uuid, name: q.name, visibleToPlayers: q.visibleToPlayers !== false })),
                 hidden: n.hidden || false,
                 displayName: n.displayName || "",
                 conditions: n.conditions || []
@@ -2274,7 +2286,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                             if (!targetNode.questUuids) targetNode.questUuids = [];
                             const alreadyLinked = targetNode.questUuids.some(q => q.uuid === data.uuid);
                             if (!alreadyLinked) {
-                                targetNode.questUuids.push({ uuid: data.uuid, name: droppedDoc.name });
+                                targetNode.questUuids.push({ uuid: data.uuid, name: droppedDoc.name, visibleToPlayers: false });
                             }
                             if (!targetNode.conditions) targetNode.conditions = [];
                             if (!targetNode.conditions.includes("questgiver")) {
@@ -2637,24 +2649,29 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const btnInfo = menu.querySelector("#ctxInfo");
         const btnEdit = menu.querySelector("#ctxEditActor");
         const btnSpotlight = menu.querySelector("#ctxSpotlight");
+        const btnQuests = menu.querySelector("#ctxQuests");
         const btnDelete = menu.querySelector("#ctxDeleteNode");
 
         const newBtnInfo = btnInfo ? btnInfo.cloneNode(true) : null;
         const newBtnEdit = btnEdit ? btnEdit.cloneNode(true) : null;
         const newBtnSpotlight = btnSpotlight ? btnSpotlight.cloneNode(true) : null;
+        const newBtnQuests = btnQuests ? btnQuests.cloneNode(true) : null;
         const newBtnDelete = btnDelete ? btnDelete.cloneNode(true) : null;
 
         if (btnInfo && newBtnInfo) btnInfo.parentNode.replaceChild(newBtnInfo, btnInfo);
         if (btnEdit && newBtnEdit) btnEdit.parentNode.replaceChild(newBtnEdit, btnEdit);
         if (btnSpotlight && newBtnSpotlight) btnSpotlight.parentNode.replaceChild(newBtnSpotlight, btnSpotlight);
+        if (btnQuests && newBtnQuests) btnQuests.parentNode.replaceChild(newBtnQuests, btnQuests);
         if (btnDelete && newBtnDelete) btnDelete.parentNode.replaceChild(newBtnDelete, btnDelete);
 
         const hasLock = this._canEditGraph(true);
         const isPlayerView = !game.user.isGM;
         const tokenIsHidden = !!node.hidden;
+        const hasQuests = !!this._getNodeQuestsForCurrentUser(node).length;
 
         if (newBtnInfo) newBtnInfo.style.display = (isPlayerView && tokenIsHidden) ? "none" : "flex";
         if (newBtnSpotlight) newBtnSpotlight.style.display = (isPlayerView && tokenIsHidden) ? "none" : "flex";
+        if (newBtnQuests) newBtnQuests.style.display = (tokenIsHidden && isPlayerView) || (!hasQuests && !hasLock) ? "none" : "flex";
         if (newBtnEdit) newBtnEdit.style.display = hasLock ? "flex" : "none";
         if (newBtnDelete) newBtnDelete.style.display = hasLock ? "flex" : "none";
 
@@ -2670,6 +2687,11 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 return;
             }
             this._onSpotlight(node);
+        });
+
+        newBtnQuests?.addEventListener("click", () => {
+            menu.classList.add("hidden");
+            this._onManageNodeQuests(node);
         });
 
         newBtnEdit?.addEventListener("click", () => {
@@ -2736,6 +2758,175 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         else if (!game.user.isGM) ui.notifications.warn("Quest Journal not found or you lack permissions.");
     }
 
+    _getNodeQuestsForCurrentUser(node) {
+        const quests = Array.isArray(node?.questUuids) ? node.questUuids : [];
+        if (game.user.isGM) return quests;
+        return quests.filter(q => q.visibleToPlayers !== false);
+    }
+
+    async _addQuestToNode(node, uuid, { visibleToPlayers = false } = {}) {
+        if (!this._canEditGraph(true) || !node || !uuid) return false;
+        const doc = await fromUuid(uuid);
+        if (!doc) return false;
+        if (!["JournalEntry", "JournalEntryPage"].includes(doc.documentName)) return false;
+
+        if (!node.questUuids) node.questUuids = [];
+        if (!node.questUuids.some(q => q.uuid === uuid)) {
+            node.questUuids.push({ uuid, name: doc.name, visibleToPlayers });
+        }
+        if (!node.conditions) node.conditions = [];
+        if (!node.conditions.includes("questgiver")) node.conditions.push("questgiver");
+        await this.saveData();
+        this.ticked();
+        return true;
+    }
+
+    async _onManageNodeQuests(node) {
+        const escapeHtml = foundry.utils.escapeHTML ?? ((value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#39;"
+        }[char])));
+        const localize = (key, fallback) => {
+            const value = game.i18n.localize(key);
+            return value && value !== key ? value : fallback;
+        };
+        const canEdit = this._canEditGraph(true);
+        const quests = canEdit ? (Array.isArray(node.questUuids) ? node.questUuids : []) : this._getNodeQuestsForCurrentUser(node);
+        const journalOptions = game.journal.contents
+            .sort((a, b) => a.name.localeCompare(b.name))
+            .map(j => `<option value="${escapeHtml(j.uuid)}" data-search="${escapeHtml(j.name.toLowerCase())}">${escapeHtml(j.name)}</option>`)
+            .join("");
+        const emptyText = canEdit
+            ? localize("FANG.Dialogs.QuestLogHint", "Visible to players as a Questgiver mark. Drop Journal here.")
+            : localize("FANG.Dialogs.SelectQuestContent", "Choose a Quest Journal to open:");
+        const rows = quests.length
+            ? quests.map((quest, index) => `
+                <li class="fang-quest-manager-row" data-index="${index}" data-uuid="${escapeHtml(quest.uuid)}">
+                    <span class="fang-quest-title"><i class="fas fa-scroll"></i> ${escapeHtml(quest.name || "Quest Journal")}</span>
+                    <div class="fang-quest-manager-actions">
+                        ${game.user.isGM ? `<span class="fang-quest-visibility ${quest.visibleToPlayers === false ? "is-hidden" : "is-visible"}">${quest.visibleToPlayers === false ? localize("FANG.Dialogs.QuestHiddenFromPlayers", "Hidden from players") : localize("FANG.Dialogs.QuestVisibleToPlayers", "Visible to players")}</span>` : ""}
+                        <button type="button" class="fang-icon-btn fang-quest-open" title="${localize("FANG.ContextMenu.OpenQuest", "Open Quest Log")}" data-tooltip="${localize("FANG.ContextMenu.OpenQuest", "Open Quest Log")}"><i class="fas fa-book-open"></i></button>
+                        <button type="button" class="fang-icon-btn fang-quest-spotlight" title="${localize("FANG.ContextMenu.Spotlight", "Spotlight for Everyone")}" data-tooltip="${localize("FANG.ContextMenu.Spotlight", "Spotlight for Everyone")}"><i class="fas fa-compass"></i></button>
+                        ${canEdit ? `<button type="button" class="fang-icon-btn fang-quest-toggle-visibility" title="${quest.visibleToPlayers === false ? localize("FANG.Dialogs.QuestMakeVisible", "Reveal") : localize("FANG.Dialogs.QuestMakeHidden", "Hide")}" data-tooltip="${quest.visibleToPlayers === false ? localize("FANG.Dialogs.QuestMakeVisible", "Reveal") : localize("FANG.Dialogs.QuestMakeHidden", "Hide")}"><i class="fas ${quest.visibleToPlayers === false ? "fa-eye" : "fa-eye-slash"}"></i></button>` : ""}
+                        ${canEdit ? `<button type="button" class="fang-icon-btn danger fang-quest-remove" title="${localize("FANG.UI.Delete", "Delete")}" data-tooltip="${localize("FANG.UI.Delete", "Delete")}"><i class="fas fa-trash"></i></button>` : ""}
+                    </div>
+                </li>`)
+                .join("")
+            : `<li class="fang-quest-manager-empty">${escapeHtml(emptyText)}</li>`;
+        const addQuestForm = canEdit
+            ? `<div class="fang-quest-add">
+                    <label><i class="fas fa-plus"></i> ${localize("FANG.Dialogs.QuestLogAddBtn", "Add Quest Journal")}</label>
+                    <div class="fang-quest-drop-zone" data-drop-zone="quest">
+                        <i class="fas fa-arrow-down"></i>
+                        <span>${localize("FANG.Dialogs.QuestDropHint", "Drop a Journal here to add it as a hidden quest.")}</span>
+                    </div>
+                    <input type="search" id="fang-quest-search" placeholder="${localize("FANG.Dialogs.QuestSearchPlaceholder", "Search quest journals...")}">
+                    <select id="fang-quest-add-select">
+                        <option value="">-- ${localize("FANG.Dialogs.SelectQuestContent", "Choose a Quest Journal to open:")} --</option>
+                        ${journalOptions}
+                    </select>
+                    <label class="fang-editor-check">
+                        <input type="checkbox" id="fang-quest-add-visible">
+                        ${localize("FANG.Dialogs.QuestVisibleToPlayers", "Visible to players")}
+                    </label>
+                    <button type="button" id="fang-quest-add-btn" class="btn action-btn"><i class="fas fa-plus"></i> ${localize("FANG.Dialogs.QuestLogAddBtn", "Add Quest Journal")}</button>
+                    <p class="hint">${localize("FANG.Dialogs.QuestAddHiddenHint", "New quests are hidden from players until you reveal them.")}</p>
+                </div>`
+            : "";
+
+        let dialog;
+        dialog = new Dialog({
+            title: `${localize("FANG.UI.Quests", "Quests")}: ${escapeHtml(node.name || "")}`,
+            content: `
+                <div class="fang-quest-manager">
+                    <ul>${rows}</ul>
+                    ${addQuestForm}
+                </div>`,
+            buttons: {
+                close: {
+                    icon: '<i class="fas fa-times"></i>',
+                    label: localize("FANG.UI.ClosePanel", "Close")
+                }
+            },
+            render: (html) => {
+                html.find(".fang-quest-open").on("click", async (event) => {
+                    const row = event.currentTarget.closest(".fang-quest-manager-row");
+                    const doc = row?.dataset?.uuid ? await fromUuid(row.dataset.uuid) : null;
+                    if (doc) doc.sheet.render(true);
+                    else ui.notifications.warn("Quest Journal not found or permissions missing.");
+                });
+                html.find(".fang-quest-spotlight").on("click", async (event) => {
+                    const row = event.currentTarget.closest(".fang-quest-manager-row");
+                    if (row?.dataset?.uuid) await this._onQuestSpotlight(row.dataset.uuid, { broadcast: true });
+                });
+                html.find(".fang-quest-toggle-visibility").on("click", async (event) => {
+                    if (!canEdit) return;
+                    const row = event.currentTarget.closest(".fang-quest-manager-row");
+                    const index = Number(row?.dataset?.index);
+                    if (!Number.isInteger(index) || !node.questUuids?.[index]) return;
+                    node.questUuids[index].visibleToPlayers = node.questUuids[index].visibleToPlayers === false;
+                    await this.saveData();
+                    dialog.close();
+                    this._onManageNodeQuests(node);
+                });
+                html.find(".fang-quest-remove").on("click", async (event) => {
+                    if (!canEdit) return;
+                    const row = event.currentTarget.closest(".fang-quest-manager-row");
+                    const index = Number(row?.dataset?.index);
+                    if (!Number.isInteger(index)) return;
+                    node.questUuids.splice(index, 1);
+                    if (!node.questUuids.length) {
+                        node.conditions = (node.conditions || []).filter(c => c !== "questgiver");
+                    }
+                    await this.saveData();
+                    this.ticked();
+                    dialog.close();
+                    this._onManageNodeQuests(node);
+                });
+                html.find("#fang-quest-search").on("input", (event) => {
+                    const query = String(event.currentTarget.value || "").toLowerCase().trim();
+                    html.find("#fang-quest-add-select option").each((_, option) => {
+                        if (!option.value) return;
+                        option.hidden = query && !String(option.dataset.search || "").includes(query);
+                    });
+                });
+                html.find(".fang-quest-drop-zone")
+                    .on("dragover", (event) => {
+                        event.preventDefault();
+                        event.currentTarget.classList.add("drag-over");
+                    })
+                    .on("dragleave", (event) => event.currentTarget.classList.remove("drag-over"))
+                    .on("drop", async (event) => {
+                        event.preventDefault();
+                        event.currentTarget.classList.remove("drag-over");
+                        let data;
+                        try {
+                            data = JSON.parse(event.originalEvent.dataTransfer.getData("text/plain"));
+                        } catch (err) {
+                            return;
+                        }
+                        if (!["JournalEntry", "JournalEntryPage"].includes(data?.type) || !data.uuid) return;
+                        if (await this._addQuestToNode(node, data.uuid, { visibleToPlayers: false })) {
+                            dialog.close();
+                            this._onManageNodeQuests(node);
+                        }
+                    });
+                html.find("#fang-quest-add-btn").on("click", async () => {
+                    if (!canEdit) return;
+                    const uuid = html.find("#fang-quest-add-select").val();
+                    if (!uuid) return;
+                    if (await this._addQuestToNode(node, uuid, { visibleToPlayers: html.find("#fang-quest-add-visible").is(":checked") })) {
+                        dialog.close();
+                        this._onManageNodeQuests(node);
+                    }
+                });
+            }
+        }, { classes: ["dialog", "fang-dialog", "fang-quest-manager-dialog"], width: 620 }).render(true);
+    }
+
     async _onEditActorProfile(node) {
         if (!this._canEditGraph()) return;
         const isGM = game.user.isGM;
@@ -2757,7 +2948,6 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             .map(f => `<option value="${escapeHtml(f.id)}" ${f.id === node.factionId ? "selected" : ""}>${escapeHtml(f.name)}</option>`)
             .join("");
         const gmJournalLabel = node.journalUuid ? localize("FANG.ContextMenu.OpenJournal", "Open GM Journal") : "GM Journal";
-        const questLabel = node.questUuids?.length ? localize("FANG.ContextMenu.OpenQuest", "Open Quest Log") : "Quest Log";
         const playerLoreLabel = node.playerLorePageId
             ? localize("FANG.Dialogs.OpenPlayerJournal", "Open Player Lore")
             : localize("FANG.Dialogs.ConvertPlayerJournal", "Create Player Lore");
@@ -2772,7 +2962,6 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const actionSection = isGM ? `
                 <section class="fang-editor-actions">
                     <button type="button" id="fang-profile-gm-journal" class="btn action-btn" ${node.journalUuid ? "" : "disabled"}><i class="fas fa-book"></i> ${gmJournalLabel}</button>
-                    <button type="button" id="fang-profile-quest" class="btn action-btn" ${node.questUuids?.length ? "" : "disabled"}><i class="fas fa-scroll"></i> ${questLabel}</button>
                     <button type="button" id="fang-profile-replace" class="btn action-btn" ${node.isPlaceholder ? "" : "disabled"}><i class="fas fa-random"></i> ${localize("FANG.ContextMenu.ReplacePlaceholder", "Replace with Actor")}</button>
                     <button type="button" id="fang-profile-delete" class="btn danger-btn"><i class="fas fa-trash"></i> ${localize("FANG.ContextMenu.DeleteNode", "Delete Actor")}</button>
                 </section>` : "";
@@ -2851,7 +3040,6 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             render: (html) => {
                 if (!isGM) return;
                 html.find("#fang-profile-gm-journal").on("click", async () => this._openNodeJournal(node));
-                html.find("#fang-profile-quest").on("click", async () => this._openNodeQuest(node));
                 html.find("#fang-profile-replace").on("click", async () => {
                     dialog.close();
                     await this._onReplacePlaceholder(node);
@@ -3429,12 +3617,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     _syncSidebarSelection(type, id) {
-        // Auto-switch to Editor Tab
-        const editorTab = this.element.querySelector('.tab-btn[data-tab="editor"]');
-        if (editorTab && !editorTab.classList.contains('active')) {
-            editorTab.click();
-        }
-
+        // Keep legacy form fields synchronized for compatibility, but never open
+        // the old editor sidebar. Modern editing lives in canvas tools/context menus.
         if (type === "node") {
             const sourceSelect = this.element.querySelector("#sourceSelect");
             const deleteSelect = this.element.querySelector("#deleteSelect");
@@ -4998,8 +5182,15 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 placeholderType: n.placeholderType || null,
                 img: n.img || null,
                 name: n.name,
+                originalName: n.originalName || n.name,
                 isCenter: n.isCenter || false,
                 lore: n.lore || "",
+                playerLorePageId: n.playerLorePageId || null,
+                journalUuid: n.journalUuid || null,
+                questUuids: (n.questUuids || []).map(q => ({ uuid: q.uuid, name: q.name, visibleToPlayers: q.visibleToPlayers !== false })),
+                hidden: n.hidden || false,
+                displayName: n.displayName || "",
+                conditions: n.conditions || [],
                 factionId: n.factionId || null,
                 role: n.role || "",
                 x: n.x,
@@ -5299,7 +5490,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             subtitle: subtitle,
             lore: loreText,
             portrait: imgSrc,
-            quests: node.questUuids || []
+            quests: this._getNodeQuestsForCurrentUser(node)
         };
     }
 

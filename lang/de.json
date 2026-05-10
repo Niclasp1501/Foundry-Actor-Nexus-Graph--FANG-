@@ -23,7 +23,7 @@
             "AddPlaceholder": "Platzhalter hinzufügen",
             "DeleteElement": "Element löschen",
             "ManageElements": "Elemente verwalten",
-            "ClosePanel": "Panel schlie?en",
+            "ClosePanel": "Panel schließen",
             "Inspector": "Inspektor",
             "SearchTitle": "Suche & Filter",
             "SearchPlaceholder": "Name, Rolle, Fraktion, Verbindung suchen...",
@@ -175,7 +175,7 @@
             "Title": "Akteur bearbeiten",
             "Profile": "Profil",
             "PlayerView": "Spieleransicht",
-            "Conditions": "Zust?nde",
+            "Conditions": "Zustände",
             "Notes": "Notizen"
         },
         "ContextMenu": {
@@ -257,12 +257,19 @@
             "BtnOpenPlayerJournal": "Spieler-Notizen öffnen",
             "BtnConvertPlayerJournal": "In Spieler-Journal umwandeln",
             "BtnConvertPlayerJournalHint": "Wandelt diese einfache Textnotiz in ein dediziertes, vom Spieler bearbeitbares Foundry-Journal um. Dies gibt dir und dem Spieler volle Textformatierungsfreiheit.",
-            "QuestLogAddBtn": "Quest-Journal hinzufügen (hier ablegen)",
-            "SelectQuestContent": "Wähle ein Quest-Journal zum Öffnen:",
+            "QuestLogAddBtn": "Quest-Journal hinzufügen",
+            "SelectQuestContent": "Quest-Journal ausw?hlen",
+            "QuestHiddenFromPlayers": "Für Spieler verborgen",
+            "QuestVisibleToPlayers": "Für Spieler sichtbar",
+            "QuestMakeVisible": "Sichtbar machen",
+            "QuestMakeHidden": "Verbergen",
+            "QuestAddHiddenHint": "Neue Aufträge sind für Spieler verborgen, bis du sie sichtbar machst.",
             "DiploGlassSyncTitle": "DiploGlass-Fraktionssync aktivieren?",
             "DiploGlassSyncContent": "DiploGlass wurde erkannt. Soll FANG Fraktionen automatisch aus DiploGlass synchronisieren (einseitig)?",
             "DiploGlassSyncEnable": "Sync aktivieren",
-            "DiploGlassSyncSkip": "Jetzt nicht"
+            "DiploGlassSyncSkip": "Jetzt nicht",
+            "QuestSearchPlaceholder": "Quest-Journale suchen...",
+            "QuestDropHint": "Journal hier ablegen, um es als verborgenen Auftrag hinzuzufügen."
         },
         "Settings": {
             "TokenSize": {

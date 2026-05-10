@@ -257,12 +257,19 @@
             "BtnOpenPlayerJournal": "Open Player Notes Journal",
             "BtnConvertPlayerJournal": "Convert & Open in Player Journal",
             "BtnConvertPlayerJournalHint": "Converts this simple text note into a dedicated, player-editable Foundry Journal. This gives you and the player full text formatting freedom.",
-            "QuestLogAddBtn": "Add Quest Journal (Drag & Drop here)",
-            "SelectQuestContent": "Choose a Quest Journal to open:",
+            "QuestLogAddBtn": "Add quest journal",
+            "SelectQuestContent": "Choose a quest journal",
+            "QuestHiddenFromPlayers": "Hidden from players",
+            "QuestVisibleToPlayers": "Visible to players",
+            "QuestMakeVisible": "Reveal",
+            "QuestMakeHidden": "Hide",
+            "QuestAddHiddenHint": "New quests are hidden from players until you reveal them.",
             "DiploGlassSyncTitle": "Enable DiploGlass Faction Sync?",
             "DiploGlassSyncContent": "DiploGlass was detected. Do you want FANG to automatically sync factions from DiploGlass (one-way)?",
             "DiploGlassSyncEnable": "Enable Sync",
-            "DiploGlassSyncSkip": "Not Now"
+            "DiploGlassSyncSkip": "Not Now",
+            "QuestSearchPlaceholder": "Search quest journals...",
+            "QuestDropHint": "Drop a Journal here to add it as a hidden quest."
         },
         "Settings": {
             "TokenSize": {
