@@ -3548,6 +3548,10 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
         if (clickedNode) {
             if (await this._handleQuickConnectNodeClick(clickedNode)) return;
+            if (!game.user.isGM) {
+                await this._openLocalNodeInfo(clickedNode);
+                return;
+            }
             this._syncSidebarSelection("node", clickedNode.id);
             return;
         }
@@ -5535,15 +5539,12 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         ui.notifications.info(game.i18n.localize("FANG.Messages.SpotlightStarted").replace("{actor}", payload.label));
     }
 
-    async _onSpotlight(node) {
-        // Spotlight can be used by anyone who can right-click (no lock required)
-
-        // Broadcast spotlight event
+    async _buildNodeSpotlightPayload(node) {
         const imgSrc = this._getNodeImageSource(node);
         const role = node.role || "";
         const factionObj = this.graphData.factions.find(f => f.id === node.factionId);
         const faction = factionObj?.playerVisible !== false ? factionObj?.name || "" : "";
-        const subtitle = [role, faction].filter(s => s).join(" • ");
+        const subtitle = [role, faction].filter(s => s).join(" - ");
 
         let loreText = node.lore || "";
         if (node.playerLorePageId) {
@@ -5560,30 +5561,38 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             }
         }
 
-        game.socket.emit("module.fang", {
-            action: "spotlightStart",
-            payload: {
-                nodeId: node.id,
-                name: node.name,
-                subtitle: subtitle,
-                lore: loreText,
-                portrait: imgSrc,
-                quests: node.questUuids || []
-            }
-        });
-
-        // Also start locally for the GM
-        this.startSpotlight({
+        return {
             nodeId: node.id,
             name: node.name,
             subtitle: subtitle,
             lore: loreText,
             portrait: imgSrc,
             quests: node.questUuids || []
-        });
+        };
     }
 
-    startSpotlight(payload) {
+    async _openLocalNodeInfo(node) {
+        if (!node || node.hidden) return;
+        const payload = await this._buildNodeSpotlightPayload(node);
+        this.startSpotlight(payload, { broadcastQuests: false, notify: false });
+    }
+
+    async _onSpotlight(node) {
+        // Spotlight can be used by anyone who can right-click (no lock required)
+        const payload = await this._buildNodeSpotlightPayload(node);
+
+        game.socket.emit("module.fang", {
+            action: "spotlightStart",
+            payload
+        });
+
+        this.startSpotlight(payload);
+    }
+
+    startSpotlight(payload, options = {}) {
+        const broadcastQuests = options.broadcastQuests !== false;
+        const notify = options.notify !== false;
+
         if (this._spotlightTimeout) clearTimeout(this._spotlightTimeout);
         this._isSpotlightActive = true;
 
@@ -5654,8 +5663,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                             if (clickTimer) {
                                 clearTimeout(clickTimer);
                                 clickTimer = null;
-                                // Short Click: Narrative Spotlight
-                                this._onQuestSpotlight(uuid);
+                                // Short Click: keep quests local when the parent node info was opened locally.
+                                this._onQuestSpotlight(uuid, { broadcast: broadcastQuests });
                             }
                         });
 
@@ -5676,7 +5685,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             }
         }, 1000);
 
-        ui.notifications.info(game.i18n.localize("FANG.Messages.SpotlightStarted").replace("{actor}", payload.name));
+        if (notify) ui.notifications.info(game.i18n.localize("FANG.Messages.SpotlightStarted").replace("{actor}", payload.name));
     }
 
     stopSpotlight() {
@@ -5704,36 +5713,42 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         }
     }
 
-    async _onQuestSpotlight(questUuid) {
+    async _getQuestSpotlightPayload(questUuid) {
+        const doc = await fromUuid(questUuid);
+        if (!doc) return null;
+
+        // Extract content from the first text page
+        let content = "";
+        let title = doc.name;
+
+        const page = doc.pages.contents[0];
+        if (page && page.type === "text" && page.text && page.text.content) {
+            content = page.text.content;
+        } else if (doc.pages.size === 0 && doc.content) {
+            // Legacy Journal compatibility
+            content = doc.content;
+        }
+
+        if (!content) content = "...";
+
+        return {
+            uuid: questUuid,
+            name: title,
+            content: content
+        };
+    }
+
+    async _onQuestSpotlight(questUuid, { broadcast = true } = {}) {
         try {
-            const doc = await fromUuid(questUuid);
-            if (!doc) return;
+            const payload = await this._getQuestSpotlightPayload(questUuid);
+            if (!payload) return;
 
-            // Extract content from the first text page
-            let content = "";
-            let title = doc.name;
-
-            const page = doc.pages.contents[0];
-            if (page && page.type === "text" && page.text && page.text.content) {
-                content = page.text.content;
-            } else if (doc.pages.size === 0 && doc.content) {
-                // Legacy Journal compatibility
-                content = doc.content;
+            if (broadcast) {
+                game.socket.emit("module.fang", {
+                    action: "questSpotlightStart",
+                    payload: payload
+                });
             }
-
-            if (!content) content = "...";
-
-            const payload = {
-                uuid: questUuid,
-                name: title,
-                content: content
-            };
-
-            // Broadcast
-            game.socket.emit("module.fang", {
-                action: "questSpotlightStart",
-                payload: payload
-            });
 
             // Start locally
             this.startQuestSpotlight(payload);
