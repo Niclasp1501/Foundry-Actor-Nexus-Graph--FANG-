@@ -2732,3 +2732,78 @@ body:has(.actors-sidebar.sidebar-popout:has(.window-content > *)) #fang-so-actor
     color: #ff3b3b !important;
     text-shadow: 0 0 10px rgba(255, 59, 59, 0.4);
 }
+
+/* === Beta Rail Layout Hardening ===
+   Older sidebar/tab rules live above this block and can otherwise override the
+   compact rail. Keep this late in the file so the modern layout wins. */
+.fang-app-container .sidebar {
+    flex: 0 0 76px !important;
+    width: 76px !important;
+    min-width: 76px !important;
+    max-width: 76px !important;
+    overflow: visible !important;
+}
+
+.fang-app-container .sidebar-header {
+    width: 76px !important;
+    min-height: 84px;
+    padding: 10px 6px !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.fang-app-container .sidebar-header h1 {
+    display: grid !important;
+    place-items: center;
+    width: 52px;
+    height: 52px;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 1px solid rgba(212, 175, 55, 0.65) !important;
+    border-radius: 16px;
+    color: transparent !important;
+    font-size: 0 !important;
+    line-height: 1 !important;
+    letter-spacing: 0 !important;
+    overflow: hidden;
+}
+
+.fang-app-container .sidebar-header h1::before {
+    display: none !important;
+}
+
+.fang-app-container .sidebar-header h1::after {
+    content: "FANG";
+    color: var(--fang-header-text);
+    font-size: 0.9rem;
+    font-weight: 900;
+    letter-spacing: 0.04em;
+}
+
+.fang-app-container .sidebar-header p,
+.fang-app-container .tabs-nav {
+    display: none !important;
+}
+
+.fang-app-container .fang-rail {
+    width: 76px;
+    flex: 0 0 auto;
+}
+
+.fang-app-container .fang-rail-btn {
+    min-width: 52px;
+    min-height: 52px;
+}
+
+.fang-app-container:not(.sidebar-panel-open) .tabs-container {
+    display: none !important;
+}
+
+.fang-app-container.sidebar-panel-open .tabs-container {
+    display: block !important;
+}
+
+.fang-app-container .canvas-container {
+    min-width: 0;
+}
