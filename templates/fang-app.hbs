@@ -48,6 +48,10 @@
                                 "FANG.UI.Directional"}}</label>
                         </div>
                         <button id="btnAddLink" class="btn secondary-btn">{{localize "FANG.UI.Connect"}}</button>
+                        <button id="btnQuickConnectMode" class="btn action-btn"
+                            title="{{localize 'FANG.UI.QuickConnectHint'}}">
+                            <i class="fas fa-route"></i> {{localize "FANG.UI.QuickConnect"}}
+                        </button>
                         <button id="btnAddPlaceholder" class="btn action-btn">{{localize "FANG.UI.AddPlaceholder"}}</button>
                     </div>
                 </div>
@@ -318,7 +322,7 @@
                 <li id="ctxOpenQuest" class="ctx-item">
                     <i class="fas fa-scroll"></i> {{localize "FANG.ContextMenu.OpenQuest"}}
                 </li>
-                <li id="ctxSpotlight" class="ctx-item gm-only">
+                <li id="ctxSpotlight" class="ctx-item">
                     <i class="fas fa-compass"></i> {{localize "FANG.ContextMenu.Spotlight"}}
                 </li>
                 <li id="ctxIdentity" class="ctx-item">
@@ -342,7 +346,7 @@
                 <li id="ctxEditConnection" class="ctx-item">
                     <i class="fas fa-edit"></i> {{localize "FANG.ContextMenu.EditConnection"}}
                 </li>
-                <li id="ctxEdgeSpotlight" class="ctx-item gm-only">
+                <li id="ctxEdgeSpotlight" class="ctx-item">
                     <i class="fas fa-compass"></i> {{localize "FANG.ContextMenu.Spotlight"}}
                 </li>
                 <li id="ctxDeleteConnection" class="ctx-item danger">

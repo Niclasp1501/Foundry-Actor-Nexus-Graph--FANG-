@@ -638,6 +638,8 @@ body.role-player .fang-app-container .gm-only {
     height: 100%;
     cursor: grab;
     display: block;
+    touch-action: none;
+    user-select: none;
     /* Fix inline-block baseline descender gap causing scrollbars */
 }
 

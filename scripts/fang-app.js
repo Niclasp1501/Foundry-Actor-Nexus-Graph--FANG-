@@ -265,6 +265,11 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         this._searchUiVisible = false;
         this._isFactionGroupingActive = false;
         this._factionClusterTargets = null;
+        this._quickConnectMode = false;
+        this._quickConnectSourceId = null;
+        this._touchLongPressTimer = null;
+        this._touchLongPressStart = null;
+        this._suppressNextCanvasClick = false;
     }
 
     async _prepareContext(options) {
@@ -401,6 +406,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
         // 3. Re-attach Event Listeners (Universal)
         this.element.querySelector("#btnAddLink").addEventListener("click", this._onAddLink.bind(this));
+        const btnQuickConnect = this.element.querySelector("#btnQuickConnectMode");
+        if (btnQuickConnect) btnQuickConnect.addEventListener("click", this._onToggleQuickConnectMode.bind(this));
         const btnAddPlaceholder = this.element.querySelector("#btnAddPlaceholder");
         if (btnAddPlaceholder) btnAddPlaceholder.addEventListener("click", this._onAddPlaceholder.bind(this));
         const btnDelete = this.element.querySelector("#btnDeleteElement");
@@ -421,6 +428,10 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const canvas = this.element.querySelector("#graphCanvas");
         canvas.addEventListener("click", this._onCanvasClick.bind(this));
         canvas.addEventListener("dblclick", this._onCanvasDoubleClick.bind(this));
+        canvas.addEventListener("pointerdown", this._onCanvasPointerDown.bind(this));
+        canvas.addEventListener("pointermove", this._onCanvasPointerMove.bind(this));
+        canvas.addEventListener("pointerup", this._onCanvasPointerUp.bind(this));
+        canvas.addEventListener("pointercancel", this._onCanvasPointerCancel.bind(this));
 
         // 4. Update Lock UI status
         this._updateLockUI();
@@ -592,6 +603,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         }
 
         this._updateGroupByFactionButtonState();
+        this._updateQuickConnectButtonState();
 
         // Apply background initially for all users
         this._applyBackground();
@@ -1694,6 +1706,98 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         }
     }
 
+    _updateQuickConnectButtonState() {
+        const button = this.element?.querySelector?.("#btnQuickConnectMode");
+        if (!button) return;
+        button.classList.toggle("active", !!this._quickConnectMode);
+    }
+
+    _onToggleQuickConnectMode(event) {
+        event?.preventDefault?.();
+        if (!this._canEditGraph()) return;
+
+        this._quickConnectMode = !this._quickConnectMode;
+        this._quickConnectSourceId = null;
+        this._updateQuickConnectButtonState();
+        ui.notifications.info(game.i18n.localize(this._quickConnectMode ? "FANG.Messages.QuickConnectEnabled" : "FANG.Messages.QuickConnectDisabled"));
+    }
+
+    async _handleQuickConnectNodeClick(node) {
+        if (!this._quickConnectMode || !node) return false;
+        if (!this._canEditGraph()) return true;
+
+        if (!this._quickConnectSourceId) {
+            this._quickConnectSourceId = node.id;
+            ui.notifications.info(game.i18n.format("FANG.Messages.QuickConnectSourceSelected", { name: node.name }));
+            return true;
+        }
+
+        const sourceId = this._quickConnectSourceId;
+        const targetId = node.id;
+        if (sourceId === targetId) {
+            ui.notifications.warn(game.i18n.localize("FANG.Messages.QuickConnectSameNode"));
+            return true;
+        }
+
+        const sourceNode = this.graphData.nodes.find(n => n.id === sourceId);
+        const targetNode = this.graphData.nodes.find(n => n.id === targetId);
+        const defaultLabel = this.element.querySelector("#linkLabel")?.value?.trim() || "";
+        const directional = !!this.element.querySelector("#linkDirectional")?.checked;
+        const label = await this._promptQuickConnectLabel(sourceNode, targetNode, defaultLabel);
+        if (!label) return true;
+
+        this.graphData.links.push({ source: sourceId, target: targetId, label, directional });
+        this._quickConnectSourceId = null;
+        this._quickConnectMode = false;
+        this._updateQuickConnectButtonState();
+        this.element.querySelector("#linkLabel").value = "";
+        this.initSimulation();
+        this.simulation.alpha(0.3).restart();
+        this._populateActors();
+        await this.saveData();
+        return true;
+    }
+
+    async _promptQuickConnectLabel(sourceNode, targetNode, defaultLabel = "") {
+        const title = game.i18n.localize("FANG.Messages.QuickConnectLabelTitle");
+        const content = game.i18n.format("FANG.Messages.QuickConnectLabelContent", {
+            source: sourceNode?.name || game.i18n.localize("FANG.Dropdowns.Unknown"),
+            target: targetNode?.name || game.i18n.localize("FANG.Dropdowns.Unknown")
+        });
+        const placeholder = game.i18n.localize("FANG.Messages.QuickConnectLabelPlaceholder");
+        const escapeHtml = foundry.utils.escapeHTML ?? ((value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            "\"": "&quot;",
+            "'": "&#39;"
+        }[char])));
+
+        return new Promise(resolve => {
+            new Dialog({
+                title,
+                content: `
+                    <p>${content}</p>
+                    <input type="text" id="fang-quick-connect-label" value="${escapeHtml(defaultLabel)}" placeholder="${escapeHtml(placeholder)}" style="width: 100%;">
+                `,
+                buttons: {
+                    save: {
+                        icon: '<i class="fas fa-link"></i>',
+                        label: game.i18n.localize("FANG.UI.Connect"),
+                        callback: html => resolve(html.find("#fang-quick-connect-label").val().trim())
+                    },
+                    cancel: {
+                        icon: '<i class="fas fa-times"></i>',
+                        label: game.i18n.localize("FANG.Dialogs.BtnCancel"),
+                        callback: () => resolve(null)
+                    }
+                },
+                default: "save",
+                close: () => resolve(null)
+            }, { classes: ["dialog", "fang-dialog"], width: 420 }).render(true);
+        });
+    }
+
     async _onDeleteElement() {
         if (!this._canEditGraph()) return;
         const selectDelete = this.element.querySelector("#deleteSelect");
@@ -2308,21 +2412,19 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
 
-    _onCanvasDoubleClick(event) {
-        if (!this.transform) return;
-
-        // Convert mouse coordinates to canvas coordinate space
+    _getCanvasPointerPosition(event) {
+        if (!this.transform || !this.canvas) return null;
         const bounds = this.canvas.getBoundingClientRect();
         const mouseX = event.clientX - bounds.left;
         const mouseY = event.clientY - bounds.top;
-
         const x = this.transform.invertX(mouseX);
         const y = this.transform.invertY(mouseY);
+        return { mouseX, mouseY, x, y };
+    }
 
-        // Find the clicked node
-        const s2 = (30 * 30); // Base radius squared
+    _findNodeAtCanvasPoint(x, y, threshold = 30) {
         let clickedNode = null;
-        let minD2 = s2;
+        let minD2 = threshold * threshold;
 
         for (let node of this.graphData.nodes) {
             const dx = x - node.x;
@@ -2333,6 +2435,76 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 minD2 = d2;
             }
         }
+        return clickedNode;
+    }
+
+    _findLinkIndexAtCanvasPoint(x, y, threshold = 15) {
+        let clickedLinkIndex = -1;
+        let minLDist = threshold / (this.transform?.k || 1);
+
+        this.graphData.links.forEach((link, idx) => {
+            const s = link.source;
+            const t = link.target;
+            if (!s || !t || s.x === undefined || t.x === undefined) return;
+
+            let dist;
+            const pairInfo = this._linkCounts ? this._linkCounts[link.pairKey] : null;
+            const totalParams = pairInfo ? pairInfo.total : 1;
+
+            if (totalParams === 1) {
+                dist = this._pointToSegmentDistance({ x, y }, s, t);
+            } else {
+                const linkIndex = pairInfo.links.indexOf(idx);
+                const offsetMultiplier = (totalParams % 2 === 0)
+                    ? (linkIndex % 2 === 0 ? 1 : -1) * (Math.floor(linkIndex / 2) + 0.5)
+                    : (linkIndex === 0 ? 0 : (linkIndex % 2 === 0 ? 1 : -1) * Math.floor((linkIndex + 1) / 2));
+
+                const ddx = t.x - s.x;
+                const ddy = t.y - s.y;
+                const ddist = Math.sqrt(ddx * ddx + ddy * ddy) || 1;
+                const spreadDistance = 12 + (ddist * 0.05) + (totalParams * 4);
+                const finalOffset = offsetMultiplier * spreadDistance;
+                const isCanonical = link.source.id < link.target.id;
+                const cDx = isCanonical ? ddx : -ddx;
+                const cDy = isCanonical ? ddy : -ddy;
+                const nx = -cDy / ddist;
+                const ny = cDx / ddist;
+                const midX = (s.x + t.x) / 2;
+                const midY = (s.y + t.y) / 2;
+                const ctrlX = midX + nx * finalOffset * 2;
+                const ctrlY = midY + ny * finalOffset * 2;
+
+                const numSamples = 25;
+                let minDistToCurve = Infinity;
+                let prevPx, prevPy;
+                for (let step = 0; step <= numSamples; step++) {
+                    const tVal = step / numSamples;
+                    const u = 1 - tVal;
+                    const px = (u * u) * s.x + 2 * u * tVal * ctrlX + (tVal * tVal) * t.x;
+                    const py = (u * u) * s.y + 2 * u * tVal * ctrlY + (tVal * tVal) * t.y;
+                    if (step > 0) {
+                        const segDist = this._pointToSegmentDistance({ x, y }, { x: prevPx, y: prevPy }, { x: px, y: py });
+                        if (segDist < minDistToCurve) minDistToCurve = segDist;
+                    }
+                    prevPx = px;
+                    prevPy = py;
+                }
+                dist = minDistToCurve;
+            }
+
+            if (dist < minLDist) {
+                clickedLinkIndex = idx;
+                minLDist = dist;
+            }
+        });
+        return clickedLinkIndex;
+    }
+
+    _onCanvasDoubleClick(event) {
+        const pos = this._getCanvasPointerPosition(event);
+        if (!pos) return;
+
+        const clickedNode = this._findNodeAtCanvasPoint(pos.x, pos.y);
 
         if (clickedNode) {
             const actor = this._getNodeActor(clickedNode);
@@ -3018,6 +3190,55 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         });
     }
 
+    _onCanvasPointerDown(event) {
+        if (event.pointerType !== "touch" && event.pointerType !== "pen") return;
+        const pos = this._getCanvasPointerPosition(event);
+        if (!pos) return;
+
+        this._clearTouchLongPress();
+        this._touchLongPressStart = {
+            pointerId: event.pointerId,
+            clientX: event.clientX,
+            clientY: event.clientY,
+            pos
+        };
+
+        this._touchLongPressTimer = setTimeout(() => {
+            const start = this._touchLongPressStart;
+            if (!start || start.pointerId !== event.pointerId) return;
+
+            const node = this._findNodeAtCanvasPoint(start.pos.x, start.pos.y, 44);
+            const linkIndex = node ? -1 : this._findLinkIndexAtCanvasPoint(start.pos.x, start.pos.y, 28);
+            if (!node && linkIndex === -1) return;
+
+            event.preventDefault();
+            this._suppressNextCanvasClick = true;
+            if (node) this._showContextMenu(node, start.pos.mouseX, start.pos.mouseY);
+            else this._showEdgeContextMenu(linkIndex, start.pos.mouseX, start.pos.mouseY);
+        }, 520);
+    }
+
+    _onCanvasPointerMove(event) {
+        if (!this._touchLongPressStart || this._touchLongPressStart.pointerId !== event.pointerId) return;
+        const dx = event.clientX - this._touchLongPressStart.clientX;
+        const dy = event.clientY - this._touchLongPressStart.clientY;
+        if (Math.sqrt(dx * dx + dy * dy) > 12) this._clearTouchLongPress();
+    }
+
+    _onCanvasPointerUp(event) {
+        if (this._touchLongPressStart?.pointerId === event.pointerId) this._clearTouchLongPress();
+    }
+
+    _onCanvasPointerCancel(event) {
+        if (this._touchLongPressStart?.pointerId === event.pointerId) this._clearTouchLongPress();
+    }
+
+    _clearTouchLongPress() {
+        if (this._touchLongPressTimer) clearTimeout(this._touchLongPressTimer);
+        this._touchLongPressTimer = null;
+        this._touchLongPressStart = null;
+    }
+
     _onCanvasRightClick(event) {
         event.preventDefault();
         if (!this.transform) return;
@@ -3290,6 +3511,11 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     async _onCanvasClick(event) {
+        if (this._suppressNextCanvasClick) {
+            this._suppressNextCanvasClick = false;
+            return;
+        }
+
         // Prevent click logic if we just finished a drag
         if (Date.now() - (this._lastDragTime || 0) < 200) return;
 
@@ -3321,6 +3547,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         }
 
         if (clickedNode) {
+            if (await this._handleQuickConnectNodeClick(clickedNode)) return;
             this._syncSidebarSelection("node", clickedNode.id);
             return;
         }
@@ -4371,8 +4598,16 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             if (isHidden) {
                 this.context.beginPath();
                 this.context.arc(pos.x, pos.y, radius, 0, Math.PI * 2);
-                this.context.fillStyle = "rgba(20, 20, 30, 0.3)";
+                this.context.fillStyle = "rgba(10, 12, 18, 0.72)";
                 this.context.fill();
+                this.context.lineWidth = 2;
+                this.context.strokeStyle = "rgba(212, 175, 55, 0.55)";
+                this.context.stroke();
+                this.context.fillStyle = "rgba(232, 224, 212, 0.9)";
+                this.context.font = `900 ${Math.max(18, radius * 0.8)}px "Font Awesome 6 Pro", "Font Awesome 6 Free", "FontAwesome"`;
+                this.context.textAlign = "center";
+                this.context.textBaseline = "middle";
+                this.context.fillText("\uf070", pos.x, pos.y);
             }
 
             // --- Faction Icon (Top-Left corner) ---

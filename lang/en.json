@@ -18,6 +18,8 @@
             "LabelPlaceholder": "Label e.g. 'is related to'",
             "Directional": "Directional (Arrow)",
             "Connect": "Connect",
+            "QuickConnect": "Quick Connect",
+            "QuickConnectHint": "Enable, then tap or click two nodes on the graph.",
             "AddPlaceholder": "Add Placeholder",
             "DeleteElement": "Delete Element",
             "ManageElements": "Manage Elements",
@@ -158,7 +160,14 @@
             "LockReleased": "Edit lock released.",
             "AlreadyEditing": "is currently editing the graph.",
             "SpotlightHiddenBlocked": "Reveal the character first before using Spotlight!",
-            "MonitorViewClosed": "Monitor view closed."
+            "MonitorViewClosed": "Monitor view closed.",
+            "QuickConnectEnabled": "Quick Connect enabled: choose the source, then the target.",
+            "QuickConnectDisabled": "Quick Connect disabled.",
+            "QuickConnectSourceSelected": "Source selected: {name}. Choose the target now.",
+            "QuickConnectSameNode": "Source and target must be different.",
+            "QuickConnectLabelTitle": "Create Quick Connection",
+            "QuickConnectLabelContent": "Relationship from {source} to {target}:",
+            "QuickConnectLabelPlaceholder": "Label e.g. 'knows'"
         },
         "ContextMenu": {
             "EditRole": "Role / Organization",

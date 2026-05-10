@@ -18,6 +18,8 @@
             "LabelPlaceholder": "Label z.B. 'ist verwandt mit'",
             "Directional": "Gerichtet (Pfeil)",
             "Connect": "Verbinden",
+            "QuickConnect": "Direkt verbinden",
+            "QuickConnectHint": "Aktivieren, dann zwei Knoten auf dem Graphen antippen oder anklicken.",
             "AddPlaceholder": "Platzhalter hinzufügen",
             "DeleteElement": "Element löschen",
             "ManageElements": "Elemente verwalten",
@@ -158,7 +160,14 @@
             "LockReleased": "Bearbeitung freigegeben.",
             "AlreadyEditing": "bearbeitet den Graphen gerade.",
             "SpotlightHiddenBlocked": "Decke den Charakter zuerst auf, bevor du das Spotlight nutzt!",
-            "MonitorViewClosed": "Monitor Ansicht geschlossen."
+            "MonitorViewClosed": "Monitor Ansicht geschlossen.",
+            "QuickConnectEnabled": "Direktverbindung aktiv: Wähle zuerst die Quelle, dann das Ziel.",
+            "QuickConnectDisabled": "Direktverbindung deaktiviert.",
+            "QuickConnectSourceSelected": "Quelle gewählt: {name}. Wähle jetzt das Ziel.",
+            "QuickConnectSameNode": "Quelle und Ziel müssen unterschiedlich sein.",
+            "QuickConnectLabelTitle": "Direktverbindung erstellen",
+            "QuickConnectLabelContent": "Beziehung von {source} zu {target}:",
+            "QuickConnectLabelPlaceholder": "Label z.B. 'kennt'"
         },
         "ContextMenu": {
             "EditRole": "Rolle / Organisation",
