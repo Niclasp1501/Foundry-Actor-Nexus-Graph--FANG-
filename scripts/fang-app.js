@@ -408,6 +408,10 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         this.element.querySelector("#btnAddLink").addEventListener("click", this._onAddLink.bind(this));
         const btnQuickConnect = this.element.querySelector("#btnQuickConnectMode");
         if (btnQuickConnect) btnQuickConnect.addEventListener("click", this._onToggleQuickConnectMode.bind(this));
+        const btnCanvasQuickConnect = this.element.querySelector("#btnCanvasQuickConnect");
+        if (btnCanvasQuickConnect) btnCanvasQuickConnect.addEventListener("click", this._onToggleQuickConnectMode.bind(this));
+        const btnCanvasAddPlaceholder = this.element.querySelector("#btnCanvasAddPlaceholder");
+        if (btnCanvasAddPlaceholder) btnCanvasAddPlaceholder.addEventListener("click", this._onAddPlaceholder.bind(this));
         const btnAddPlaceholder = this.element.querySelector("#btnAddPlaceholder");
         if (btnAddPlaceholder) btnAddPlaceholder.addEventListener("click", this._onAddPlaceholder.bind(this));
         const btnDelete = this.element.querySelector("#btnDeleteElement");
@@ -512,22 +516,15 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         }
 
         const railSearch = this.element.querySelector("#fangRailSearch");
-        if (railSearch) railSearch.addEventListener("click", () => this._setSearchUiVisible(true, { focus: true }));
-
-        const railQuickConnect = this.element.querySelector("#fangRailQuickConnect");
-        if (railQuickConnect) railQuickConnect.addEventListener("click", (event) => this._onToggleQuickConnectMode(event));
-
-        const railPlaceholder = this.element.querySelector("#fangRailPlaceholder");
-        if (railPlaceholder) railPlaceholder.addEventListener("click", () => this._onAddPlaceholder());
+        if (railSearch) railSearch.addEventListener("click", () => {
+            this._setSearchUiVisible(!this._searchUiVisible, { focus: true });
+        });
 
         const railPresentation = this.element.querySelector("#fangRailPresentation");
         if (railPresentation) railPresentation.addEventListener("click", () => this._openSidebarPanel("view"));
 
         const railManage = this.element.querySelector("#fangRailManage");
         if (railManage) railManage.addEventListener("click", () => this._openSidebarPanel("advanced"));
-
-        const railClose = this.element.querySelector("#fangRailClosePanel");
-        if (railClose) railClose.addEventListener("click", () => this._closeSidebarPanel());
 
         // 4. GM-specific or Player-specific Logic
         if (game.user.isGM) {
@@ -1490,6 +1487,13 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
     _openSidebarPanel(tabName) {
         const appContainer = this.element.querySelector(".fang-app-container") || this.element;
+        const isOpen = appContainer.classList.contains("sidebar-panel-open");
+        const activeContent = this.element.querySelector(".tab-content.active");
+        if (isOpen && activeContent?.dataset.tab === tabName) {
+            this._closeSidebarPanel();
+            return;
+        }
+
         const tabBtns = this.element.querySelectorAll(".tab-btn");
         const tabContents = this.element.querySelectorAll(".tab-content");
         tabBtns.forEach(btn => btn.classList.toggle("active", btn.dataset.tab === tabName));
@@ -1743,9 +1747,30 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     _updateQuickConnectButtonState() {
-        const button = this.element?.querySelector?.("#btnQuickConnectMode");
-        if (!button) return;
-        button.classList.toggle("active", !!this._quickConnectMode);
+        const buttons = this.element?.querySelectorAll?.("#btnQuickConnectMode, #btnCanvasQuickConnect") || [];
+        buttons.forEach(button => {
+            button.classList.toggle("active", !!this._quickConnectMode);
+            button.classList.toggle("awaiting-target", !!this._quickConnectMode && !!this._quickConnectSourceId);
+        });
+        this._updateCanvasEditStatus();
+    }
+
+    _updateCanvasEditStatus(message = "") {
+        const status = this.element?.querySelector?.("#fangCanvasEditStatus");
+        if (!status) return;
+
+        let text = message;
+        if (!text && this._quickConnectMode) {
+            if (this._quickConnectSourceId) {
+                const source = this.graphData.nodes.find(n => n.id === this._quickConnectSourceId);
+                text = game.i18n.format("FANG.Messages.QuickConnectSourceSelected", { name: source?.name || "?" });
+            } else {
+                text = game.i18n.localize("FANG.Messages.QuickConnectEnabled");
+            }
+        }
+
+        status.textContent = text || "";
+        status.classList.toggle("hidden", !text);
     }
 
     _onToggleQuickConnectMode(event) {
@@ -1755,7 +1780,6 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         this._quickConnectMode = !this._quickConnectMode;
         this._quickConnectSourceId = null;
         this._updateQuickConnectButtonState();
-        ui.notifications.info(game.i18n.localize(this._quickConnectMode ? "FANG.Messages.QuickConnectEnabled" : "FANG.Messages.QuickConnectDisabled"));
     }
 
     async _handleQuickConnectNodeClick(node) {
@@ -1764,7 +1788,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
         if (!this._quickConnectSourceId) {
             this._quickConnectSourceId = node.id;
-            ui.notifications.info(game.i18n.format("FANG.Messages.QuickConnectSourceSelected", { name: node.name }));
+            this._updateQuickConnectButtonState();
+            this.ticked();
             return true;
         }
 
@@ -1786,6 +1811,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         this._quickConnectSourceId = null;
         this._quickConnectMode = false;
         this._updateQuickConnectButtonState();
+        this.ticked();
         this.element.querySelector("#linkLabel").value = "";
         this.initSimulation();
         this.simulation.alpha(0.3).restart();
@@ -2686,6 +2712,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
     async _onEditActorProfile(node) {
         if (!this._canEditGraph()) return;
+        const isGM = game.user.isGM;
         const escapeHtml = foundry.utils.escapeHTML ?? ((value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({
             "&": "&amp;",
             "<": "&lt;",
@@ -2708,6 +2735,21 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const playerLoreLabel = node.playerLorePageId
             ? localize("FANG.Dialogs.OpenPlayerJournal", "Open Player Lore")
             : localize("FANG.Dialogs.ConvertPlayerJournal", "Create Player Lore");
+        const playerViewSection = isGM ? `
+                <section class="fang-editor-section">
+                    <h3><i class="fas fa-user-secret"></i> ${localize("FANG.ActorEditor.PlayerView", "Player View")}</h3>
+                    <label class="fang-editor-check"><input type="checkbox" id="fang-profile-hidden" ${node.hidden ? "checked" : ""}> ${localize("FANG.Dialogs.IdentityHidden", "Hidden for Players")}</label>
+                    <label>${localize("FANG.Dialogs.IdentityAlias", "Alias")}</label>
+                    <input type="text" id="fang-profile-alias" value="${escapeHtml(node.displayName || "")}" placeholder="???">
+                    <button type="button" id="fang-profile-player-lore" class="btn action-btn"><i class="fas fa-book-open"></i> ${playerLoreLabel}</button>
+                </section>` : "";
+        const actionSection = isGM ? `
+                <section class="fang-editor-actions">
+                    <button type="button" id="fang-profile-gm-journal" class="btn action-btn" ${node.journalUuid ? "" : "disabled"}><i class="fas fa-book"></i> ${gmJournalLabel}</button>
+                    <button type="button" id="fang-profile-quest" class="btn action-btn" ${node.questUuids?.length ? "" : "disabled"}><i class="fas fa-scroll"></i> ${questLabel}</button>
+                    <button type="button" id="fang-profile-replace" class="btn action-btn" ${node.isPlaceholder ? "" : "disabled"}><i class="fas fa-random"></i> ${localize("FANG.ContextMenu.ReplacePlaceholder", "Replace with Actor")}</button>
+                    <button type="button" id="fang-profile-delete" class="btn danger-btn"><i class="fas fa-trash"></i> ${localize("FANG.ContextMenu.DeleteNode", "Delete Actor")}</button>
+                </section>` : "";
 
         const content = `
             <div class="fang-actor-editor">
@@ -2723,13 +2765,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                         ${factionOptions}
                     </select>
                 </section>
-                <section class="fang-editor-section">
-                    <h3><i class="fas fa-user-secret"></i> ${localize("FANG.ActorEditor.PlayerView", "Player View")}</h3>
-                    <label class="fang-editor-check"><input type="checkbox" id="fang-profile-hidden" ${node.hidden ? "checked" : ""}> ${localize("FANG.Dialogs.IdentityHidden", "Hidden for Players")}</label>
-                    <label>${localize("FANG.Dialogs.IdentityAlias", "Alias")}</label>
-                    <input type="text" id="fang-profile-alias" value="${escapeHtml(node.displayName || "")}" placeholder="???">
-                    <button type="button" id="fang-profile-player-lore" class="btn action-btn"><i class="fas fa-book-open"></i> ${playerLoreLabel}</button>
-                </section>
+                ${playerViewSection}
                 <section class="fang-editor-section">
                     <h3><i class="fas fa-tags"></i> ${localize("FANG.ActorEditor.Conditions", "Conditions")}</h3>
                     <div class="fang-condition-grid">
@@ -2743,12 +2779,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     <h3><i class="fas fa-feather"></i> ${localize("FANG.ActorEditor.Notes", "Notes")}</h3>
                     <textarea id="fang-profile-lore" placeholder="${localize("FANG.Dialogs.InfoInput", "Notes")}">${escapeHtml(node.lore || "")}</textarea>
                 </section>
-                <section class="fang-editor-actions">
-                    <button type="button" id="fang-profile-gm-journal" class="btn action-btn" ${node.journalUuid ? "" : "disabled"}><i class="fas fa-book"></i> ${gmJournalLabel}</button>
-                    <button type="button" id="fang-profile-quest" class="btn action-btn" ${node.questUuids?.length ? "" : "disabled"}><i class="fas fa-scroll"></i> ${questLabel}</button>
-                    <button type="button" id="fang-profile-replace" class="btn action-btn" ${node.isPlaceholder && game.user.isGM ? "" : "disabled"}><i class="fas fa-random"></i> ${localize("FANG.ContextMenu.ReplacePlaceholder", "Replace with Actor")}</button>
-                    <button type="button" id="fang-profile-delete" class="btn danger-btn"><i class="fas fa-trash"></i> ${localize("FANG.ContextMenu.DeleteNode", "Delete Actor")}</button>
-                </section>
+                ${actionSection}
             </div>`;
 
         let dialog;
@@ -2763,7 +2794,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                         const newName = html.find("#fang-profile-name").val().trim();
                         const newRole = html.find("#fang-profile-role").val().trim();
                         const newFactionId = html.find("#fang-profile-faction").val();
-                        const newAlias = html.find("#fang-profile-alias").val().trim();
+                        const newAlias = isGM ? html.find("#fang-profile-alias").val().trim() : node.displayName;
                         const newLore = html.find("#fang-profile-lore").val().trim();
                         const newConditions = [];
                         html.find("[data-condition]").each((_, el) => {
@@ -2773,8 +2804,10 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                         if (newName) node.name = newName;
                         node.role = newRole || null;
                         node.factionId = newFactionId || null;
-                        node.hidden = html.find("#fang-profile-hidden").is(":checked");
-                        node.displayName = newAlias;
+                        if (isGM) {
+                            node.hidden = html.find("#fang-profile-hidden").is(":checked");
+                            node.displayName = newAlias;
+                        }
                         node.lore = newLore || null;
                         node.conditions = newConditions;
 
@@ -2790,6 +2823,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             },
             default: "save",
             render: (html) => {
+                if (!isGM) return;
                 html.find("#fang-profile-gm-journal").on("click", async () => this._openNodeJournal(node));
                 html.find("#fang-profile-quest").on("click", async () => this._openNodeQuest(node));
                 html.find("#fang-profile-replace").on("click", async () => {
@@ -4248,6 +4282,20 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 this.context.stroke();
                 this.context.shadowBlur = 0;
             }
+
+            // QuickConnect source marker: keep the workflow visible without notification spam.
+            if (this._quickConnectMode && this._quickConnectSourceId === node.id) {
+                this.context.beginPath();
+                this.context.arc(pos.x, pos.y, radius + 12, 0, Math.PI * 2);
+                this.context.strokeStyle = "rgba(36, 83, 143, 0.95)";
+                this.context.lineWidth = 4;
+                this.context.setLineDash([8, 5]);
+                this.context.shadowBlur = 16;
+                this.context.shadowColor = "rgba(36, 83, 143, 0.65)";
+                this.context.stroke();
+                this.context.setLineDash([]);
+                this.context.shadowBlur = 0;
+            }
             // -----------------------------
 
             // --- Draw Token Image ---
@@ -5627,7 +5675,6 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             // Release the lock
             if (game.user.isGM) {
                 await entry.unsetFlag("fang", "editLock");
-                ui.notifications.info(game.i18n.localize("FANG.Messages.LockReleased") || "Bearbeitung freigegeben.");
                 game.socket.emit("module.fang", { action: "lockStatusUpdate" });
                 this.render();
             } else {
@@ -5641,7 +5688,6 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     userName: game.user.name,
                     time: Date.now()
                 });
-                ui.notifications.info(game.user.name + " " + game.i18n.localize("FANG.Messages.LockAcquired") || "hat die Bearbeitung Ã¼bernommen.");
                 game.socket.emit("module.fang", { action: "lockStatusUpdate" });
                 this.render();
             } else {
@@ -5656,10 +5702,16 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         if (!entry) return;
 
         await entry.unsetFlag("fang", "editLock");
-        ui.notifications.info("GM forced lock release.");
 
         game.socket.emit("module.fang", { action: "lockStatusUpdate" });
         this.render();
+    }
+
+    _setButtonTooltip(button, text) {
+        if (!button) return;
+        button.title = text;
+        button.setAttribute("data-tooltip", text);
+        button.setAttribute("aria-label", text);
     }
 
     _updateLockUI() {
@@ -5678,6 +5730,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         // New Canvas UI
         const canvasIndicator = this.element.querySelector("#fang-canvas-lock-indicator");
         const canvasText = this.element.querySelector("#canvas-lock-text");
+        const canvasEditTools = this.element.querySelector("#fang-canvas-edit-tools");
 
         if (!banner || !lockText || !btnToggleLock) return;
 
@@ -5692,15 +5745,22 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
         if (btnForce) btnForce.classList.add("hidden");
         if (canvasIndicator) canvasIndicator.classList.add("hidden");
+        if (canvasEditTools) canvasEditTools.classList.add("hidden");
         if (bannerIcon) bannerIcon.className = "fas fa-lock-open";
+        this._setButtonTooltip(btnToggleLock, game.i18n.localize("FANG.UI.EditMode"));
+        this._setButtonTooltip(btnForce, game.i18n.localize("FANG.UI.ForceRelease"));
 
         if (!lock) {
+            this._quickConnectMode = false;
+            this._quickConnectSourceId = null;
+            this._updateQuickConnectButtonState();
             // NO ACTIVE LOCK - Everyone is blocked for editing by default
             banner.classList.add("no-editor");
             lockText.textContent = game.i18n.localize("FANG.UI.NoEditor");
             btnText.textContent = game.i18n.localize("FANG.UI.EditMode");
-            btnIcon.className = "fas fa-pencil-alt";
+            btnIcon.className = "fas fa-pen-to-square";
             btnToggleLock.classList.remove("active");
+            this._setButtonTooltip(btnToggleLock, game.i18n.localize("FANG.UI.EditMode"));
 
             // Block editor tab exclusively for everyone until lock is taken
             if (editorTab) editorTab.classList.add("tab-locked");
@@ -5728,11 +5788,16 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 banner.classList.add("i-am-editor");
                 lockText.textContent = lockUser;
                 btnText.textContent = game.i18n.localize("FANG.UI.ReleaseLock");
-                btnIcon.className = "fas fa-lock"; // Use closed lock when holding
+                btnIcon.className = "fas fa-lock-open";
                 btnToggleLock.classList.add("active");
                 btnToggleLock.style.display = "flex";
-                if (bannerIcon) bannerIcon.className = "fas fa-lock"; // Match the button
+                this._setButtonTooltip(btnToggleLock, game.i18n.localize("FANG.UI.ReleaseLock"));
+                if (bannerIcon) bannerIcon.className = "fas fa-lock";
+                if (canvasEditTools) canvasEditTools.classList.remove("hidden");
             } else {
+                this._quickConnectMode = false;
+                this._quickConnectSourceId = null;
+                this._updateQuickConnectButtonState();
                 // SOMEONE ELSE IS EDITING
                 banner.classList.remove("hidden");
                 banner.classList.add("someone-else-editing");

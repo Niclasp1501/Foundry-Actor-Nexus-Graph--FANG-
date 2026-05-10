@@ -6,6 +6,26 @@
             <p>{{localize "FANG.Subtitle"}}</p>
         </header>
 
+        <div class="fang-sidebar-status">
+            <!-- Edit Lock Banner -->
+            <div id="fang-lock-banner" class="lock-banner no-editor">
+                <div class="lock-info">
+                    <i class="fas fa-lock-open"></i>
+                    <span id="lock-text">{{localize "FANG.UI.NoEditor"}}</span>
+                </div>
+                <button id="btnToggleLock" class="fang-lock-btn" title="{{localize 'FANG.UI.EditMode'}}"
+                    data-tooltip="{{localize 'FANG.UI.EditMode'}}" aria-label="{{localize 'FANG.UI.EditMode'}}">
+                    <i class="fas fa-pen-to-square"></i>
+                    <span id="lock-btn-text">{{localize "FANG.UI.EditMode"}}</span>
+                </button>
+                <button id="btnForceRelease" class="fang-lock-btn gm-only hidden"
+                    title="{{localize 'FANG.UI.ForceRelease'}}" data-tooltip="{{localize 'FANG.UI.ForceRelease'}}"
+                    aria-label="{{localize 'FANG.UI.ForceRelease'}}">
+                    <i class="fas fa-unlock-alt"></i>
+                </button>
+            </div>
+        </div>
+
         <nav class="tabs-nav">
             <a class="tab-btn active" data-tab="editor"><i class="fas fa-hammer"></i> {{localize
                 "FANG.UI.TabEditor"}}</a>
@@ -17,40 +37,13 @@
             <button type="button" id="fangRailSearch" class="fang-rail-btn" title="{{localize 'FANG.UI.SearchToggle'}}">
                 <i class="fas fa-search"></i>
             </button>
-            <button type="button" id="fangRailQuickConnect" class="fang-rail-btn" title="{{localize 'FANG.UI.QuickConnect'}}">
-                <i class="fas fa-route"></i>
-            </button>
-            <button type="button" id="fangRailPlaceholder" class="fang-rail-btn" title="{{localize 'FANG.UI.AddPlaceholder'}}">
-                <i class="fas fa-user-plus"></i>
-            </button>
             <button type="button" id="fangRailPresentation" class="fang-rail-btn gm-only" title="{{localize 'FANG.UI.Presentation'}}">
                 <i class="fas fa-display"></i>
             </button>
             <button type="button" id="fangRailManage" class="fang-rail-btn gm-only" title="{{localize 'FANG.UI.TabAdvanced'}}">
                 <i class="fas fa-sliders"></i>
             </button>
-            <button type="button" id="fangRailClosePanel" class="fang-rail-btn" title="{{localize 'FANG.UI.ClosePanel'}}">
-                <i class="fas fa-chevron-left"></i>
-            </button>
         </nav>
-
-        <div class="fang-sidebar-status">
-            <!-- Edit Lock Banner -->
-            <div id="fang-lock-banner" class="lock-banner no-editor">
-                <div class="lock-info">
-                    <i class="fas fa-lock-open"></i>
-                    <span id="lock-text">{{localize "FANG.UI.NoEditor"}}</span>
-                </div>
-                <button id="btnToggleLock" class="fang-lock-btn">
-                    <i class="fas fa-pencil-alt"></i>
-                    <span id="lock-btn-text">{{localize "FANG.UI.EditMode"}}</span>
-                </button>
-                <button id="btnForceRelease" class="fang-lock-btn gm-only hidden"
-                    title="{{localize 'FANG.UI.ForceRelease'}}">
-                    <i class="fas fa-unlock-alt"></i>
-                </button>
-            </div>
-        </div>
 
         <div class="tabs-container">
             <!-- EDITOR TAB -->
@@ -319,6 +312,21 @@
         <div id="fang-canvas-lock-indicator" class="canvas-lock-indicator hidden">
             <i class="fas fa-user-edit"></i>
             <span id="canvas-lock-text"></span>
+        </div>
+        <div id="fang-canvas-edit-tools" class="fang-canvas-edit-tools hidden">
+            <button type="button" id="btnCanvasQuickConnect" class="fang-canvas-tool-btn fang-quick-connect-tool"
+                title="{{localize 'FANG.UI.QuickConnect'}}" data-tooltip="{{localize 'FANG.UI.QuickConnect'}}"
+                aria-label="{{localize 'FANG.UI.QuickConnect'}}">
+                <i class="fas fa-route"></i>
+                <span>{{localize "FANG.UI.QuickConnect"}}</span>
+            </button>
+            <button type="button" id="btnCanvasAddPlaceholder" class="fang-canvas-tool-btn"
+                title="{{localize 'FANG.UI.AddPlaceholder'}}" data-tooltip="{{localize 'FANG.UI.AddPlaceholder'}}"
+                aria-label="{{localize 'FANG.UI.AddPlaceholder'}}">
+                <i class="fas fa-user-plus"></i>
+                <span>{{localize "FANG.UI.AddPlaceholder"}}</span>
+            </button>
+            <div id="fangCanvasEditStatus" class="fang-canvas-edit-status hidden"></div>
         </div>
         <canvas id="graphCanvas"></canvas>
 

@@ -431,6 +431,65 @@ body.role-player .fang-app-container .gm-only {
     display: none !important;
 }
 
+.fang-app-container .fang-canvas-edit-tools {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    z-index: 930;
+    display: grid;
+    grid-template-columns: repeat(2, max-content);
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+    background: rgba(253, 251, 247, 0.92);
+    border: 1px solid rgba(139, 0, 0, 0.24);
+    border-radius: 14px;
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.18);
+    backdrop-filter: blur(3px);
+}
+
+.fang-app-container .fang-canvas-tool-btn {
+    min-height: 40px;
+    border: 1px solid rgba(139, 0, 0, 0.3);
+    border-radius: 10px;
+    padding: 0 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #fffaf0;
+    color: var(--fang-primary-red);
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 2px 0 rgba(139, 0, 0, 0.14);
+}
+
+.fang-app-container .fang-canvas-tool-btn:hover,
+.fang-app-container .fang-canvas-tool-btn.active {
+    background: var(--fang-primary-red);
+    color: #fff;
+    border-color: var(--fang-accent-gold);
+    transform: translateY(-1px);
+}
+
+.fang-app-container .fang-canvas-tool-btn.awaiting-target {
+    background: #24538f;
+    color: #fff;
+    border-color: #9fc4ff;
+    box-shadow: 0 0 0 3px rgba(36, 83, 143, 0.18), 0 8px 18px rgba(36, 83, 143, 0.25);
+}
+
+.fang-app-container .fang-canvas-edit-status {
+    grid-column: 1 / -1;
+    max-width: 420px;
+    padding: 6px 9px;
+    border-radius: 9px;
+    background: rgba(20, 28, 38, 0.9);
+    color: #fff;
+    font-size: 0.82rem;
+    font-weight: 700;
+    line-height: 1.25;
+}
+
 /* Add a gold accent line */
 .fang-app-container .sidebar-header h1::before {
     content: "";
@@ -2791,6 +2850,89 @@ body:has(.actors-sidebar.sidebar-popout:has(.window-content > *)) #fang-so-actor
 .fang-app-container .fang-rail-btn {
     min-width: 52px;
     min-height: 52px;
+}
+
+.fang-app-container .fang-sidebar-status {
+    width: 76px;
+    padding: 0 6px 10px;
+    border-bottom: 1px solid rgba(139, 0, 0, 0.35);
+}
+
+.fang-app-container .fang-sidebar-status .lock-banner {
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    padding: 0;
+    gap: 5px;
+    box-shadow: none;
+}
+
+.fang-app-container .fang-sidebar-status .lock-info {
+    min-height: 16px;
+}
+
+.fang-app-container .fang-sidebar-status .lock-info i {
+    color: rgba(40, 40, 40, 0.55);
+    font-size: 0.85rem;
+}
+
+.fang-app-container .fang-sidebar-status .fang-lock-btn {
+    width: 52px;
+    min-width: 52px;
+    height: 34px;
+    margin: 0 auto;
+    border-radius: 8px;
+    padding: 0;
+}
+
+.fang-app-container .fang-sidebar-status .lock-banner.no-editor,
+.fang-app-container .fang-sidebar-status .lock-banner.i-am-editor,
+.fang-app-container .fang-sidebar-status .lock-banner.someone-else-editing {
+    border-left: 0;
+}
+
+.fang-app-container .fang-sidebar-status .lock-banner.no-editor .lock-info i {
+    color: #6f6a5f;
+}
+
+.fang-app-container .fang-sidebar-status .lock-banner.no-editor .fang-lock-btn {
+    background: #fffaf0;
+    border: 2px solid var(--fang-accent-gold);
+    color: var(--fang-primary-red);
+    box-shadow: 0 2px 0 rgba(139, 0, 0, 0.18);
+}
+
+.fang-app-container .fang-sidebar-status .lock-banner.no-editor .fang-lock-btn:hover {
+    background: #fff2c4;
+    transform: translateY(-1px);
+}
+
+.fang-app-container .fang-sidebar-status .lock-banner.i-am-editor .lock-info i {
+    color: #198754;
+    filter: drop-shadow(0 0 4px rgba(25, 135, 84, 0.35));
+}
+
+.fang-app-container .fang-sidebar-status .lock-banner.i-am-editor .fang-lock-btn {
+    background: #198754;
+    border: 2px solid #d7f5df;
+    color: #fff;
+    box-shadow: 0 0 0 3px rgba(25, 135, 84, 0.18), 0 8px 18px rgba(25, 135, 84, 0.28);
+}
+
+.fang-app-container .fang-sidebar-status .lock-banner.i-am-editor .fang-lock-btn:hover {
+    background: #146c43;
+    transform: translateY(-1px);
+}
+
+.fang-app-container .fang-sidebar-status .lock-banner.someone-else-editing .lock-info i {
+    color: #9b1c1c;
+}
+
+.fang-app-container .fang-sidebar-status .lock-banner.someone-else-editing .fang-lock-btn {
+    background: #eee8dc;
+    border: 2px solid #b8afa0;
+    color: #7a7468;
+    box-shadow: none;
 }
 
 .fang-app-container:not(.sidebar-panel-open) .tabs-container {
