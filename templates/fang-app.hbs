@@ -10,28 +10,30 @@
             <a class="tab-btn active" data-tab="editor"><i class="fas fa-hammer"></i> {{localize
                 "FANG.UI.TabEditor"}}</a>
             <a class="tab-btn gm-only" data-tab="view"><i class="fas fa-eye"></i> {{localize "FANG.UI.TabView"}}</a>
-            <a class="tab-btn gm-only" data-tab="advanced"><i class="fas fa-cogs"></i></a>
+            <a class="tab-btn gm-only" data-tab="advanced"><i class="fas fa-cogs"></i> {{localize "FANG.UI.TabAdvanced"}}</a>
         </nav>
+
+        <div class="fang-sidebar-status">
+            <!-- Edit Lock Banner -->
+            <div id="fang-lock-banner" class="lock-banner no-editor">
+                <div class="lock-info">
+                    <i class="fas fa-lock-open"></i>
+                    <span id="lock-text">{{localize "FANG.UI.NoEditor"}}</span>
+                </div>
+                <button id="btnToggleLock" class="fang-lock-btn">
+                    <i class="fas fa-pencil-alt"></i>
+                    <span id="lock-btn-text">{{localize "FANG.UI.EditMode"}}</span>
+                </button>
+                <button id="btnForceRelease" class="fang-lock-btn gm-only hidden"
+                    title="{{localize 'FANG.UI.ForceRelease'}}">
+                    <i class="fas fa-unlock-alt"></i>
+                </button>
+            </div>
+        </div>
 
         <div class="tabs-container">
             <!-- EDITOR TAB -->
             <section class="tab-content active" data-tab="editor">
-                <!-- Edit Lock Banner -->
-                <div id="fang-lock-banner" class="lock-banner no-editor">
-                    <div class="lock-info">
-                        <i class="fas fa-lock-open"></i>
-                        <span id="lock-text">{{localize "FANG.UI.NoEditor"}}</span>
-                    </div>
-                    <button id="btnToggleLock" class="fang-lock-btn">
-                        <i class="fas fa-pencil-alt"></i>
-                        <span id="lock-btn-text">{{localize "FANG.UI.EditMode"}}</span>
-                    </button>
-                    <button id="btnForceRelease" class="fang-lock-btn gm-only hidden"
-                        title="{{localize 'FANG.UI.ForceRelease'}}">
-                        <i class="fas fa-unlock-alt"></i>
-                    </button>
-                </div>
-
                 <div class="control-group">
                     <h3>{{localize "FANG.UI.CreateConnection"}}</h3>
                     <div class="input-stack">
@@ -57,7 +59,7 @@
                 </div>
 
                 <div class="control-group">
-                    <h3>{{localize "FANG.UI.ManageElements"}}</h3>
+                    <h3>{{localize "FANG.UI.Inspector"}}</h3>
                     <div class="input-stack">
                         <select id="deleteSelect">
                             <option value="" disabled selected>{{localize "FANG.UI.SelectElement"}}</option>
@@ -310,31 +312,37 @@
         <!-- Right-Click Radial Context Menu -->
         <div id="fang-context-menu" class="fang-context-menu hidden">
             <ul>
-                <li id="ctxEditRole" class="ctx-item">
-                    <i class="fas fa-theater-masks"></i> {{localize "FANG.ContextMenu.EditRole"}}
+                <li id="ctxInfo" class="ctx-item ctx-primary">
+                    <i class="fas fa-circle-info"></i> {{localize "FANG.ContextMenu.Info"}}
                 </li>
-                <li id="ctxEditLore" class="ctx-item">
-                    <i class="fas fa-book-open"></i> {{localize "FANG.ContextMenu.EditLore"}}
-                </li>
-                <li id="ctxOpenJournal" class="ctx-item gm-only">
-                    <i class="fas fa-book"></i> {{localize "FANG.ContextMenu.OpenJournal"}}
-                </li>
-                <li id="ctxOpenQuest" class="ctx-item">
-                    <i class="fas fa-scroll"></i> {{localize "FANG.ContextMenu.OpenQuest"}}
-                </li>
-                <li id="ctxSpotlight" class="ctx-item">
+                <li id="ctxSpotlight" class="ctx-item ctx-primary">
                     <i class="fas fa-compass"></i> {{localize "FANG.ContextMenu.Spotlight"}}
                 </li>
-                <li id="ctxIdentity" class="ctx-item">
+                <li id="ctxEditLore" class="ctx-item ctx-primary">
+                    <i class="fas fa-pen-to-square"></i> {{localize "FANG.ContextMenu.Edit"}}
+                </li>
+                <li id="ctxMore" class="ctx-item ctx-primary">
+                    <i class="fas fa-ellipsis"></i> {{localize "FANG.ContextMenu.More"}}
+                </li>
+                <li id="ctxEditRole" class="ctx-item ctx-secondary">
+                    <i class="fas fa-theater-masks"></i> {{localize "FANG.ContextMenu.EditRole"}}
+                </li>
+                <li id="ctxOpenJournal" class="ctx-item ctx-secondary gm-only">
+                    <i class="fas fa-book"></i> {{localize "FANG.ContextMenu.OpenJournal"}}
+                </li>
+                <li id="ctxOpenQuest" class="ctx-item ctx-secondary">
+                    <i class="fas fa-scroll"></i> {{localize "FANG.ContextMenu.OpenQuest"}}
+                </li>
+                <li id="ctxIdentity" class="ctx-item ctx-secondary">
                     <i class="fas fa-user-secret"></i> {{localize "FANG.ContextMenu.Identity"}}
                 </li>
-                <li id="ctxReplacePlaceholder" class="ctx-item gm-only">
+                <li id="ctxReplacePlaceholder" class="ctx-item ctx-secondary gm-only">
                     <i class="fas fa-random"></i> {{localize "FANG.ContextMenu.ReplacePlaceholder"}}
                 </li>
-                <li id="ctxCondition" class="ctx-item">
+                <li id="ctxCondition" class="ctx-item ctx-secondary">
                     <i class="fas fa-tag"></i> {{localize "FANG.ContextMenu.Condition"}}
                 </li>
-                <li id="ctxDeleteNode" class="ctx-item danger">
+                <li id="ctxDeleteNode" class="ctx-item ctx-secondary danger">
                     <i class="fas fa-trash"></i> {{localize "FANG.ContextMenu.DeleteNode"}}
                 </li>
             </ul>
@@ -343,11 +351,14 @@
         <!-- Edge Right-Click Radial Context Menu -->
         <div id="fang-edge-context-menu" class="fang-context-menu hidden">
             <ul>
-                <li id="ctxEditConnection" class="ctx-item">
-                    <i class="fas fa-edit"></i> {{localize "FANG.ContextMenu.EditConnection"}}
+                <li id="ctxEdgeInfo" class="ctx-item">
+                    <i class="fas fa-circle-info"></i> {{localize "FANG.ContextMenu.Info"}}
                 </li>
                 <li id="ctxEdgeSpotlight" class="ctx-item">
                     <i class="fas fa-compass"></i> {{localize "FANG.ContextMenu.Spotlight"}}
+                </li>
+                <li id="ctxEditConnection" class="ctx-item">
+                    <i class="fas fa-edit"></i> {{localize "FANG.ContextMenu.EditConnection"}}
                 </li>
                 <li id="ctxDeleteConnection" class="ctx-item danger">
                     <i class="fas fa-unlink"></i> {{localize "FANG.ContextMenu.DeleteConnection"}}

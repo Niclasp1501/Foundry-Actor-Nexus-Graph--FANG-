@@ -2516,42 +2516,71 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         }
     }
 
+    _positionFloatingMenu(menu, mouseX, mouseY) {
+        if (!menu) return;
+        const container = this.element?.querySelector(".canvas-container") || this.element;
+        const bounds = container?.getBoundingClientRect?.();
+        if (!bounds) {
+            menu.style.left = `${mouseX}px`;
+            menu.style.top = `${mouseY}px`;
+            return;
+        }
+
+        const margin = 8;
+        const menuWidth = menu.offsetWidth || 220;
+        const menuHeight = menu.offsetHeight || 44;
+        const maxX = Math.max(margin, bounds.width - menuWidth - margin);
+        const maxY = Math.max(margin, bounds.height - menuHeight - margin);
+        const left = Math.min(Math.max(mouseX, margin), maxX);
+        const top = Math.min(Math.max(mouseY, margin), maxY);
+
+        menu.style.left = `${left}px`;
+        menu.style.top = `${top}px`;
+    }
+
     _showContextMenu(node, mouseX, mouseY) {
 
         const menu = this.element.querySelector("#fang-context-menu");
         if (!menu) return;
 
-        // Position menu at cursor
+        menu.classList.remove("show-more");
+        // Position menu at cursor; final clamping happens after visibility/actions are set.
         menu.style.left = `${mouseX}px`;
         menu.style.top = `${mouseY}px`;
         menu.classList.remove("hidden");
 
+        const btnInfo = menu.querySelector("#ctxInfo");
         const btnRole = menu.querySelector("#ctxEditRole");
         const btnLore = menu.querySelector("#ctxEditLore");
         const btnOpenJournal = menu.querySelector("#ctxOpenJournal");
         const btnOpenQuest = menu.querySelector("#ctxOpenQuest");
         const btnSpotlight = menu.querySelector("#ctxSpotlight");
+        const btnMore = menu.querySelector("#ctxMore");
         const btnIdentity = menu.querySelector("#ctxIdentity");
         const btnReplacePlaceholder = menu.querySelector("#ctxReplacePlaceholder");
         const btnCondition = menu.querySelector("#ctxCondition");
         const btnDelete = menu.querySelector("#ctxDeleteNode");
 
         // Clear previous listeners by cloning nodes
+        const newBtnInfo = btnInfo ? btnInfo.cloneNode(true) : null;
         const newBtnRole = btnRole.cloneNode(true);
         const newBtnLore = btnLore.cloneNode(true);
         const newBtnOpenJournal = btnOpenJournal ? btnOpenJournal.cloneNode(true) : null;
         const newBtnOpenQuest = btnOpenQuest ? btnOpenQuest.cloneNode(true) : null;
         const newBtnSpotlight = btnSpotlight.cloneNode(true);
+        const newBtnMore = btnMore ? btnMore.cloneNode(true) : null;
         const newBtnIdentity = btnIdentity ? btnIdentity.cloneNode(true) : null;
         const newBtnReplacePlaceholder = btnReplacePlaceholder ? btnReplacePlaceholder.cloneNode(true) : null;
         const newBtnCondition = btnCondition ? btnCondition.cloneNode(true) : null;
         const newBtnDelete = btnDelete.cloneNode(true);
 
+        if (btnInfo && newBtnInfo) btnInfo.parentNode.replaceChild(newBtnInfo, btnInfo);
         btnRole.parentNode.replaceChild(newBtnRole, btnRole);
         btnLore.parentNode.replaceChild(newBtnLore, btnLore);
         if (btnOpenJournal && newBtnOpenJournal) btnOpenJournal.parentNode.replaceChild(newBtnOpenJournal, btnOpenJournal);
         if (btnOpenQuest && newBtnOpenQuest) btnOpenQuest.parentNode.replaceChild(newBtnOpenQuest, btnOpenQuest);
         btnSpotlight.parentNode.replaceChild(newBtnSpotlight, btnSpotlight);
+        if (btnMore && newBtnMore) btnMore.parentNode.replaceChild(newBtnMore, btnMore);
         if (btnIdentity && newBtnIdentity) btnIdentity.parentNode.replaceChild(newBtnIdentity, btnIdentity);
         if (btnReplacePlaceholder && newBtnReplacePlaceholder) btnReplacePlaceholder.parentNode.replaceChild(newBtnReplacePlaceholder, btnReplacePlaceholder);
         if (btnCondition && newBtnCondition) btnCondition.parentNode.replaceChild(newBtnCondition, btnCondition);
@@ -2562,14 +2591,15 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const isPlayerView = !game.user.isGM;
         const tokenIsHidden = node.hidden;
 
-        newBtnRole.style.display = hasLock ? "block" : "none";
+        if (newBtnInfo) newBtnInfo.style.display = tokenIsHidden && isPlayerView ? "none" : "block";
+        newBtnRole.style.display = hasLock ? "" : "none";
         newBtnLore.style.display = hasLock ? "block" : "none";
-        if (newBtnOpenJournal) newBtnOpenJournal.style.display = (game.user.isGM && node.journalUuid) ? "block" : "none";
-        if (newBtnOpenQuest) newBtnOpenQuest.style.display = (node.questUuids && node.questUuids.length > 0) ? "block" : "none";
-        newBtnDelete.style.display = hasLock ? "block" : "none";
-        if (newBtnIdentity) newBtnIdentity.style.display = (game.user.isGM && hasLock) ? "block" : "none";
-        if (newBtnReplacePlaceholder) newBtnReplacePlaceholder.style.display = (game.user.isGM && hasLock && node.isPlaceholder) ? "block" : "none";
-        if (newBtnCondition) newBtnCondition.style.display = (game.user.isGM && hasLock) ? "block" : "none";
+        if (newBtnOpenJournal) newBtnOpenJournal.style.display = (game.user.isGM && node.journalUuid) ? "" : "none";
+        if (newBtnOpenQuest) newBtnOpenQuest.style.display = (node.questUuids && node.questUuids.length > 0) ? "" : "none";
+        newBtnDelete.style.display = hasLock ? "" : "none";
+        if (newBtnIdentity) newBtnIdentity.style.display = (game.user.isGM && hasLock) ? "" : "none";
+        if (newBtnReplacePlaceholder) newBtnReplacePlaceholder.style.display = (game.user.isGM && hasLock && node.isPlaceholder) ? "" : "none";
+        if (newBtnCondition) newBtnCondition.style.display = (game.user.isGM && hasLock) ? "" : "none";
 
         // Protection: Hide info buttons for players viewing hidden tokens
         if (isPlayerView && tokenIsHidden) {
@@ -2578,8 +2608,29 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             if (newBtnOpenQuest) newBtnOpenQuest.style.display = "none";
         }
 
-        // Spotlight is always visible
-        newBtnSpotlight.style.display = "block";
+        // Spotlight is explicit broadcast, but hidden player-facing nodes must not expose actions.
+        newBtnSpotlight.style.display = (isPlayerView && tokenIsHidden) ? "none" : "block";
+
+        const secondaryButtons = [newBtnRole, newBtnOpenJournal, newBtnOpenQuest, newBtnIdentity, newBtnReplacePlaceholder, newBtnCondition, newBtnDelete]
+            .filter(Boolean);
+        const hasSecondaryActions = secondaryButtons.some(btn => btn.style.display !== "none");
+        if (newBtnMore) newBtnMore.style.display = hasSecondaryActions ? "block" : "none";
+
+        if (newBtnInfo) {
+            newBtnInfo.addEventListener("click", () => {
+                menu.classList.add("hidden");
+                this._openLocalNodeInfo(node);
+            });
+        }
+
+        if (newBtnMore) {
+            newBtnMore.addEventListener("click", (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                menu.classList.toggle("show-more");
+                this._positionFloatingMenu(menu, mouseX, mouseY);
+            });
+        }
 
         // --- Context Action: Spotlight ---
         newBtnSpotlight.addEventListener("click", () => {
@@ -2590,6 +2641,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             }
             this._onSpotlight(node);
         });
+
+        this._positionFloatingMenu(menu, mouseX, mouseY);
 
         if (newBtnReplacePlaceholder) {
             newBtnReplacePlaceholder.addEventListener("click", () => {
@@ -3395,27 +3448,41 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const link = this.graphData.links[linkIndex];
         if (!link) return;
 
-        // Position menu at cursor
+        // Position menu at cursor; final clamping happens after visibility/actions are set.
         menu.style.left = `${mouseX}px`;
         menu.style.top = `${mouseY}px`;
         menu.classList.remove("hidden");
 
+        const btnInfo = menu.querySelector("#ctxEdgeInfo");
         const btnEdit = menu.querySelector("#ctxEditConnection");
         const btnSpotlight = menu.querySelector("#ctxEdgeSpotlight");
         const btnDelete = menu.querySelector("#ctxDeleteConnection");
 
+        const newBtnInfo = btnInfo ? btnInfo.cloneNode(true) : null;
         const newBtnEdit = btnEdit.cloneNode(true);
         const newBtnSpotlight = btnSpotlight.cloneNode(true);
         const newBtnDelete = btnDelete.cloneNode(true);
 
+        if (btnInfo && newBtnInfo) btnInfo.parentNode.replaceChild(newBtnInfo, btnInfo);
         btnEdit.parentNode.replaceChild(newBtnEdit, btnEdit);
         btnSpotlight.parentNode.replaceChild(newBtnSpotlight, btnSpotlight);
         btnDelete.parentNode.replaceChild(newBtnDelete, btnDelete);
 
         const hasLock = this._canEditGraph(true);
+        const isPlayerView = !game.user.isGM;
+        const hiddenEndpoint = !!(link.source?.hidden || link.target?.hidden);
+        if (newBtnInfo) newBtnInfo.style.display = (isPlayerView && hiddenEndpoint) ? "none" : "block";
         newBtnEdit.style.display = hasLock ? "block" : "none";
         newBtnDelete.style.display = hasLock ? "block" : "none";
-        newBtnSpotlight.style.display = "block"; // Always available
+        newBtnSpotlight.style.display = (isPlayerView && hiddenEndpoint) ? "none" : "block";
+
+        if (newBtnInfo) {
+            newBtnInfo.addEventListener("click", () => {
+                menu.classList.add("hidden");
+                if ((link.source?.hidden || link.target?.hidden) && !game.user.isGM) return;
+                this.startEdgeSpotlight(this._buildEdgeSpotlightPayload(link), { notify: false });
+            });
+        }
 
         // Action: Edit
         newBtnEdit.addEventListener("click", () => {
@@ -3508,6 +3575,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             menu.classList.add("hidden");
             this._onEdgeSpotlight(link);
         });
+
+        this._positionFloatingMenu(menu, mouseX, mouseY);
     }
 
     async _onCanvasClick(event) {
@@ -5453,29 +5522,23 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             return;
         }
 
-        const sActor = this._getNodeActor(sourceNode);
-        const tActor = this._getNodeActor(targetNode);
-
-        const sourceImg = this._getNodeImageSource(sourceNode) || sourceNode.imgElement?.src || "icons/svg/mystery-man.svg";
-        const targetImg = this._getNodeImageSource(targetNode) || targetNode.imgElement?.src || "icons/svg/mystery-man.svg";
+        const payload = this._buildEdgeSpotlightPayload(link);
 
         game.socket.emit("module.fang", {
             action: "spotlightEdgeStart",
-            payload: {
-                linkId: link.index, // Not strictly needed but good to have
-                label: link.label || "",
-                info: link.info || "",
-                sourcePortrait: sourceImg,
-                targetPortrait: targetImg,
-                sourceX: sourceNode.x,
-                sourceY: sourceNode.y,
-                targetX: targetNode.x,
-                targetY: targetNode.y,
-                directional: link.directional || false
-            }
+            payload
         });
 
-        this.startEdgeSpotlight({
+        this.startEdgeSpotlight(payload);
+    }
+
+    _buildEdgeSpotlightPayload(link) {
+        const sourceNode = link.source;
+        const targetNode = link.target;
+        const sourceImg = this._getNodeImageSource(sourceNode) || sourceNode.imgElement?.src || "icons/svg/mystery-man.svg";
+        const targetImg = this._getNodeImageSource(targetNode) || targetNode.imgElement?.src || "icons/svg/mystery-man.svg";
+
+        return {
             linkId: link.index,
             label: link.label || "",
             info: link.info || "",
@@ -5486,10 +5549,11 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             targetX: targetNode.x,
             targetY: targetNode.y,
             directional: link.directional || false
-        });
+        };
     }
 
-    startEdgeSpotlight(payload) {
+    startEdgeSpotlight(payload, options = {}) {
+        const notify = options.notify !== false;
         if (this._spotlightTimeout) clearTimeout(this._spotlightTimeout);
         this._isSpotlightActive = true;
 
@@ -5536,7 +5600,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             }
         }, 1000);
 
-        ui.notifications.info(game.i18n.localize("FANG.Messages.SpotlightStarted").replace("{actor}", payload.label));
+        if (notify) ui.notifications.info(game.i18n.localize("FANG.Messages.SpotlightStarted").replace("{actor}", payload.label));
     }
 
     async _buildNodeSpotlightPayload(node) {
@@ -5572,7 +5636,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     async _openLocalNodeInfo(node) {
-        if (!node || node.hidden) return;
+        if (!node || (node.hidden && !game.user.isGM)) return;
         const payload = await this._buildNodeSpotlightPayload(node);
         this.startSpotlight(payload, { broadcastQuests: false, notify: false });
     }

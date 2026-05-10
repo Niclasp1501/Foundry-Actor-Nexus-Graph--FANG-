@@ -244,6 +244,10 @@ body.role-player .fang-app-container .gm-only {
     transition: all 0.3s ease;
 }
 
+.fang-app-container .fang-sidebar-status .lock-banner {
+    border-bottom: 2px solid var(--fang-border-color);
+}
+
 .fang-app-container .lock-banner.no-editor {
     border-left: 4px solid #aaa;
 }
@@ -1262,7 +1266,7 @@ body.fang-theme-cyberpunk .fang-dialog .faction-icon-preview {
 #fang-edge-context-menu {
     position: absolute;
     z-index: 1000;
-    width: 200px;
+    width: 220px;
     background: var(--fang-card-bg);
     border: 1px solid var(--fang-border-color);
     border-radius: 6px;
@@ -1292,7 +1296,8 @@ body.fang-theme-cyberpunk .fang-dialog .faction-icon-preview {
 }
 
 .fang-app-container .ctx-item {
-    padding: 10px 15px;
+    min-height: 44px;
+    padding: 11px 15px;
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -1300,6 +1305,23 @@ body.fang-theme-cyberpunk .fang-dialog .faction-icon-preview {
     font-size: 0.9rem;
     transition: background 0.15s, color 0.15s;
     border-left: 3px solid transparent;
+}
+
+.fang-app-container .ctx-item.ctx-secondary {
+    display: none;
+}
+
+#fang-context-menu.show-more .ctx-item.ctx-secondary {
+    display: flex;
+}
+
+#fang-context-menu.show-more #ctxMore {
+    background: var(--fang-nav-bg);
+    border-left-color: var(--fang-accent-gold);
+}
+
+.fang-app-container .ctx-item.ctx-primary {
+    font-weight: 800;
 }
 
 .fang-app-container .ctx-item i {
