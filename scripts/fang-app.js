@@ -1093,13 +1093,15 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 displayName: n.displayName || "",
                 conditions: n.conditions || []
             })),
-            links: this.graphData.links.map(l => ({
-                source: typeof l.source === 'object' ? l.source.id : l.source,
-                target: typeof l.target === 'object' ? l.target.id : l.target,
-                label: l.label,
-                info: l.info || "",
-                directional: l.directional || false
-            })),
+            links: this.graphData.links
+                .map(l => ({
+                    source: typeof l.source === 'object' ? l.source?.id : l.source,
+                    target: typeof l.target === 'object' ? l.target?.id : l.target,
+                    label: l.label,
+                    info: l.info || "",
+                    directional: !!l.directional
+                }))
+                .filter(l => l.source && l.target),
             factions: this.graphData.factions.map(f => ({
                 id: f.id,
                 name: f.name,
@@ -1802,17 +1804,30 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
         const sourceNode = this.graphData.nodes.find(n => n.id === sourceId);
         const targetNode = this.graphData.nodes.find(n => n.id === targetId);
-        const defaultLabel = this.element.querySelector("#linkLabel")?.value?.trim() || "";
-        const directional = !!this.element.querySelector("#linkDirectional")?.checked;
-        const label = await this._promptQuickConnectLabel(sourceNode, targetNode, defaultLabel);
-        if (!label) return true;
+        if (!sourceNode || !targetNode) {
+            this._quickConnectSourceId = null;
+            this._quickConnectMode = false;
+            this._updateQuickConnectButtonState();
+            this.ticked();
+            return true;
+        }
 
-        this.graphData.links.push({ source: sourceId, target: targetId, label, directional });
+        const result = await this._promptQuickConnectLink(sourceNode, targetNode);
+        if (!result?.label) {
+            this._quickConnectSourceId = null;
+            this._quickConnectMode = false;
+            this._updateQuickConnectButtonState();
+            this.ticked();
+            return true;
+        }
+
+        this.graphData.links.push({ source: sourceId, target: targetId, label: result.label, directional: !!result.directional });
         this._quickConnectSourceId = null;
         this._quickConnectMode = false;
         this._updateQuickConnectButtonState();
         this.ticked();
-        this.element.querySelector("#linkLabel").value = "";
+        const legacyLabel = this.element.querySelector("#linkLabel");
+        if (legacyLabel) legacyLabel.value = "";
         this.initSimulation();
         this.simulation.alpha(0.3).restart();
         this._populateActors();
@@ -1820,7 +1835,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         return true;
     }
 
-    async _promptQuickConnectLabel(sourceNode, targetNode, defaultLabel = "") {
+    async _promptQuickConnectLink(sourceNode, targetNode, defaultLabel = "") {
         const title = game.i18n.localize("FANG.Messages.QuickConnectLabelTitle");
         const content = game.i18n.format("FANG.Messages.QuickConnectLabelContent", {
             source: sourceNode?.name || game.i18n.localize("FANG.Dropdowns.Unknown"),
@@ -1841,12 +1856,19 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 content: `
                     <p>${content}</p>
                     <input type="text" id="fang-quick-connect-label" value="${escapeHtml(defaultLabel)}" placeholder="${escapeHtml(placeholder)}" style="width: 100%;">
+                    <label class="fang-editor-check" style="margin-top: 10px;">
+                        <input type="checkbox" id="fang-quick-connect-directional">
+                        ${game.i18n.localize("FANG.UI.Directional")}
+                    </label>
                 `,
                 buttons: {
                     save: {
                         icon: '<i class="fas fa-link"></i>',
                         label: game.i18n.localize("FANG.UI.Connect"),
-                        callback: html => resolve(html.find("#fang-quick-connect-label").val().trim())
+                        callback: html => resolve({
+                            label: html.find("#fang-quick-connect-label").val().trim(),
+                            directional: html.find("#fang-quick-connect-directional").is(":checked")
+                        })
                     },
                     cancel: {
                         icon: '<i class="fas fa-times"></i>',
@@ -1876,8 +1898,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             if (type === "node") {
                 this.graphData.nodes = this.graphData.nodes.filter(n => n.id !== id);
                 this.graphData.links = this.graphData.links.filter(l => {
-                    const sId = typeof l.source === 'object' ? l.source.id : l.source;
-                    const tId = typeof l.target === 'object' ? l.target.id : l.target;
+                    const sId = this._getLinkEndpointId(l.source);
+                    const tId = this._getLinkEndpointId(l.target);
                     return sId !== id && tId !== id;
                 });
                 ui.notifications.info(game.i18n.localize("FANG.Messages.DeletedNode"));
@@ -2484,6 +2506,10 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         return { mouseX, mouseY, x, y };
     }
 
+    _getLinkEndpointId(endpoint) {
+        return typeof endpoint === "object" ? endpoint?.id : endpoint;
+    }
+
     _findNodeAtCanvasPoint(x, y, threshold = 30) {
         let clickedNode = null;
         let minD2 = threshold * threshold;
@@ -2526,7 +2552,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 const ddist = Math.sqrt(ddx * ddx + ddy * ddy) || 1;
                 const spreadDistance = 12 + (ddist * 0.05) + (totalParams * 4);
                 const finalOffset = offsetMultiplier * spreadDistance;
-                const isCanonical = link.source.id < link.target.id;
+                const isCanonical = this._getLinkEndpointId(link.source) < this._getLinkEndpointId(link.target);
                 const cDx = isCanonical ? ddx : -ddx;
                 const cDy = isCanonical ? ddy : -ddy;
                 const nx = -cDy / ddist;
@@ -2674,8 +2700,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     callback: async () => {
                         this.graphData.nodes = this.graphData.nodes.filter(n => n.id !== node.id);
                         this.graphData.links = this.graphData.links.filter(l => {
-                            const sId = typeof l.source === "object" ? l.source.id : l.source;
-                            const tId = typeof l.target === "object" ? l.target.id : l.target;
+                            const sId = this._getLinkEndpointId(l.source);
+                            const tId = this._getLinkEndpointId(l.target);
                             return sId !== node.id && tId !== node.id;
                         });
 
@@ -2970,7 +2996,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 const spreadDistance = 12 + (ddist * 0.05) + (totalParams * 4);
                 const finalOffset = offsetMultiplier * spreadDistance;
 
-                const isCanonical = link.source.id < link.target.id;
+                const isCanonical = this._getLinkEndpointId(link.source) < this._getLinkEndpointId(link.target);
                 const cDx = isCanonical ? ddx : -ddx;
                 const cDy = isCanonical ? ddy : -ddy;
                 const cDist = ddist;
@@ -3273,7 +3299,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 const finalOffset = offsetMultiplier * spreadDistance;
 
                 // Use canonical direction (A < B) for consistent normal vector
-                const isCanonical = link.source.id < link.target.id;
+                const isCanonical = this._getLinkEndpointId(link.source) < this._getLinkEndpointId(link.target);
                 const cDx = isCanonical ? ddx : -ddx;
                 const cDy = isCanonical ? ddy : -ddy;
                 const cDist = ddist;
@@ -3617,11 +3643,15 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
     initSimulation() {
         if (this.simulation) this.simulation.stop();
 
-        const links = this.graphData.links.map(d => ({
-            ...d,
-            source: typeof d.source === "object" ? d.source.id : d.source,
-            target: typeof d.target === "object" ? d.target.id : d.target
-        }));
+        const nodeIds = new Set(this.graphData.nodes.map(n => n.id));
+        const links = this.graphData.links
+            .map(d => ({
+                ...d,
+                source: typeof d.source === "object" ? d.source?.id : d.source,
+                target: typeof d.target === "object" ? d.target?.id : d.target,
+                directional: !!d.directional
+            }))
+            .filter(d => d.source && d.target && nodeIds.has(d.source) && nodeIds.has(d.target));
         const nodes = this.graphData.nodes.map(d => {
             const oldNode = this.graphData.nodes.find(n => n.id === d.id);
             let nInfo = d;
@@ -3723,7 +3753,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     const link = links[j];
                     if (!link.source || !link.target) continue;
                     // Don't repel from lines the node is directly attached to
-                    if (link.source.id === node.id || link.target.id === node.id) continue;
+                    if (this._getLinkEndpointId(link.source) === node.id || this._getLinkEndpointId(link.target) === node.id) continue;
 
                     const x1 = link.source.x, y1 = link.source.y;
                     const x2 = link.target.x, y2 = link.target.y;
@@ -3747,7 +3777,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                         const offsetMultiplier = (totalParams % 2 === 0) ? (linkIndex % 2 === 0 ? 1 : -1) * (Math.floor(linkIndex / 2) + 0.5) : (linkIndex === 0 ? 0 : (linkIndex % 2 === 0 ? 1 : -1) * Math.floor((linkIndex + 1) / 2));
 
                         // Use canonical direction (A < B) for consistent normal vector
-                        const isCanonical = link.source.id < link.target.id;
+                        const isCanonical = this._getLinkEndpointId(link.source) < this._getLinkEndpointId(link.target);
                         const cX1 = isCanonical ? x1 : x2;
                         const cY1 = isCanonical ? y1 : y2;
                         const cX2 = isCanonical ? x2 : x1;
@@ -3857,8 +3887,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         if (hoveredNodeId) {
             connectedNodeIds.add(hoveredNodeId);
             this.graphData.links.forEach(link => {
-                const sId = typeof link.source === 'object' ? link.source.id : link.source;
-                const tId = typeof link.target === 'object' ? link.target.id : link.target;
+                const sId = this._getLinkEndpointId(link.source);
+                const tId = this._getLinkEndpointId(link.target);
                 if (sId === hoveredNodeId) connectedNodeIds.add(tId);
                 if (tId === hoveredNodeId) connectedNodeIds.add(sId);
             });
@@ -3895,8 +3925,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             // Build a set of existing regular link pairs for overlap detection
             const regularLinkPairs = new Set();
             this.graphData.links.forEach(l => {
-                const sId = typeof l.source === 'object' ? l.source.id : l.source;
-                const tId = typeof l.target === 'object' ? l.target.id : l.target;
+                const sId = this._getLinkEndpointId(l.source);
+                const tId = this._getLinkEndpointId(l.target);
                 regularLinkPairs.add(sId < tId ? `${sId} - ${tId}` : `${tId} - ${sId}`);
             });
 
@@ -3977,9 +4007,10 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
         this._linkCounts = {};
         this.graphData.links.forEach((link, i) => {
-            const pairKey = link.source.id < link.target.id
-                ? `${link.source.id} - ${link.target.id}`
-                : `${link.target.id} - ${link.source.id}`;
+            const sId = this._getLinkEndpointId(link?.source);
+            const tId = this._getLinkEndpointId(link?.target);
+            if (!sId || !tId) return;
+            const pairKey = sId < tId ? `${sId} - ${tId}` : `${tId} - ${sId}`;
 
             if (!this._linkCounts[pairKey]) {
                 this._linkCounts[pairKey] = { total: 0, links: [] };
@@ -3992,18 +4023,21 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const labelsToDraw = [];
 
         this.graphData.links.forEach((link, i) => {
+            const sIdRaw = this._getLinkEndpointId(link?.source);
+            const tIdRaw = this._getLinkEndpointId(link?.target);
+            if (!sIdRaw || !tIdRaw) return;
             const pairInfo = this._linkCounts[link.pairKey];
+            if (!pairInfo) return;
             const linkIndex = pairInfo.links.indexOf(i);
             const totalParams = pairInfo.total;
 
-            const sIdRaw = typeof link.source === 'object' ? link.source.id : link.source;
-            const tIdRaw = typeof link.target === 'object' ? link.target.id : link.target;
             const showLinkInIsolate = exactLinkMatches.has(i)
                 || (visibleNodeIds.has(sIdRaw) && visibleNodeIds.has(tIdRaw) && exactNodeMatches.has(sIdRaw) && exactNodeMatches.has(tIdRaw));
             if (isolateSearch && !showLinkInIsolate) return;
 
-            const sPos = renderPos[link.source.id];
-            const tPos = renderPos[link.target.id];
+            const sPos = renderPos[sIdRaw];
+            const tPos = renderPos[tIdRaw];
+            if (!sPos || !tPos) return;
 
             const dx = tPos.x - sPos.x;
             const dy = tPos.y - sPos.y;
@@ -4102,7 +4136,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 const finalOffset = offsetMultiplier * spreadDistance;
 
                 const nx = -dy / dist, ny = dx / dist;
-                const isCanonical = link.source.id < link.target.id;
+                const isCanonical = this._getLinkEndpointId(link.source) < this._getLinkEndpointId(link.target);
                 const fNx = isCanonical ? nx : -nx, fNy = isCanonical ? ny : -ny;
 
                 ctrlX = midX + fNx * finalOffset * 2;
@@ -4774,7 +4808,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                             const ddist = Math.sqrt(ddx * ddx + ddy * ddy) || 1;
                             const spreadDistance = 12 + (ddist * 0.05) + (totalParams * 4);
                             const finalOffset = offsetMultiplier * spreadDistance;
-                            const isCanonical = link.source.id < link.target.id;
+                            const isCanonical = this._getLinkEndpointId(link.source) < this._getLinkEndpointId(link.target);
                             const cDx = isCanonical ? ddx : -ddx;
                             const cDy = isCanonical ? ddy : -ddy;
                             const nx = -cDy / ddist;
@@ -4909,7 +4943,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                         const ddist = Math.sqrt(ddx * ddx + ddy * ddy) || 1;
                         const spreadDistance = 12 + (ddist * 0.05) + (totalParams * 4);
                         const finalOffset = offsetMultiplier * spreadDistance;
-                        const isCanonical = link.source.id < link.target.id;
+                        const isCanonical = this._getLinkEndpointId(link.source) < this._getLinkEndpointId(link.target);
                         const cDx = isCanonical ? ddx : -ddx;
                         const cDy = isCanonical ? ddy : -ddy;
                         const nx = -cDy / ddist;
@@ -4973,12 +5007,14 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 vx: n.vx || 0,
                 vy: n.vy || 0
             })),
-            links: this.graphData.links.map(l => ({
-                source: typeof l.source === "object" ? l.source.id : l.source,
-                target: typeof l.target === "object" ? l.target.id : l.target,
-                label: l.label,
-                directional: l.directional || false
-            })),
+            links: this.graphData.links
+                .map(l => ({
+                    source: typeof l.source === "object" ? l.source?.id : l.source,
+                    target: typeof l.target === "object" ? l.target?.id : l.target,
+                    label: l.label,
+                    directional: !!l.directional
+                }))
+                .filter(l => l.source && l.target),
             factions: this.graphData.factions.map(f => ({
                 id: f.id,
                 name: f.name,
