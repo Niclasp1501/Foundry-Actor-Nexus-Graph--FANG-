@@ -33,6 +33,21 @@ Beta releases should derive from the current stable base version:
 
 The persistent beta install link remains the `beta-latest` GitHub prerelease manifest.
 
+## Player-Facing Hidden Tokens
+
+Hidden/verdeckte tokens are not "disabled" for players. FANG is a shared player management tool, so players must still be able to interact with the safe player-facing version of a hidden contact.
+
+Rules:
+
+- Players may view local info, use Spotlight, and edit allowed player-facing data on hidden tokens.
+- Never expose the real actor name, original name, GM role, faction identity, GM journal, GM lore, or GM-only visibility settings to non-GM users.
+- Use the safe facade for players: `displayName`/alias, visible player lore page, `playerNotes`, visible conditions, and visible quests.
+- Visible quests on hidden tokens are controlled by an additional GM option (`showHiddenQuestsToPlayers`). A quest must be visible to players and this option must be enabled before it appears in the hidden player-facing view.
+- If a hidden token needs a portrait for a player-facing view, use the unknown/placeholder portrait instead of the real actor image.
+- Player editing of hidden tokens should open a restricted editor for alias, player notes, and visible status markers. The full profile editor is GM-only.
+- Context menus for players should still offer safe actions such as info, spotlight, quests that are visible to players, and restricted edit when player editing is allowed.
+- When adding new features, keep "can interact with safe facade" separate from "can see GM identity." Do not use one boolean for both concepts.
+
 ## Foundry Journal Buttons and Links
 
 When module content adds custom buttons or links inside Foundry Journal pages, do not rely on a single sheet render hook as the only way to attach behavior. Foundry v13/v14 can render Journal pages through different sheet/app paths, and saved Journal HTML can outlive the exact renderer that originally created it.

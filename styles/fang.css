@@ -495,7 +495,7 @@ body.role-player .fang-app-container .gm-only {
     display: flex;
     align-items: center;
     gap: 8px;
-    color: var(--fang-primary-red);
+    color: #5f4a21;
     font-family: var(--fang-font-header);
     font-size: 0.98rem;
     font-weight: 800;
@@ -523,11 +523,17 @@ body.role-player .fang-app-container .gm-only {
     border: 1px solid var(--fang-border-color);
     border-radius: 10px;
     background: var(--fang-bg-color);
+    cursor: pointer;
+}
+
+.fang-quest-manager-row:hover {
+    border-color: var(--fang-accent-gold);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
 }
 
 .fang-quest-title {
     font-weight: 800;
-    color: var(--fang-primary-red);
+    color: #2b221a;
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -549,7 +555,7 @@ body.role-player .fang-app-container .gm-only {
     border: 1px solid var(--fang-border-color);
     border-radius: 8px;
     background: #fffaf0;
-    color: var(--fang-primary-red);
+    color: #6f5a2a;
     cursor: pointer;
 }
 
@@ -655,6 +661,111 @@ body.role-player .fang-app-container .gm-only {
 
 .fang-quest-add-picker .action-btn {
     min-height: 40px;
+}
+
+.fang-app-container .fang-quest-canvas-panel {
+    position: absolute;
+    inset: 0;
+    z-index: 1750;
+    pointer-events: auto;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(2px);
+}
+
+.fang-app-container .fang-quest-canvas-card {
+    position: relative;
+    width: min(760px, 92%);
+    min-width: 360px;
+    max-height: 85%;
+    pointer-events: auto;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    background:
+        radial-gradient(circle at top left, rgba(212, 175, 55, 0.12), transparent 34%),
+        #fdfbf7;
+    border: 2px solid var(--fang-accent-gold);
+    border-radius: 8px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 0 0 20px rgba(212, 175, 55, 0.2);
+    animation: fangCinemaEnter 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (max-width: 760px) {
+    .fang-app-container .fang-quest-canvas-card {
+        width: 94%;
+        min-width: 0;
+    }
+}
+
+.fang-app-container .fang-quest-canvas-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 24px 58px 10px 24px;
+    background: transparent;
+    color: #3a2a12;
+    border-bottom: 2px solid var(--fang-accent-gold);
+}
+
+.fang-app-container .fang-quest-canvas-header h3 {
+    margin: 0;
+    color: inherit;
+    border: 0;
+    font-size: 1.55rem;
+    line-height: 1.15;
+    letter-spacing: 0.01em;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.fang-app-container .fang-quest-canvas-header h3 i {
+    color: var(--fang-accent-gold);
+}
+
+.fang-app-container .fang-quest-canvas-close {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    width: 34px;
+    height: 34px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: #888;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    font-size: 1.35rem;
+}
+
+.fang-app-container .fang-quest-canvas-close:hover {
+    color: var(--fang-primary-red);
+    background: rgba(139, 0, 0, 0.06);
+}
+
+.fang-app-container .fang-quest-canvas-card .fang-quest-manager {
+    overflow: auto;
+    padding: 20px 24px 24px;
+}
+
+.fang-app-container.fang-theme-cyberpunk .fang-quest-canvas-card {
+    background: rgba(3, 15, 26, 0.95);
+    border-color: #33d9ff;
+    box-shadow: 0 0 0 1px rgba(51, 217, 255, 0.35), 0 22px 50px rgba(0, 0, 0, 0.45);
+}
+
+.fang-app-container.fang-theme-cyberpunk .fang-quest-canvas-header {
+    background: transparent;
+    color: #33d9ff;
+    border-bottom-color: #33d9ff;
 }
 
 /* Add a gold accent line */
@@ -1797,9 +1908,7 @@ body.fang-theme-cyberpunk .fang-dialog .faction-icon-preview {
     grid-template-columns: 1fr 1fr;
     gap: 14px;
     padding: 18px;
-    background:
-        radial-gradient(circle at top left, rgba(212, 175, 55, 0.14), transparent 34%),
-        var(--fang-card-bg);
+    background: var(--fang-card-bg);
 }
 
 .fang-actor-editor .fang-editor-section,
@@ -3178,7 +3287,7 @@ body:has(.actors-sidebar.sidebar-popout:has(.window-content > *)) #fang-so-actor
 
 .fang-app-container .fang-sidebar-status {
     width: 76px;
-    padding: 0 6px 10px;
+    padding: 8px 6px 10px;
     border-bottom: 1px solid rgba(139, 0, 0, 0.35);
 }
 

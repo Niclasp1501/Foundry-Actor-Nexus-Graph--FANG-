@@ -54,7 +54,7 @@
             "CenterGraphHint": "Zoomt und schiebt den Graphen so, dass alle Token sichtbar sind.",
             "GroupByFaction": "Nach Fraktion gruppieren",
             "GroupByFactionHint": "Ordnet Knoten auf dem Canvas nach Fraktionen an.",
-            "ResetFactionGrouping": "Gruppierung zuruecksetzen",
+            "ResetFactionGrouping": "Gruppierung zurücksetzen",
             "ResetFactionGroupingHint": "Stellt das Standard-Layout der Physik wieder her.",
             "EnablePlayerEdit": "Spieler-Bearbeitung umschalten",
             "ToggleCenter": "Zentrieren",
@@ -139,8 +139,8 @@
             "PlayersCannotEdit": "Spieler können den Graphen nicht mehr bearbeiten.",
             "WarnNoGMOnline": "Ein Spielleiter (GM) muss online sein, um Änderungen am Graphen zu speichern.",
             "FactionGroupingApplied": "Fraktions-Gruppierung angewendet.",
-            "FactionGroupingReset": "Fraktions-Gruppierung zurueckgesetzt.",
-            "FactionGroupingInsufficient": "Mindestens zwei Fraktionen mit zugewiesenen Knoten sind noetig.",
+            "FactionGroupingReset": "Fraktions-Gruppierung zurückgesetzt.",
+            "FactionGroupingInsufficient": "Mindestens zwei Fraktionen mit zugewiesenen Knoten sind nötig.",
             "JournalInitSuccess": "FANG Graph Journal erfolgreich initialisiert.",
             "JournalMissing": "Kein FANG Graph Journal gefunden. Ein GM muss dieses Tool zuerst öffnen.",
             "SaveNoPermission": "Keine Berechtigung zum Speichern des FANG Graphen.",
@@ -162,6 +162,7 @@
             "LockReleased": "Bearbeitung freigegeben.",
             "AlreadyEditing": "bearbeitet den Graphen gerade.",
             "SpotlightHiddenBlocked": "Decke den Charakter zuerst auf, bevor du das Spotlight nutzt!",
+            "HiddenEditBlocked": "Verdeckte Akteure k?nnen von Spielern nicht bearbeitet werden.",
             "MonitorViewClosed": "Monitor Ansicht geschlossen.",
             "QuickConnectEnabled": "Direktverbindung aktiv: Wähle zuerst die Quelle, dann das Ziel.",
             "QuickConnectDisabled": "Direktverbindung deaktiviert.",
@@ -169,14 +170,19 @@
             "QuickConnectSameNode": "Quelle und Ziel müssen unterschiedlich sein.",
             "QuickConnectLabelTitle": "Direktverbindung erstellen",
             "QuickConnectLabelContent": "Beziehung von {source} zu {target}:",
-            "QuickConnectLabelPlaceholder": "Label z.B. 'kennt'"
+            "QuickConnectLabelPlaceholder": "Label z.B. 'kennt'",
+            "PlayerLoreMissing": "Ein GM muss das Spieler-Notizen-Journal zuerst erstellen.",
+            "PlayerLoreCreateGMOnly": "Nur ein GM kann das erste Spieler-Notizen-Journal erstellen."
         },
         "ActorEditor": {
             "Title": "Akteur bearbeiten",
             "Profile": "Profil",
             "PlayerView": "Spieleransicht",
+            "PlayerNotesTitle": "Spieler-Notizen",
+            "HiddenPlayerEditHint": "Dieser Kontakt ist noch verdeckt. Du kannst den Spielernamen, Notizen und sichtbare Zust?nde bearbeiten, ohne GM-Geheimnisse aufzudecken.",
             "Conditions": "Zustände",
-            "Notes": "Notizen"
+            "Notes": "Notizen",
+            "PlayerViewGMSettings": "GM-Einstellungen"
         },
         "ContextMenu": {
             "Info": "Info ansehen",
@@ -210,11 +216,11 @@
             "FactionInput": "Fraktion",
             "FactionNamePlaceholder": "Fraktionsname",
             "FactionDescriptionPlaceholder": "Kurze Fraktionsbeschreibung",
-            "FactionVisibleToPlayers": "Fuer Spieler sichtbar",
+            "FactionVisibleToPlayers": "Für Spieler sichtbar",
             "FactionLegendForPlayers": "In Legende anzeigen",
             "FactionLinesForPlayers": "Fraktionslinien anzeigen",
-            "ChooseFactionIcon": "Icon auswaehlen",
-            "DeleteFaction": "Fraktion loeschen",
+            "ChooseFactionIcon": "Icon auswählen",
+            "DeleteFaction": "Fraktion löschen",
             "DeleteFactionConfirm": "Fraktion {name} wirklich l?schen? Tokens dieser Fraktion verlieren ihre Zuordnung.",
             "NewFaction": "Neue Fraktion",
             "ShowFactionLines": "Fraktionslinien anzeigen",
@@ -274,8 +280,9 @@
             "QuestPickerTitle": "Oder aus der Journalliste auswählen",
             "QuestDropTitle": "Journal hier ablegen",
             "QuestAttachTitle": "Weiteres Quest-Journal verknüpfen",
-            "QuestLinkedTitle": "Verknüpfte Aufträge",
-            "QuestDropHint": "Lege ein Journal hier ab. Es wird zunächst als verborgener Auftrag verknüpft."
+            "QuestLinkedTitle": "Aufträge",
+            "QuestDropHint": "Lege ein Journal hier ab. Es wird zunächst als verborgener Auftrag verknüpft.",
+            "HiddenQuestsVisible": "Aufträge bei verdeckter Ansicht anzeigen"
         },
         "Settings": {
             "TokenSize": {
@@ -304,7 +311,7 @@
             },
             "ThemeVariant": {
                 "Name": "FANG-Design",
-                "Hint": "Waehle das visuelle Design fuer das FANG-Fenster fuer alle Nutzer.",
+                "Hint": "Wähle das visuelle Design für das FANG-Fenster für alle Nutzer.",
                 "Choices": {
                     "Fantasy": "Fantasy (Standard)",
                     "Cyberpunk": "Cyberpunk"
@@ -338,6 +345,7 @@
             "DefaultName": "Unbekannter Kontakt",
             "CreateTitle": "Platzhalter-NPC erstellen",
             "CreateBtn": "Erstellen",
+            "PlayerCreateHint": "Erstellt einen sichtbaren Platzhalter-Kontakt. Ein GM kann Rolle, Fraktion und geheime Details sp?ter erg?nzen.",
             "Type": "Typ",
             "Name": "Anzeigename",
             "ReplaceTitle": "Platzhalter ersetzen",

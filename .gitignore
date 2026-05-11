@@ -1,4 +1,5 @@
 Foundry Actor Nexus Graph (FANG).code-workspace
+.claude/
 
 # Node / Playwright local tooling
 node_modules/

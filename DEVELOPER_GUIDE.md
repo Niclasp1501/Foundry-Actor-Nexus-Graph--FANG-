@@ -66,6 +66,7 @@ FANG renders an HTML Sidebar next to a raw `<canvas>` tag powered by D3.js.
 ## 📝 3. Localization
 If you add a new feature, a new button, a new setting, or a new warning message:
 1. Add a descriptive key to `lang/en.json` (e.g. `"FANG.Dialogs.MyNewButton": "Click Me!"`).
-2. Add the exact identical structure to `lang/de.json` with the German translation.
+2. Add the exact identical structure to every `lang/*.json` file with the matching translation.
 3. Access it in JS via `game.i18n.localize("FANG.Dialogs.MyNewButton")`.
 4. Access it in HBS via `{{localize "FANG.Dialogs.MyNewButton"}}`.
+5. Run `node tools/fang-validate.mjs` before committing to catch missing locale keys.
