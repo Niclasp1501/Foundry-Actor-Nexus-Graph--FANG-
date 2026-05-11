@@ -257,6 +257,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         this._isSyncCameraActive = false;
         this._remoteSyncing = false; // Guard to prevent feedback loops
         this._hoveredNodeId = null;
+        this._hoverLoreTooltipEnabled = false;
         this._bgImageLoaded = new Map();
         this._searchQuery = "";
         this._searchIsolate = false;
@@ -265,6 +266,11 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         this._searchUiVisible = false;
         this._isFactionGroupingActive = false;
         this._factionClusterTargets = null;
+        this._quickConnectMode = false;
+        this._quickConnectSourceId = null;
+        this._touchLongPressTimer = null;
+        this._touchLongPressStart = null;
+        this._suppressNextCanvasClick = false;
     }
 
     async _prepareContext(options) {
@@ -316,12 +322,104 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
     _shouldShowFactionLinesToCurrentUser(faction) {
         if (!this._isFactionVisibleToCurrentUser(faction)) return false;
-        return game.user.isGM || faction.showLinesForPlayers !== false;
+        return faction.showLinesForPlayers !== false;
     }
 
     _shouldShowFactionInLegendToCurrentUser(faction) {
         if (!this._isFactionVisibleToCurrentUser(faction)) return false;
-        return game.user.isGM || faction.showInLegendForPlayers !== false;
+        return faction.showInLegendForPlayers !== false;
+    }
+
+    _canUserSeeNode(node, user = game.user) {
+        if (!node) return false;
+        // Hidden nodes are still player-managed contacts. Players may interact
+        // with their safe facade, but must never receive the real identity.
+        return true;
+    }
+
+    _isNodeHiddenForUser(node, user = game.user) {
+        return !!node?.hidden && !user?.isGM;
+    }
+
+    _canUserSeeQuest(node, quest, user = game.user) {
+        if (!node || !quest) return false;
+        if (!this._canUserSeeNode(node, user)) return false;
+        if (user?.isGM) return true;
+        return quest.visibleToPlayers !== false;
+    }
+
+    _canUserSeeLink(link, user = game.user) {
+        if (!link) return false;
+        const sourceNode = this._resolveNodeReference(link.source);
+        const targetNode = this._resolveNodeReference(link.target);
+        return this._canUserSeeNode(sourceNode, user) && this._canUserSeeNode(targetNode, user);
+    }
+
+    _canUseGraphAction(action, target, user = game.user) {
+        const hasLock = this._canEditGraph(true);
+        switch (action) {
+            case "viewNode":
+            case "spotlightNode":
+                return this._canUserSeeNode(target, user);
+            case "viewLink":
+            case "spotlightLink":
+                return this._canUserSeeLink(target, user);
+            case "manageQuests":
+                return user?.isGM ? hasLock || this._getNodeQuestsForUser(target, user).length > 0 : this._getNodeQuestsForUser(target, user).length > 0;
+            case "edit":
+            case "delete":
+            case "addQuest":
+                return hasLock;
+            default:
+                return false;
+        }
+    }
+
+    _resolveNodeReference(ref) {
+        if (!ref) return null;
+        if (typeof ref === "object") return ref;
+        return this.graphData?.nodes?.find(n => n.id === ref) ?? null;
+    }
+
+    _getSafeNodeName(node, user = game.user) {
+        if (!node) return game.i18n.localize("FANG.Dropdowns.Unknown");
+        if (this._isNodeHiddenForUser(node, user)) {
+            return node.displayName || game.i18n.localize("FANG.Dropdowns.Unknown");
+        }
+        return node.name || game.i18n.localize("FANG.Dropdowns.Unknown");
+    }
+
+    _getNodeQuestsForUser(node, user = game.user) {
+        if (this._isNodeHiddenForUser(node, user) && node.showHiddenQuestsToPlayers === false) return [];
+        const quests = Array.isArray(node?.questUuids) ? node.questUuids : [];
+        return quests.filter(q => this._canUserSeeQuest(node, q, user));
+    }
+
+    _repairGraphData(graphData = this.graphData) {
+        const graph = graphData && typeof graphData === "object" ? graphData : {};
+        graph.nodes = Array.isArray(graph.nodes) ? graph.nodes : [];
+        graph.links = Array.isArray(graph.links) ? graph.links : [];
+        graph.factions = Array.isArray(graph.factions) ? graph.factions.map(f => this._normalizeFaction(f)) : [];
+
+        const nodeIds = new Set(graph.nodes.map(n => n?.id).filter(Boolean));
+        graph.links = graph.links.filter(link => {
+            const sourceId = this._getLinkEndpointId(link?.source);
+            const targetId = this._getLinkEndpointId(link?.target);
+            return sourceId && targetId && nodeIds.has(sourceId) && nodeIds.has(targetId);
+        });
+
+        const factionIds = new Set(graph.factions.map(f => f.id).filter(Boolean));
+        for (const node of graph.nodes) {
+            if (node.factionId && !factionIds.has(node.factionId)) node.factionId = null;
+            node.conditions = Array.isArray(node.conditions) ? node.conditions : [];
+            node.questUuids = Array.isArray(node.questUuids) ? node.questUuids : [];
+            if (node.showHiddenQuestsToPlayers === undefined) node.showHiddenQuestsToPlayers = true;
+        }
+
+        if (graph.showFactionLines === undefined) graph.showFactionLines = true;
+        if (graph.showFactionLegend === undefined) graph.showFactionLegend = true;
+        this.graphData = graph;
+        return graph;
     }
 
     _onRender(context, options) {
@@ -401,6 +499,12 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
         // 3. Re-attach Event Listeners (Universal)
         this.element.querySelector("#btnAddLink").addEventListener("click", this._onAddLink.bind(this));
+        const btnQuickConnect = this.element.querySelector("#btnQuickConnectMode");
+        if (btnQuickConnect) btnQuickConnect.addEventListener("click", this._onToggleQuickConnectMode.bind(this));
+        const btnCanvasQuickConnect = this.element.querySelector("#btnCanvasQuickConnect");
+        if (btnCanvasQuickConnect) btnCanvasQuickConnect.addEventListener("click", this._onToggleQuickConnectMode.bind(this));
+        const btnCanvasAddPlaceholder = this.element.querySelector("#btnCanvasAddPlaceholder");
+        if (btnCanvasAddPlaceholder) btnCanvasAddPlaceholder.addEventListener("click", this._onAddPlaceholder.bind(this));
         const btnAddPlaceholder = this.element.querySelector("#btnAddPlaceholder");
         if (btnAddPlaceholder) btnAddPlaceholder.addEventListener("click", this._onAddPlaceholder.bind(this));
         const btnDelete = this.element.querySelector("#btnDeleteElement");
@@ -421,6 +525,10 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const canvas = this.element.querySelector("#graphCanvas");
         canvas.addEventListener("click", this._onCanvasClick.bind(this));
         canvas.addEventListener("dblclick", this._onCanvasDoubleClick.bind(this));
+        canvas.addEventListener("pointerdown", this._onCanvasPointerDown.bind(this));
+        canvas.addEventListener("pointermove", this._onCanvasPointerMove.bind(this));
+        canvas.addEventListener("pointerup", this._onCanvasPointerUp.bind(this));
+        canvas.addEventListener("pointercancel", this._onCanvasPointerCancel.bind(this));
 
         // 4. Update Lock UI status
         this._updateLockUI();
@@ -499,6 +607,24 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 }
             });
         }
+
+        const railSearch = this.element.querySelector("#fangRailSearch");
+        if (railSearch) railSearch.addEventListener("click", () => {
+            this._setSearchUiVisible(!this._searchUiVisible, { focus: true });
+        });
+
+        const railPresentation = this.element.querySelector("#fangRailPresentation");
+        if (railPresentation) railPresentation.addEventListener("click", () => this._openSidebarPanel("view"));
+
+        const railFactions = this.element.querySelector("#fangRailFactions");
+        if (railFactions) railFactions.addEventListener("click", (event) => {
+            event.preventDefault();
+            this._closeSidebarPanel();
+            this._onManageFactions();
+        });
+
+        const railManage = this.element.querySelector("#fangRailManage");
+        if (railManage) railManage.addEventListener("click", () => this._openSidebarPanel("advanced"));
 
         // 4. GM-specific or Player-specific Logic
         if (game.user.isGM) {
@@ -592,6 +718,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         }
 
         this._updateGroupByFactionButtonState();
+        this._updateQuickConnectButtonState();
 
         // Apply background initially for all users
         this._applyBackground();
@@ -784,17 +911,24 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     node.img = normalizeLegacyPlaceholderImagePath(node.img);
                     if (node.hidden === undefined) node.hidden = false;
                     if (!node.displayName) node.displayName = "";
+                    if (node.playerNotes === undefined) node.playerNotes = "";
+                    if (node.showHiddenQuestsToPlayers === undefined) node.showHiddenQuestsToPlayers = true;
                     if (!node.conditions) node.conditions = [];
                     // Migration: Journal linking fields
                     if (node.playerLorePageId === undefined) node.playerLorePageId = null;
                     if (node.journalUuid === undefined) node.journalUuid = null;
                     // Migration: questUuid (single) -> questUuids (array)
                     if (node.questUuid !== undefined && !node.questUuids) {
-                        node.questUuids = node.questUuid ? [{ uuid: node.questUuid, name: node._questJournalName || "Quest Journal" }] : [];
+                        node.questUuids = node.questUuid ? [{ uuid: node.questUuid, name: node._questJournalName || "Quest Journal", visibleToPlayers: true }] : [];
                         delete node.questUuid;
                         delete node._questJournalName;
                     }
                     if (!node.questUuids) node.questUuids = [];
+                    node.questUuids = node.questUuids.map(q => ({
+                        uuid: q.uuid,
+                        name: q.name || "Quest Journal",
+                        visibleToPlayers: q.visibleToPlayers !== false
+                    }));
                 });
 
                 if (this.graphData.showFactionLines === undefined) {
@@ -812,6 +946,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
         if (!this.graphData.factions) this.graphData.factions = [];
         this.graphData.factions = this.graphData.factions.map(f => this._normalizeFaction(f));
+        this._repairGraphData();
         await this._syncDiploGlassFactions({ saveIfChanged: true, triggerSync: true });
     }
 
@@ -1040,6 +1175,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
     async saveData(triggerSync = true) {
         const entry = await this.getJournalEntry();
+        this._repairGraphData();
 
         // Prepare the exportable state
         const exportData = {
@@ -1061,18 +1197,22 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 lore: n.lore || "",
                 playerLorePageId: n.playerLorePageId || null,
                 journalUuid: n.journalUuid || null,
-                questUuids: (n.questUuids || []).map(q => ({ uuid: q.uuid, name: q.name })),
+                questUuids: (n.questUuids || []).map(q => ({ uuid: q.uuid, name: q.name, visibleToPlayers: q.visibleToPlayers !== false })),
                 hidden: n.hidden || false,
                 displayName: n.displayName || "",
+                playerNotes: n.playerNotes || "",
+                showHiddenQuestsToPlayers: n.showHiddenQuestsToPlayers !== false,
                 conditions: n.conditions || []
             })),
-            links: this.graphData.links.map(l => ({
-                source: typeof l.source === 'object' ? l.source.id : l.source,
-                target: typeof l.target === 'object' ? l.target.id : l.target,
-                label: l.label,
-                info: l.info || "",
-                directional: l.directional || false
-            })),
+            links: this.graphData.links
+                .map(l => ({
+                    source: typeof l.source === 'object' ? l.source?.id : l.source,
+                    target: typeof l.target === 'object' ? l.target?.id : l.target,
+                    label: l.label,
+                    info: l.info || "",
+                    directional: !!l.directional
+                }))
+                .filter(l => l.source && l.target),
             factions: this.graphData.factions.map(f => ({
                 id: f.id,
                 name: f.name,
@@ -1292,6 +1432,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             y,
             hidden: game.settings.get("fang", "defaultHiddenMode"),
             displayName: "",
+            playerNotes: "",
+            showHiddenQuestsToPlayers: true,
             conditions: [],
             playerLorePageId: null,
             journalUuid: null,
@@ -1301,13 +1443,13 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
     async _onAddPlaceholder() {
         if (!this._canEditGraph()) return;
-        if (!game.user.isGM) return;
 
         const factions = this.graphData.factions || [];
         const factionOptions = [`<option value="">-- None --</option>`]
             .concat(factions.map(f => `<option value="${f.id}">${f.name}</option>`))
             .join("");
         const defaultName = game.i18n.localize("FANG.Placeholder.DefaultName") || "Unknown Contact";
+        const isGM = game.user.isGM;
 
         new Dialog({
             title: game.i18n.localize("FANG.Placeholder.CreateTitle") || "Create Placeholder NPC",
@@ -1318,7 +1460,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                         <input type="text" id="fang-placeholder-name" value="${defaultName}" style="width: 100%;">
                     </div>
                 </div>
-                <div class="form-group">
+                ${isGM ? `<div class="form-group">
                     <label>${game.i18n.localize("FANG.Dialogs.RoleInput") || "Role"}:</label>
                     <div class="form-fields">
                         <input type="text" id="fang-placeholder-role" value="" style="width: 100%;">
@@ -1329,7 +1471,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     <div class="form-fields">
                         <select id="fang-placeholder-faction" style="width: 100%;">${factionOptions}</select>
                     </div>
-                </div>
+                </div>` : `<p class="hint">${game.i18n.localize("FANG.Placeholder.PlayerCreateHint") || "Creates a visible placeholder contact. A GM can add role, faction, and secret details later."}</p>`}
             `,
             buttons: {
                 create: {
@@ -1337,9 +1479,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     label: game.i18n.localize("FANG.Placeholder.CreateBtn") || "Create",
                     callback: async (html) => {
                         const name = html.find("#fang-placeholder-name").val().trim() || (game.i18n.localize("FANG.Placeholder.DefaultName") || "Unknown Contact");
-                        const roleVal = html.find("#fang-placeholder-role").val().trim();
+                        const roleVal = isGM ? html.find("#fang-placeholder-role").val().trim() : "";
                         const role = roleVal || null;
-                        const factionIdVal = html.find("#fang-placeholder-faction").val();
+                        const factionIdVal = isGM ? html.find("#fang-placeholder-faction").val() : "";
                         const factionId = factionIdVal || null;
 
                         const x = this.transform ? this.transform.invertX(this.width / 2) : (this.width / 2);
@@ -1353,6 +1495,12 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                             x: x + (Math.random() - 0.5) * 20,
                             y: y + (Math.random() - 0.5) * 20
                         });
+                        if (!isGM) {
+                            node.hidden = false;
+                            node.displayName = "";
+                            node.playerNotes = "";
+                            node.conditions = [];
+                        }
 
                         this.graphData.nodes.push(node);
                         this.initSimulation();
@@ -1458,6 +1606,31 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         }
     }
 
+    _openSidebarPanel(tabName) {
+        const appContainer = this.element.querySelector(".fang-app-container") || this.element;
+        const isOpen = appContainer.classList.contains("sidebar-panel-open");
+        const activeContent = this.element.querySelector(".tab-content.active");
+        if (isOpen && activeContent?.dataset.tab === tabName) {
+            this._closeSidebarPanel();
+            return;
+        }
+
+        const tabBtns = this.element.querySelectorAll(".tab-btn");
+        const tabContents = this.element.querySelectorAll(".tab-content");
+        tabBtns.forEach(btn => btn.classList.toggle("active", btn.dataset.tab === tabName));
+        tabContents.forEach(content => content.classList.toggle("active", content.dataset.tab === tabName));
+        appContainer.classList.add("sidebar-panel-open");
+        this.element.querySelectorAll(".fang-rail-btn").forEach(btn => btn.classList.remove("active"));
+        const activeRail = tabName === "view" ? "#fangRailPresentation" : "#fangRailManage";
+        this.element.querySelector(activeRail)?.classList.add("active");
+    }
+
+    _closeSidebarPanel() {
+        const appContainer = this.element.querySelector(".fang-app-container") || this.element;
+        appContainer.classList.remove("sidebar-panel-open");
+        this.element.querySelectorAll(".fang-rail-btn").forEach(btn => btn.classList.remove("active"));
+    }
+
     _clearSearchState() {
         this._searchQuery = "";
         this._searchIsolate = false;
@@ -1489,19 +1662,21 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const matchedLinks = new Set();
 
         for (const node of this.graphData.nodes) {
+            if (!this._canUserSeeNode(node)) continue;
             const faction = node.factionId ? factionsById.get(node.factionId) : null;
             const factionName = this._isFactionVisibleToCurrentUser(faction) ? faction?.name || "" : "";
             const nodeText = [
-                node.name,
-                node.originalName,
+                this._getSafeNodeName(node),
+                game.user.isGM ? node.originalName : "",
                 node.displayName,
-                node.role,
+                this._isNodeHiddenForUser(node) ? "" : node.role,
                 factionName
             ].join(" ");
             if (matchAllTerms(nodeText)) matchedNodes.add(node.id);
         }
 
         this.graphData.links.forEach((link, index) => {
+            if (!this._canUserSeeLink(link)) return;
             const linkText = [link.label, link.info].join(" ");
             if (!matchAllTerms(linkText)) return;
             matchedLinks.add(index);
@@ -1555,11 +1730,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 optgroup.label = game.i18n.localize("FANG.Dropdowns.GroupCanvas");
                 let hasEntries = false;
                 const sortedNodes = [...this.graphData.nodes].sort((a, b) => (a.name || "").localeCompare(b.name || ""));
-                const isPlayerView = !game.user.isGM;
                 sortedNodes.forEach(node => {
-                    const shownName = (isPlayerView && node.hidden)
-                        ? (node.displayName || game.i18n.localize("FANG.Dropdowns.Unknown"))
-                        : (node.name || game.i18n.localize("FANG.Dropdowns.Unknown"));
+                    const shownName = this._getSafeNodeName(node);
                     const actor = this._getNodeActor(node);
                     const suffix = game.user.isGM
                         ? (node.isPlaceholder ? ` (${game.i18n.localize("FANG.Placeholder.Tag") || "Placeholder"})` : (actor ? "" : " (?)"))
@@ -1590,13 +1762,10 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             if (this.graphData.nodes.length > 0) {
                 const optGroupN = document.createElement("optgroup");
                 optGroupN.label = game.i18n.localize("FANG.Dropdowns.Nodes");
-                const isPlayerView = !game.user.isGM;
                 this.graphData.nodes.forEach(node => {
                     let opt = document.createElement("option");
                     opt.value = `node|${node.id}`;
-                    const shownName = (isPlayerView && node.hidden)
-                        ? (node.displayName || game.i18n.localize("FANG.Dropdowns.Unknown"))
-                        : node.name;
+                    const shownName = this._getSafeNodeName(node);
                     opt.textContent = `${game.i18n.localize("FANG.Dropdowns.TokenPrefix")} ${shownName}`;
                     optGroupN.appendChild(opt);
                 });
@@ -1606,14 +1775,11 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             if (this.graphData.links.length > 0) {
                 const optGroupL = document.createElement("optgroup");
                 optGroupL.label = game.i18n.localize("FANG.Dropdowns.Links");
-                const isPlayerView = !game.user.isGM;
                 const getNodeName = (ref) => {
-                    const node = typeof ref === 'object' ? ref : this.graphData.nodes.find(n => n.id === ref);
-                    if (!node) return game.i18n.localize("FANG.Dropdowns.Unknown");
-                    if (isPlayerView && node.hidden) return node.displayName || game.i18n.localize("FANG.Dropdowns.Unknown");
-                    return node.name || game.i18n.localize("FANG.Dropdowns.Unknown");
+                    return this._getSafeNodeName(this._resolveNodeReference(ref));
                 };
                 this.graphData.links.forEach((link, index) => {
+                    if (!this._canUserSeeLink(link) && !game.user.isGM) return;
                     let opt = document.createElement("option");
                     opt.value = `link|${index}`;
                     const sourceName = getNodeName(link.source);
@@ -1672,7 +1838,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                             id: id, actorId: actor.id, isPlaceholder: false, placeholderType: null, img: actor.prototypeToken?.texture?.src || actor.img || null,
                             name: actor.name, originalName: actor.name,
                             hidden: game.settings.get("fang", "defaultHiddenMode"),
-                            displayName: "", conditions: []
+                            displayName: "", playerNotes: "", showHiddenQuestsToPlayers: true, conditions: []
                         });
                     }
                 }
@@ -1694,6 +1860,140 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         }
     }
 
+    _updateQuickConnectButtonState() {
+        const buttons = this.element?.querySelectorAll?.("#btnQuickConnectMode, #btnCanvasQuickConnect") || [];
+        buttons.forEach(button => {
+            button.classList.toggle("active", !!this._quickConnectMode);
+            button.classList.toggle("awaiting-target", !!this._quickConnectMode && !!this._quickConnectSourceId);
+        });
+        this._updateCanvasEditStatus();
+    }
+
+    _updateCanvasEditStatus(message = "") {
+        const status = this.element?.querySelector?.("#fangCanvasEditStatus");
+        if (!status) return;
+
+        let text = message;
+        if (!text && this._quickConnectMode) {
+            if (this._quickConnectSourceId) {
+                const source = this.graphData.nodes.find(n => n.id === this._quickConnectSourceId);
+                text = game.i18n.format("FANG.Messages.QuickConnectSourceSelected", { name: source?.name || "?" });
+            } else {
+                text = game.i18n.localize("FANG.Messages.QuickConnectEnabled");
+            }
+        }
+
+        status.textContent = text || "";
+        status.classList.toggle("hidden", !text);
+    }
+
+    _onToggleQuickConnectMode(event) {
+        event?.preventDefault?.();
+        if (!this._canEditGraph()) return;
+
+        this._quickConnectMode = !this._quickConnectMode;
+        this._quickConnectSourceId = null;
+        this._updateQuickConnectButtonState();
+    }
+
+    async _handleQuickConnectNodeClick(node) {
+        if (!this._quickConnectMode || !node) return false;
+        if (!this._canEditGraph()) return true;
+
+        if (!this._quickConnectSourceId) {
+            this._quickConnectSourceId = node.id;
+            this._updateQuickConnectButtonState();
+            this.ticked();
+            return true;
+        }
+
+        const sourceId = this._quickConnectSourceId;
+        const targetId = node.id;
+        if (sourceId === targetId) {
+            ui.notifications.warn(game.i18n.localize("FANG.Messages.QuickConnectSameNode"));
+            return true;
+        }
+
+        const sourceNode = this.graphData.nodes.find(n => n.id === sourceId);
+        const targetNode = this.graphData.nodes.find(n => n.id === targetId);
+        if (!sourceNode || !targetNode) {
+            this._quickConnectSourceId = null;
+            this._quickConnectMode = false;
+            this._updateQuickConnectButtonState();
+            this.ticked();
+            return true;
+        }
+
+        const result = await this._promptQuickConnectLink(sourceNode, targetNode);
+        if (!result?.label) {
+            this._quickConnectSourceId = null;
+            this._quickConnectMode = false;
+            this._updateQuickConnectButtonState();
+            this.ticked();
+            return true;
+        }
+
+        this.graphData.links.push({ source: sourceId, target: targetId, label: result.label, directional: !!result.directional });
+        this._quickConnectSourceId = null;
+        this._quickConnectMode = false;
+        this._updateQuickConnectButtonState();
+        this.ticked();
+        const legacyLabel = this.element.querySelector("#linkLabel");
+        if (legacyLabel) legacyLabel.value = "";
+        this.initSimulation();
+        this.simulation.alpha(0.3).restart();
+        this._populateActors();
+        await this.saveData();
+        return true;
+    }
+
+    async _promptQuickConnectLink(sourceNode, targetNode, defaultLabel = "") {
+        const title = game.i18n.localize("FANG.Messages.QuickConnectLabelTitle");
+        const content = game.i18n.format("FANG.Messages.QuickConnectLabelContent", {
+            source: sourceNode?.name || game.i18n.localize("FANG.Dropdowns.Unknown"),
+            target: targetNode?.name || game.i18n.localize("FANG.Dropdowns.Unknown")
+        });
+        const placeholder = game.i18n.localize("FANG.Messages.QuickConnectLabelPlaceholder");
+        const escapeHtml = foundry.utils.escapeHTML ?? ((value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            "\"": "&quot;",
+            "'": "&#39;"
+        }[char])));
+
+        return new Promise(resolve => {
+            new Dialog({
+                title,
+                content: `
+                    <p>${content}</p>
+                    <input type="text" id="fang-quick-connect-label" value="${escapeHtml(defaultLabel)}" placeholder="${escapeHtml(placeholder)}" style="width: 100%;">
+                    <label class="fang-editor-check" style="margin-top: 10px;">
+                        <input type="checkbox" id="fang-quick-connect-directional">
+                        ${game.i18n.localize("FANG.UI.Directional")}
+                    </label>
+                `,
+                buttons: {
+                    save: {
+                        icon: '<i class="fas fa-link"></i>',
+                        label: game.i18n.localize("FANG.UI.Connect"),
+                        callback: html => resolve({
+                            label: html.find("#fang-quick-connect-label").val().trim(),
+                            directional: html.find("#fang-quick-connect-directional").is(":checked")
+                        })
+                    },
+                    cancel: {
+                        icon: '<i class="fas fa-times"></i>',
+                        label: game.i18n.localize("FANG.Dialogs.BtnCancel"),
+                        callback: () => resolve(null)
+                    }
+                },
+                default: "save",
+                close: () => resolve(null)
+            }, { classes: ["dialog", "fang-dialog"], width: 420 }).render(true);
+        });
+    }
+
     async _onDeleteElement() {
         if (!this._canEditGraph()) return;
         const selectDelete = this.element.querySelector("#deleteSelect");
@@ -1710,8 +2010,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             if (type === "node") {
                 this.graphData.nodes = this.graphData.nodes.filter(n => n.id !== id);
                 this.graphData.links = this.graphData.links.filter(l => {
-                    const sId = typeof l.source === 'object' ? l.source.id : l.source;
-                    const tId = typeof l.target === 'object' ? l.target.id : l.target;
+                    const sId = this._getLinkEndpointId(l.source);
+                    const tId = this._getLinkEndpointId(l.target);
                     return sId !== id && tId !== id;
                 });
                 ui.notifications.info(game.i18n.localize("FANG.Messages.DeletedNode"));
@@ -1810,9 +2110,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             node.isCenter = !node.isCenter;
 
             if (node.isCenter) {
-                ui.notifications.info(`${node.name} ${game.i18n.localize("FANG.Messages.CenterEnabled")}`);
+                ui.notifications.info(`${this._getSafeNodeName(node)} ${game.i18n.localize("FANG.Messages.CenterEnabled")}`);
             } else {
-                ui.notifications.info(`${node.name} ${game.i18n.localize("FANG.Messages.CenterDisabled")}`);
+                ui.notifications.info(`${this._getSafeNodeName(node)} ${game.i18n.localize("FANG.Messages.CenterDisabled")}`);
             }
 
             this.initSimulation();
@@ -1850,6 +2150,18 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             "\"": "&quot;",
             "'": "&#39;"
         }[char])));
+        const confirmRemoveFactionRow = (row) => {
+            if (!row) return;
+            const name = row.querySelector(".faction-name")?.value?.trim() || localize("FANG.Dialogs.NewFaction", "New Faction");
+            const title = game.i18n.localize("FANG.Dialogs.DeleteConfirmTitle") || "Confirm Deletion";
+            const content = localize("FANG.Dialogs.DeleteFactionConfirm", "Delete this faction?");
+            Dialog.confirm({
+                title,
+                content: `<p>${content.replace("{name}", `<strong>${escapeHtml(name)}</strong>`)}</p>`,
+                yes: () => row.remove(),
+                no: () => {}
+            });
+        };
         const renderFactionRow = (faction, index) => {
             const f = this._normalizeFaction(faction);
             return `
@@ -1865,9 +2177,6 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                             <i class="fas fa-file-image"></i>
                         </button>
                         <input type="hidden" class="faction-icon" id="faction-icon-${index}" data-index="${index}" value="${escapeHtml(f.icon || "")}">
-                        <button type="button" class="btn danger-btn btn-delete-faction fang-faction-delete-btn" data-index="${index}" title="${localize("FANG.Dialogs.DeleteFaction", "Delete faction")}">
-                            <i class="fas fa-trash"></i>
-                        </button>
                     </div>
                     <textarea class="faction-description" rows="2" placeholder="${localize("FANG.Dialogs.FactionDescriptionPlaceholder", "Short description")}">${escapeHtml(f.description || "")}</textarea>
                     <div class="fang-faction-visibility-row">
@@ -1875,21 +2184,35 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                         <label><input type="checkbox" class="faction-show-legend-player" ${f.showInLegendForPlayers !== false ? 'checked' : ''}> ${localize("FANG.Dialogs.FactionLegendForPlayers", "Player legend")}</label>
                         <label><input type="checkbox" class="faction-show-lines-player" ${f.showLinesForPlayers !== false ? 'checked' : ''}> ${localize("FANG.Dialogs.FactionLinesForPlayers", "Player lines")}</label>
                     </div>
+                    <div class="fang-faction-actions-row">
+                        <button type="button" class="btn danger-btn btn-delete-faction fang-faction-delete-btn" data-index="${index}" title="${localize("FANG.Dialogs.DeleteFaction", "Delete faction")}">
+                            <i class="fas fa-trash"></i> ${localize("FANG.Dialogs.DeleteFaction", "Delete faction")}
+                        </button>
+                    </div>
                 </div>
             `;
         };
 
         const factionsHtml = this.graphData.factions.map((f, index) => renderFactionRow(f, index)).join("");
         const dialogContent = `
-            <div style="display: flex; flex-direction: column; height: 100%;">
-                <p style="flex: 0 0 auto;">${game.i18n.localize("FANG.UI.ManageFactionsHint")}</p>
-                <div style="flex: 0 0 auto; margin-bottom: 10px; display: flex; align-items: center; gap: 10px;">
-                    <input type="checkbox" id="fang-show-faction-lines" ${this.graphData.showFactionLines !== false ? 'checked' : ''}>
-                    <label for="fang-show-faction-lines">${game.i18n.localize("FANG.Dialogs.ShowFactionLines")}</label>
-                </div>
-                <div style="flex: 0 0 auto; margin-bottom: 10px; display: flex; align-items: center; gap: 10px;">
-                    <input type="checkbox" id="fang-show-faction-legend" ${this.graphData.showFactionLegend !== false ? 'checked' : ''}>
-                    <label for="fang-show-faction-legend">${game.i18n.localize("FANG.Dialogs.ShowFactionLegend")}</label>
+            <div class="fang-faction-manager">
+                <header class="fang-faction-manager__header">
+                    <div>
+                        <strong>${game.i18n.localize("FANG.UI.ManageFactions")}</strong>
+                        <p>${game.i18n.localize("FANG.UI.ManageFactionsHint")}</p>
+                    </div>
+                </header>
+                <div class="fang-faction-manager__toggles">
+                    <label class="fang-toggle-card" for="fang-show-faction-lines">
+                        <input type="checkbox" id="fang-show-faction-lines" ${this.graphData.showFactionLines !== false ? 'checked' : ''}>
+                        <span class="fang-toggle-card__icon"><i class="fas fa-project-diagram"></i></span>
+                        <span>${game.i18n.localize("FANG.Dialogs.ShowFactionLines")}</span>
+                    </label>
+                    <label class="fang-toggle-card" for="fang-show-faction-legend">
+                        <input type="checkbox" id="fang-show-faction-legend" ${this.graphData.showFactionLegend !== false ? 'checked' : ''}>
+                        <span class="fang-toggle-card__icon"><i class="fas fa-list"></i></span>
+                        <span>${game.i18n.localize("FANG.Dialogs.ShowFactionLegend")}</span>
+                    </label>
                 </div>
                 <div id="fang-factions-list">${factionsHtml}</div>
                 <button type="button" id="fang-add-faction-btn" class="btn fang-add-faction-btn">
@@ -1918,7 +2241,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     }, newIndex));
 
                     html.find(`.btn-delete-faction[data-index='${newIndex}']`).on("click", (e) => {
-                        $(e.currentTarget).closest(".fang-faction-item").remove();
+                        confirmRemoveFactionRow(e.currentTarget.closest(".fang-faction-item"));
                     });
                 });
 
@@ -1939,7 +2262,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 });
 
                 html.find(".btn-delete-faction").on("click", (e) => {
-                    $(e.currentTarget).closest(".fang-faction-item").remove();
+                    confirmRemoveFactionRow(e.currentTarget.closest(".fang-faction-item"));
                 });
             },
             buttons: {
@@ -2086,7 +2409,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                             if (!targetNode.questUuids) targetNode.questUuids = [];
                             const alreadyLinked = targetNode.questUuids.some(q => q.uuid === data.uuid);
                             if (!alreadyLinked) {
-                                targetNode.questUuids.push({ uuid: data.uuid, name: droppedDoc.name });
+                                targetNode.questUuids.push({ uuid: data.uuid, name: droppedDoc.name, visibleToPlayers: false });
                             }
                             if (!targetNode.conditions) targetNode.conditions = [];
                             if (!targetNode.conditions.includes("questgiver")) {
@@ -2180,7 +2503,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                                         name: actor.name, originalName: actor.name,
                                         x: x - 20, y: y - 20,
                                         hidden: game.settings.get("fang", "defaultHiddenMode"),
-                                        displayName: "", conditions: [],
+                                        displayName: "", playerNotes: "", showHiddenQuestsToPlayers: true, conditions: [],
                                         playerLorePageId: generatedLorePageId
                                     };
 
@@ -2288,6 +2611,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     y: jitterY,
                     hidden: game.settings.get("fang", "defaultHiddenMode"),
                     displayName: "",
+                    playerNotes: "",
+                    showHiddenQuestsToPlayers: true,
                     conditions: [],
                     playerLorePageId: generatedLorePageId
                 };
@@ -2308,21 +2633,23 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
 
-    _onCanvasDoubleClick(event) {
-        if (!this.transform) return;
-
-        // Convert mouse coordinates to canvas coordinate space
+    _getCanvasPointerPosition(event) {
+        if (!this.transform || !this.canvas) return null;
         const bounds = this.canvas.getBoundingClientRect();
         const mouseX = event.clientX - bounds.left;
         const mouseY = event.clientY - bounds.top;
-
         const x = this.transform.invertX(mouseX);
         const y = this.transform.invertY(mouseY);
+        return { mouseX, mouseY, x, y };
+    }
 
-        // Find the clicked node
-        const s2 = (30 * 30); // Base radius squared
+    _getLinkEndpointId(endpoint) {
+        return typeof endpoint === "object" ? endpoint?.id : endpoint;
+    }
+
+    _findNodeAtCanvasPoint(x, y, threshold = 30) {
         let clickedNode = null;
-        let minD2 = s2;
+        let minD2 = threshold * threshold;
 
         for (let node of this.graphData.nodes) {
             const dx = x - node.x;
@@ -2333,6 +2660,76 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 minD2 = d2;
             }
         }
+        return clickedNode;
+    }
+
+    _findLinkIndexAtCanvasPoint(x, y, threshold = 15) {
+        let clickedLinkIndex = -1;
+        let minLDist = threshold / (this.transform?.k || 1);
+
+        this.graphData.links.forEach((link, idx) => {
+            const s = link.source;
+            const t = link.target;
+            if (!s || !t || s.x === undefined || t.x === undefined) return;
+
+            let dist;
+            const pairInfo = this._linkCounts ? this._linkCounts[link.pairKey] : null;
+            const totalParams = pairInfo ? pairInfo.total : 1;
+
+            if (totalParams === 1) {
+                dist = this._pointToSegmentDistance({ x, y }, s, t);
+            } else {
+                const linkIndex = pairInfo.links.indexOf(idx);
+                const offsetMultiplier = (totalParams % 2 === 0)
+                    ? (linkIndex % 2 === 0 ? 1 : -1) * (Math.floor(linkIndex / 2) + 0.5)
+                    : (linkIndex === 0 ? 0 : (linkIndex % 2 === 0 ? 1 : -1) * Math.floor((linkIndex + 1) / 2));
+
+                const ddx = t.x - s.x;
+                const ddy = t.y - s.y;
+                const ddist = Math.sqrt(ddx * ddx + ddy * ddy) || 1;
+                const spreadDistance = 12 + (ddist * 0.05) + (totalParams * 4);
+                const finalOffset = offsetMultiplier * spreadDistance;
+                const isCanonical = this._getLinkEndpointId(link.source) < this._getLinkEndpointId(link.target);
+                const cDx = isCanonical ? ddx : -ddx;
+                const cDy = isCanonical ? ddy : -ddy;
+                const nx = -cDy / ddist;
+                const ny = cDx / ddist;
+                const midX = (s.x + t.x) / 2;
+                const midY = (s.y + t.y) / 2;
+                const ctrlX = midX + nx * finalOffset * 2;
+                const ctrlY = midY + ny * finalOffset * 2;
+
+                const numSamples = 25;
+                let minDistToCurve = Infinity;
+                let prevPx, prevPy;
+                for (let step = 0; step <= numSamples; step++) {
+                    const tVal = step / numSamples;
+                    const u = 1 - tVal;
+                    const px = (u * u) * s.x + 2 * u * tVal * ctrlX + (tVal * tVal) * t.x;
+                    const py = (u * u) * s.y + 2 * u * tVal * ctrlY + (tVal * tVal) * t.y;
+                    if (step > 0) {
+                        const segDist = this._pointToSegmentDistance({ x, y }, { x: prevPx, y: prevPy }, { x: px, y: py });
+                        if (segDist < minDistToCurve) minDistToCurve = segDist;
+                    }
+                    prevPx = px;
+                    prevPy = py;
+                }
+                dist = minDistToCurve;
+            }
+
+            if (dist < minLDist) {
+                clickedLinkIndex = idx;
+                minLDist = dist;
+            }
+        });
+        return clickedLinkIndex;
+    }
+
+    _onCanvasDoubleClick(event) {
+        const pos = this._getCanvasPointerPosition(event);
+        if (!pos) return;
+
+        const clickedNode = this._findNodeAtCanvasPoint(pos.x, pos.y);
 
         if (clickedNode) {
             const actor = this._getNodeActor(clickedNode);
@@ -2344,678 +2741,610 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         }
     }
 
-    _showContextMenu(node, mouseX, mouseY) {
+    _positionFloatingMenu(menu, mouseX, mouseY) {
+        if (!menu) return;
+        const container = this.element?.querySelector(".canvas-container") || this.element;
+        const bounds = container?.getBoundingClientRect?.();
+        if (!bounds) {
+            menu.style.left = `${mouseX}px`;
+            menu.style.top = `${mouseY}px`;
+            return;
+        }
 
+        const margin = 8;
+        const menuWidth = menu.offsetWidth || 220;
+        const menuHeight = menu.offsetHeight || 44;
+        const maxX = Math.max(margin, bounds.width - menuWidth - margin);
+        const maxY = Math.max(margin, bounds.height - menuHeight - margin);
+        const left = Math.min(Math.max(mouseX, margin), maxX);
+        const top = Math.min(Math.max(mouseY, margin), maxY);
+
+        menu.style.left = `${left}px`;
+        menu.style.top = `${top}px`;
+    }
+
+    _showContextMenu(node, mouseX, mouseY) {
         const menu = this.element.querySelector("#fang-context-menu");
         if (!menu) return;
 
-        // Position menu at cursor
         menu.style.left = `${mouseX}px`;
         menu.style.top = `${mouseY}px`;
         menu.classList.remove("hidden");
 
-        const btnRole = menu.querySelector("#ctxEditRole");
-        const btnLore = menu.querySelector("#ctxEditLore");
-        const btnOpenJournal = menu.querySelector("#ctxOpenJournal");
-        const btnOpenQuest = menu.querySelector("#ctxOpenQuest");
+        const btnInfo = menu.querySelector("#ctxInfo");
+        const btnEdit = menu.querySelector("#ctxEditActor");
         const btnSpotlight = menu.querySelector("#ctxSpotlight");
-        const btnIdentity = menu.querySelector("#ctxIdentity");
-        const btnReplacePlaceholder = menu.querySelector("#ctxReplacePlaceholder");
-        const btnCondition = menu.querySelector("#ctxCondition");
+        const btnQuests = menu.querySelector("#ctxQuests");
         const btnDelete = menu.querySelector("#ctxDeleteNode");
 
-        // Clear previous listeners by cloning nodes
-        const newBtnRole = btnRole.cloneNode(true);
-        const newBtnLore = btnLore.cloneNode(true);
-        const newBtnOpenJournal = btnOpenJournal ? btnOpenJournal.cloneNode(true) : null;
-        const newBtnOpenQuest = btnOpenQuest ? btnOpenQuest.cloneNode(true) : null;
-        const newBtnSpotlight = btnSpotlight.cloneNode(true);
-        const newBtnIdentity = btnIdentity ? btnIdentity.cloneNode(true) : null;
-        const newBtnReplacePlaceholder = btnReplacePlaceholder ? btnReplacePlaceholder.cloneNode(true) : null;
-        const newBtnCondition = btnCondition ? btnCondition.cloneNode(true) : null;
-        const newBtnDelete = btnDelete.cloneNode(true);
+        const newBtnInfo = btnInfo ? btnInfo.cloneNode(true) : null;
+        const newBtnEdit = btnEdit ? btnEdit.cloneNode(true) : null;
+        const newBtnSpotlight = btnSpotlight ? btnSpotlight.cloneNode(true) : null;
+        const newBtnQuests = btnQuests ? btnQuests.cloneNode(true) : null;
+        const newBtnDelete = btnDelete ? btnDelete.cloneNode(true) : null;
 
-        btnRole.parentNode.replaceChild(newBtnRole, btnRole);
-        btnLore.parentNode.replaceChild(newBtnLore, btnLore);
-        if (btnOpenJournal && newBtnOpenJournal) btnOpenJournal.parentNode.replaceChild(newBtnOpenJournal, btnOpenJournal);
-        if (btnOpenQuest && newBtnOpenQuest) btnOpenQuest.parentNode.replaceChild(newBtnOpenQuest, btnOpenQuest);
-        btnSpotlight.parentNode.replaceChild(newBtnSpotlight, btnSpotlight);
-        if (btnIdentity && newBtnIdentity) btnIdentity.parentNode.replaceChild(newBtnIdentity, btnIdentity);
-        if (btnReplacePlaceholder && newBtnReplacePlaceholder) btnReplacePlaceholder.parentNode.replaceChild(newBtnReplacePlaceholder, btnReplacePlaceholder);
-        if (btnCondition && newBtnCondition) btnCondition.parentNode.replaceChild(newBtnCondition, btnCondition);
-        btnDelete.parentNode.replaceChild(newBtnDelete, btnDelete);
+        if (btnInfo && newBtnInfo) btnInfo.parentNode.replaceChild(newBtnInfo, btnInfo);
+        if (btnEdit && newBtnEdit) btnEdit.parentNode.replaceChild(newBtnEdit, btnEdit);
+        if (btnSpotlight && newBtnSpotlight) btnSpotlight.parentNode.replaceChild(newBtnSpotlight, btnSpotlight);
+        if (btnQuests && newBtnQuests) btnQuests.parentNode.replaceChild(newBtnQuests, btnQuests);
+        if (btnDelete && newBtnDelete) btnDelete.parentNode.replaceChild(newBtnDelete, btnDelete);
 
-        // --- Permission Logic ---
         const hasLock = this._canEditGraph(true);
-        const isPlayerView = !game.user.isGM;
-        const tokenIsHidden = node.hidden;
+        const canViewNode = this._canUseGraphAction("viewNode", node);
+        const canSpotlightNode = this._canUseGraphAction("spotlightNode", node);
+        const hasQuests = !!this._getNodeQuestsForUser(node).length;
 
-        newBtnRole.style.display = hasLock ? "block" : "none";
-        newBtnLore.style.display = hasLock ? "block" : "none";
-        if (newBtnOpenJournal) newBtnOpenJournal.style.display = (game.user.isGM && node.journalUuid) ? "block" : "none";
-        if (newBtnOpenQuest) newBtnOpenQuest.style.display = (node.questUuids && node.questUuids.length > 0) ? "block" : "none";
-        newBtnDelete.style.display = hasLock ? "block" : "none";
-        if (newBtnIdentity) newBtnIdentity.style.display = (game.user.isGM && hasLock) ? "block" : "none";
-        if (newBtnReplacePlaceholder) newBtnReplacePlaceholder.style.display = (game.user.isGM && hasLock && node.isPlaceholder) ? "block" : "none";
-        if (newBtnCondition) newBtnCondition.style.display = (game.user.isGM && hasLock) ? "block" : "none";
+        if (newBtnInfo) newBtnInfo.style.display = canViewNode ? "flex" : "none";
+        if (newBtnSpotlight) newBtnSpotlight.style.display = canSpotlightNode ? "flex" : "none";
+        if (newBtnQuests) newBtnQuests.style.display = this._canUseGraphAction("manageQuests", node) ? "flex" : "none";
+        if (newBtnEdit) newBtnEdit.style.display = (hasLock && (game.user.isGM || canViewNode)) ? "flex" : "none";
+        if (newBtnDelete) newBtnDelete.style.display = hasLock ? "flex" : "none";
 
-        // Protection: Hide info buttons for players viewing hidden tokens
-        if (isPlayerView && tokenIsHidden) {
-            newBtnRole.style.display = "none";
-            newBtnLore.style.display = "none";
-            if (newBtnOpenQuest) newBtnOpenQuest.style.display = "none";
-        }
-
-        // Spotlight is always visible
-        newBtnSpotlight.style.display = "block";
-
-        // --- Context Action: Spotlight ---
-        newBtnSpotlight.addEventListener("click", () => {
+        newBtnInfo?.addEventListener("click", () => {
             menu.classList.add("hidden");
-            if (node.hidden) {
+            this._openLocalNodeInfo(node);
+        });
+
+        newBtnSpotlight?.addEventListener("click", () => {
+            menu.classList.add("hidden");
+            if (!this._canUseGraphAction("spotlightNode", node)) {
                 ui.notifications.warn(game.i18n.localize("FANG.Messages.SpotlightHiddenBlocked") || "Reveal the character first before using Spotlight!");
                 return;
             }
             this._onSpotlight(node);
         });
 
-        if (newBtnReplacePlaceholder) {
-            newBtnReplacePlaceholder.addEventListener("click", () => {
-                menu.classList.add("hidden");
-                this._onReplacePlaceholder(node);
-            });
-        }
+        newBtnQuests?.addEventListener("click", () => {
+            menu.classList.add("hidden");
+            this._onManageNodeQuests(node);
+        });
 
-        // --- Context Action: Open GM Journal ---
-        if (newBtnOpenJournal) {
-            newBtnOpenJournal.addEventListener("click", async () => {
-                menu.classList.add("hidden");
-                if (!node.journalUuid) return;
-                const doc = await fromUuid(node.journalUuid);
+        newBtnEdit?.addEventListener("click", () => {
+            menu.classList.add("hidden");
+            this._onEditActorProfile(node);
+        });
+
+        newBtnDelete?.addEventListener("click", () => {
+            menu.classList.add("hidden");
+            this._confirmDeleteNode(node);
+        });
+
+        this._positionFloatingMenu(menu, mouseX, mouseY);
+    }
+
+    _confirmDeleteNode(node) {
+        if (!this._canEditGraph()) return;
+        const dialogTitle = game.i18n.localize("FANG.Dialogs.DeleteConfirmTitle") || "Confirm Deletion";
+        const dialogContent = game.i18n.localize("FANG.Dialogs.DeleteNodeContent") || "Are you sure you want to delete this token from the graph? Your Player Lore notes will be kept safe.";
+
+        new Dialog({
+            title: dialogTitle,
+            content: `<p style="margin-bottom: 15px;">${dialogContent}</p>`,
+            buttons: {
+                yes: {
+                    icon: '<i class="fas fa-check"></i>',
+                    label: game.i18n.localize("Yes"),
+                    callback: async () => {
+                        this.graphData.nodes = this.graphData.nodes.filter(n => n.id !== node.id);
+                        this.graphData.links = this.graphData.links.filter(l => {
+                            const sId = this._getLinkEndpointId(l.source);
+                            const tId = this._getLinkEndpointId(l.target);
+                            return sId !== node.id && tId !== node.id;
+                        });
+
+                        ui.notifications.info(game.i18n.localize("FANG.Messages.DeletedNode"));
+                        this.initSimulation();
+                        this.simulation.alpha(0.3).restart();
+                        this._populateActors();
+                        await this.saveData();
+                    }
+                },
+                no: {
+                    icon: '<i class="fas fa-times"></i>',
+                    label: game.i18n.localize("No"),
+                    className: "cancel"
+                }
+            },
+            default: "no"
+        }, { classes: ["dialog", "fang-dialog"], width: 400 }).render(true);
+    }
+
+    async _openNodeJournal(node) {
+        if (!node?.journalUuid) return;
+        const doc = await fromUuid(node.journalUuid);
+        if (doc) doc.sheet.render(true);
+    }
+
+    async _openNodeQuest(node) {
+        if (!node?.questUuids?.length) return;
+        const quest = node.questUuids[0];
+        const doc = await fromUuid(quest.uuid);
+        if (doc) doc.sheet.render(true);
+        else if (!game.user.isGM) ui.notifications.warn("Quest Journal not found or you lack permissions.");
+    }
+
+    _getNodeQuestsForCurrentUser(node) {
+        return this._getNodeQuestsForUser(node);
+    }
+
+    async _addQuestToNode(node, uuid, { visibleToPlayers = false } = {}) {
+        if (!this._canEditGraph(true) || !node || !uuid) return false;
+        const doc = await fromUuid(uuid);
+        if (!doc) return false;
+        if (!["JournalEntry", "JournalEntryPage"].includes(doc.documentName)) return false;
+
+        if (!node.questUuids) node.questUuids = [];
+        if (!node.questUuids.some(q => q.uuid === uuid)) {
+            node.questUuids.push({ uuid, name: doc.name, visibleToPlayers });
+        }
+        if (!node.conditions) node.conditions = [];
+        if (!node.conditions.includes("questgiver")) node.conditions.push("questgiver");
+        await this.saveData();
+        this.ticked();
+        return true;
+    }
+
+    async _onManageNodeQuests(node) {
+        const escapeHtml = foundry.utils.escapeHTML ?? ((value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#39;"
+        }[char])));
+        const localize = (key, fallback) => {
+            const value = game.i18n.localize(key);
+            return value && value !== key ? value : fallback;
+        };
+        const canEdit = game.user.isGM && this._canEditGraph(true);
+        const quests = canEdit ? (Array.isArray(node.questUuids) ? node.questUuids : []) : this._getNodeQuestsForCurrentUser(node);
+        const journalOptions = game.journal.contents
+            .sort((a, b) => a.name.localeCompare(b.name))
+            .map(j => `<option value="${escapeHtml(j.uuid)}" data-search="${escapeHtml(j.name.toLowerCase())}">${escapeHtml(j.name)}</option>`)
+            .join("");
+        const emptyText = canEdit
+            ? localize("FANG.Dialogs.QuestLogHint", "Visible to players as a Questgiver mark. Drop Journal here.")
+            : localize("FANG.Dialogs.SelectQuestContent", "Choose a Quest Journal to open:");
+        const rows = quests.length
+            ? quests.map((quest, index) => `
+                <li class="fang-quest-manager-row" data-index="${index}" data-uuid="${escapeHtml(quest.uuid)}">
+                    <span class="fang-quest-title"><i class="fas fa-scroll"></i> ${escapeHtml(quest.name || "Quest Journal")}</span>
+                    <div class="fang-quest-manager-actions">
+                        ${game.user.isGM ? `<span class="fang-quest-visibility ${quest.visibleToPlayers === false ? "is-hidden" : "is-visible"}">${quest.visibleToPlayers === false ? localize("FANG.Dialogs.QuestHiddenFromPlayers", "Hidden from players") : localize("FANG.Dialogs.QuestVisibleToPlayers", "Visible to players")}</span>` : ""}
+                        <button type="button" class="fang-icon-btn fang-quest-open" title="${localize("FANG.ContextMenu.OpenQuest", "Open Quest Log")}" data-tooltip="${localize("FANG.ContextMenu.OpenQuest", "Open Quest Log")}"><i class="fas fa-book-open"></i></button>
+                        <button type="button" class="fang-icon-btn fang-quest-spotlight" title="${localize("FANG.ContextMenu.Spotlight", "Spotlight for Everyone")}" data-tooltip="${localize("FANG.ContextMenu.Spotlight", "Spotlight for Everyone")}"><i class="fas fa-compass"></i></button>
+                        ${canEdit ? `<button type="button" class="fang-icon-btn fang-quest-toggle-visibility" title="${quest.visibleToPlayers === false ? localize("FANG.Dialogs.QuestMakeVisible", "Reveal") : localize("FANG.Dialogs.QuestMakeHidden", "Hide")}" data-tooltip="${quest.visibleToPlayers === false ? localize("FANG.Dialogs.QuestMakeVisible", "Reveal") : localize("FANG.Dialogs.QuestMakeHidden", "Hide")}"><i class="fas ${quest.visibleToPlayers === false ? "fa-eye" : "fa-eye-slash"}"></i></button>` : ""}
+                        ${canEdit ? `<button type="button" class="fang-icon-btn danger fang-quest-remove" title="${localize("FANG.UI.Delete", "Delete")}" data-tooltip="${localize("FANG.UI.Delete", "Delete")}"><i class="fas fa-trash"></i></button>` : ""}
+                    </div>
+                </li>`)
+                .join("")
+            : `<li class="fang-quest-manager-empty">${escapeHtml(emptyText)}</li>`;
+        const addQuestForm = canEdit
+            ? `<div class="fang-quest-add">
+                    <div class="fang-quest-add-heading">
+                        <i class="fas fa-link"></i>
+                        <span>${localize("FANG.Dialogs.QuestAttachTitle", "Attach another quest journal")}</span>
+                    </div>
+                    <div class="fang-quest-drop-zone" data-drop-zone="quest">
+                        <i class="fas fa-file-import"></i>
+                        <strong>${localize("FANG.Dialogs.QuestDropTitle", "Drop Journal here")}</strong>
+                        <span>${localize("FANG.Dialogs.QuestDropHint", "Drop a Journal here to add it as a hidden quest.")}</span>
+                    </div>
+                    <div class="fang-quest-add-picker">
+                        <label for="fang-quest-add-select">${localize("FANG.Dialogs.QuestPickerTitle", "Or choose from journal list")}</label>
+                        <input type="search" id="fang-quest-search" placeholder="${localize("FANG.Dialogs.QuestSearchPlaceholder", "Search quest journals...")}">
+                        <select id="fang-quest-add-select">
+                            <option value="">-- ${localize("FANG.Dialogs.SelectQuestContent", "Choose a Quest Journal to open:")} --</option>
+                            ${journalOptions}
+                        </select>
+                        <label class="fang-editor-check">
+                            <input type="checkbox" id="fang-quest-add-visible">
+                            ${localize("FANG.Dialogs.QuestVisibleToPlayers", "Visible to players")}
+                        </label>
+                        <button type="button" id="fang-quest-add-btn" class="btn action-btn"><i class="fas fa-link"></i> ${localize("FANG.Dialogs.QuestLogAddBtn", "Add Quest Journal")}</button>
+                    </div>
+                    <p class="hint">${localize("FANG.Dialogs.QuestAddHiddenHint", "New quests are hidden from players until you reveal them.")}</p>
+                </div>`
+            : "";
+
+        const panelHost = this.element?.querySelector(".fang-app-container") || this.element;
+        panelHost?.querySelector(".fang-quest-canvas-panel")?.remove();
+        const panel = document.createElement("div");
+        panel.className = "fang-quest-canvas-panel";
+        panel.innerHTML = `
+            <div class="fang-quest-canvas-card">
+                <header class="fang-quest-canvas-header">
+                    <h3><i class="fas fa-scroll"></i> ${localize("FANG.UI.Quests", "Quests")}: ${escapeHtml(this._getSafeNodeName(node))}</h3>
+                    <button type="button" class="fang-quest-canvas-close" title="${localize("FANG.UI.ClosePanel", "Close")}"><i class="fas fa-times"></i></button>
+                </header>
+                <div class="fang-quest-manager">
+                    <div class="fang-quest-section-title">
+                        <i class="fas fa-scroll"></i>
+                        <span>${localize("FANG.Dialogs.QuestLinkedTitle", "Linked quests")}</span>
+                    </div>
+                    <ul>${rows}</ul>
+                    ${addQuestForm}
+                </div>
+            </div>`;
+        panelHost?.appendChild(panel);
+
+        const refreshPanel = () => {
+            panel.remove();
+            this._onManageNodeQuests(node);
+        };
+
+        panel.querySelector(".fang-quest-canvas-close")?.addEventListener("click", () => panel.remove());
+        panel.querySelectorAll(".fang-quest-manager-row").forEach(row => {
+            row.addEventListener("click", async (event) => {
+                if (event.target.closest("button")) return;
+                if (row.dataset?.uuid) await this._onQuestSpotlight(row.dataset.uuid, { broadcast: false });
+            });
+        });
+        panel.querySelectorAll(".fang-quest-open").forEach(button => {
+            button.addEventListener("click", async (event) => {
+                const row = event.currentTarget.closest(".fang-quest-manager-row");
+                const doc = row?.dataset?.uuid ? await fromUuid(row.dataset.uuid) : null;
                 if (doc) doc.sheet.render(true);
+                else ui.notifications.warn("Quest Journal not found or permissions missing.");
             });
-        }
+        });
+        panel.querySelectorAll(".fang-quest-spotlight").forEach(button => {
+            button.addEventListener("click", async (event) => {
+                const row = event.currentTarget.closest(".fang-quest-manager-row");
+                if (row?.dataset?.uuid) await this._onQuestSpotlight(row.dataset.uuid, { broadcast: true });
+            });
+        });
+        panel.querySelectorAll(".fang-quest-toggle-visibility").forEach(button => {
+            button.addEventListener("click", async (event) => {
+                if (!canEdit) return;
+                const row = event.currentTarget.closest(".fang-quest-manager-row");
+                const index = Number(row?.dataset?.index);
+                if (!Number.isInteger(index) || !node.questUuids?.[index]) return;
+                node.questUuids[index].visibleToPlayers = node.questUuids[index].visibleToPlayers === false;
+                await this.saveData();
+                refreshPanel();
+            });
+        });
+        panel.querySelectorAll(".fang-quest-remove").forEach(button => {
+            button.addEventListener("click", async (event) => {
+                if (!canEdit) return;
+                const row = event.currentTarget.closest(".fang-quest-manager-row");
+                const index = Number(row?.dataset?.index);
+                if (!Number.isInteger(index)) return;
+                node.questUuids.splice(index, 1);
+                if (!node.questUuids.length) {
+                    node.conditions = (node.conditions || []).filter(c => c !== "questgiver");
+                }
+                await this.saveData();
+                this.ticked();
+                refreshPanel();
+            });
+        });
 
-        // --- Context Action: Open Quest Log ---
-        if (newBtnOpenQuest) {
-            newBtnOpenQuest.addEventListener("click", async (evt) => {
-                menu.classList.add("hidden");
-                if (!node.questUuids || node.questUuids.length === 0) return;
+        const search = panel.querySelector("#fang-quest-search");
+        const select = panel.querySelector("#fang-quest-add-select");
+        search?.addEventListener("input", (event) => {
+            const query = String(event.currentTarget.value || "").toLowerCase().trim();
+            select?.querySelectorAll("option").forEach(option => {
+                if (!option.value) return;
+                option.hidden = query && !String(option.dataset.search || "").includes(query);
+            });
+        });
 
-                if (node.questUuids.length === 1) {
-                    // Only one quest – open directly
-                    const doc = await fromUuid(node.questUuids[0].uuid);
-                    if (doc) doc.sheet.render(true);
-                    else if (!game.user.isGM) ui.notifications.warn("Quest Journal not found or you lack permissions.");
+        const dropZone = panel.querySelector(".fang-quest-drop-zone");
+        dropZone?.addEventListener("dragover", (event) => {
+            event.preventDefault();
+            event.currentTarget.classList.add("drag-over");
+        });
+        dropZone?.addEventListener("dragleave", (event) => event.currentTarget.classList.remove("drag-over"));
+        dropZone?.addEventListener("drop", async (event) => {
+            event.preventDefault();
+            event.currentTarget.classList.remove("drag-over");
+            let data;
+            try {
+                data = JSON.parse(event.dataTransfer.getData("text/plain"));
+            } catch (err) {
+                return;
+            }
+            if (!["JournalEntry", "JournalEntryPage"].includes(data?.type) || !data.uuid) return;
+            if (await this._addQuestToNode(node, data.uuid, { visibleToPlayers: false })) refreshPanel();
+        });
+
+        panel.querySelector("#fang-quest-add-btn")?.addEventListener("click", async () => {
+            if (!canEdit) return;
+            const uuid = select?.value;
+            if (!uuid) return;
+            const visibleToPlayers = !!panel.querySelector("#fang-quest-add-visible")?.checked;
+            if (await this._addQuestToNode(node, uuid, { visibleToPlayers })) refreshPanel();
+        });
+    }
+
+    async _onEditActorProfile(node) {
+        if (!this._canEditGraph()) return;
+        const isGM = game.user.isGM;
+        const escapeHtml = foundry.utils.escapeHTML ?? ((value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#39;"
+        }[char])));
+        const localize = (key, fallback) => {
+            const value = game.i18n.localize(key);
+            return value && value !== key ? value : fallback;
+        };
+        const conditions = new Set(node.conditions || []);
+        const conditionGrid = `
+                    <div class="fang-condition-grid">
+                        <label><input type="checkbox" data-condition="deceased" ${conditions.has("deceased") ? "checked" : ""}> ${localize("FANG.Dialogs.ConditionDeceased", "Deceased")}</label>
+                        <label><input type="checkbox" data-condition="missing" ${conditions.has("missing") ? "checked" : ""}> ${localize("FANG.Dialogs.ConditionMissing", "Missing")}</label>
+                        <label><input type="checkbox" data-condition="captured" ${conditions.has("captured") ? "checked" : ""}> ${localize("FANG.Dialogs.ConditionCaptured", "Captured")}</label>
+                        <label><input type="checkbox" data-condition="questgiver" ${conditions.has("questgiver") ? "checked" : ""}> ${localize("FANG.Dialogs.ConditionQuestgiver", "Quest Giver")}</label>
+                    </div>`;
+        const openPlayerLorePage = async ({ createIfMissing = false, button = null } = {}) => {
+            const entry = await this.getJournalEntry();
+            if (!entry) return;
+            if (node.playerLorePageId) {
+                const page = entry.pages.get(node.playerLorePageId);
+                if (page) {
+                    entry.sheet.render(true, { pageId: node.playerLorePageId });
                     return;
                 }
-
-                // Multiple quests – show the in-canvas quest picker panel
-                const picker = this.element.querySelector("#fang-quest-picker");
-                const pickerTitle = picker.querySelector("#fang-quest-picker-title");
-                const pickerList = picker.querySelector("#fang-quest-picker-list");
-                if (!picker) return;
-
-                // Set header text: character name
-                pickerTitle.textContent = node.name;
-
-                // Build the list of quests
-                pickerList.innerHTML = node.questUuids.map((q, i) => `
-                    <li class="fang-quest-pick-item ctx-item" data-idx="${i}" style="padding: 9px 14px; cursor: pointer; display: flex; align-items: center; gap: 10px; border-left: 3px solid transparent; transition: background 0.15s, border-color 0.15s;">
-                        <i class="fas fa-scroll" style="color: var(--fang-accent-gold); width:16px; text-align:center;"></i>
-                        <span style="font-size:0.92rem;">${q.name || "Quest " + (i + 1)}</span>
-                    </li>
-                `).join("");
-
-                // Position next to cursor, within canvas bounds
-                const canvasBounds = this.canvas.getBoundingClientRect();
-                const containerBounds = this.element.querySelector("main").getBoundingClientRect();
-                let px = mouseX + 10;
-                let py = mouseY;
-                picker.classList.remove("hidden");
-                // Clamp to canvas
-                const pw = picker.offsetWidth || 240;
-                const ph = picker.offsetHeight || 150;
-                if (px + pw > containerBounds.width) px = mouseX - pw - 10;
-                if (py + ph > containerBounds.height) py = containerBounds.height - ph - 10;
-                picker.style.left = `${px}px`;
-                picker.style.top = `${py}px`;
-
-                // Click handlers on items
-                picker.querySelectorAll(".fang-quest-pick-item").forEach(el => {
-                    el.addEventListener("click", async () => {
-                        picker.classList.add("hidden");
-                        const idx = parseInt(el.dataset.idx);
-                        const q = node.questUuids[idx];
-                        if (!q) return;
-                        const doc = await fromUuid(q.uuid);
-                        if (doc) doc.sheet.render(true);
-                        else ui.notifications.warn("Quest Journal not found or you lack permissions.");
-                    });
-                    el.addEventListener("mouseover", () => {
-                        el.style.background = "var(--fang-nav-bg)";
-                        el.style.borderLeftColor = "var(--fang-primary-red)";
-                        el.style.color = "var(--fang-primary-red)";
-                    });
-                    el.addEventListener("mouseout", () => {
-                        el.style.background = "";
-                        el.style.borderLeftColor = "transparent";
-                        el.style.color = "";
-                    });
-                });
-
-                // Close on outside click
-                const closePicker = (e) => {
-                    if (!picker.contains(e.target)) {
-                        picker.classList.add("hidden");
-                        document.removeEventListener("click", closePicker, true);
-                    }
-                };
-                setTimeout(() => document.addEventListener("click", closePicker, true), 50);
-            });
-        }
-
-
-
-        // --- Context Action: Identity ---
-        if (newBtnIdentity) {
-            newBtnIdentity.addEventListener("click", () => {
-                menu.classList.add("hidden");
-                if (!this._canEditGraph()) return;
-
-                const title = game.i18n.localize("FANG.Dialogs.IdentityTitle") || "Identity";
-                const lblName = game.i18n.localize("FANG.Dialogs.IdentityName") || "Displayed Name";
-                const lblOriginal = (game.i18n.localize("FANG.Dialogs.IdentityOriginal") || "Original: {name}").replace("{name}", node.originalName || node.name);
-                const lblHidden = game.i18n.localize("FANG.Dialogs.IdentityHidden") || "Hidden for Players";
-                const lblAlias = game.i18n.localize("FANG.Dialogs.IdentityAlias") || "Alias (when hidden)";
-
-                new Dialog({
-                    title: title,
-                    content: `
-                        <div class="form-group">
-                            <label>${lblName}:</label>
-                            <div class="form-fields">
-                                <input type="text" id="fang-identity-name" value="${node.name || ""}" style="width: 100%;">
-                            </div>
-                            <p style="font-size: 0.8em; color: #888; margin: 2px 0 8px 0;">${lblOriginal}</p>
-                        </div>
-                        <div class="form-group">
-                            <label>${lblHidden}:</label>
-                            <div class="form-fields">
-                                <input type="checkbox" id="fang-identity-hidden" ${node.hidden ? "checked" : ""} style="width: auto;">
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label>${lblAlias}:</label>
-                            <div class="form-fields">
-                                <input type="text" id="fang-identity-alias" value="${node.displayName || ""}" placeholder="???" style="width: 100%;">
-                            </div>
-                        </div>
-                    `,
-                    buttons: {
-                        save: {
-                            icon: '<i class="fas fa-save"></i>',
-                            label: game.i18n.localize("FANG.Dialogs.BtnSave") || "Save",
-                            callback: async (html) => {
-                                const newName = html.find("#fang-identity-name").val().trim();
-                                const isHidden = html.find("#fang-identity-hidden").is(":checked");
-                                const newAlias = html.find("#fang-identity-alias").val().trim();
-                                if (newName) node.name = newName;
-                                node.hidden = isHidden;
-                                node.displayName = newAlias;
-                                this.ticked();
-                                this._populateActors();
-                                await this.saveData();
-                            }
-                        },
-                        cancel: { icon: '<i class="fas fa-times"></i>', label: game.i18n.localize("FANG.Dialogs.BtnCancel") || "Cancel" }
-                    },
-                    default: "save"
-                }, { classes: ["dialog", "fang-dialog"], width: 420 }).render(true);
-            });
-        }
-
-        // --- Context Action: Condition ---
-        if (newBtnCondition) {
-            newBtnCondition.addEventListener("click", () => {
-                menu.classList.add("hidden");
-                if (!this._canEditGraph()) return;
-
-                const title = game.i18n.localize("FANG.Dialogs.ConditionTitle") || "Set Condition";
-                const conditions = node.conditions || [];
-                const conditionDefs = [
-                    { id: "deceased", label: game.i18n.localize("FANG.Dialogs.ConditionDeceased") || "Deceased", icon: "fa-skull" },
-                    { id: "missing", label: game.i18n.localize("FANG.Dialogs.ConditionMissing") || "Missing", icon: "fa-question-circle" },
-                    { id: "captured", label: game.i18n.localize("FANG.Dialogs.ConditionCaptured") || "Captured", icon: "fa-link" },
-                    { id: "questgiver", label: game.i18n.localize("FANG.Dialogs.ConditionQuestgiver") || "Quest Giver", icon: "fa-scroll" }
-                ];
-
-                const checkboxes = conditionDefs.map(c => {
-                    const checked = conditions.includes(c.id) ? "checked" : "";
-                    return `<div style="display: flex; align-items: center; gap: 8px; padding: 4px 0;">
-                        <input type="checkbox" id="fang-cond-${c.id}" ${checked} style="width: auto; margin: 0;">
-                        <i class="fas ${c.icon}" style="width: 18px; text-align: center;"></i>
-                        <label for="fang-cond-${c.id}" style="cursor: pointer;">${c.label}</label>
-                    </div>`;
-                }).join("");
-
-                new Dialog({
-                    title: title,
-                    content: `
-                        <p><strong>${(game.i18n.localize("FANG.Dialogs.ConditionContent") || "Conditions for {actor}:").replace("{actor}", node.name)}</strong></p>
-                        <div class="form-group" style="flex-direction: column; gap: 2px;">${checkboxes}</div>
-                    `,
-                    buttons: {
-                        save: {
-                            icon: '<i class="fas fa-save"></i>',
-                            label: game.i18n.localize("FANG.Dialogs.BtnSave") || "Save",
-                            callback: async (html) => {
-                                const newConditions = [];
-                                conditionDefs.forEach(c => {
-                                    if (html.find(`#fang-cond-${c.id}`).is(":checked")) newConditions.push(c.id);
-                                });
-                                node.conditions = newConditions;
-                                this.ticked();
-                                await this.saveData();
-                            }
-                        },
-                        cancel: { icon: '<i class="fas fa-times"></i>', label: game.i18n.localize("FANG.Dialogs.BtnCancel") || "Cancel" }
-                    },
-                    default: "save"
-                }, { classes: ["dialog", "fang-dialog"], width: 380 }).render(true);
-            });
-        }
-
-        // --- Context Action: Edit Role ---
-        newBtnRole.addEventListener("click", () => {
-            menu.classList.add("hidden");
-            if (!this._canEditGraph()) return;
-
-            const title = game.i18n.localize("FANG.Dialogs.EditRoleTitle") || "Details bearbeiten";
-            const contentString = (game.i18n.localize("FANG.Dialogs.EditRoleContent") || "Details für {actor}:").replace("{actor}", node.name);
-            const lblRole = game.i18n.localize("FANG.Dialogs.RoleInput") || "Rolle";
-
-            const factionOptions = this.graphData.factions
-                .map(f => this._normalizeFaction(f))
-                .filter(f => this._isFactionVisibleToCurrentUser(f) || f.id === node.factionId)
-                .map(f => {
-                const selected = f.id === node.factionId ? "selected" : "";
-                return `<option value="${f.id}" ${selected}>${f.name}</option>`;
-            }).join("");
-
-            new Dialog({
-                title: title,
-                content: `
-                    <p><strong>${contentString}</strong></p>
-                    <div class="form-group">
-                        <label>${lblRole}:</label>
-                        <div class="form-fields">
-                            <input type="text" id="fang-edit-role" value="${node.role || ""}" style="width: 100%;">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>${game.i18n.localize("FANG.Dialogs.FactionInput") || "Fraktion"}:</label>
-                        <div class="form-fields">
-                            <select id="fang-edit-faction" style="width: 100%;">
-                                <option value="">-- Keine --</option>
-                                ${factionOptions}
-                            </select>
-                        </div>
-                    </div>
-                `,
-                buttons: {
-                    save: {
-                        icon: '<i class="fas fa-save"></i>',
-                        label: game.i18n.localize("FANG.Dialogs.BtnSave") || "Speichern",
-                        callback: async (html) => {
-                            const newRole = html.find("#fang-edit-role").val().trim();
-                            const newFactionId = html.find("#fang-edit-faction").val();
-                            node.role = newRole !== "" ? newRole : null;
-                            node.factionId = newFactionId !== "" ? newFactionId : null;
-                            this.initSimulation();
-                            this.simulation.alpha(0.05).restart();
-                            await this.saveData();
-                        }
-                    },
-                    cancel: { icon: '<i class="fas fa-times"></i>', label: game.i18n.localize("FANG.Dialogs.BtnCancel") || "Abbrechen" }
-                },
-                default: "save"
-            }, { classes: ["dialog", "fang-dialog"], width: 400 }).render(true);
-        });
-
-        // --- Context Action: Edit Lore / Journals ---
-        newBtnLore.addEventListener("click", () => {
-            menu.classList.add("hidden");
-            if (!this._canEditGraph()) return;
-
-            const title = game.i18n.localize("FANG.Dialogs.EditLoreTitle") || "Edit Information & Journals";
-            const contentString = (game.i18n.localize("FANG.Dialogs.EditLoreContent") || "Manage details and journals for {actor}:").replace("{actor}", node.name);
-            const isGM = game.user.isGM;
-
-            // Prepare GM sections HTML
-            let gmHtml = "";
-            if (isGM) {
-                // Translations
-                const gmNotesTitle = game.i18n.localize("FANG.Dialogs.GMNotesTitle") || "GM Private Notes";
-                const gmNotesHint = game.i18n.localize("FANG.Dialogs.GMNotesHint") || "Drag & Drop a Journal Entry here, or click to open.";
-                const questLogTitle = game.i18n.localize("FANG.Dialogs.QuestLogTitle") || "Public Quest Log";
-                const questLogHint = game.i18n.localize("FANG.Dialogs.QuestLogHint") || "Visible to players as a Questgiver mark. Drop Journal here.";
-                const dropJournalHere = game.i18n.localize("FANG.Dialogs.DropJournalHere") || "Drop Journal Here";
-
-                // GM Private Notes Section
-                const gmJournalName = node.journalUuid ? (node._gmJournalName || "Linked Journal") : "None";
-                 const gmSection = `
-                     <div class="fang-dialog-section">
-                         <h3 style="margin-bottom: 5px; color: var(--fang-accent-gold);"><i class="fas fa-book"></i> ${gmNotesTitle}</h3>
-                         <p style="font-size: 0.8em; color: #888; margin-bottom: 5px;">${gmNotesHint}</p>
-                         <div id="fang-drop-gm" class="fang-drop-zone ${node.journalUuid ? 'has-link' : ''}">
-                             <span id="fang-gm-link-text">${node.journalUuid ? '<i class="fas fa-link"></i> ' + gmJournalName : dropJournalHere}</span>
-                             <button id="fang-remove-gm" class="btn danger-btn fang-drop-remove ${node.journalUuid ? '' : 'hidden'}" title="Remove Link">
-                                 <i class="fas fa-times"></i>
-                             </button>
-                         </div>
-                     </div>
-                 `;
-
-                // Public Quest Log Section (dynamic multi-entry list)
-                const addQuestBtn = game.i18n.localize("FANG.Dialogs.QuestLogAddBtn") || "Add Quest Journal";
-                 const existingQuestItems = (node.questUuids || []).map((q, i) => `
-                     <div id="fang-quest-item-${i}" class="fang-quest-item">
-                         <i class="fas fa-scroll" style="color: var(--fang-accent-gold);"></i>
-                         <span style="flex:1; font-size:0.9em;">${q.name}</span>
-                         <button class="btn danger-btn fang-quest-remove" data-idx="${i}" style="padding: 2px 6px; width: auto;" title="Remove">
-                             <i class="fas fa-times"></i>
-                         </button>
-                     </div>
-                 `).join("");
-
-                 const questSection = `
-                     <div class="fang-dialog-section">
-                         <h3 style="margin-bottom: 5px; color: var(--fang-accent-gold);"><i class="fas fa-scroll"></i> ${questLogTitle}</h3>
-                         <p style="font-size: 0.8em; color: #888; margin-bottom: 5px;">${questLogHint}</p>
-                         <div id="fang-quest-list">${existingQuestItems}</div>
-                         <div id="fang-drop-quest-new" class="fang-drop-zone fang-drop-zone-add" style="color: #888; font-size: 0.9em;">
-                             <i class="fas fa-plus"></i> ${addQuestBtn}
-                         </div>
-                     </div>
-                 `;
-                gmHtml = gmSection + questSection;
+                node.playerLorePageId = null;
+                await this.saveData();
+                button?.remove?.();
             }
+            if (!createIfMissing) {
+                ui.notifications.warn(localize("FANG.Messages.PlayerLoreMissing", "A GM needs to create the player notes journal first."));
+                return;
+            }
+            if (!game.user.isGM) {
+                ui.notifications.warn(localize("FANG.Messages.PlayerLoreCreateGMOnly", "Only a GM can create the initial player notes journal."));
+                return;
+            }
+            const newPage = await JournalEntryPage.create({
+                name: "Lore: " + (node.name || "Unknown"),
+                type: "text",
+                text: { content: node.lore ? "<p>" + node.lore.replace(/\n/g, "<br>") + "</p>" : "" },
+                ownership: { default: CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER }
+            }, { parent: entry });
+            node.playerLorePageId = newPage.id;
+            node.lore = "";
+            await this.saveData();
+            entry.sheet.render(true, { pageId: newPage.id });
+        };
 
-            const legacyNotesLabel = game.i18n.localize("FANG.Dialogs.LegacyNotes") || "Quick Lore Note:";
-            const btnOpenPlayerJournal = game.i18n.localize("FANG.Dialogs.BtnOpenPlayerJournal") || "Open Player Notes Journal";
-            const btnConvertPlayerJournal = game.i18n.localize("FANG.Dialogs.BtnConvertPlayerJournal") || "Convert & Open in Player Journal";
-            const btnConvertHint = game.i18n.localize("FANG.Dialogs.BtnConvertPlayerJournalHint") || "Converts this simple text note into a dedicated, player-editable Foundry Journal. This gives you and the player full text formatting freedom.";
+        if (!isGM && this._isNodeHiddenForUser(node)) {
+            const safeName = node.displayName || game.i18n.localize("FANG.Dropdowns.Unknown");
+            const playerLoreButton = node.playerLorePageId
+                ? `<button type="button" id="fang-safe-player-lore" class="btn action-btn"><i class="fas fa-book-open"></i> ${localize("FANG.Dialogs.BtnOpenPlayerJournal", "Open Player Notes Journal")}</button>`
+                : "";
+            const content = `
+            <div class="fang-actor-editor fang-actor-editor-safe">
+                <section class="fang-editor-section">
+                    <h3><i class="fas fa-user-secret"></i> ${localize("FANG.ActorEditor.PlayerView", "Player View")}</h3>
+                    <label>${localize("FANG.Dialogs.IdentityAlias", "Alias")}</label>
+                    <input type="text" id="fang-safe-alias" value="${escapeHtml(safeName)}" placeholder="???">
+                </section>
+                <section class="fang-editor-section">
+                    <h3><i class="fas fa-tags"></i> ${localize("FANG.ActorEditor.Conditions", "Conditions")}</h3>
+                    ${conditionGrid}
+                </section>
+                <section class="fang-editor-section fang-editor-notes">
+                    <h3><i class="fas fa-feather"></i> ${localize("FANG.ActorEditor.PlayerNotesTitle", "Player Notes")}</h3>
+                    <textarea id="fang-safe-player-notes" placeholder="${localize("FANG.Dialogs.InfoInput", "Notes")}">${escapeHtml(node.playerNotes || "")}</textarea>
+                    ${playerLoreButton}
+                </section>
+            </div>`;
 
-            const dialogContent = `
-                <p><strong>${contentString}</strong></p>
-                <div class="form-group" style="height: 120px; display: ${node.playerLorePageId ? 'none' : 'block'};">
-                    <label style="font-size:0.8em; color:#888;">${legacyNotesLabel}</label>
-                    <textarea id="fang-edit-lore" style="width: 100%; height: 100%; resize: none; font-family: var(--fang-font-main); padding: 5px;">${node.lore || ""}</textarea>
-                </div>
-                <div style="margin-top: 10px;">
-                    <button id="fang-btn-player-journal" class="btn action-btn" style="width: 100%; padding: 8px;" title="${node.playerLorePageId ? '' : btnConvertHint}">
-                        <i class="fa-solid fa-book" aria-hidden="true"></i> ${node.playerLorePageId ? btnOpenPlayerJournal : btnConvertPlayerJournal}
-                    </button>
-                </div>
-                ${gmHtml}
-                <div style="margin-bottom: 15px;"></div>
-            `;
-
-            let d = new Dialog({
-                title: title,
-                content: dialogContent,
-                render: (html) => {
-                    // --- Player Journal Button ---
-                    html.find("#fang-btn-player-journal").click(async (ev) => {
-                        ev.preventDefault();
-                        const legacyText = html.find("#fang-edit-lore").val();
-                        if (legacyText !== node.lore) node.lore = legacyText; // Save temp state
-                        d.close();
-
-                        // Handle Journal Page Creation/Opening
-                        const entry = await this.getJournalEntry();
-                        if (!entry) return;
-
-                        if (node.playerLorePageId) {
-                            // Try to open existing
-                            const page = entry.pages.get(node.playerLorePageId);
-                            if (page) {
-                                entry.sheet.render(true, { pageId: node.playerLorePageId });
-                                return;
-                            }
-                            // If missing, fall through to create new
-                        }
-
-                        // Create new page
-                        if (game.user.isGM) {
-                            const newPage = await JournalEntryPage.create({
-                                name: "Lore: " + node.name,
-                                type: "text",
-                                text: { content: node.lore ? "<p>" + node.lore.replace(/\n/g, '<br>') + "</p>" : "" },
-                                ownership: { default: 3 } // Allow players to edit the page
-                            }, { parent: entry });
-
-                            node.playerLorePageId = newPage.id;
-                            node.lore = ""; // Clear legacy text
-
-                            const actorContext = this._getNodeActor(node);
-                            if (actorContext) await actorContext.unsetFlag("fang", "legacyLore");
-
-                            await this.saveData();
-                            entry.sheet.render(true, { pageId: newPage.id });
-                        } else {
-                            ui.notifications.warn("Only a GM can create the initial journal page for this node. Ask them to click 'Convert & Open' first.");
-                        }
-                    });
-
-                    // --- GM Drag & Drop Logic ---
-                    if (isGM) {
-                        const setupDropZone = (zoneId, textId, removeBtnId, fieldName, cacheName) => {
-                            const zone = html.find(`#${zoneId}`)[0];
-                            if (!zone) return;
-
-                            // Handle Clicks to open
-                            zone.addEventListener("click", async (e) => {
-                                if (e.target.closest(`#${removeBtnId}`)) return; // Ignore if clicking remove
-                                const uuid = node[fieldName];
-                                if (uuid) {
-                                    const doc = await fromUuid(uuid);
-                                    if (doc) doc.sheet.render(true);
-                                }
-                            });
-
-                            // Handle Removals
-                            html.find(`#${removeBtnId}`).click((e) => {
-                                e.stopPropagation();
-                                e.preventDefault();
-                                node[fieldName] = null;
-                                delete node[cacheName];
-                                 html.find(`#${textId}`).text("Drop Journal Here");
-                                 html.find(`#${removeBtnId}`).addClass("hidden");
-                                 zone.classList.remove("has-link");
-                                 zone.style.borderColor = "";
-                             });
-
-                            // Drag & Drop
-                            zone.addEventListener("dragover", (e) => {
-                                e.preventDefault();
-                                zone.style.borderColor = "var(--fang-accent-gold)";
-                                zone.style.backgroundColor = "rgba(212, 175, 55, 0.1)";
-                            });
-                             zone.addEventListener("dragleave", (e) => {
-                                 e.preventDefault();
-                                 zone.style.borderColor = "";
-                                 zone.style.backgroundColor = "";
-                             });
-                             zone.addEventListener("drop", async (e) => {
-                                 e.preventDefault();
-                                 zone.style.borderColor = "";
-                                 zone.style.backgroundColor = "";
-
-                                let data;
-                                try { data = JSON.parse(e.dataTransfer.getData("text/plain")); }
-                                catch (err) { return; }
-
-                                if (data.type !== "JournalEntry" && data.type !== "JournalEntryPage") {
-                                    ui.notifications.warn("Please drop a Journal Entry or Journal Page here.");
-                                    return;
-                                }
-
-                                const doc = await fromUuid(data.uuid);
-                                if (!doc) return;
-
-                                node[fieldName] = data.uuid;
-                                node[cacheName] = doc.name;
-
-                                html.find(`#${textId}`).html(`<i class="fas fa-link"></i> ${doc.name}`);
-                                html.find(`#${removeBtnId}`).removeClass("hidden");
-                                zone.classList.add("has-link");
-                            });
-                        };
-
-                        setupDropZone("fang-drop-gm", "fang-gm-link-text", "fang-remove-gm", "journalUuid", "_gmJournalName");
-
-                        // Multi-Quest Drop Zone
-                        const questListEl = html.find("#fang-quest-list")[0];
-                        const newQuestZone = html.find("#fang-drop-quest-new")[0];
-
-                        const refreshQuestRemoveButtons = () => {
-                            html.find(".fang-quest-remove").off("click").on("click", (e) => {
-                                e.stopPropagation();
-                                e.preventDefault();
-                                const idx = parseInt($(e.currentTarget).data("idx"));
-                                node.questUuids.splice(idx, 1);
-                                // Re-render list
-                                questListEl.innerHTML = (node.questUuids).map((q, i) => `
-                                     <div id="fang-quest-item-${i}" class="fang-quest-item">
-                                         <i class="fas fa-scroll" style="color:var(--fang-accent-gold);"></i>
-                                         <span style="flex:1;font-size:0.9em;">${q.name}</span>
-                                         <button class="btn danger-btn fang-quest-remove" data-idx="${i}" style="padding:2px 6px;width:auto;" title="Remove">
-                                             <i class="fas fa-times"></i>
-                                         </button>
-                                     </div>
-                                 `).join("");
-                                refreshQuestRemoveButtons();
-                            });
-                        };
-                        refreshQuestRemoveButtons();
-
-                        if (newQuestZone) {
-                            newQuestZone.addEventListener("dragover", (e) => {
-                                e.preventDefault();
-                                newQuestZone.style.borderColor = "var(--fang-accent-gold)";
-                                newQuestZone.style.backgroundColor = "rgba(212,175,55,0.1)";
-                            });
-                            newQuestZone.addEventListener("dragleave", () => {
-                                newQuestZone.style.borderColor = "";
-                                newQuestZone.style.backgroundColor = "";
-                            });
-                            newQuestZone.addEventListener("drop", async (e) => {
-                                e.preventDefault();
-                                newQuestZone.style.borderColor = "";
-                                newQuestZone.style.backgroundColor = "";
-                                let dropData;
-                                try { dropData = JSON.parse(e.dataTransfer.getData("text/plain")); } catch { return; }
-                                if (dropData.type !== "JournalEntry" && dropData.type !== "JournalEntryPage") {
-                                    ui.notifications.warn("Please drop a Journal Entry or Journal Page here.");
-                                    return;
-                                }
-                                const doc = await fromUuid(dropData.uuid);
-                                if (!doc) return;
-                                if (!node.questUuids) node.questUuids = [];
-                                if (!node.questUuids.some(q => q.uuid === dropData.uuid)) {
-                                    node.questUuids.push({ uuid: dropData.uuid, name: doc.name });
-                                    const idx = node.questUuids.length - 1;
-                                    questListEl.insertAdjacentHTML("beforeend", `
-                                        <div id="fang-quest-item-${idx}" class="fang-quest-item">
-                                            <i class="fas fa-scroll" style="color:var(--fang-accent-gold);"></i>
-                                            <span style="flex:1;font-size:0.9em;">${doc.name}</span>
-                                            <button class="btn danger-btn fang-quest-remove" data-idx="${idx}" style="padding:2px 6px;width:auto;" title="Remove">
-                                                <i class="fas fa-times"></i>
-                                            </button>
-                                        </div>
-                                    `);
-                                    refreshQuestRemoveButtons();
-                                } else {
-                                    ui.notifications.info("This Quest Journal is already linked.");
-                                }
-                            });
-                        }
-                    }
-                },
+            new Dialog({
+                title: localize("FANG.ActorEditor.Title", "Edit Actor"),
+                content,
                 buttons: {
                     save: {
                         icon: '<i class="fas fa-save"></i>',
-                        label: game.i18n.localize("FANG.Dialogs.BtnSave") || "Save & Close",
+                        label: localize("FANG.Dialogs.BtnSave", "Save"),
                         callback: async (html) => {
-                            if (!node.playerLorePageId) {
-                                const newLore = html.find("#fang-edit-lore").val().trim();
-                                node.lore = newLore !== "" ? newLore : null;
-
-                                const actorContext = this._getNodeActor(node);
-                                if (actorContext) {
-                                    if (node.lore) await actorContext.setFlag("fang", "legacyLore", node.lore);
-                                    else await actorContext.unsetFlag("fang", "legacyLore");
-                                }
-                            }
-
-                            // Re-evaluate Questgiver condition
-                            if (node.questUuids && node.questUuids.length > 0 && !node.conditions.includes("questgiver")) {
-                                node.conditions.push("questgiver");
-                            } else if ((!node.questUuids || node.questUuids.length === 0) && node.conditions.includes("questgiver")) {
-                                node.conditions = node.conditions.filter(c => c !== "questgiver");
-                            }
-
-                            this.ticked(); // Refresh visuals for questgiver
-                            await this.saveData();
-                        }
-                    },
-                    cancel: { icon: '<i class="fas fa-times"></i>', label: game.i18n.localize("FANG.Dialogs.BtnCancel") || "Cancel" }
-                },
-                default: "save"
-            }, { classes: ["dialog", "fang-dialog"], width: 450 }).render(true);
-        });
-
-        // --- Context Action: Delete Node ---
-        newBtnDelete.addEventListener("click", async () => {
-            menu.classList.add("hidden");
-            if (!this._canEditGraph()) return;
-
-            const dialogTitle = game.i18n.localize("FANG.Dialogs.DeleteConfirmTitle") || "Confirm Deletion";
-            const dialogContent = game.i18n.localize("FANG.Dialogs.DeleteNodeContent") || "Are you sure you want to delete this token from the graph? Your Player Lore notes will be kept safe.";
-
-            new Dialog({
-                title: dialogTitle,
-                content: `<p style="margin-bottom: 15px;">${dialogContent}</p>`,
-                buttons: {
-                    yes: {
-                        icon: '<i class="fas fa-check"></i>',
-                        label: game.i18n.localize("Yes"),
-                        callback: async () => {
-                            this.graphData.nodes = this.graphData.nodes.filter(n => n.id !== node.id);
-                            this.graphData.links = this.graphData.links.filter(l => {
-                                const sId = typeof l.source === 'object' ? l.source.id : l.source;
-                                const tId = typeof l.target === 'object' ? l.target.id : l.target;
-                                return sId !== node.id && tId !== node.id;
+                            const alias = html.find("#fang-safe-alias").val().trim();
+                            const newConditions = [];
+                            html.find("[data-condition]").each((_, el) => {
+                                if (el.checked) newConditions.push(el.dataset.condition);
                             });
-
-                            ui.notifications.info(game.i18n.localize("FANG.Messages.DeletedNode"));
-                            this.initSimulation();
-                            this.simulation.alpha(0.3).restart();
+                            node.displayName = alias || "";
+                            node.playerNotes = html.find("#fang-safe-player-notes").val().trim();
+                            node.conditions = newConditions;
+                            this.ticked();
                             this._populateActors();
                             await this.saveData();
                         }
                     },
-                    no: {
+                    cancel: {
                         icon: '<i class="fas fa-times"></i>',
-                        label: game.i18n.localize("No"),
-                        className: "cancel" // Applies the white/grey FANG cancel styling
+                        label: localize("FANG.Dialogs.BtnCancel", "Cancel")
                     }
                 },
-                default: "no"
-            }, { classes: ["dialog", "fang-dialog"], width: 400 }).render(true);
-        });
+                default: "save",
+                render: (html) => {
+                    html.find("#fang-safe-player-lore").on("click", async (event) => openPlayerLorePage({ createIfMissing: false, button: event.currentTarget }));
+                }
+            }, { classes: ["dialog", "fang-dialog", "fang-actor-editor-dialog"], width: 620 }).render(true);
+            return;
+        }
+
+        const factionOptions = (this.graphData.factions || [])
+            .map(f => this._normalizeFaction(f))
+            .filter(f => this._isFactionVisibleToCurrentUser(f) || f.id === node.factionId)
+            .map(f => `<option value="${escapeHtml(f.id)}" ${f.id === node.factionId ? "selected" : ""}>${escapeHtml(f.name)}</option>`)
+            .join("");
+        const gmJournalLabel = node.journalUuid ? localize("FANG.ContextMenu.OpenJournal", "Open GM Journal") : "GM Journal";
+        const playerLoreLabel = node.playerLorePageId
+            ? localize("FANG.Dialogs.BtnOpenPlayerJournal", "Open Player Notes Journal")
+            : localize("FANG.Dialogs.BtnConvertPlayerJournal", "Convert & Open in Player Journal");
+        const playerViewSection = isGM ? `
+                <section class="fang-editor-section">
+                    <h3><i class="fas fa-user-secret"></i> ${localize("FANG.ActorEditor.PlayerViewGMSettings", "GM Settings for Player View")}</h3>
+                    <label class="fang-editor-check"><input type="checkbox" id="fang-profile-hidden" ${node.hidden ? "checked" : ""}> ${localize("FANG.Dialogs.IdentityHidden", "Hidden for Players")}</label>
+                    <label class="fang-editor-check"><input type="checkbox" id="fang-profile-hidden-quests" ${node.showHiddenQuestsToPlayers !== false ? "checked" : ""}> ${localize("FANG.Dialogs.HiddenQuestsVisible", "Show quests while hidden")}</label>
+                    <label>${localize("FANG.Dialogs.IdentityAlias", "Alias")}</label>
+                    <input type="text" id="fang-profile-alias" value="${escapeHtml(node.displayName || "")}" placeholder="???">
+                    <button type="button" id="fang-profile-player-lore" class="btn action-btn"><i class="fas fa-book-open"></i> ${playerLoreLabel}</button>
+                </section>` : "";
+        const actionSection = isGM ? `
+                <section class="fang-editor-actions">
+                    ${node.journalUuid ? `<button type="button" id="fang-profile-gm-journal" class="btn action-btn"><i class="fas fa-book"></i> ${gmJournalLabel}</button>` : ""}
+                    ${node.isPlaceholder ? `<button type="button" id="fang-profile-replace" class="btn action-btn"><i class="fas fa-random"></i> ${localize("FANG.ContextMenu.ReplacePlaceholder", "Replace with Actor")}</button>` : ""}
+                    <button type="button" id="fang-profile-delete" class="btn danger-btn"><i class="fas fa-trash"></i> ${localize("FANG.ContextMenu.DeleteNode", "Delete Actor")}</button>
+                </section>` : "";
+
+        const content = `
+            <div class="fang-actor-editor">
+                <section class="fang-editor-section">
+                    <h3><i class="fas fa-id-card"></i> ${localize("FANG.ActorEditor.Profile", "Profile")}</h3>
+                    <label>${localize("FANG.Dialogs.IdentityName", "Displayed Name")}</label>
+                    <input type="text" id="fang-profile-name" value="${escapeHtml(node.name || "")}">
+                    <label>${localize("FANG.Dialogs.RoleInput", "Role")}</label>
+                    <input type="text" id="fang-profile-role" value="${escapeHtml(node.role || "")}">
+                    <label>${localize("FANG.Dialogs.FactionInput", "Faction")}</label>
+                    <select id="fang-profile-faction">
+                        <option value="">-- None --</option>
+                        ${factionOptions}
+                    </select>
+                </section>
+                ${playerViewSection}
+                <section class="fang-editor-section">
+                    <h3><i class="fas fa-tags"></i> ${localize("FANG.ActorEditor.Conditions", "Conditions")}</h3>
+                    ${conditionGrid}
+                </section>
+                <section class="fang-editor-section fang-editor-notes">
+                    <h3><i class="fas fa-feather"></i> ${localize("FANG.ActorEditor.Notes", "Notes")}</h3>
+                    <textarea id="fang-profile-lore" placeholder="${localize("FANG.Dialogs.InfoInput", "Notes")}">${escapeHtml(node.lore || "")}</textarea>
+                </section>
+                ${actionSection}
+            </div>`;
+
+        let dialog;
+        dialog = new Dialog({
+            title: localize("FANG.ActorEditor.Title", "Edit Actor"),
+            content,
+            buttons: {
+                save: {
+                    icon: '<i class="fas fa-save"></i>',
+                    label: localize("FANG.Dialogs.BtnSave", "Save"),
+                    callback: async (html) => {
+                        const newName = html.find("#fang-profile-name").val().trim();
+                        const newRole = html.find("#fang-profile-role").val().trim();
+                        const newFactionId = html.find("#fang-profile-faction").val();
+                        const newAlias = isGM ? html.find("#fang-profile-alias").val().trim() : node.displayName;
+                        const newLore = html.find("#fang-profile-lore").val().trim();
+                        const newConditions = [];
+                        html.find("[data-condition]").each((_, el) => {
+                            if (el.checked) newConditions.push(el.dataset.condition);
+                        });
+
+                        if (newName) node.name = newName;
+                        node.role = newRole || null;
+                        node.factionId = newFactionId || null;
+                        if (isGM) {
+                            node.hidden = html.find("#fang-profile-hidden").is(":checked");
+                            node.displayName = newAlias;
+                            node.showHiddenQuestsToPlayers = html.find("#fang-profile-hidden-quests").is(":checked");
+                        }
+                        node.lore = newLore || null;
+                        node.conditions = newConditions;
+
+                        this.ticked();
+                        this._populateActors();
+                        await this.saveData();
+                    }
+                },
+                cancel: {
+                    icon: '<i class="fas fa-times"></i>',
+                    label: localize("FANG.Dialogs.BtnCancel", "Cancel")
+                }
+            },
+            default: "save",
+            render: (html) => {
+                if (!isGM) return;
+                html.find("#fang-profile-gm-journal").on("click", async () => this._openNodeJournal(node));
+                html.find("#fang-profile-replace").on("click", async () => {
+                    dialog.close();
+                    await this._onReplacePlaceholder(node);
+                });
+                html.find("#fang-profile-delete").on("click", () => {
+                    dialog.close();
+                    this._confirmDeleteNode(node);
+                });
+                html.find("#fang-profile-player-lore").on("click", async (event) => openPlayerLorePage({ createIfMissing: true, button: event.currentTarget }));
+            }
+        }, { classes: ["dialog", "fang-dialog", "fang-actor-editor-dialog"], width: 760 }).render(true);
+    }
+    _onCanvasPointerDown(event) {
+        if (event.pointerType !== "touch" && event.pointerType !== "pen") return;
+        const pos = this._getCanvasPointerPosition(event);
+        if (!pos) return;
+
+        this._clearTouchLongPress();
+        this._touchLongPressStart = {
+            pointerId: event.pointerId,
+            clientX: event.clientX,
+            clientY: event.clientY,
+            pos
+        };
+
+        this._touchLongPressTimer = setTimeout(() => {
+            const start = this._touchLongPressStart;
+            if (!start || start.pointerId !== event.pointerId) return;
+
+            const node = this._findNodeAtCanvasPoint(start.pos.x, start.pos.y, 44);
+            const linkIndex = node ? -1 : this._findLinkIndexAtCanvasPoint(start.pos.x, start.pos.y, 28);
+            if (!node && linkIndex === -1) return;
+
+            event.preventDefault();
+            this._suppressNextCanvasClick = true;
+            if (node) this._showContextMenu(node, start.pos.mouseX, start.pos.mouseY);
+            else this._showEdgeContextMenu(linkIndex, start.pos.mouseX, start.pos.mouseY);
+        }, 520);
+    }
+
+    _onCanvasPointerMove(event) {
+        if (!this._touchLongPressStart || this._touchLongPressStart.pointerId !== event.pointerId) return;
+        const dx = event.clientX - this._touchLongPressStart.clientX;
+        const dy = event.clientY - this._touchLongPressStart.clientY;
+        if (Math.sqrt(dx * dx + dy * dy) > 12) this._clearTouchLongPress();
+    }
+
+    _onCanvasPointerUp(event) {
+        if (this._touchLongPressStart?.pointerId === event.pointerId) this._clearTouchLongPress();
+    }
+
+    _onCanvasPointerCancel(event) {
+        if (this._touchLongPressStart?.pointerId === event.pointerId) this._clearTouchLongPress();
+    }
+
+    _clearTouchLongPress() {
+        if (this._touchLongPressTimer) clearTimeout(this._touchLongPressTimer);
+        this._touchLongPressTimer = null;
+        this._touchLongPressStart = null;
     }
 
     _onCanvasRightClick(event) {
@@ -3079,7 +3408,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 const spreadDistance = 12 + (ddist * 0.05) + (totalParams * 4);
                 const finalOffset = offsetMultiplier * spreadDistance;
 
-                const isCanonical = link.source.id < link.target.id;
+                const isCanonical = this._getLinkEndpointId(link.source) < this._getLinkEndpointId(link.target);
                 const cDx = isCanonical ? ddx : -ddx;
                 const cDy = isCanonical ? ddy : -ddy;
                 const cDist = ddist;
@@ -3174,27 +3503,40 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const link = this.graphData.links[linkIndex];
         if (!link) return;
 
-        // Position menu at cursor
+        // Position menu at cursor; final clamping happens after visibility/actions are set.
         menu.style.left = `${mouseX}px`;
         menu.style.top = `${mouseY}px`;
         menu.classList.remove("hidden");
 
+        const btnInfo = menu.querySelector("#ctxEdgeInfo");
         const btnEdit = menu.querySelector("#ctxEditConnection");
         const btnSpotlight = menu.querySelector("#ctxEdgeSpotlight");
         const btnDelete = menu.querySelector("#ctxDeleteConnection");
 
+        const newBtnInfo = btnInfo ? btnInfo.cloneNode(true) : null;
         const newBtnEdit = btnEdit.cloneNode(true);
         const newBtnSpotlight = btnSpotlight.cloneNode(true);
         const newBtnDelete = btnDelete.cloneNode(true);
 
+        if (btnInfo && newBtnInfo) btnInfo.parentNode.replaceChild(newBtnInfo, btnInfo);
         btnEdit.parentNode.replaceChild(newBtnEdit, btnEdit);
         btnSpotlight.parentNode.replaceChild(newBtnSpotlight, btnSpotlight);
         btnDelete.parentNode.replaceChild(newBtnDelete, btnDelete);
 
         const hasLock = this._canEditGraph(true);
+        const hiddenEndpoint = !!(link.source?.hidden || link.target?.hidden);
+        if (newBtnInfo) newBtnInfo.style.display = this._canUseGraphAction("viewLink", link) ? "block" : "none";
         newBtnEdit.style.display = hasLock ? "block" : "none";
         newBtnDelete.style.display = hasLock ? "block" : "none";
-        newBtnSpotlight.style.display = "block"; // Always available
+        newBtnSpotlight.style.display = this._canUseGraphAction("spotlightLink", link) ? "block" : "none";
+
+        if (newBtnInfo) {
+            newBtnInfo.addEventListener("click", () => {
+                menu.classList.add("hidden");
+                if (!this._canUseGraphAction("viewLink", link)) return;
+                this.startEdgeSpotlight(this._buildEdgeSpotlightPayload(link), { notify: false });
+            });
+        }
 
         // Action: Edit
         newBtnEdit.addEventListener("click", () => {
@@ -3202,10 +3544,11 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             if (!this._canEditGraph()) return;
 
             const title = game.i18n.localize("FANG.Dialogs.EditConnectionTitle") || "Informationen bearbeiten";
-            const contentString = game.i18n.localize("FANG.Dialogs.EditConnectionContent") || "Zusätzliche Details für die Verbindung:";
+            const contentString = game.i18n.localize("FANG.Dialogs.EditConnectionContent") || "ZusÃ¤tzliche Details fÃ¼r die Verbindung:";
             const lblName = game.i18n.localize("FANG.Dialogs.LabelInput") || "Bezeichnung (Label)";
             const lblInfo = game.i18n.localize("FANG.Dialogs.InfoInput") || "Notizen";
             const lblDirectional = game.i18n.localize("FANG.Dialogs.DirectionalInput") || "Gerichtet (Pfeil)";
+            const lblReverseDirection = game.i18n.localize("FANG.Dialogs.ReverseDirectionInput") || "Richtung umkehren";
 
             new Dialog({
                 title: title,
@@ -3223,6 +3566,10 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                         <label for="fang-edit-link-directional" style="cursor: pointer;">${lblDirectional}</label>
                         <input type="checkbox" id="fang-edit-link-directional" ${link.directional ? "checked" : ""} style="width: auto; margin: 0; cursor: pointer;">
                     </div>
+                    <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; margin-top: 8px;">
+                        <label for="fang-edit-link-reverse" style="cursor: pointer;">${lblReverseDirection}</label>
+                        <input type="checkbox" id="fang-edit-link-reverse" style="width: auto; margin: 0; cursor: pointer;">
+                    </div>
                 `,
                 buttons: {
                     save: {
@@ -3232,9 +3579,15 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                             const newLabel = html.find("#fang-edit-link-name").val().trim();
                             const newInfo = html.find("#fang-edit-link-info").val().trim();
                             const newDirectional = html.find("#fang-edit-link-directional").is(":checked");
+                            const reverseDirection = html.find("#fang-edit-link-reverse").is(":checked");
                             if (newLabel) link.label = newLabel;
                             link.info = newInfo !== "" ? newInfo : null;
-                            link.directional = newDirectional;
+                            link.directional = reverseDirection ? true : newDirectional;
+                            if (reverseDirection) {
+                                const oldSource = link.source;
+                                link.source = link.target;
+                                link.target = oldSource;
+                            }
 
                             this.initSimulation();
                             this.simulation.alpha(0.05).restart();
@@ -3285,11 +3638,19 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         // Action: Edge Spotlight
         newBtnSpotlight.addEventListener("click", () => {
             menu.classList.add("hidden");
+            if (!this._canUseGraphAction("spotlightLink", link)) return;
             this._onEdgeSpotlight(link);
         });
+
+        this._positionFloatingMenu(menu, mouseX, mouseY);
     }
 
     async _onCanvasClick(event) {
+        if (this._suppressNextCanvasClick) {
+            this._suppressNextCanvasClick = false;
+            return;
+        }
+
         // Prevent click logic if we just finished a drag
         if (Date.now() - (this._lastDragTime || 0) < 200) return;
 
@@ -3321,6 +3682,11 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         }
 
         if (clickedNode) {
+            if (await this._handleQuickConnectNodeClick(clickedNode)) return;
+            if (!game.user.isGM) {
+                await this._openLocalNodeInfo(clickedNode);
+                return;
+            }
             this._syncSidebarSelection("node", clickedNode.id);
             return;
         }
@@ -3356,7 +3722,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 const finalOffset = offsetMultiplier * spreadDistance;
 
                 // Use canonical direction (A < B) for consistent normal vector
-                const isCanonical = link.source.id < link.target.id;
+                const isCanonical = this._getLinkEndpointId(link.source) < this._getLinkEndpointId(link.target);
                 const cDx = isCanonical ? ddx : -ddx;
                 const cDy = isCanonical ? ddy : -ddy;
                 const cDist = ddist;
@@ -3486,12 +3852,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     _syncSidebarSelection(type, id) {
-        // Auto-switch to Editor Tab
-        const editorTab = this.element.querySelector('.tab-btn[data-tab="editor"]');
-        if (editorTab && !editorTab.classList.contains('active')) {
-            editorTab.click();
-        }
-
+        // Keep legacy form fields synchronized for compatibility, but never open
+        // the old editor sidebar. Modern editing lives in canvas tools/context menus.
         if (type === "node") {
             const sourceSelect = this.element.querySelector("#sourceSelect");
             const deleteSelect = this.element.querySelector("#deleteSelect");
@@ -3700,11 +4062,15 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
     initSimulation() {
         if (this.simulation) this.simulation.stop();
 
-        const links = this.graphData.links.map(d => ({
-            ...d,
-            source: typeof d.source === "object" ? d.source.id : d.source,
-            target: typeof d.target === "object" ? d.target.id : d.target
-        }));
+        const nodeIds = new Set(this.graphData.nodes.map(n => n.id));
+        const links = this.graphData.links
+            .map(d => ({
+                ...d,
+                source: typeof d.source === "object" ? d.source?.id : d.source,
+                target: typeof d.target === "object" ? d.target?.id : d.target,
+                directional: !!d.directional
+            }))
+            .filter(d => d.source && d.target && nodeIds.has(d.source) && nodeIds.has(d.target));
         const nodes = this.graphData.nodes.map(d => {
             const oldNode = this.graphData.nodes.find(n => n.id === d.id);
             let nInfo = d;
@@ -3806,7 +4172,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     const link = links[j];
                     if (!link.source || !link.target) continue;
                     // Don't repel from lines the node is directly attached to
-                    if (link.source.id === node.id || link.target.id === node.id) continue;
+                    if (this._getLinkEndpointId(link.source) === node.id || this._getLinkEndpointId(link.target) === node.id) continue;
 
                     const x1 = link.source.x, y1 = link.source.y;
                     const x2 = link.target.x, y2 = link.target.y;
@@ -3830,7 +4196,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                         const offsetMultiplier = (totalParams % 2 === 0) ? (linkIndex % 2 === 0 ? 1 : -1) * (Math.floor(linkIndex / 2) + 0.5) : (linkIndex === 0 ? 0 : (linkIndex % 2 === 0 ? 1 : -1) * Math.floor((linkIndex + 1) / 2));
 
                         // Use canonical direction (A < B) for consistent normal vector
-                        const isCanonical = link.source.id < link.target.id;
+                        const isCanonical = this._getLinkEndpointId(link.source) < this._getLinkEndpointId(link.target);
                         const cX1 = isCanonical ? x1 : x2;
                         const cY1 = isCanonical ? y1 : y2;
                         const cX2 = isCanonical ? x2 : x1;
@@ -3940,8 +4306,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         if (hoveredNodeId) {
             connectedNodeIds.add(hoveredNodeId);
             this.graphData.links.forEach(link => {
-                const sId = typeof link.source === 'object' ? link.source.id : link.source;
-                const tId = typeof link.target === 'object' ? link.target.id : link.target;
+                const sId = this._getLinkEndpointId(link.source);
+                const tId = this._getLinkEndpointId(link.target);
                 if (sId === hoveredNodeId) connectedNodeIds.add(tId);
                 if (tId === hoveredNodeId) connectedNodeIds.add(sId);
             });
@@ -3978,8 +4344,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             // Build a set of existing regular link pairs for overlap detection
             const regularLinkPairs = new Set();
             this.graphData.links.forEach(l => {
-                const sId = typeof l.source === 'object' ? l.source.id : l.source;
-                const tId = typeof l.target === 'object' ? l.target.id : l.target;
+                const sId = this._getLinkEndpointId(l.source);
+                const tId = this._getLinkEndpointId(l.target);
                 regularLinkPairs.add(sId < tId ? `${sId} - ${tId}` : `${tId} - ${sId}`);
             });
 
@@ -4060,9 +4426,10 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
         this._linkCounts = {};
         this.graphData.links.forEach((link, i) => {
-            const pairKey = link.source.id < link.target.id
-                ? `${link.source.id} - ${link.target.id}`
-                : `${link.target.id} - ${link.source.id}`;
+            const sId = this._getLinkEndpointId(link?.source);
+            const tId = this._getLinkEndpointId(link?.target);
+            if (!sId || !tId) return;
+            const pairKey = sId < tId ? `${sId} - ${tId}` : `${tId} - ${sId}`;
 
             if (!this._linkCounts[pairKey]) {
                 this._linkCounts[pairKey] = { total: 0, links: [] };
@@ -4075,18 +4442,21 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const labelsToDraw = [];
 
         this.graphData.links.forEach((link, i) => {
+            const sIdRaw = this._getLinkEndpointId(link?.source);
+            const tIdRaw = this._getLinkEndpointId(link?.target);
+            if (!sIdRaw || !tIdRaw) return;
             const pairInfo = this._linkCounts[link.pairKey];
+            if (!pairInfo) return;
             const linkIndex = pairInfo.links.indexOf(i);
             const totalParams = pairInfo.total;
 
-            const sIdRaw = typeof link.source === 'object' ? link.source.id : link.source;
-            const tIdRaw = typeof link.target === 'object' ? link.target.id : link.target;
             const showLinkInIsolate = exactLinkMatches.has(i)
                 || (visibleNodeIds.has(sIdRaw) && visibleNodeIds.has(tIdRaw) && exactNodeMatches.has(sIdRaw) && exactNodeMatches.has(tIdRaw));
             if (isolateSearch && !showLinkInIsolate) return;
 
-            const sPos = renderPos[link.source.id];
-            const tPos = renderPos[link.target.id];
+            const sPos = renderPos[sIdRaw];
+            const tPos = renderPos[tIdRaw];
+            if (!sPos || !tPos) return;
 
             const dx = tPos.x - sPos.x;
             const dy = tPos.y - sPos.y;
@@ -4125,10 +4495,10 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             const getNodeBoundOffset = (node, rayAngle) => {
                 let R = nodeRadius + 2;
                 this.context.font = "bold 15px 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
-                const tWidth = Math.max(this.context.measureText(node.name).width, 40);
+                const tWidth = Math.max(this.context.measureText(this._getSafeNodeName(node)).width, 40);
                 const halfW = (tWidth / 2) + 12;
                 const topY = nodeRadius - 10;
-                const bottomY = nodeRadius + (node.role ? 42 : 28);
+                const bottomY = nodeRadius + (!this._isNodeHiddenForUser(node) && node.role ? 42 : 28);
 
                 const vx = Math.cos(rayAngle);
                 const vy = Math.sin(rayAngle);
@@ -4185,7 +4555,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 const finalOffset = offsetMultiplier * spreadDistance;
 
                 const nx = -dy / dist, ny = dx / dist;
-                const isCanonical = link.source.id < link.target.id;
+                const isCanonical = this._getLinkEndpointId(link.source) < this._getLinkEndpointId(link.target);
                 const fNx = isCanonical ? nx : -nx, fNy = isCanonical ? ny : -ny;
 
                 ctrlX = midX + fNx * finalOffset * 2;
@@ -4292,6 +4662,36 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         // Draw Nodes
         const radius = game.settings.get("fang", "tokenSize") || 33;
         const isGM = game.user.isGM;
+        const drawUnknownContactIcon = (context, x, y, size) => {
+            const scale = size / 32;
+
+            context.save();
+            context.fillStyle = "rgba(232, 224, 212, 0.94)";
+
+            // Anonymous contact silhouette: head plus shoulders.
+            context.beginPath();
+            context.arc(x - 4 * scale, y - 6 * scale, 6 * scale, 0, Math.PI * 2);
+            context.fill();
+
+            context.beginPath();
+            context.moveTo(x - 17 * scale, y + 13 * scale);
+            context.bezierCurveTo(x - 14 * scale, y + 3 * scale, x - 8 * scale, y + 1 * scale, x - 4 * scale, y + 1 * scale);
+            context.bezierCurveTo(x + 5 * scale, y + 1 * scale, x + 11 * scale, y + 5 * scale, x + 13 * scale, y + 14 * scale);
+            context.closePath();
+            context.fill();
+
+            // Question mark on top makes the token read as an unknown person, not just hidden.
+            context.font = `900 ${Math.max(9, size * 0.55)}px "Signika", "Palatino Linotype", serif`;
+            context.textAlign = "center";
+            context.textBaseline = "middle";
+            context.lineWidth = Math.max(1.5, 2 * scale);
+            context.strokeStyle = "rgba(10, 12, 18, 0.95)";
+            context.fillStyle = "rgba(255, 244, 203, 0.98)";
+            context.strokeText("?", x + 9 * scale, y - 5 * scale);
+            context.fillText("?", x + 9 * scale, y - 5 * scale);
+
+            context.restore();
+        };
 
         this.graphData.nodes.forEach(node => {
             const pos = renderPos[node.id];
@@ -4338,6 +4738,20 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 this.context.stroke();
                 this.context.shadowBlur = 0;
             }
+
+            // QuickConnect source marker: keep the workflow visible without notification spam.
+            if (this._quickConnectMode && this._quickConnectSourceId === node.id) {
+                this.context.beginPath();
+                this.context.arc(pos.x, pos.y, radius + 12, 0, Math.PI * 2);
+                this.context.strokeStyle = "rgba(36, 83, 143, 0.95)";
+                this.context.lineWidth = 4;
+                this.context.setLineDash([8, 5]);
+                this.context.shadowBlur = 16;
+                this.context.shadowColor = "rgba(36, 83, 143, 0.65)";
+                this.context.stroke();
+                this.context.setLineDash([]);
+                this.context.shadowBlur = 0;
+            }
             // -----------------------------
 
             // --- Draw Token Image ---
@@ -4371,8 +4785,12 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             if (isHidden) {
                 this.context.beginPath();
                 this.context.arc(pos.x, pos.y, radius, 0, Math.PI * 2);
-                this.context.fillStyle = "rgba(20, 20, 30, 0.3)";
+                this.context.fillStyle = "rgba(10, 12, 18, 0.72)";
                 this.context.fill();
+                this.context.lineWidth = 2;
+                this.context.strokeStyle = "rgba(212, 175, 55, 0.55)";
+                this.context.stroke();
+                drawUnknownContactIcon(this.context, pos.x, pos.y, Math.max(28, radius * 1.05));
             }
 
             // --- Faction Icon (Top-Left corner) ---
@@ -4431,12 +4849,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 this.context.strokeStyle = "rgba(255,255,255,0.15)";
                 this.context.stroke();
 
-                // Eye-slash icon (FontAwesome)
-                this.context.fillStyle = "#e8e0d4";
-                this.context.font = '900 12px "Font Awesome 6 Pro", "Font Awesome 6 Free", "FontAwesome"';
-                this.context.textAlign = "center";
-                this.context.textBaseline = "middle";
-                this.context.fillText("\uf070", hbx, hby); // fa-eye-slash
+                drawUnknownContactIcon(this.context, hbx, hby, 14);
             }
 
             // --- Determine displayed name ---
@@ -4676,14 +5089,15 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
     // @param {boolean} transition - Whether to animate the transition.
     zoomToFit(transition = true) {
         const isMonitor = game.user.name.toLowerCase().includes("monitor");
-        // Centering is a view-only operation — no edit lock required
+        // Centering is a view-only operation â€” no edit lock required
         if (!this.canvas || !this.zoom || !this.graphData.nodes.length) return;
 
         const padding = 60;
         const width = isMonitor ? window.innerWidth : this.width;
         const height = isMonitor ? window.innerHeight : this.height;
         const sidebar = this.element ? this.element.querySelector(".sidebar") : null;
-        const actualWidth = (sidebar && sidebar.style.display !== "none") ? width - 300 : width;
+        const sidebarWidth = (sidebar && sidebar.style.display !== "none") ? sidebar.getBoundingClientRect().width : 0;
+        const actualWidth = Math.max(100, width - sidebarWidth);
 
         let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
         this.graphData.nodes.forEach(d => {
@@ -4773,6 +5187,17 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const tooltip = this.element.querySelector("#fang-tooltip");
         if (!tooltip) return;
 
+        if (!this._hoverLoreTooltipEnabled) {
+            if (this._hoverTimeout) {
+                clearTimeout(this._hoverTimeout);
+                this._hoverTimeout = null;
+            }
+            this._tooltipVisibleForNode = null;
+            tooltip.classList.add("hidden");
+            this.canvas.style.cursor = hoveredNode ? "pointer" : "grab";
+            return;
+        }
+
         // If the hovered node changed or we stopped hovering:
         if (this._hoveredNodeId !== (hoveredNode ? hoveredNode.id : null)) {
             // Clear existing timeout
@@ -4816,7 +5241,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                             const ddist = Math.sqrt(ddx * ddx + ddy * ddy) || 1;
                             const spreadDistance = 12 + (ddist * 0.05) + (totalParams * 4);
                             const finalOffset = offsetMultiplier * spreadDistance;
-                            const isCanonical = link.source.id < link.target.id;
+                            const isCanonical = this._getLinkEndpointId(link.source) < this._getLinkEndpointId(link.target);
                             const cDx = isCanonical ? ddx : -ddx;
                             const cDy = isCanonical ? ddy : -ddy;
                             const nx = -cDy / ddist;
@@ -4951,7 +5376,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                         const ddist = Math.sqrt(ddx * ddx + ddy * ddy) || 1;
                         const spreadDistance = 12 + (ddist * 0.05) + (totalParams * 4);
                         const finalOffset = offsetMultiplier * spreadDistance;
-                        const isCanonical = link.source.id < link.target.id;
+                        const isCanonical = this._getLinkEndpointId(link.source) < this._getLinkEndpointId(link.target);
                         const cDx = isCanonical ? ddx : -ddx;
                         const cDy = isCanonical ? ddy : -ddy;
                         const nx = -cDy / ddist;
@@ -5006,8 +5431,17 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 placeholderType: n.placeholderType || null,
                 img: n.img || null,
                 name: n.name,
+                originalName: n.originalName || n.name,
                 isCenter: n.isCenter || false,
                 lore: n.lore || "",
+                playerLorePageId: n.playerLorePageId || null,
+                journalUuid: n.journalUuid || null,
+                questUuids: (n.questUuids || []).map(q => ({ uuid: q.uuid, name: q.name, visibleToPlayers: q.visibleToPlayers !== false })),
+                hidden: n.hidden || false,
+                displayName: n.displayName || "",
+                playerNotes: n.playerNotes || "",
+                showHiddenQuestsToPlayers: n.showHiddenQuestsToPlayers !== false,
+                conditions: n.conditions || [],
                 factionId: n.factionId || null,
                 role: n.role || "",
                 x: n.x,
@@ -5015,12 +5449,14 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 vx: n.vx || 0,
                 vy: n.vy || 0
             })),
-            links: this.graphData.links.map(l => ({
-                source: typeof l.source === "object" ? l.source.id : l.source,
-                target: typeof l.target === "object" ? l.target.id : l.target,
-                label: l.label,
-                directional: l.directional || false
-            })),
+            links: this.graphData.links
+                .map(l => ({
+                    source: typeof l.source === "object" ? l.source?.id : l.source,
+                    target: typeof l.target === "object" ? l.target?.id : l.target,
+                    label: l.label,
+                    directional: !!l.directional
+                }))
+                .filter(l => l.source && l.target),
             factions: this.graphData.factions.map(f => ({
                 id: f.id,
                 name: f.name,
@@ -5187,38 +5623,34 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const targetNode = link.target;
         if (!sourceNode || !targetNode) return;
 
-        // Prevent spotlight if either node is hidden block the spotlight entirely
-        if ((sourceNode.hidden || targetNode.hidden) && !game.user.isGM) {
-            return;
-        }
-        if (sourceNode.hidden || targetNode.hidden) {
+        if (!this._canUseGraphAction("spotlightLink", link)) {
             ui.notifications.warn(game.i18n.localize("FANG.Messages.SpotlightHiddenBlocked") || "Reveal the characters first before using Spotlight!");
             return;
         }
 
-        const sActor = this._getNodeActor(sourceNode);
-        const tActor = this._getNodeActor(targetNode);
-
-        const sourceImg = this._getNodeImageSource(sourceNode) || sourceNode.imgElement?.src || "icons/svg/mystery-man.svg";
-        const targetImg = this._getNodeImageSource(targetNode) || targetNode.imgElement?.src || "icons/svg/mystery-man.svg";
+        const payload = this._buildEdgeSpotlightPayload(link);
+        if (!payload) return;
 
         game.socket.emit("module.fang", {
             action: "spotlightEdgeStart",
-            payload: {
-                linkId: link.index, // Not strictly needed but good to have
-                label: link.label || "",
-                info: link.info || "",
-                sourcePortrait: sourceImg,
-                targetPortrait: targetImg,
-                sourceX: sourceNode.x,
-                sourceY: sourceNode.y,
-                targetX: targetNode.x,
-                targetY: targetNode.y,
-                directional: link.directional || false
-            }
+            payload
         });
 
-        this.startEdgeSpotlight({
+        this.startEdgeSpotlight(payload);
+    }
+
+    _buildEdgeSpotlightPayload(link) {
+        if (!this._canUserSeeLink(link)) return null;
+        const sourceNode = link.source;
+        const targetNode = link.target;
+        const sourceImg = this._isNodeHiddenForUser(sourceNode)
+            ? FANG_DEFAULT_PLACEHOLDER_IMG
+            : this._getNodeImageSource(sourceNode) || sourceNode.imgElement?.src || "icons/svg/mystery-man.svg";
+        const targetImg = this._isNodeHiddenForUser(targetNode)
+            ? FANG_DEFAULT_PLACEHOLDER_IMG
+            : this._getNodeImageSource(targetNode) || targetNode.imgElement?.src || "icons/svg/mystery-man.svg";
+
+        return {
             linkId: link.index,
             label: link.label || "",
             info: link.info || "",
@@ -5229,10 +5661,12 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             targetX: targetNode.x,
             targetY: targetNode.y,
             directional: link.directional || false
-        });
+        };
     }
 
-    startEdgeSpotlight(payload) {
+    startEdgeSpotlight(payload, options = {}) {
+        if (!payload) return;
+        const notify = options.notify !== false;
         if (this._spotlightTimeout) clearTimeout(this._spotlightTimeout);
         this._isSpotlightActive = true;
 
@@ -5279,27 +5713,41 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             }
         }, 1000);
 
-        ui.notifications.info(game.i18n.localize("FANG.Messages.SpotlightStarted").replace("{actor}", payload.label));
+        if (notify) ui.notifications.info(game.i18n.localize("FANG.Messages.SpotlightStarted").replace("{actor}", payload.label));
     }
 
-    async _onSpotlight(node) {
-        // Spotlight can be used by anyone who can right-click (no lock required)
+    async _buildNodeSpotlightPayload(node) {
+        if (!this._canUserSeeNode(node)) return null;
+        const hiddenForUser = this._isNodeHiddenForUser(node);
+        const escapeHtml = foundry.utils.escapeHTML ?? ((value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#39;"
+        }[char])));
+        const formatPlayerNotes = (notes) => String(notes || "")
+            .trim()
+            .split(/\n{2,}/)
+            .map(paragraph => `<p>${escapeHtml(paragraph).replace(/\n/g, "<br>")}</p>`)
+            .join("");
 
-        // Broadcast spotlight event
-        const imgSrc = this._getNodeImageSource(node);
-        const role = node.role || "";
-        const factionObj = this.graphData.factions.find(f => f.id === node.factionId);
+        const imgSrc = hiddenForUser ? FANG_DEFAULT_PLACEHOLDER_IMG : this._getNodeImageSource(node);
+        const role = hiddenForUser ? "" : node.role || "";
+        const factionObj = hiddenForUser ? null : this.graphData.factions.find(f => f.id === node.factionId);
         const faction = factionObj?.playerVisible !== false ? factionObj?.name || "" : "";
-        const subtitle = [role, faction].filter(s => s).join(" • ");
+        const subtitle = [role, faction].filter(s => s).join(" - ");
 
-        let loreText = node.lore || "";
+        let loreText = hiddenForUser ? formatPlayerNotes(node.playerNotes) : node.lore || "";
         if (node.playerLorePageId) {
             try {
                 const entry = await this.getJournalEntry();
                 if (entry) {
                     const page = entry.pages.get(node.playerLorePageId);
                     if (page && page.text && page.text.content) {
-                        loreText = page.text.content;
+                        loreText = hiddenForUser && node.playerNotes
+                            ? `${page.text.content}<hr>${formatPlayerNotes(node.playerNotes)}`
+                            : page.text.content;
                     }
                 }
             } catch (e) {
@@ -5307,30 +5755,41 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             }
         }
 
-        game.socket.emit("module.fang", {
-            action: "spotlightStart",
-            payload: {
-                nodeId: node.id,
-                name: node.name,
-                subtitle: subtitle,
-                lore: loreText,
-                portrait: imgSrc,
-                quests: node.questUuids || []
-            }
-        });
-
-        // Also start locally for the GM
-        this.startSpotlight({
+        return {
             nodeId: node.id,
-            name: node.name,
+            name: this._getSafeNodeName(node),
             subtitle: subtitle,
             lore: loreText,
             portrait: imgSrc,
-            quests: node.questUuids || []
-        });
+            quests: this._getNodeQuestsForCurrentUser(node)
+        };
     }
 
-    startSpotlight(payload) {
+    async _openLocalNodeInfo(node) {
+        if (!node || !this._canUseGraphAction("viewNode", node)) return;
+        const payload = await this._buildNodeSpotlightPayload(node);
+        this.startSpotlight(payload, { broadcastQuests: false, notify: false });
+    }
+
+    async _onSpotlight(node) {
+        if (!node || !this._canUseGraphAction("spotlightNode", node)) return;
+        // Spotlight can be used by anyone who can right-click (no lock required)
+        const payload = await this._buildNodeSpotlightPayload(node);
+        if (!payload) return;
+
+        game.socket.emit("module.fang", {
+            action: "spotlightStart",
+            payload
+        });
+
+        this.startSpotlight(payload);
+    }
+
+    startSpotlight(payload, options = {}) {
+        if (!payload) return;
+        const broadcastQuests = options.broadcastQuests !== false;
+        const notify = options.notify !== false;
+
         if (this._spotlightTimeout) clearTimeout(this._spotlightTimeout);
         this._isSpotlightActive = true;
 
@@ -5401,8 +5860,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                             if (clickTimer) {
                                 clearTimeout(clickTimer);
                                 clickTimer = null;
-                                // Short Click: Narrative Spotlight
-                                this._onQuestSpotlight(uuid);
+                                // Short Click: keep quests local when the parent node info was opened locally.
+                                this._onQuestSpotlight(uuid, { broadcast: broadcastQuests });
                             }
                         });
 
@@ -5423,7 +5882,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             }
         }, 1000);
 
-        ui.notifications.info(game.i18n.localize("FANG.Messages.SpotlightStarted").replace("{actor}", payload.name));
+        if (notify) ui.notifications.info(game.i18n.localize("FANG.Messages.SpotlightStarted").replace("{actor}", payload.name));
     }
 
     stopSpotlight() {
@@ -5451,36 +5910,42 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         }
     }
 
-    async _onQuestSpotlight(questUuid) {
+    async _getQuestSpotlightPayload(questUuid) {
+        const doc = await fromUuid(questUuid);
+        if (!doc) return null;
+
+        // Extract content from the first text page
+        let content = "";
+        let title = doc.name;
+
+        const page = doc.pages.contents[0];
+        if (page && page.type === "text" && page.text && page.text.content) {
+            content = page.text.content;
+        } else if (doc.pages.size === 0 && doc.content) {
+            // Legacy Journal compatibility
+            content = doc.content;
+        }
+
+        if (!content) content = "...";
+
+        return {
+            uuid: questUuid,
+            name: title,
+            content: content
+        };
+    }
+
+    async _onQuestSpotlight(questUuid, { broadcast = true } = {}) {
         try {
-            const doc = await fromUuid(questUuid);
-            if (!doc) return;
+            const payload = await this._getQuestSpotlightPayload(questUuid);
+            if (!payload) return;
 
-            // Extract content from the first text page
-            let content = "";
-            let title = doc.name;
-
-            const page = doc.pages.contents[0];
-            if (page && page.type === "text" && page.text && page.text.content) {
-                content = page.text.content;
-            } else if (doc.pages.size === 0 && doc.content) {
-                // Legacy Journal compatibility
-                content = doc.content;
+            if (broadcast) {
+                game.socket.emit("module.fang", {
+                    action: "questSpotlightStart",
+                    payload: payload
+                });
             }
-
-            if (!content) content = "...";
-
-            const payload = {
-                uuid: questUuid,
-                name: title,
-                content: content
-            };
-
-            // Broadcast
-            game.socket.emit("module.fang", {
-                action: "questSpotlightStart",
-                payload: payload
-            });
 
             // Start locally
             this.startQuestSpotlight(payload);
@@ -5711,7 +6176,6 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             // Release the lock
             if (game.user.isGM) {
                 await entry.unsetFlag("fang", "editLock");
-                ui.notifications.info(game.i18n.localize("FANG.Messages.LockReleased") || "Bearbeitung freigegeben.");
                 game.socket.emit("module.fang", { action: "lockStatusUpdate" });
                 this.render();
             } else {
@@ -5725,7 +6189,6 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     userName: game.user.name,
                     time: Date.now()
                 });
-                ui.notifications.info(game.user.name + " " + game.i18n.localize("FANG.Messages.LockAcquired") || "hat die Bearbeitung übernommen.");
                 game.socket.emit("module.fang", { action: "lockStatusUpdate" });
                 this.render();
             } else {
@@ -5740,10 +6203,28 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         if (!entry) return;
 
         await entry.unsetFlag("fang", "editLock");
-        ui.notifications.info("GM forced lock release.");
 
         game.socket.emit("module.fang", { action: "lockStatusUpdate" });
         this.render();
+    }
+
+    _setButtonTooltip(button, text) {
+        if (!button) return;
+        button.title = text;
+        button.setAttribute("data-tooltip", text);
+        button.setAttribute("aria-label", text);
+    }
+
+    _getLockDisplayName(lock) {
+        if (!lock) return game.i18n.localize("FANG.Dropdowns.Unknown");
+        const user = game.users?.get?.(lock.userId);
+        const character = user?.character;
+        if (character) {
+            const node = this.graphData?.nodes?.find(n => n.actorId === character.id || n.id === character.id);
+            if (node) return this._getSafeNodeName(node);
+            if (character.name) return character.name;
+        }
+        return lock.userName || user?.name || game.i18n.localize("FANG.Dropdowns.Unknown");
     }
 
     _updateLockUI() {
@@ -5762,6 +6243,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         // New Canvas UI
         const canvasIndicator = this.element.querySelector("#fang-canvas-lock-indicator");
         const canvasText = this.element.querySelector("#canvas-lock-text");
+        const canvasEditTools = this.element.querySelector("#fang-canvas-edit-tools");
 
         if (!banner || !lockText || !btnToggleLock) return;
 
@@ -5776,15 +6258,22 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
         if (btnForce) btnForce.classList.add("hidden");
         if (canvasIndicator) canvasIndicator.classList.add("hidden");
+        if (canvasEditTools) canvasEditTools.classList.add("hidden");
         if (bannerIcon) bannerIcon.className = "fas fa-lock-open";
+        this._setButtonTooltip(btnToggleLock, game.i18n.localize("FANG.UI.EditMode"));
+        this._setButtonTooltip(btnForce, game.i18n.localize("FANG.UI.ForceRelease"));
 
         if (!lock) {
+            this._quickConnectMode = false;
+            this._quickConnectSourceId = null;
+            this._updateQuickConnectButtonState();
             // NO ACTIVE LOCK - Everyone is blocked for editing by default
             banner.classList.add("no-editor");
             lockText.textContent = game.i18n.localize("FANG.UI.NoEditor");
             btnText.textContent = game.i18n.localize("FANG.UI.EditMode");
-            btnIcon.className = "fas fa-pencil-alt";
+            btnIcon.className = "fas fa-pen-to-square";
             btnToggleLock.classList.remove("active");
+            this._setButtonTooltip(btnToggleLock, game.i18n.localize("FANG.UI.EditMode"));
 
             // Block editor tab exclusively for everyone until lock is taken
             if (editorTab) editorTab.classList.add("tab-locked");
@@ -5804,7 +6293,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             // ACTIVE LOCK
             const iAmEditor = lock.userId === game.user.id;
             const someoneElse = !iAmEditor;
-            const lockUser = iAmEditor ? game.user.name : lock.userName;
+            const lockUser = this._getLockDisplayName(lock);
 
             if (iAmEditor) {
                 // I AM THE EDITOR
@@ -5812,11 +6301,16 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 banner.classList.add("i-am-editor");
                 lockText.textContent = lockUser;
                 btnText.textContent = game.i18n.localize("FANG.UI.ReleaseLock");
-                btnIcon.className = "fas fa-lock"; // Use closed lock when holding
+                btnIcon.className = "fas fa-lock-open";
                 btnToggleLock.classList.add("active");
                 btnToggleLock.style.display = "flex";
-                if (bannerIcon) bannerIcon.className = "fas fa-lock"; // Match the button
+                this._setButtonTooltip(btnToggleLock, game.i18n.localize("FANG.UI.ReleaseLock"));
+                if (bannerIcon) bannerIcon.className = "fas fa-lock";
+                if (canvasEditTools) canvasEditTools.classList.remove("hidden");
             } else {
+                this._quickConnectMode = false;
+                this._quickConnectSourceId = null;
+                this._updateQuickConnectButtonState();
                 // SOMEONE ELSE IS EDITING
                 banner.classList.remove("hidden");
                 banner.classList.add("someone-else-editing");

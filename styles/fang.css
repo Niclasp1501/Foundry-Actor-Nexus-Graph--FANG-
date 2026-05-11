@@ -202,14 +202,15 @@ body.role-player .fang-app-container .gm-only {
 
 /* Sidebar Styling */
 .fang-app-container .sidebar {
-    width: 340px;
+    width: 76px;
     background-color: var(--fang-nav-bg);
     border-right: 2px solid var(--fang-primary-red);
     box-shadow: var(--fang-shadow-sm);
     display: flex;
     flex-direction: column;
-    z-index: 10;
-    overflow-y: auto;
+    z-index: 1600;
+    overflow: visible;
+    position: relative;
 }
 
 .fang-app-container .sidebar-header {
@@ -217,6 +218,42 @@ body.role-player .fang-app-container .gm-only {
     color: var(--fang-header-text);
     padding: 15px 20px;
     border-bottom: 2px solid var(--fang-accent-gold);
+}
+
+.fang-app-container .sidebar-header h1,
+.fang-app-container .sidebar-header p,
+.fang-app-container .tabs-nav {
+    display: none;
+}
+
+.fang-app-container .fang-rail {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px;
+    align-items: stretch;
+}
+
+.fang-app-container .fang-rail-btn {
+    width: 52px;
+    height: 52px;
+    border: 1px solid var(--fang-border-color);
+    border-radius: 14px;
+    background: var(--fang-card-bg);
+    color: var(--fang-primary-red);
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    font-size: 1.1rem;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+    transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.fang-app-container .fang-rail-btn:hover,
+.fang-app-container .fang-rail-btn.active {
+    transform: translateX(3px);
+    border-color: var(--fang-accent-gold);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18), 0 0 14px rgba(212, 175, 55, 0.25);
 }
 
 .fang-app-container .sidebar-header h1 {
@@ -242,6 +279,31 @@ body.role-player .fang-app-container .gm-only {
     border-bottom: 1px solid var(--fang-border-color);
     font-size: 0.9rem;
     transition: all 0.3s ease;
+}
+
+.fang-app-container .fang-sidebar-status .lock-banner {
+    border-bottom: 2px solid var(--fang-border-color);
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px 6px;
+    font-size: 0.72rem;
+    text-align: center;
+}
+
+.fang-app-container .fang-sidebar-status .lock-info {
+    justify-content: center;
+    gap: 4px;
+}
+
+.fang-app-container .fang-sidebar-status #lock-text,
+.fang-app-container .fang-sidebar-status #lock-btn-text {
+    display: none;
+}
+
+.fang-app-container .fang-sidebar-status .fang-lock-btn {
+    min-width: 44px;
+    justify-content: center;
+    padding: 7px;
 }
 
 .fang-app-container .lock-banner.no-editor {
@@ -369,6 +431,343 @@ body.role-player .fang-app-container .gm-only {
     display: none !important;
 }
 
+.fang-app-container .fang-canvas-edit-tools {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    z-index: 930;
+    display: grid;
+    grid-template-columns: repeat(2, max-content);
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+    background: rgba(253, 251, 247, 0.92);
+    border: 1px solid rgba(139, 0, 0, 0.24);
+    border-radius: 14px;
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.18);
+    backdrop-filter: blur(3px);
+}
+
+.fang-app-container .fang-canvas-tool-btn {
+    min-height: 40px;
+    border: 1px solid rgba(139, 0, 0, 0.3);
+    border-radius: 10px;
+    padding: 0 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #fffaf0;
+    color: var(--fang-primary-red);
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 2px 0 rgba(139, 0, 0, 0.14);
+}
+
+.fang-app-container .fang-canvas-tool-btn:hover,
+.fang-app-container .fang-canvas-tool-btn.active {
+    background: var(--fang-primary-red);
+    color: #fff;
+    border-color: var(--fang-accent-gold);
+    transform: translateY(-1px);
+}
+
+.fang-app-container .fang-canvas-tool-btn.awaiting-target {
+    background: #24538f;
+    color: #fff;
+    border-color: #9fc4ff;
+    box-shadow: 0 0 0 3px rgba(36, 83, 143, 0.18), 0 8px 18px rgba(36, 83, 143, 0.25);
+}
+
+.fang-app-container .fang-canvas-edit-status {
+    grid-column: 1 / -1;
+    max-width: 420px;
+    padding: 6px 9px;
+    border-radius: 9px;
+    background: rgba(20, 28, 38, 0.9);
+    color: #fff;
+    font-size: 0.82rem;
+    font-weight: 700;
+    line-height: 1.25;
+}
+
+.fang-quest-section-title,
+.fang-quest-add-heading {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #5f4a21;
+    font-family: var(--fang-font-header);
+    font-size: 0.98rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+}
+
+.fang-quest-section-title {
+    margin-bottom: 8px;
+}
+
+.fang-quest-manager ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 6px;
+}
+
+.fang-quest-manager-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 9px;
+    border: 1px solid var(--fang-border-color);
+    border-radius: 10px;
+    background: var(--fang-bg-color);
+    cursor: pointer;
+}
+
+.fang-quest-manager-row:hover {
+    border-color: var(--fang-accent-gold);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+}
+
+.fang-quest-title {
+    font-weight: 800;
+    color: #2b221a;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.fang-quest-manager-actions {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 4px;
+    justify-content: flex-end;
+}
+
+.fang-icon-btn {
+    width: 30px;
+    height: 30px;
+    display: inline-grid;
+    place-items: center;
+    border: 1px solid var(--fang-border-color);
+    border-radius: 8px;
+    background: #fffaf0;
+    color: #6f5a2a;
+    cursor: pointer;
+}
+
+.fang-icon-btn:hover {
+    border-color: var(--fang-accent-gold);
+    transform: translateY(-1px);
+}
+
+.fang-icon-btn.danger {
+    color: #8b0000;
+    background: rgba(139, 0, 0, 0.08);
+}
+
+.fang-quest-manager-empty {
+    padding: 14px;
+    border: 1px dashed var(--fang-border-color);
+    border-radius: 12px;
+    color: #666;
+    background: rgba(255, 255, 255, 0.45);
+}
+
+.fang-quest-visibility {
+    align-self: center;
+    padding: 3px 7px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 800;
+    background: rgba(25, 135, 84, 0.12);
+    color: #198754;
+}
+
+.fang-quest-visibility.is-hidden {
+    background: rgba(139, 0, 0, 0.1);
+    color: var(--fang-primary-red);
+}
+
+.fang-quest-add {
+    display: grid;
+    gap: 10px;
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--fang-border-color);
+}
+
+.fang-quest-drop-zone {
+    display: grid;
+    grid-template-columns: 42px minmax(0, 1fr);
+    grid-template-areas:
+        "icon title"
+        "icon hint";
+    align-items: center;
+    gap: 2px 10px;
+    min-height: 70px;
+    padding: 12px 14px;
+    border: 2px dashed var(--fang-accent-gold);
+    border-radius: 14px;
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.12), rgba(139, 0, 0, 0.04));
+    color: var(--fang-primary-red);
+}
+
+.fang-quest-drop-zone i {
+    grid-area: icon;
+    display: inline-grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    background: rgba(139, 0, 0, 0.1);
+    font-size: 1.25rem;
+}
+
+.fang-quest-drop-zone strong {
+    grid-area: title;
+    font-weight: 900;
+}
+
+.fang-quest-drop-zone span {
+    grid-area: hint;
+    color: rgba(43, 34, 26, 0.74);
+    font-size: 0.86rem;
+    line-height: 1.25;
+}
+
+.fang-quest-drop-zone.drag-over {
+    background: rgba(212, 175, 55, 0.2);
+    box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.16);
+}
+
+.fang-quest-add-picker {
+    display: grid;
+    gap: 8px;
+    padding: 12px;
+    border: 1px solid rgba(139, 0, 0, 0.14);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.46);
+}
+
+.fang-quest-add-picker > label:first-child {
+    margin: 0;
+    color: var(--fang-text-color);
+    font-weight: 800;
+}
+
+.fang-quest-add-picker .action-btn {
+    min-height: 40px;
+}
+
+.fang-app-container .fang-quest-canvas-panel {
+    position: absolute;
+    inset: 0;
+    z-index: 1750;
+    pointer-events: auto;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(2px);
+}
+
+.fang-app-container .fang-quest-canvas-card {
+    position: relative;
+    width: min(760px, 92%);
+    min-width: 360px;
+    max-height: 85%;
+    pointer-events: auto;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    background:
+        radial-gradient(circle at top left, rgba(212, 175, 55, 0.12), transparent 34%),
+        #fdfbf7;
+    border: 2px solid var(--fang-accent-gold);
+    border-radius: 8px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 0 0 20px rgba(212, 175, 55, 0.2);
+    animation: fangCinemaEnter 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (max-width: 760px) {
+    .fang-app-container .fang-quest-canvas-card {
+        width: 94%;
+        min-width: 0;
+    }
+}
+
+.fang-app-container .fang-quest-canvas-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 24px 58px 10px 24px;
+    background: transparent;
+    color: #3a2a12;
+    border-bottom: 2px solid var(--fang-accent-gold);
+}
+
+.fang-app-container .fang-quest-canvas-header h3 {
+    margin: 0;
+    color: inherit;
+    border: 0;
+    font-size: 1.55rem;
+    line-height: 1.15;
+    letter-spacing: 0.01em;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.fang-app-container .fang-quest-canvas-header h3 i {
+    color: var(--fang-accent-gold);
+}
+
+.fang-app-container .fang-quest-canvas-close {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    width: 34px;
+    height: 34px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: #888;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    font-size: 1.35rem;
+}
+
+.fang-app-container .fang-quest-canvas-close:hover {
+    color: var(--fang-primary-red);
+    background: rgba(139, 0, 0, 0.06);
+}
+
+.fang-app-container .fang-quest-canvas-card .fang-quest-manager {
+    overflow: auto;
+    padding: 20px 24px 24px;
+}
+
+.fang-app-container.fang-theme-cyberpunk .fang-quest-canvas-card {
+    background: rgba(3, 15, 26, 0.95);
+    border-color: #33d9ff;
+    box-shadow: 0 0 0 1px rgba(51, 217, 255, 0.35), 0 22px 50px rgba(0, 0, 0, 0.45);
+}
+
+.fang-app-container.fang-theme-cyberpunk .fang-quest-canvas-header {
+    background: transparent;
+    color: #33d9ff;
+    border-bottom-color: #33d9ff;
+}
+
 /* Add a gold accent line */
 .fang-app-container .sidebar-header h1::before {
     content: "";
@@ -439,8 +838,22 @@ body.role-player .fang-app-container .gm-only {
 }
 
 .fang-app-container .tabs-container {
-    flex: 1;
+    position: absolute;
+    left: 88px;
+    top: 12px;
+    width: 340px;
+    max-height: calc(100% - 24px);
     overflow-y: auto;
+    display: none;
+    border: 1px solid var(--fang-border-color);
+    border-radius: 14px;
+    box-shadow: 0 18px 42px rgba(0, 0, 0, 0.28);
+    background: var(--fang-card-bg);
+    z-index: 1700;
+}
+
+.fang-app-container.sidebar-panel-open .tabs-container {
+    display: block;
 }
 
 .fang-app-container .tab-content {
@@ -450,6 +863,12 @@ body.role-player .fang-app-container .gm-only {
 
 .fang-app-container .tab-content.active {
     display: block;
+}
+
+.fang-app-container .fang-legacy-editor-tab,
+.fang-app-container .fang-legacy-editor-panel,
+.fang-app-container .fang-legacy-editor-panel.active {
+    display: none !important;
 }
 
 @keyframes fangFadeIn {
@@ -638,6 +1057,8 @@ body.role-player .fang-app-container .gm-only {
     height: 100%;
     cursor: grab;
     display: block;
+    touch-action: none;
+    user-select: none;
     /* Fix inline-block baseline descender gap causing scrollbars */
 }
 
@@ -1111,72 +1532,170 @@ body.fang-monitor .fang-app-container .narrative-close {
     background-color: #ebe5dc;
 }
 
+.fang-dialog .fang-faction-manager {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    gap: 12px;
+}
+
+.fang-dialog .fang-faction-manager__header {
+    flex: 0 0 auto;
+    padding: 10px 14px;
+    border: 1px solid rgba(139, 0, 0, 0.16);
+    border-left: 4px solid var(--fang-primary-red);
+    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(139, 0, 0, 0.08), rgba(212, 175, 55, 0.08));
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.08);
+}
+
+.fang-dialog .fang-faction-manager__header strong {
+    display: block;
+    margin-bottom: 3px;
+    color: var(--fang-primary-red);
+    font-family: var(--fang-font-header);
+    font-size: 1.02rem;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+}
+
+.fang-dialog .fang-faction-manager__header p {
+    margin: 0;
+    color: rgba(43, 34, 26, 0.74);
+    font-size: 0.9rem;
+    line-height: 1.35;
+}
+
+.fang-dialog .fang-faction-manager__toggles {
+    flex: 0 0 auto;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.fang-dialog .fang-toggle-card {
+    display: grid;
+    grid-template-columns: auto 34px minmax(0, 1fr);
+    align-items: center;
+    gap: 9px;
+    min-height: 42px;
+    margin: 0;
+    padding: 7px 10px;
+    border: 1px solid rgba(139, 0, 0, 0.18);
+    border-radius: 12px;
+    background: rgba(255, 252, 244, 0.9);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.44), 0 4px 14px rgba(0, 0, 0, 0.06);
+    color: var(--fang-text-color);
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.fang-dialog .fang-toggle-card input {
+    margin: 0;
+}
+
+.fang-dialog .fang-toggle-card__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: rgba(139, 0, 0, 0.09);
+    color: var(--fang-primary-red);
+}
+
 .fang-dialog #fang-factions-list {
     flex: 1 1 auto;
     overflow-y: auto;
     overflow-x: hidden;
     margin-bottom: 10px;
-    min-height: 150px;
-    border: 1px solid var(--fang-border-color);
-    border-radius: 4px;
-    padding: 6px;
-    background: rgba(0, 0, 0, 0.03);
+    min-height: 300px;
+    max-height: none;
+    border: 1px solid rgba(139, 0, 0, 0.14);
+    border-radius: 14px;
+    padding: 10px;
+    background: rgba(255, 252, 244, 0.58);
 }
 
 .fang-dialog .fang-faction-item {
     display: flex;
     flex-direction: column;
-    gap: 6px;
-    margin-bottom: 6px;
-    padding: 8px;
-    border: 1px solid rgba(139, 0, 0, 0.14);
-    border-radius: 4px;
-    background: rgba(0, 0, 0, 0.025);
+    gap: 7px;
+    margin-bottom: 9px;
+    padding: 9px;
+    border: 1px solid rgba(139, 0, 0, 0.16);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.72);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.07);
+}
+
+.fang-dialog .fang-faction-item:last-child {
+    margin-bottom: 0;
 }
 
 .fang-dialog .fang-faction-main-row {
     display: flex;
-    gap: 5px;
+    gap: 7px;
     align-items: center;
 }
 
 .fang-dialog .fang-faction-item .faction-color {
-    flex: 0 0 30px;
-    width: 30px;
-    height: 30px;
+    flex: 0 0 34px;
+    width: 34px;
+    height: 34px;
     padding: 0;
-    border: 1px solid var(--fang-border-color);
+    border: 1px solid rgba(139, 0, 0, 0.22);
+    border-radius: 8px;
+    cursor: pointer;
 }
 
 .fang-dialog .fang-faction-item .faction-name {
     flex: 1;
+    min-height: 36px;
+    font-weight: 700;
 }
 
 .fang-dialog .fang-faction-item .faction-description {
     width: 100%;
-    min-height: 48px;
+    min-height: 42px;
+    padding: 8px 10px;
+    border-radius: 10px;
     resize: vertical;
 }
 
 .fang-dialog .fang-faction-visibility-row {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 6px;
+    gap: 8px;
     font-size: 0.82rem;
 }
 
 .fang-dialog .fang-faction-visibility-row label {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 6px;
     min-width: 0;
+    min-height: 34px;
+    margin: 0;
+    padding: 5px 8px;
+    border: 1px solid rgba(139, 0, 0, 0.12);
+    border-radius: 9px;
+    background: rgba(255, 252, 244, 0.72);
+    font-weight: 700;
+}
+
+.fang-dialog .fang-faction-actions-row {
+    display: flex;
+    justify-content: flex-end;
 }
 
 .fang-dialog .faction-icon-preview {
-    flex: 0 0 30px;
-    height: 30px;
-    border: 1px solid var(--fang-border-color);
-    border-radius: 3px;
+    flex: 0 0 34px;
+    height: 34px;
+    border: 1px solid rgba(139, 0, 0, 0.18);
+    border-radius: 9px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1184,21 +1703,40 @@ body.fang-monitor .fang-app-container .narrative-close {
     overflow: hidden;
 }
 
-.fang-dialog .fang-faction-icon-btn,
-.fang-dialog .fang-faction-delete-btn {
-    flex: 0 0 30px;
-    width: 30px;
+.fang-dialog .fang-faction-icon-btn {
+    flex: 0 0 34px;
+    width: 34px;
+    height: 34px;
     padding: 0;
+    border-radius: 9px;
+}
+
+.fang-dialog .fang-faction-delete-btn {
+    width: auto;
+    min-height: 32px;
+    padding: 5px 10px;
+    border: 1px solid rgba(139, 0, 0, 0.45);
+    border-radius: 9px;
+    background: rgba(139, 0, 0, 0.1);
+    color: var(--fang-primary-red);
+    font-weight: 800;
+}
+
+.fang-dialog .fang-faction-delete-btn:hover {
+    background: var(--fang-primary-red);
+    color: #fff;
 }
 
 .fang-dialog .fang-add-faction-btn {
     flex: 0 0 auto;
     width: 100%;
-    margin-bottom: 10px;
+    min-height: 42px;
+    margin-bottom: 0;
     border: 1px solid var(--fang-accent-gold);
-    background: rgba(139, 0, 0, 0.05);
-    color: var(--fang-text-color);
-    font-weight: 700;
+    border-radius: 12px;
+    background: rgba(139, 0, 0, 0.06);
+    color: var(--fang-primary-red);
+    font-weight: 800;
 }
 
 :root.fang-theme-cyberpunk .fang-dialog input[type="text"],
@@ -1237,6 +1775,40 @@ body.fang-theme-cyberpunk .fang-dialog .dialog-buttons button.cancel:hover {
     background-color: #15324b;
 }
 
+:root.fang-theme-cyberpunk .fang-dialog .fang-faction-manager__header,
+body.fang-theme-cyberpunk .fang-dialog .fang-faction-manager__header {
+    background: linear-gradient(135deg, rgba(255, 43, 139, 0.12), rgba(51, 217, 255, 0.1));
+    border-color: rgba(51, 217, 255, 0.35);
+    border-left-color: #ff2b8b;
+}
+
+:root.fang-theme-cyberpunk .fang-dialog .fang-faction-manager__header strong,
+body.fang-theme-cyberpunk .fang-dialog .fang-faction-manager__header strong {
+    color: #ff2b8b;
+}
+
+:root.fang-theme-cyberpunk .fang-dialog .fang-faction-manager__header p,
+body.fang-theme-cyberpunk .fang-dialog .fang-faction-manager__header p {
+    color: rgba(217, 236, 255, 0.76);
+}
+
+:root.fang-theme-cyberpunk .fang-dialog .fang-toggle-card,
+body.fang-theme-cyberpunk .fang-dialog .fang-toggle-card,
+:root.fang-theme-cyberpunk .fang-dialog .fang-faction-item,
+body.fang-theme-cyberpunk .fang-dialog .fang-faction-item,
+:root.fang-theme-cyberpunk .fang-dialog .fang-faction-visibility-row label,
+body.fang-theme-cyberpunk .fang-dialog .fang-faction-visibility-row label {
+    background: rgba(10, 26, 42, 0.78);
+    border-color: rgba(51, 217, 255, 0.28);
+    color: #d9ecff;
+}
+
+:root.fang-theme-cyberpunk .fang-dialog .fang-toggle-card__icon,
+body.fang-theme-cyberpunk .fang-dialog .fang-toggle-card__icon {
+    background: rgba(255, 43, 139, 0.14);
+    color: #33d9ff;
+}
+
 :root.fang-theme-cyberpunk .fang-dialog #fang-factions-list,
 body.fang-theme-cyberpunk .fang-dialog #fang-factions-list {
     background: rgba(8, 18, 30, 0.65);
@@ -1260,7 +1832,7 @@ body.fang-theme-cyberpunk .fang-dialog .faction-icon-preview {
 #fang-edge-context-menu {
     position: absolute;
     z-index: 1000;
-    width: 200px;
+    width: 220px;
     background: var(--fang-card-bg);
     border: 1px solid var(--fang-border-color);
     border-radius: 6px;
@@ -1290,7 +1862,8 @@ body.fang-theme-cyberpunk .fang-dialog .faction-icon-preview {
 }
 
 .fang-app-container .ctx-item {
-    padding: 10px 15px;
+    min-height: 44px;
+    padding: 11px 15px;
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -1298,6 +1871,10 @@ body.fang-theme-cyberpunk .fang-dialog .faction-icon-preview {
     font-size: 0.9rem;
     transition: background 0.15s, color 0.15s;
     border-left: 3px solid transparent;
+}
+
+.fang-app-container .ctx-item.ctx-primary {
+    font-weight: 800;
 }
 
 .fang-app-container .ctx-item i {
@@ -1320,6 +1897,95 @@ body.fang-theme-cyberpunk .fang-dialog .faction-icon-preview {
 
 .fang-app-container .ctx-item.danger i {
     color: #ff4d4d;
+}
+
+.fang-actor-editor-dialog .window-content {
+    padding: 0;
+}
+
+.fang-actor-editor {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    padding: 18px;
+    background: var(--fang-card-bg);
+}
+
+.fang-actor-editor .fang-editor-section,
+.fang-actor-editor .fang-editor-actions {
+    background: rgba(255, 255, 255, 0.72);
+    border: 1px solid var(--fang-border-color);
+    border-radius: 12px;
+    padding: 14px;
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.08);
+}
+
+.fang-actor-editor .fang-editor-section h3 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 10px;
+    border: 0;
+    color: var(--fang-primary-red);
+    font-size: 0.95rem;
+    text-transform: uppercase;
+}
+
+.fang-actor-editor label {
+    display: block;
+    margin: 8px 0 4px;
+    font-weight: 700;
+}
+
+.fang-actor-editor input[type="text"],
+.fang-actor-editor select,
+.fang-actor-editor textarea {
+    width: 100%;
+}
+
+.fang-actor-editor textarea {
+    min-height: 130px;
+    resize: vertical;
+}
+
+.fang-actor-editor .fang-editor-notes,
+.fang-actor-editor .fang-editor-actions {
+    grid-column: 1 / -1;
+}
+
+.fang-actor-editor .fang-condition-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.fang-actor-editor .fang-editor-check,
+.fang-actor-editor .fang-condition-grid label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 36px;
+}
+
+.fang-actor-editor .fang-editor-actions {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+}
+
+@media (max-width: 800px) {
+    .fang-actor-editor {
+        grid-template-columns: 1fr;
+    }
+
+    .fang-actor-editor .fang-editor-notes,
+    .fang-actor-editor .fang-editor-actions {
+        grid-column: auto;
+    }
+
+    .fang-actor-editor .fang-editor-actions {
+        grid-template-columns: 1fr;
+    }
 }
 
 /* --- Floating Hover Lore Tooltip --- */
@@ -2557,4 +3223,159 @@ body.fang-actor-panel-open #fang-so-actors-btn,
 body:has(.actors-sidebar.sidebar-popout:has(.window-content > *)) #fang-so-actors-btn {
     color: #ff3b3b !important;
     text-shadow: 0 0 10px rgba(255, 59, 59, 0.4);
+}
+
+/* === Beta Rail Layout Hardening ===
+   Older sidebar/tab rules live above this block and can otherwise override the
+   compact rail. Keep this late in the file so the modern layout wins. */
+.fang-app-container .sidebar {
+    flex: 0 0 76px !important;
+    width: 76px !important;
+    min-width: 76px !important;
+    max-width: 76px !important;
+    overflow: visible !important;
+}
+
+.fang-app-container .sidebar-header {
+    width: 76px !important;
+    min-height: 48px;
+    padding: 6px !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.fang-app-container .sidebar-header h1 {
+    display: grid !important;
+    place-items: center;
+    width: 100%;
+    height: 36px;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0;
+    color: var(--fang-header-text) !important;
+    font-size: 0.9rem !important;
+    line-height: 1 !important;
+    letter-spacing: 0.04em !important;
+    overflow: hidden;
+    text-transform: uppercase;
+}
+
+.fang-app-container .sidebar-header h1::before {
+    display: none !important;
+}
+
+.fang-app-container .sidebar-header h1::after {
+    content: none !important;
+}
+
+.fang-app-container .sidebar-header p,
+.fang-app-container .tabs-nav {
+    display: none !important;
+}
+
+.fang-app-container .fang-rail {
+    width: 76px;
+    flex: 0 0 auto;
+}
+
+.fang-app-container .fang-rail-btn {
+    min-width: 52px;
+    min-height: 52px;
+}
+
+.fang-app-container .fang-sidebar-status {
+    width: 76px;
+    padding: 8px 6px 10px;
+    border-bottom: 1px solid rgba(139, 0, 0, 0.35);
+}
+
+.fang-app-container .fang-sidebar-status .lock-banner {
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    padding: 0;
+    gap: 5px;
+    box-shadow: none;
+}
+
+.fang-app-container .fang-sidebar-status .lock-info {
+    min-height: 16px;
+}
+
+.fang-app-container .fang-sidebar-status .lock-info i {
+    color: rgba(40, 40, 40, 0.55);
+    font-size: 0.85rem;
+}
+
+.fang-app-container .fang-sidebar-status .fang-lock-btn {
+    width: 52px;
+    min-width: 52px;
+    height: 34px;
+    margin: 0 auto;
+    border-radius: 8px;
+    padding: 0;
+}
+
+.fang-app-container .fang-sidebar-status .lock-banner.no-editor,
+.fang-app-container .fang-sidebar-status .lock-banner.i-am-editor,
+.fang-app-container .fang-sidebar-status .lock-banner.someone-else-editing {
+    border-left: 0;
+}
+
+.fang-app-container .fang-sidebar-status .lock-banner.no-editor .lock-info i {
+    color: #6f6a5f;
+}
+
+.fang-app-container .fang-sidebar-status .lock-banner.no-editor .fang-lock-btn {
+    background: #fffaf0;
+    border: 2px solid var(--fang-accent-gold);
+    color: var(--fang-primary-red);
+    box-shadow: 0 2px 0 rgba(139, 0, 0, 0.18);
+}
+
+.fang-app-container .fang-sidebar-status .lock-banner.no-editor .fang-lock-btn:hover {
+    background: #fff2c4;
+    transform: translateY(-1px);
+}
+
+.fang-app-container .fang-sidebar-status .lock-banner.i-am-editor .lock-info i {
+    color: #198754;
+    filter: drop-shadow(0 0 4px rgba(25, 135, 84, 0.35));
+}
+
+.fang-app-container .fang-sidebar-status .lock-banner.i-am-editor .fang-lock-btn {
+    background: #198754;
+    border: 2px solid #d7f5df;
+    color: #fff;
+    box-shadow: 0 0 0 3px rgba(25, 135, 84, 0.18), 0 8px 18px rgba(25, 135, 84, 0.28);
+}
+
+.fang-app-container .fang-sidebar-status .lock-banner.i-am-editor .fang-lock-btn:hover {
+    background: #146c43;
+    transform: translateY(-1px);
+}
+
+.fang-app-container .fang-sidebar-status .lock-banner.someone-else-editing .lock-info i {
+    color: #9b1c1c;
+}
+
+.fang-app-container .fang-sidebar-status .lock-banner.someone-else-editing .fang-lock-btn {
+    background: #eee8dc;
+    border: 2px solid #b8afa0;
+    color: #7a7468;
+    box-shadow: none;
+}
+
+.fang-app-container:not(.sidebar-panel-open) .tabs-container {
+    display: none !important;
+}
+
+.fang-app-container.sidebar-panel-open .tabs-container {
+    display: block !important;
+}
+
+.fang-app-container .canvas-container {
+    min-width: 0;
 }

@@ -1,6 +1,6 @@
 # Ninjo's FANG (Foundry Actor Nexus Graph)
 
-**Current Version / Aktuelle Version:** 14.0.19
+**Current Version / Aktuelle Version:** 14.2605.1
 
 An interactive, self-arranging Actor Graph module for visualizing Character & NPC Relationships natively in Foundry VTT V13 and V14. FANG enables Game Masters and players to dynamically map out self-building relationship networks inside their game world.
 
@@ -12,9 +12,9 @@ An interactive, self-arranging Actor Graph module for visualizing Character & NP
 
 ### Features
 <p align="center">
-  <img src="assets/fang_ui_1.png" width="32%" title="Empty Graph UI" />
-  <img src="assets/fang_ui_2.png" width="32%" title="Directional and Normal Links" />
-  <img src="assets/fang_ui_3.png" width="32%" title="Smart Actor Dropdowns" />
+  <img src="assets/fang_ui_1.png" width="32%" title="Canvas Graph Overview" />
+  <img src="assets/fang_ui_2.png" width="32%" title="Canvas Quest Panel" />
+  <img src="assets/fang_ui_3.png" width="32%" title="Narrative Spotlight" />
 </p>
 
 - **In-Person Gaming Mode:** Enable a specialized workflow for local gaming sessions. Includes toggleable monitor controls that appear dynamically in the UI.
@@ -71,9 +71,9 @@ For the current development status and planned features, please refer to the [TO
 
 ### Features
 <p align="center">
-  <img src="assets/fang_ui_1.png" width="32%" title="Leerer Graph UI" />
-  <img src="assets/fang_ui_2.png" width="32%" title="Gerichtete und normale Verbindungen" />
-  <img src="assets/fang_ui_3.png" width="32%" title="Smarte Akteur Dropdowns" />
+  <img src="assets/fang_ui_1.png" width="32%" title="Canvas-Graph Übersicht" />
+  <img src="assets/fang_ui_2.png" width="32%" title="Canvas-Aufträge-Panel" />
+  <img src="assets/fang_ui_3.png" width="32%" title="Narratives Spotlight" />
 </p>
 
 - **In-Person Gaming Modus:** Spezialisierter Workflow für Vor-Ort-Runden. Schaltet optimierte Monitor-Steuerelemente frei, die dynamisch in der UI erscheinen.

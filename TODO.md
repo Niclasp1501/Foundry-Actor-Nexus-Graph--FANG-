@@ -1,6 +1,6 @@
 # FANG (Foundry Actor Nexus Graph) - TODO / Feature Requests
 
-Status synced to `v14.0.18` / Stand synchronisiert auf `v14.0.18`.
+Status synced to `v14.2605.1` / Stand synchronisiert auf `v14.2605.1`.
 
 ## 1. Features and Improvements / Features und Verbesserungen
 
@@ -25,10 +25,17 @@ Status synced to `v14.0.18` / Stand synchronisiert auf `v14.0.18`.
 
 - [ ] **2.1 Fully hide tokens for players/monitor / Token komplett ausblenden (Spieler/Monitor):** Hide token including incoming/outgoing links for player/monitor views / Vollstaendig unsichtbar inkl. eingehender/ausgehender Verbindungen (nur fuer Spieler/Monitor).
 - [ ] **2.2 GM secret nodes / GM-Secret-Nodes:** Hidden story nodes with later GM reveal / Versteckte Story-Knoten mit spaeterem Reveal durch den GM.
+- [ ] **2.3 Player edit leak audit / Spieler-Bearbeitung gegen Spoiler pruefen:** Player-facing edit dialogs must never expose hidden-node GM fields, true names, aliases, player-view settings, journals, quests, factions, or conditions that would reveal secrets / Spieler-Dialoge duerfen bei verdeckten Knoten keine GM-Felder, echten Namen, Alias-/Spieleransicht-Einstellungen, Journale, Auftraege, Fraktionen oder Zustaende verraten.
 
-## 3. Internationalization and Misc / Internationalisierung und Sonstiges
+## 3. Timeline and Player Knowledge / Chronik und Spielerwissen
 
-- [x] **3.1 Additional languages / Weitere Sprachen:** Added French, Spanish, Portuguese (Brazil), Italian, Polish, Russian, Czech, and Dutch / Hinzugefuegt: Franzoesisch, Spanisch, Portugiesisch (Brasilien), Italienisch, Polnisch, Russisch, Tschechisch und Niederlaendisch.
+- [ ] **3.1 Player Story Timeline / Spieler-Chronik:** Curated, GM-controlled timeline of story events linked to nodes, factions, quests, and sessions / Kuratierte, vom GM gesteuerte Chronik mit Ereignissen, die mit Knoten, Fraktionen, Auftraegen und Sitzungen verknuepft sind.
+- [ ] **3.2 Timeline visibility rules / Chronik-Sichtbarkeit:** Timeline entries must use the same central visibility policy as nodes, links, quests, and factions / Chronik-Eintraege muessen dieselbe zentrale Sichtbarkeitslogik wie Knoten, Verbindungen, Auftraege und Fraktionen nutzen.
+- [ ] **3.3 Timeline first beta scope / Chronik erster Beta-Umfang:** Manual GM entries, player read-only view, linked node focus, visible/GM-only flag, and no automatic event spam / Manuelle GM-Eintraege, reine Spieler-Leseansicht, Fokus auf verknuepfte Knoten, Sichtbar/Nur-GM-Schalter und keine automatische Ereignisflut.
+
+## 4. Internationalization and Misc / Internationalisierung und Sonstiges
+
+- [x] **4.1 Additional languages / Weitere Sprachen:** Added French, Spanish, Portuguese (Brazil), Italian, Polish, Russian, Czech, and Dutch / Hinzugefuegt: Franzoesisch, Spanisch, Portugiesisch (Brasilien), Italienisch, Polnisch, Russisch, Tschechisch und Niederlaendisch.
 
 ## Removed from Roadmap / Aus der Planung entfernt
 
