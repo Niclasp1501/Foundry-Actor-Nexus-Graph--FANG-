@@ -1,7 +1,26 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Module versions follow the Foundry-targeted `<foundry-major>.<YYMM>.<patch>` release scheme documented in `AGENTS.md`.
+
+## [14.2605.2] - 2026-05-12
+### Added
+- **Canvas-first Interaction Model:** Added the compact FANG rail, in-canvas edit tools, double-press panel toggles, and clearer edit-lock states for faster table use.
+- **Player-Safe Hidden Contact Editing:** Hidden contacts now keep true GM information protected while players can still maintain allowed aliases, player notes, safe state markers, and optionally visible quests.
+- **Quest Canvas Panel:** Reworked node quests into an in-canvas panel with clearer linked quest rows, hidden-by-default additions, visible toggles, journal opening, and spotlight actions.
+- **Faction Visibility Controls:** Added faction descriptions plus GM/player visibility controls for faction visibility, legend inclusion, and faction line rendering.
+
+### Changed
+- **Modernized Sidebar and Panels:** Reduced the permanent sidebar, moved management tasks into floating panels, and aligned faction/background/admin UI with the current fantasy/cyberpunk theme system.
+- **Connection Editing Flow:** Relationship editing is safer and supports changing directed links after creation, including direction flipping where appropriate.
+- **README Refresh:** Updated the README screenshots and user-facing stable/beta documentation for the new UI.
+- **Version Bump:** Advanced the stable module version to `14.2605.2`.
+
+### Fixed
+- **Graph Stability After Direct Connections:** Hardened quick-connect link creation so malformed edge state no longer breaks graph rendering.
+- **Journal Button Robustness:** FANG journal buttons use delegated click handling so saved journal links remain compatible across Foundry v13/v14 render paths.
+- **Localization Coverage:** Updated German/English strings for the redesigned UI and kept generated locale coverage in sync for all shipped languages.
+- **Module Language Labels:** Corrected language display names in `module.json` so Foundry shows readable locale names.
 
 ## [14.0.19] - 2026-04-22
 ### Added
