@@ -3,6 +3,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Module versions follow the Foundry-targeted `<foundry-major>.<YYMM>.<patch>` release scheme documented in `AGENTS.md`.
 
+## [14.2605.3] - 2026-05-14
+### Fixed
+- **Quest Journal Page Links:** Quest links now support both complete Journal entries and individual Journal pages. Opening a page-linked quest now opens the parent Journal directly on the correct page, and Quest Spotlight reads the page content instead of falling back to an empty view.
+- **Portuguese Brazil Localization:** Cleaned up mojibake artifacts in the new UI, faction, quick-connect, and quest-management strings.
+- **Localization Validator:** Refined encoding checks so valid Portuguese characters such as `Ã` in `NÃO` are not reported as false-positive mojibake warnings.
+
 ## [14.2605.2] - 2026-05-12
 ### Added
 - **Canvas-first Interaction Model:** Added the compact FANG rail, in-canvas edit tools, double-press panel toggles, and clearer edit-lock states for faster table use.

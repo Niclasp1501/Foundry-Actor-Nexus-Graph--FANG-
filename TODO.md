@@ -1,6 +1,6 @@
 # FANG (Foundry Actor Nexus Graph) - TODO / Feature Requests
 
-Status synced to `v14.2605.2` / Stand synchronisiert auf `v14.2605.2`.
+Status synced to `v14.2605.3` / Stand synchronisiert auf `v14.2605.3`.
 
 ## 1. Features and Improvements / Features und Verbesserungen
 
