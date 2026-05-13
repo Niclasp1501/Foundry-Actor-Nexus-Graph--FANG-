@@ -2409,7 +2409,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                             if (!targetNode.questUuids) targetNode.questUuids = [];
                             const alreadyLinked = targetNode.questUuids.some(q => q.uuid === data.uuid);
                             if (!alreadyLinked) {
-                                targetNode.questUuids.push({ uuid: data.uuid, name: droppedDoc.name, visibleToPlayers: false });
+                                targetNode.questUuids.push({ uuid: data.uuid, name: this._getJournalDocumentTitle(droppedDoc), visibleToPlayers: false });
                             }
                             if (!targetNode.conditions) targetNode.conditions = [];
                             if (!targetNode.conditions.includes("questgiver")) {
@@ -2871,16 +2871,60 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
     async _openNodeJournal(node) {
         if (!node?.journalUuid) return;
-        const doc = await fromUuid(node.journalUuid);
-        if (doc) doc.sheet.render(true);
+        await this._openJournalDocument(node.journalUuid);
     }
 
     async _openNodeQuest(node) {
         if (!node?.questUuids?.length) return;
         const quest = node.questUuids[0];
-        const doc = await fromUuid(quest.uuid);
-        if (doc) doc.sheet.render(true);
-        else if (!game.user.isGM) ui.notifications.warn("Quest Journal not found or you lack permissions.");
+        const opened = await this._openJournalDocument(quest.uuid);
+        if (!opened && !game.user.isGM) ui.notifications.warn("Quest Journal not found or you lack permissions.");
+    }
+
+    async _resolveJournalDocument(uuid) {
+        if (!uuid) return null;
+        const doc = await fromUuid(uuid);
+        if (!doc || !["JournalEntry", "JournalEntryPage"].includes(doc.documentName)) return null;
+        return doc;
+    }
+
+    async _openJournalDocument(uuid) {
+        const doc = await this._resolveJournalDocument(uuid);
+        if (!doc) return false;
+
+        if (doc.documentName === "JournalEntryPage") {
+            const parent = doc.parent;
+            if (parent?.sheet) {
+                parent.sheet.render(true, { pageId: doc.id });
+                return true;
+            }
+            doc.sheet?.render?.(true);
+            return true;
+        }
+
+        doc.sheet?.render?.(true);
+        return true;
+    }
+
+    _getJournalDocumentTitle(doc) {
+        if (!doc) return "Quest Journal";
+        if (doc.documentName === "JournalEntryPage" && doc.parent?.name) return `${doc.parent.name}: ${doc.name}`;
+        return doc.name || "Quest Journal";
+    }
+
+    _getJournalDocumentTextContent(doc) {
+        if (!doc) return "";
+
+        if (doc.documentName === "JournalEntryPage") {
+            if (doc.type === "text" && doc.text?.content) return doc.text.content;
+            return "";
+        }
+
+        const page = doc.pages?.contents?.find(p => p.type === "text" && p.text?.content);
+        if (page?.text?.content) return page.text.content;
+
+        // Legacy Journal compatibility
+        return doc.content || "";
     }
 
     _getNodeQuestsForCurrentUser(node) {
@@ -2895,7 +2939,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
         if (!node.questUuids) node.questUuids = [];
         if (!node.questUuids.some(q => q.uuid === uuid)) {
-            node.questUuids.push({ uuid, name: doc.name, visibleToPlayers });
+            node.questUuids.push({ uuid, name: this._getJournalDocumentTitle(doc), visibleToPlayers });
         }
         if (!node.conditions) node.conditions = [];
         if (!node.conditions.includes("questgiver")) node.conditions.push("questgiver");
@@ -3003,9 +3047,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         panel.querySelectorAll(".fang-quest-open").forEach(button => {
             button.addEventListener("click", async (event) => {
                 const row = event.currentTarget.closest(".fang-quest-manager-row");
-                const doc = row?.dataset?.uuid ? await fromUuid(row.dataset.uuid) : null;
-                if (doc) doc.sheet.render(true);
-                else ui.notifications.warn("Quest Journal not found or permissions missing.");
+                const opened = row?.dataset?.uuid ? await this._openJournalDocument(row.dataset.uuid) : false;
+                if (!opened) ui.notifications.warn("Quest Journal not found or permissions missing.");
             });
         });
         panel.querySelectorAll(".fang-quest-spotlight").forEach(button => {
@@ -5849,9 +5892,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                             clickTimer = setTimeout(async () => {
                                 clickTimer = null;
                                 // Long Press: Open Journal Sheet
-                                const doc = await fromUuid(uuid);
-                                if (doc) doc.sheet.render(true);
-                                else ui.notifications.warn("Quest Journal not found or permissions missing.");
+                                const opened = await this._openJournalDocument(uuid);
+                                if (!opened) ui.notifications.warn("Quest Journal not found or permissions missing.");
                             }, 500);
                         });
 
@@ -5911,20 +5953,11 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     async _getQuestSpotlightPayload(questUuid) {
-        const doc = await fromUuid(questUuid);
+        const doc = await this._resolveJournalDocument(questUuid);
         if (!doc) return null;
 
-        // Extract content from the first text page
-        let content = "";
-        let title = doc.name;
-
-        const page = doc.pages.contents[0];
-        if (page && page.type === "text" && page.text && page.text.content) {
-            content = page.text.content;
-        } else if (doc.pages.size === 0 && doc.content) {
-            // Legacy Journal compatibility
-            content = doc.content;
-        }
+        const title = this._getJournalDocumentTitle(doc);
+        let content = this._getJournalDocumentTextContent(doc);
 
         if (!content) content = "...";
 
