@@ -157,7 +157,10 @@
             "LockReleased": "Edit lock released.",
             "AlreadyEditing": "is currently editing the graph.",
             "SpotlightHiddenBlocked": "Reveal the character first before using Spotlight!",
-            "MonitorViewClosed": "Monitor view closed."
+            "MonitorViewClosed": "Monitor view closed.",
+            "OtherUser": "another user",
+            "LockStompTitle": "Take over edit lock?",
+            "LockStompConfirm": "{user} is currently editing. Take over anyway?"
         },
         "ContextMenu": {
             "EditRole": "Role / Organization",

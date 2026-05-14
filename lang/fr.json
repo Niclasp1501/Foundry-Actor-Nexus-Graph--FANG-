@@ -157,7 +157,10 @@
             "LockReleased": "Verrou d'édition libéré.",
             "AlreadyEditing": "est actuellement en train de modifier le graphique.",
             "SpotlightHiddenBlocked": "Révélez d'abord le personnage avant d'utiliser la mise en lumière !",
-            "MonitorViewClosed": "Vue du moniteur fermée."
+            "MonitorViewClosed": "Vue du moniteur fermée.",
+            "OtherUser": "un autre utilisateur",
+            "LockStompTitle": "Reprendre le verrou d'édition ?",
+            "LockStompConfirm": "{user} est en train de modifier. Reprendre quand même ?"
         },
         "ContextMenu": {
             "EditRole": "Rôle / Organisation",

@@ -3,6 +3,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [14.1.2-beta.3] - 2026-05-15
+### Fixed
+- **GM-only Elemente bleiben in dynamisch eingefügten Sub-Bäumen ungeschützt:** Die CSS-Regel `body.role-player .gm-only { display:none }` existierte, aber die Klasse wurde nie gesetzt. Stattdessen versteckte eine JS-Schleife (`gmControls.forEach(el.style.display='none')`) GM-Buttons nur bei Initial-Render. Klasse wird jetzt in `Hooks.once("ready")` global gesetzt (`role-player` / `role-gm`), redundante Schleife entfernt.
+- **Edit-Lock-Race / GM-Stomping:** GM konnte ohne Warnung einen aktiven Edit-Lock eines Spielers oder anderen GMs überschreiben. Nun: vor `setFlag` wird der Flag nochmals frisch gelesen, bei Konflikt erscheint ein Bestätigungsdialog mit dem Namen des aktuellen Bearbeiters. Standardantwort ist „Abbrechen".
+- **Localize/Concat-Operator-Bug bei Lock-Notification:** `name + " " + localize(key) || fallback` — `||` bindet an die gesamte Konkatenation, der Fallback war unerreichbar und bei fehlendem Key wurde der Rohschlüsselname angezeigt. Lokalisierter String wird jetzt separat berechnet, dann mit Username konkateniert.
+- **Quest-Picker Null-Check in falscher Reihenfolge:** `picker.querySelector(...)` lief vor `if (!picker) return`. Crash wenn das Element fehlte. Guard wurde vorgezogen.
+
+### Added
+- 3 neue i18n-Keys für Lock-Stomp-Dialog (`FANG.Messages.OtherUser`, `LockStompTitle`, `LockStompConfirm`) in allen 10 Locales.
+
 ## [14.1.1-beta.2] - 2026-05-15
 ### Fixed
 - **Edge-Richtungs-Pfeil nicht mehr sichtbar (Regression aus 14.1.0-beta.1):** Der Inline-Style-Refactor hatte die `style="display:none"`-Schalter auf `class="hidden"` umgestellt — die JS toggelte aber weiterhin `style.display`, was wegen `!important` in `.hidden` nicht mehr griff. Pfeile gerichteter Edges werden jetzt wieder korrekt ein-/ausgeblendet via `classList.toggle("hidden", …)`.

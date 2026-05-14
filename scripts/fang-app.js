@@ -312,8 +312,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             if (sidebar) {
                 const isMonitor = game.user.name.toLowerCase().includes(monitorName);
                 sidebar.style.display = (allowPlayerEdit && isGMOnline && !isMonitor) ? "flex" : "none";
-                const gmControls = sidebar.querySelectorAll(".gm-only");
-                gmControls.forEach(el => el.style.display = "none");
+                // GM-only elements are hidden via body.role-player .gm-only CSS rule (main.js sets the class).
             }
             if (game.user.name.toLowerCase().includes(monitorName)) {
                 this.element.classList.add("fang-fullscreen-player");
@@ -2386,9 +2385,10 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
                 // Multiple quests – show the in-canvas quest picker panel
                 const picker = this.element.querySelector("#fang-quest-picker");
+                if (!picker) return; // Guard BEFORE dereferencing
                 const pickerTitle = picker.querySelector("#fang-quest-picker-title");
                 const pickerList = picker.querySelector("#fang-quest-picker-list");
-                if (!picker) return;
+                if (!pickerTitle || !pickerList) return;
 
                 // Set header text: character name
                 pickerTitle.textContent = node.name;
@@ -5533,12 +5533,27 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         } else {
             // Take the lock
             if (game.user.isGM) {
+                // Edit-Lock-Race protection: if someone else (player OR another GM) already holds
+                // the lock, ask before stomping. Re-fetch the flag to minimise race window.
+                const freshLock = entry.getFlag("fang", "editLock");
+                if (freshLock && freshLock.userId !== game.user.id) {
+                    const otherName = freshLock.userName || game.i18n.localize("FANG.Messages.OtherUser") || "another user";
+                    const confirmMsg = (game.i18n.localize("FANG.Messages.LockStompConfirm") || "{user} is currently editing. Take over anyway?").replace("{user}", otherName);
+                    const ok = await Dialog.confirm({
+                        title: game.i18n.localize("FANG.Messages.LockStompTitle") || "Take over edit lock?",
+                        content: `<p>${confirmMsg}</p>`,
+                        defaultYes: false
+                    });
+                    if (!ok) return;
+                }
                 await entry.setFlag("fang", "editLock", {
                     userId: game.user.id,
                     userName: game.user.name,
                     time: Date.now()
                 });
-                ui.notifications.info(game.user.name + " " + game.i18n.localize("FANG.Messages.LockAcquired") || "hat die Bearbeitung übernommen.");
+                // Bug #6: localize first, then concat — || does not bind to localize() alone
+                const lockMsg = game.i18n.localize("FANG.Messages.LockAcquired") || "hat die Bearbeitung übernommen.";
+                ui.notifications.info(`${game.user.name} ${lockMsg}`);
                 game.socket.emit("module.fang", { action: "lockStatusUpdate" });
                 this.render();
             } else {

@@ -157,7 +157,10 @@
             "LockReleased": "Blokada edycji zwolniona.",
             "AlreadyEditing": "aktualnie edytuje graf.",
             "SpotlightHiddenBlocked": "Najpierw odkryj postać, zanim użyjesz reflektora!",
-            "MonitorViewClosed": "Widok monitorowania zamknięty."
+            "MonitorViewClosed": "Widok monitorowania zamknięty.",
+            "OtherUser": "inny użytkownik",
+            "LockStompTitle": "Przejąć blokadę edycji?",
+            "LockStompConfirm": "{user} aktualnie edytuje. Przejąć mimo to?"
         },
         "ContextMenu": {
             "EditRole": "Rola / Organizacja",

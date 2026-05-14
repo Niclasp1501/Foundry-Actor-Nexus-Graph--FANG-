@@ -157,7 +157,10 @@
             "LockReleased": "Bewerkingslock vrijgegeven.",
             "AlreadyEditing": "is momenteel bezig met het bewerken van de grafiek.",
             "SpotlightHiddenBlocked": "Maak het personage eerst zichtbaar voordat je Spotlight gebruikt!",
-            "MonitorViewClosed": "Monitorweergave gesloten."
+            "MonitorViewClosed": "Monitorweergave gesloten.",
+            "OtherUser": "een andere gebruiker",
+            "LockStompTitle": "Bewerkingsslot overnemen?",
+            "LockStompConfirm": "{user} is momenteel aan het bewerken. Toch overnemen?"
         },
         "ContextMenu": {
             "EditRole": "Rol / Organisatie",

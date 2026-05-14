@@ -157,7 +157,10 @@
             "LockReleased": "Blocco di modifica rilasciato.",
             "AlreadyEditing": "sta attualmente modificando il grafico.",
             "SpotlightHiddenBlocked": "Mostra prima il personaggio prima di usare lo Spotlight!",
-            "MonitorViewClosed": "Vista monitor chiusa."
+            "MonitorViewClosed": "Vista monitor chiusa.",
+            "OtherUser": "un altro utente",
+            "LockStompTitle": "Acquisire blocco di modifica?",
+            "LockStompConfirm": "{user} sta modificando. Acquisire comunque?"
         },
         "ContextMenu": {
             "EditRole": "Ruolo / Organizzazione",

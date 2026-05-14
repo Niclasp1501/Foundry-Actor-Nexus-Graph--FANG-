@@ -157,7 +157,10 @@
             "LockReleased": "Блокировка редактирования снята.",
             "AlreadyEditing": "в настоящее время редактирует график.",
             "SpotlightHiddenBlocked": "Сначала покажите персонажа, прежде чем использовать Spotlight!",
-            "MonitorViewClosed": "Окно монитора закрыто."
+            "MonitorViewClosed": "Окно монитора закрыто.",
+            "OtherUser": "другой пользователь",
+            "LockStompTitle": "Перехватить блокировку?",
+            "LockStompConfirm": "{user} сейчас редактирует. Всё равно перехватить?"
         },
         "ContextMenu": {
             "EditRole": "Роль / Организация",

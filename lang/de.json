@@ -157,7 +157,10 @@
             "LockReleased": "Bearbeitung freigegeben.",
             "AlreadyEditing": "bearbeitet den Graphen gerade.",
             "SpotlightHiddenBlocked": "Decke den Charakter zuerst auf, bevor du das Spotlight nutzt!",
-            "MonitorViewClosed": "Monitor Ansicht geschlossen."
+            "MonitorViewClosed": "Monitor Ansicht geschlossen.",
+            "OtherUser": "ein anderer Benutzer",
+            "LockStompTitle": "Bearbeitung übernehmen?",
+            "LockStompConfirm": "{user} bearbeitet gerade. Trotzdem übernehmen?"
         },
         "ContextMenu": {
             "EditRole": "Rolle / Organisation",

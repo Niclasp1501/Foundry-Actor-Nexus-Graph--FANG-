@@ -531,6 +531,11 @@ Hooks.once("init", () => {
 });
 
 Hooks.once("ready", async () => {
+  // Mark body for role-based CSS — enables `body.role-player .gm-only { display:none }`
+  // to hide GM-only elements globally, including dynamically added ones.
+  document.body.classList.toggle("role-player", !game.user.isGM);
+  document.body.classList.toggle("role-gm", game.user.isGM);
+
   // Global, robust "Ghost Shell" cleanup for Foundry v13/v14 Actor Directory popouts.
   // Runs for players + GM, regardless of Only-Sheet usage.
   if (!window._fangActorDirectoryGhostFixInstalled) {

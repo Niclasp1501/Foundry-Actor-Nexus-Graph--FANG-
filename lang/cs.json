@@ -157,7 +157,10 @@
             "LockReleased": "Zámek úprav uvolněn.",
             "AlreadyEditing": "aktuálně upravuje graf.",
             "SpotlightHiddenBlocked": "Nejprve odhalte postavu, než použijete Reflektor!",
-            "MonitorViewClosed": "Monitorovací okno zavřeno."
+            "MonitorViewClosed": "Monitorovací okno zavřeno.",
+            "OtherUser": "jiný uživatel",
+            "LockStompTitle": "Převzít zámek úprav?",
+            "LockStompConfirm": "{user} právě upravuje. Přesto převzít?"
         },
         "ContextMenu": {
             "EditRole": "Role / Organizace",

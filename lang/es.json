@@ -157,7 +157,10 @@
             "LockReleased": "Bloqueo de edición liberado.",
             "AlreadyEditing": "está editando el gráfico actualmente.",
             "SpotlightHiddenBlocked": "¡Revela primero al personaje antes de usar el foco narrativo!",
-            "MonitorViewClosed": "Vista del monitor cerrada."
+            "MonitorViewClosed": "Vista del monitor cerrada.",
+            "OtherUser": "otro usuario",
+            "LockStompTitle": "¿Tomar el bloqueo de edición?",
+            "LockStompConfirm": "{user} está editando actualmente. ¿Tomar el control de todas formas?"
         },
         "ContextMenu": {
             "EditRole": "Rol / Organización",
