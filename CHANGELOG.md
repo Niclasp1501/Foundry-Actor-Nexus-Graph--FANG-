@@ -3,6 +3,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [14.1.3-beta.4] - 2026-05-15
+### Added
+- **Volle ARIA-Tab-Pattern-Unterstützung:** Tabs in der Sidebar haben jetzt `aria-controls`, `tabindex="0"`/`-1` sync zu `aria-selected`, und entsprechende Tab-Panels haben `role="tabpanel"` + `aria-labelledby`. Vollständige Keyboard-Navigation: ← → ↑ ↓ wechselt zwischen sichtbaren Tabs (überspringt versteckte GM-only Tabs für Spieler), Home/End springen an Anfang/Ende, Enter/Space aktivieren. Screenreader-konform.
+
+### Changed
+- **Quest-Picker-Items komplett in CSS:** Die JS, die `.fang-quest-pick-item` per `innerHTML` baute, hatte beim Design-Refactor wieder Inline-Styles und manuelle `mouseover`/`mouseout`-Handler für den Hover-Effekt bekommen. Jetzt eine reine CSS-Klasse `.fang-quest-pick-item` mit `:hover`-Pseudoklasse, ohne Inline-Styles und ohne dedizierte JS-Handler.
+- **Visibility-Strategie vereinheitlicht:** Über 10 Stellen in `fang-app.js`, die `element.style.display = "none"/"block"/"flex"` setzten (Context-Menu-Items, Sidebar, Lock-Button), nutzen jetzt durchgängig `classList.toggle("hidden", …)`. Die `.hidden`-Klasse mit `!important` ist die alleinige Wahrheit. Das verhindert weitere Regressionen wie den Edge-Pfeil-Bug aus 14.1.0-beta.1.
+
 ## [14.1.2-beta.3] - 2026-05-15
 ### Fixed
 - **GM-only Elemente bleiben in dynamisch eingefügten Sub-Bäumen ungeschützt:** Die CSS-Regel `body.role-player .gm-only { display:none }` existierte, aber die Klasse wurde nie gesetzt. Stattdessen versteckte eine JS-Schleife (`gmControls.forEach(el.style.display='none')`) GM-Buttons nur bei Initial-Render. Klasse wird jetzt in `Hooks.once("ready")` global gesetzt (`role-player` / `role-gm`), redundante Schleife entfernt.

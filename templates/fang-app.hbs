@@ -7,13 +7,16 @@
         </header>
 
         <nav class="tabs-nav" role="tablist" aria-label="{{localize 'FANG.Name'}}">
-            <button type="button" class="tab-btn active" role="tab" aria-selected="true" data-tab="editor">
+            <button type="button" id="fang-tab-btn-editor" class="tab-btn active" role="tab"
+                aria-selected="true" aria-controls="fang-tabpanel-editor" tabindex="0" data-tab="editor">
                 <i class="fas fa-hammer" aria-hidden="true"></i> {{localize "FANG.UI.TabEditor"}}
             </button>
-            <button type="button" class="tab-btn gm-only" role="tab" aria-selected="false" data-tab="view">
+            <button type="button" id="fang-tab-btn-view" class="tab-btn gm-only" role="tab"
+                aria-selected="false" aria-controls="fang-tabpanel-view" tabindex="-1" data-tab="view">
                 <i class="fas fa-eye" aria-hidden="true"></i> {{localize "FANG.UI.TabView"}}
             </button>
-            <button type="button" class="tab-btn gm-only" role="tab" aria-selected="false" data-tab="advanced"
+            <button type="button" id="fang-tab-btn-advanced" class="tab-btn gm-only" role="tab"
+                aria-selected="false" aria-controls="fang-tabpanel-advanced" tabindex="-1" data-tab="advanced"
                 aria-label="{{localize 'FANG.UI.TabAdvanced'}}">
                 <i class="fas fa-cogs" aria-hidden="true"></i>
             </button>
@@ -21,7 +24,8 @@
 
         <div class="tabs-container">
             <!-- EDITOR TAB -->
-            <section class="tab-content active" data-tab="editor">
+            <section id="fang-tabpanel-editor" class="tab-content active" role="tabpanel"
+                aria-labelledby="fang-tab-btn-editor" data-tab="editor">
                 <!-- Edit Lock Banner -->
                 <div id="fang-lock-banner" class="lock-banner no-editor">
                     <div class="lock-info">
@@ -104,7 +108,8 @@
             </section>
 
             <!-- VIEW / PRESENTATION TAB -->
-            <section class="tab-content gm-only" data-tab="view">
+            <section id="fang-tabpanel-view" class="tab-content gm-only" role="tabpanel"
+                aria-labelledby="fang-tab-btn-view" data-tab="view">
                 <div class="control-group">
                     <h3>{{localize "FANG.UI.Presentation"}}</h3>
                     <div class="input-stack">
@@ -200,7 +205,8 @@
             </section>
 
             <!-- ADVANCED TAB -->
-            <section class="tab-content gm-only" data-tab="advanced">
+            <section id="fang-tabpanel-advanced" class="tab-content gm-only" role="tabpanel"
+                aria-labelledby="fang-tab-btn-advanced" data-tab="advanced">
                 <div class="control-group">
                     <h3>{{localize "FANG.UI.ManageFactions"}}</h3>
                     <div class="input-stack">

@@ -311,7 +311,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             const isGMOnline = game.users.some(u => u.isGM && u.active);
             if (sidebar) {
                 const isMonitor = game.user.name.toLowerCase().includes(monitorName);
-                sidebar.style.display = (allowPlayerEdit && isGMOnline && !isMonitor) ? "flex" : "none";
+                sidebar.classList.toggle("hidden", !(allowPlayerEdit && isGMOnline && !isMonitor));
                 // GM-only elements are hidden via body.role-player .gm-only CSS rule (main.js sets the class).
             }
             if (game.user.name.toLowerCase().includes(monitorName)) {
@@ -399,21 +399,61 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         canvas.addEventListener("contextmenu", this._onCanvasRightClick.bind(this));
         canvas.addEventListener("mousemove", this._handleCanvasMouseMove.bind(this));
 
-        // Tab Navigation Logic (with ARIA state sync)
-        const tabBtns = this.element.querySelectorAll(".tab-btn");
+        // Tab Navigation Logic (with full ARIA tab-pattern support)
+        const tabBtns = Array.from(this.element.querySelectorAll(".tab-btn"));
         const tabContents = this.element.querySelectorAll(".tab-content");
-        tabBtns.forEach(btn => {
-            btn.addEventListener("click", (e) => {
-                const targetTab = e.currentTarget.dataset.tab;
-                tabBtns.forEach(b => {
-                    b.classList.remove("active");
-                    if (b.hasAttribute("role")) b.setAttribute("aria-selected", "false");
-                });
-                tabContents.forEach(c => c.classList.remove("active"));
-                e.currentTarget.classList.add("active");
-                if (e.currentTarget.hasAttribute("role")) e.currentTarget.setAttribute("aria-selected", "true");
-                const targetContent = this.element.querySelector(`.tab-content[data-tab="${targetTab}"]`);
-                if (targetContent) targetContent.classList.add("active");
+
+        const activateTab = (btn) => {
+            const targetTab = btn.dataset.tab;
+            tabBtns.forEach(b => {
+                b.classList.remove("active");
+                if (b.hasAttribute("role")) {
+                    b.setAttribute("aria-selected", "false");
+                    b.setAttribute("tabindex", "-1");
+                }
+            });
+            tabContents.forEach(c => c.classList.remove("active"));
+            btn.classList.add("active");
+            if (btn.hasAttribute("role")) {
+                btn.setAttribute("aria-selected", "true");
+                btn.setAttribute("tabindex", "0");
+            }
+            const targetContent = this.element.querySelector(`.tab-content[data-tab="${targetTab}"]`);
+            if (targetContent) targetContent.classList.add("active");
+        };
+
+        // Visible tabs only — hidden GM-only buttons are skipped by keyboard nav
+        const visibleTabs = () => tabBtns.filter(b => b.offsetParent !== null);
+
+        tabBtns.forEach((btn, idx) => {
+            btn.addEventListener("click", (e) => activateTab(e.currentTarget));
+
+            // ARIA tab-pattern: ← → Home End to navigate, Enter/Space to activate
+            btn.addEventListener("keydown", (e) => {
+                const tabs = visibleTabs();
+                const i = tabs.indexOf(e.currentTarget);
+                let next = null;
+                switch (e.key) {
+                    case "ArrowRight":
+                    case "ArrowDown":
+                        next = tabs[(i + 1) % tabs.length];
+                        break;
+                    case "ArrowLeft":
+                    case "ArrowUp":
+                        next = tabs[(i - 1 + tabs.length) % tabs.length];
+                        break;
+                    case "Home":
+                        next = tabs[0];
+                        break;
+                    case "End":
+                        next = tabs[tabs.length - 1];
+                        break;
+                }
+                if (next) {
+                    e.preventDefault();
+                    activateTab(next);
+                    next.focus();
+                }
             });
         });
 
@@ -2323,24 +2363,25 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const isPlayerView = !game.user.isGM;
         const tokenIsHidden = node.hidden;
 
-        newBtnRole.style.display = hasLock ? "block" : "none";
-        newBtnLore.style.display = hasLock ? "block" : "none";
-        if (newBtnOpenJournal) newBtnOpenJournal.style.display = (game.user.isGM && node.journalUuid) ? "block" : "none";
-        if (newBtnOpenQuest) newBtnOpenQuest.style.display = (node.questUuids && node.questUuids.length > 0) ? "block" : "none";
-        newBtnDelete.style.display = hasLock ? "block" : "none";
-        if (newBtnIdentity) newBtnIdentity.style.display = (game.user.isGM && hasLock) ? "block" : "none";
-        if (newBtnReplacePlaceholder) newBtnReplacePlaceholder.style.display = (game.user.isGM && hasLock && node.isPlaceholder) ? "block" : "none";
-        if (newBtnCondition) newBtnCondition.style.display = (game.user.isGM && hasLock) ? "block" : "none";
+        newBtnRole.classList.toggle("hidden", !hasLock);
+        newBtnLore.classList.toggle("hidden", !hasLock);
+        if (newBtnOpenJournal) newBtnOpenJournal.classList.toggle("hidden", !(game.user.isGM && node.journalUuid));
+        if (newBtnOpenQuest) newBtnOpenQuest.classList.toggle("hidden", !(node.questUuids && node.questUuids.length > 0));
+        // Visibility via .hidden class — single source of truth across the codebase
+        newBtnDelete.classList.toggle("hidden", !hasLock);
+        if (newBtnIdentity) newBtnIdentity.classList.toggle("hidden", !(game.user.isGM && hasLock));
+        if (newBtnReplacePlaceholder) newBtnReplacePlaceholder.classList.toggle("hidden", !(game.user.isGM && hasLock && node.isPlaceholder));
+        if (newBtnCondition) newBtnCondition.classList.toggle("hidden", !(game.user.isGM && hasLock));
 
         // Protection: Hide info buttons for players viewing hidden tokens
         if (isPlayerView && tokenIsHidden) {
-            newBtnRole.style.display = "none";
-            newBtnLore.style.display = "none";
-            if (newBtnOpenQuest) newBtnOpenQuest.style.display = "none";
+            newBtnRole.classList.add("hidden");
+            newBtnLore.classList.add("hidden");
+            if (newBtnOpenQuest) newBtnOpenQuest.classList.add("hidden");
         }
 
         // Spotlight is always visible
-        newBtnSpotlight.style.display = "block";
+        newBtnSpotlight.classList.remove("hidden");
 
         // --- Context Action: Spotlight ---
         newBtnSpotlight.addEventListener("click", () => {
@@ -2393,11 +2434,11 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 // Set header text: character name
                 pickerTitle.textContent = node.name;
 
-                // Build the list of quests
+                // Build the list of quests (styling lives in CSS — .fang-quest-pick-item)
                 pickerList.innerHTML = node.questUuids.map((q, i) => `
-                    <li class="fang-quest-pick-item ctx-item" data-idx="${i}" style="padding: 9px 14px; cursor: pointer; display: flex; align-items: center; gap: 10px; border-left: 3px solid transparent; transition: background 0.15s, border-color 0.15s;">
-                        <i class="fas fa-scroll" style="color: var(--fang-accent-gold); width:16px; text-align:center;"></i>
-                        <span style="font-size:0.92rem;">${q.name || "Quest " + (i + 1)}</span>
+                    <li class="fang-quest-pick-item ctx-item" data-idx="${i}">
+                        <i class="fas fa-scroll" aria-hidden="true"></i>
+                        <span class="fang-quest-pick-label">${q.name || "Quest " + (i + 1)}</span>
                     </li>
                 `).join("");
 
@@ -2415,7 +2456,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 picker.style.left = `${px}px`;
                 picker.style.top = `${py}px`;
 
-                // Click handlers on items
+                // Click handlers on items — hover is now pure CSS (:hover rule)
                 picker.querySelectorAll(".fang-quest-pick-item").forEach(el => {
                     el.addEventListener("click", async () => {
                         picker.classList.add("hidden");
@@ -2425,16 +2466,6 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                         const doc = await fromUuid(q.uuid);
                         if (doc) doc.sheet.render(true);
                         else ui.notifications.warn("Quest Journal not found or you lack permissions.");
-                    });
-                    el.addEventListener("mouseover", () => {
-                        el.style.background = "var(--fang-nav-bg)";
-                        el.style.borderLeftColor = "var(--fang-primary-red)";
-                        el.style.color = "var(--fang-primary-red)";
-                    });
-                    el.addEventListener("mouseout", () => {
-                        el.style.background = "";
-                        el.style.borderLeftColor = "transparent";
-                        el.style.color = "";
                     });
                 });
 
@@ -3123,9 +3154,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         btnDelete.parentNode.replaceChild(newBtnDelete, btnDelete);
 
         const hasLock = this._canEditGraph(true);
-        newBtnEdit.style.display = hasLock ? "block" : "none";
-        newBtnDelete.style.display = hasLock ? "block" : "none";
-        newBtnSpotlight.style.display = "block"; // Always available
+        newBtnEdit.classList.toggle("hidden", !hasLock);
+        newBtnDelete.classList.toggle("hidden", !hasLock);
+        newBtnSpotlight.classList.remove("hidden"); // Always available
 
         // Action: Edit
         newBtnEdit.addEventListener("click", () => {
@@ -4485,7 +4516,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const width = isMonitor ? window.innerWidth : this.width;
         const height = isMonitor ? window.innerHeight : this.height;
         const sidebar = this.element ? this.element.querySelector(".sidebar") : null;
-        const actualWidth = (sidebar && sidebar.style.display !== "none") ? width - 300 : width;
+        const sidebarVisible = sidebar && !sidebar.classList.contains("hidden");
+        const actualWidth = sidebarVisible ? width - 300 : width;
 
         let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
         this.graphData.nodes.forEach(d => {
@@ -5620,13 +5652,13 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             const allowPlayerEdit = game.settings.get("fang", "allowPlayerEditing");
             if (!game.user.isGM) {
                 banner.classList.remove("hidden");
-                btnToggleLock.style.display = allowPlayerEdit ? "flex" : "none";
+                btnToggleLock.classList.toggle("hidden", !allowPlayerEdit);
                 // Players have no View/Advanced anyway, so we can lock their whole sidebar for simplicity
                 sidebar?.classList.add("sidebar-locked");
             } else {
                 // GM: Show the button even if no lock, so they can take it
                 banner.classList.remove("hidden");
-                btnToggleLock.style.display = "flex";
+                btnToggleLock.classList.remove("hidden");
             }
         } else {
             // ACTIVE LOCK
@@ -5642,14 +5674,14 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 btnText.textContent = game.i18n.localize("FANG.UI.ReleaseLock");
                 btnIcon.className = "fas fa-lock"; // Use closed lock when holding
                 btnToggleLock.classList.add("active");
-                btnToggleLock.style.display = "flex";
+                btnToggleLock.classList.remove("hidden");
                 if (bannerIcon) bannerIcon.className = "fas fa-lock"; // Match the button
             } else {
                 // SOMEONE ELSE IS EDITING
                 banner.classList.remove("hidden");
                 banner.classList.add("someone-else-editing");
                 lockText.textContent = game.i18n.format("FANG.UI.CurrentlyEditing", { user: lockUser });
-                btnToggleLock.style.display = "none";
+                btnToggleLock.classList.add("hidden");
                 if (bannerIcon) bannerIcon.className = "fas fa-lock";
 
                 // Block ONLY the editor tab for GMs, but the whole sidebar for players
