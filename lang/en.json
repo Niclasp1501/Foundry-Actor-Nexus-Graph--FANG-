@@ -282,7 +282,12 @@
             "QuestAttachTitle": "Attach another quest journal",
             "QuestLinkedTitle": "Quests",
             "QuestDropHint": "Drop a Journal here to add it as a hidden quest.",
-            "HiddenQuestsVisible": "Show quests while hidden"
+            "HiddenQuestsVisible": "Show quests while hidden",
+            "ActorDropVisibilityTitle": "Show Token",
+            "ActorDropVisibilityBody": "How should {name} appear to players?",
+            "ActorDropAliasHint": "The alias is only used when you add the token hidden.",
+            "ActorDropVisible": "Show openly",
+            "ActorDropHidden": "Show hidden"
         },
         "History": {
             "Timeline": "Chronicle",

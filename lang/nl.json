@@ -282,7 +282,12 @@
             "QuestAttachTitle": "Koppel nog een questjournaal",
             "QuestLinkedTitle": "Quests",
             "QuestDropHint": "Sleep hier een journal naartoe om het als verborgen quest toe te voegen.",
-            "HiddenQuestsVisible": "Toon quests wanneer verborgen"
+            "HiddenQuestsVisible": "Toon quests wanneer verborgen",
+            "ActorDropVisibilityTitle": "Show Token",
+            "ActorDropVisibilityBody": "How should {name} appear to players?",
+            "ActorDropAliasHint": "The alias is only used when you add the token hidden.",
+            "ActorDropVisible": "Show openly",
+            "ActorDropHidden": "Show hidden"
         },
         "History": {
             "Timeline": "Chronicle",

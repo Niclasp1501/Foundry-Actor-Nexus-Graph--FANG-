@@ -282,7 +282,12 @@
             "QuestAttachTitle": "Lier un autre journal de quête",
             "QuestLinkedTitle": "Qu?tes",
             "QuestDropHint": "D?posez un journal ici pour l?ajouter comme qu?te masqu?e.",
-            "HiddenQuestsVisible": "Afficher les quêtes quand masqué"
+            "HiddenQuestsVisible": "Afficher les quêtes quand masqué",
+            "ActorDropVisibilityTitle": "Show Token",
+            "ActorDropVisibilityBody": "How should {name} appear to players?",
+            "ActorDropAliasHint": "The alias is only used when you add the token hidden.",
+            "ActorDropVisible": "Show openly",
+            "ActorDropHidden": "Show hidden"
         },
         "History": {
             "Timeline": "Chronicle",

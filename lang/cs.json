@@ -282,7 +282,12 @@
             "QuestAttachTitle": "Připojit další deník úkolu",
             "QuestLinkedTitle": "?koly",
             "QuestDropHint": "P?et?hn?te sem den?k a p?idejte ho jako skryt? ?kol.",
-            "HiddenQuestsVisible": "Zobrazit úkoly, když je kontakt skrytý"
+            "HiddenQuestsVisible": "Zobrazit úkoly, když je kontakt skrytý",
+            "ActorDropVisibilityTitle": "Show Token",
+            "ActorDropVisibilityBody": "How should {name} appear to players?",
+            "ActorDropAliasHint": "The alias is only used when you add the token hidden.",
+            "ActorDropVisible": "Show openly",
+            "ActorDropHidden": "Show hidden"
         },
         "History": {
             "Timeline": "Chronicle",

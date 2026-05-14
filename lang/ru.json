@@ -282,7 +282,12 @@
             "QuestAttachTitle": "Прикрепить еще один журнал задания",
             "QuestLinkedTitle": "???????",
             "QuestDropHint": "?????????? ?????? ????, ????? ???????? ??? ??? ??????? ???????.",
-            "HiddenQuestsVisible": "Показывать задания, когда скрыто"
+            "HiddenQuestsVisible": "Показывать задания, когда скрыто",
+            "ActorDropVisibilityTitle": "Show Token",
+            "ActorDropVisibilityBody": "How should {name} appear to players?",
+            "ActorDropAliasHint": "The alias is only used when you add the token hidden.",
+            "ActorDropVisible": "Show openly",
+            "ActorDropHidden": "Show hidden"
         },
         "History": {
             "Timeline": "Chronicle",

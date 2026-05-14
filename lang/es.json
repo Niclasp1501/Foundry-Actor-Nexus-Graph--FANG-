@@ -282,7 +282,12 @@
             "QuestAttachTitle": "Vincular otro diario de misión",
             "QuestLinkedTitle": "Misiones",
             "QuestDropHint": "Suelta un diario aqu? para a?adirlo como misi?n oculta.",
-            "HiddenQuestsVisible": "Mostrar misiones mientras está oculto"
+            "HiddenQuestsVisible": "Mostrar misiones mientras está oculto",
+            "ActorDropVisibilityTitle": "Show Token",
+            "ActorDropVisibilityBody": "How should {name} appear to players?",
+            "ActorDropAliasHint": "The alias is only used when you add the token hidden.",
+            "ActorDropVisible": "Show openly",
+            "ActorDropHidden": "Show hidden"
         },
         "History": {
             "Timeline": "Chronicle",

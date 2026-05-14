@@ -282,7 +282,12 @@
             "QuestAttachTitle": "Collega un altro diario missione",
             "QuestLinkedTitle": "Missioni",
             "QuestDropHint": "Rilascia qui un diario per aggiungerlo come missione nascosta.",
-            "HiddenQuestsVisible": "Mostra missioni quando nascosto"
+            "HiddenQuestsVisible": "Mostra missioni quando nascosto",
+            "ActorDropVisibilityTitle": "Show Token",
+            "ActorDropVisibilityBody": "How should {name} appear to players?",
+            "ActorDropAliasHint": "The alias is only used when you add the token hidden.",
+            "ActorDropVisible": "Show openly",
+            "ActorDropHidden": "Show hidden"
         },
         "History": {
             "Timeline": "Chronicle",

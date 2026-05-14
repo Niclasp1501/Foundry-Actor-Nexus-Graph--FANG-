@@ -282,7 +282,12 @@
             "QuestAttachTitle": "Weiteres Quest-Journal verknüpfen",
             "QuestLinkedTitle": "Aufträge",
             "QuestDropHint": "Lege ein Journal hier ab. Es wird zunächst als verborgener Auftrag verknüpft.",
-            "HiddenQuestsVisible": "Aufträge bei verdeckter Ansicht anzeigen"
+            "HiddenQuestsVisible": "Aufträge bei verdeckter Ansicht anzeigen",
+            "ActorDropVisibilityTitle": "Token anzeigen",
+            "ActorDropVisibilityBody": "Wie soll {name} fuer Spieler erscheinen?",
+            "ActorDropAliasHint": "Der Alias wird nur verwendet, wenn du den Token verdeckt hinzufuegst.",
+            "ActorDropVisible": "Offen anzeigen",
+            "ActorDropHidden": "Verdeckt anzeigen"
         },
         "History": {
             "Timeline": "Chronik",

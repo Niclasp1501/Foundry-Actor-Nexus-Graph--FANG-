@@ -3774,8 +3774,168 @@ body:has(.actors-sidebar.sidebar-popout:has(.window-content > *)) #fang-so-actor
     color: rgba(234, 252, 255, 0.75);
 }
 
+.fang-app-container .fang-canvas-prompt-panel {
+    position: absolute;
+    inset: 0;
+    z-index: 1780;
+    pointer-events: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(0, 0, 0, 0.22);
+    backdrop-filter: blur(2px);
+}
+
+.fang-app-container .fang-canvas-prompt-card {
+    position: relative;
+    width: min(520px, 92%);
+    min-width: 320px;
+    background:
+        radial-gradient(circle at top left, rgba(212, 175, 55, 0.12), transparent 34%),
+        #fdfbf7;
+    border: 2px solid var(--fang-accent-gold);
+    border-radius: 8px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.48), 0 0 20px rgba(212, 175, 55, 0.18);
+    overflow: hidden;
+    animation: fangCinemaEnter 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.fang-app-container .fang-canvas-prompt-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 20px 56px 12px 24px;
+    border-bottom: 2px solid var(--fang-accent-gold);
+    color: #3a2a12;
+}
+
+.fang-app-container .fang-canvas-prompt-header h3 {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: inherit;
+    font-size: 1.25rem;
+    line-height: 1.15;
+    text-transform: uppercase;
+}
+
+.fang-app-container .fang-canvas-prompt-header h3 i {
+    color: var(--fang-accent-gold);
+}
+
+.fang-app-container .fang-canvas-prompt-close {
+    position: absolute;
+    top: 13px;
+    right: 13px;
+    width: 34px;
+    height: 34px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: #888;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    font-size: 1.25rem;
+}
+
+.fang-app-container .fang-canvas-prompt-close:hover {
+    color: var(--fang-primary-red);
+    background: rgba(139, 0, 0, 0.06);
+}
+
+.fang-app-container .fang-canvas-prompt-body {
+    padding: 18px 24px 8px;
+    color: var(--fang-text-color);
+}
+
+.fang-app-container .fang-canvas-prompt-body p {
+    margin: 0 0 12px;
+}
+
+.fang-app-container .fang-canvas-prompt-fields {
+    display: grid;
+    gap: 6px;
+}
+
+.fang-app-container .fang-canvas-prompt-fields label {
+    font-weight: 800;
+}
+
+.fang-app-container .fang-canvas-prompt-fields input[type="text"] {
+    width: 100%;
+    min-height: 42px;
+    border: 1px solid rgba(58, 42, 18, 0.22);
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.84);
+    color: var(--fang-text-color);
+    font-family: var(--fang-font-main);
+    font-size: 0.95rem;
+    padding: 8px 12px;
+}
+
+.fang-app-container .fang-canvas-prompt-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 8px;
+    padding: 12px 24px 24px;
+}
+
+.fang-app-container .fang-canvas-prompt-action {
+    width: auto;
+    min-height: 38px;
+    border: 1px solid rgba(58, 42, 18, 0.18);
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.72);
+    color: #3a2a12;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-family: var(--fang-font-main);
+    font-weight: 800;
+    padding: 7px 13px;
+}
+
+.fang-app-container .fang-canvas-prompt-action.primary {
+    border: 2px solid var(--fang-accent-gold);
+    background: var(--fang-primary-red);
+    color: var(--fang-header-text);
+    box-shadow: 0 2px 0 rgba(0, 0, 0, 0.16);
+}
+
+.fang-app-container .fang-canvas-prompt-action:hover {
+    transform: translateY(-1px);
+}
+
+.fang-app-container.fang-theme-cyberpunk .fang-canvas-prompt-card {
+    background: rgba(3, 15, 26, 0.95);
+    border-color: #33d9ff;
+}
+
+.fang-app-container.fang-theme-cyberpunk .fang-canvas-prompt-header {
+    color: #33d9ff;
+    border-bottom-color: #33d9ff;
+}
+
+.fang-app-container.fang-theme-cyberpunk .fang-canvas-prompt-fields input[type="text"] {
+    background: rgba(8, 18, 31, 0.82);
+    border-color: rgba(51, 217, 255, 0.42);
+    color: #eafcff;
+}
+
 @media (max-width: 760px) {
     .fang-app-container .fang-history-canvas-card {
+        width: 94%;
+        min-width: 0;
+    }
+
+    .fang-app-container .fang-canvas-prompt-card {
         width: 94%;
         min-width: 0;
     }
@@ -3784,13 +3944,15 @@ body:has(.actors-sidebar.sidebar-popout:has(.window-content > *)) #fang-so-actor
     .fang-history-filter-row,
     .fang-history-entry-media,
     .fang-history-form-row,
-    .fang-history-editor-actions {
+    .fang-history-editor-actions,
+    .fang-app-container .fang-canvas-prompt-actions {
         align-items: stretch;
         flex-direction: column;
     }
 
     .fang-history-editor-actions .fang-history-save,
-    .fang-history-editor-actions .fang-history-cancel {
+    .fang-history-editor-actions .fang-history-cancel,
+    .fang-app-container .fang-canvas-prompt-action {
         width: 100%;
     }
 }

@@ -992,6 +992,87 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         this._getHistoryPanelHost()?.querySelector(".fang-history-canvas-panel")?.remove();
     }
 
+    _closeCanvasPrompt() {
+        this._getHistoryPanelHost()?.querySelector(".fang-canvas-prompt-panel")?.remove();
+    }
+
+    _openCanvasPrompt({ title, icon = "fa-circle-question", body = "", content = "", actions = [] } = {}) {
+        return new Promise(resolve => {
+            const panelHost = this._getHistoryPanelHost();
+            this._closeCanvasPrompt();
+            const panel = document.createElement("div");
+            panel.className = "fang-canvas-prompt-panel";
+            const actionButtons = actions.map(action => `
+                <button type="button" class="fang-canvas-prompt-action ${this._escapeHtml(action.className || "")}" data-action="${this._escapeHtml(action.id)}">
+                    <i class="fas ${this._escapeHtml(action.icon || "fa-check")}"></i>
+                    <span>${this._escapeHtml(action.label || "")}</span>
+                </button>`).join("");
+            panel.innerHTML = `
+                <div class="fang-canvas-prompt-card">
+                    <header class="fang-canvas-prompt-header">
+                        <h3><i class="fas ${this._escapeHtml(icon)}"></i> ${this._escapeHtml(title || "")}</h3>
+                        <button type="button" class="fang-canvas-prompt-close" title="${this._escapeHtml(this._localize("FANG.UI.ClosePanel", "Close"))}"><i class="fas fa-times"></i></button>
+                    </header>
+                    <div class="fang-canvas-prompt-body">
+                        ${body ? `<p>${this._escapeHtml(body)}</p>` : ""}
+                        ${content}
+                    </div>
+                    <div class="fang-canvas-prompt-actions">
+                        ${actionButtons}
+                    </div>
+                </div>`;
+            panelHost?.appendChild(panel);
+
+            const close = (value) => {
+                panel.remove();
+                resolve(value);
+            };
+            panel.querySelector(".fang-canvas-prompt-close")?.addEventListener("click", () => close(null));
+            panel.querySelectorAll(".fang-canvas-prompt-action").forEach(button => {
+                button.addEventListener("click", () => {
+                    const action = actions.find(item => item.id === button.dataset.action);
+                    close(typeof action?.resolve === "function" ? action.resolve(panel) : action?.id);
+                });
+            });
+        });
+    }
+
+    async _promptActorDropVisibility(actor) {
+        if (!game.user?.isGM) {
+            return { hidden: false, displayName: "" };
+        }
+        const unknown = this._localize("FANG.Dropdowns.Unknown", "Unbekannt");
+        return this._openCanvasPrompt({
+            title: this._localize("FANG.Dialogs.ActorDropVisibilityTitle", "Token anzeigen"),
+            icon: "fa-user-plus",
+            body: this._localize("FANG.Dialogs.ActorDropVisibilityBody", "Wie soll der neue Token fuer Spieler erscheinen?").replace("{name}", actor?.name || ""),
+            content: `
+                <div class="fang-canvas-prompt-fields">
+                    <label>${this._escapeHtml(this._localize("FANG.Dialogs.IdentityAlias", "Alias"))}</label>
+                    <input type="text" class="fang-drop-alias" value="${this._escapeHtml(unknown)}">
+                    <p class="hint">${this._escapeHtml(this._localize("FANG.Dialogs.ActorDropAliasHint", "Der Alias wird nur verwendet, wenn du den Token verdeckt hinzufuegst."))}</p>
+                </div>`,
+            actions: [
+                {
+                    id: "visible",
+                    label: this._localize("FANG.Dialogs.ActorDropVisible", "Offen anzeigen"),
+                    icon: "fa-eye",
+                    className: "primary",
+                    resolve: () => ({ hidden: false, displayName: "" })
+                },
+                {
+                    id: "hidden",
+                    label: this._localize("FANG.Dialogs.ActorDropHidden", "Verdeckt anzeigen"),
+                    icon: "fa-user-secret",
+                    resolve: (panel) => ({
+                        hidden: true,
+                        displayName: panel.querySelector(".fang-drop-alias")?.value?.trim() || unknown
+                    })
+                }
+            ]
+        });
+    }
+
     _openAddHistoryEntryDialog({ node = null, refresh = null, entry = null } = {}) {
         if (entry ? !this._canEditHistoryEntry(entry) : !this._canCreateHistoryEntry()) return;
         const isGM = game.user?.isGM;
@@ -3325,6 +3406,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                                 let sourceNode = this.graphData.nodes.find(n => n.id === actor.id || n.actorId === actor.id);
                                 let createdSourceNode = false;
                                 if (!sourceNode) {
+                                    const visibility = await this._promptActorDropVisibility(actor);
+                                    if (!visibility) return;
                                     // Add near target to make the simulation look nice
                                     let generatedLorePageId = null;
                                     const entry = await this.getJournalEntry();
@@ -3337,8 +3420,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                                         id: actor.id, actorId: actor.id, isPlaceholder: false, placeholderType: null, img: actor.prototypeToken?.texture?.src || actor.img || null,
                                         name: actor.name, originalName: actor.name,
                                         x: x - 20, y: y - 20,
-                                        hidden: game.settings.get("fang", "defaultHiddenMode"),
-                                        displayName: "", playerNotes: "", showHiddenQuestsToPlayers: true, conditions: [],
+                                        hidden: visibility.hidden,
+                                        displayName: visibility.displayName || "", playerNotes: "", showHiddenQuestsToPlayers: true, conditions: [],
                                         playerLorePageId: generatedLorePageId
                                     };
 
@@ -3423,6 +3506,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 existingNode.fy = null;
             } else {
                 // Add new node at precise location with a tiny random offset to prevent perfect stacking
+                const visibility = await this._promptActorDropVisibility(actor);
+                if (!visibility) return;
                 const jitterX = x + (Math.random() - 0.5) * 5;
                 const jitterY = y + (Math.random() - 0.5) * 5;
 
@@ -3448,8 +3533,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     factionId: null,
                     x: jitterX,
                     y: jitterY,
-                    hidden: game.settings.get("fang", "defaultHiddenMode"),
-                    displayName: "",
+                    hidden: visibility.hidden,
+                    displayName: visibility.displayName || "",
                     playerNotes: "",
                     showHiddenQuestsToPlayers: true,
                     conditions: [],
