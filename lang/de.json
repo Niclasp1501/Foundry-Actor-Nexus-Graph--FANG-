@@ -5,6 +5,7 @@
         "ButtonOpen": "Ninjo's FANG",
         "KeybindingHint": "Öffnet den interaktiven FANG Akteur Beziehungs-Graphen.",
         "UI": {
+            "Color": "Farbe",
             "TabEditor": "Editor",
             "TabView": "Ansicht",
             "TabAdvanced": "Weitere Funktionen",
@@ -104,7 +105,11 @@
                     "Midnight": "Mitternacht",
                     "Red": "Blutrot",
                     "Grey": "Schiefergrau",
-                    "Black": "Tiefschwarz"
+                    "Black": "Tiefschwarz",
+                    "DeepMahogany": "Dunkles Mahagoni",
+                    "Forest": "Wald",
+                    "Ocean": "Ozean",
+                    "Shadow": "Schatten"
                 }
             }
         },
@@ -119,6 +124,7 @@
             "OpenBtn": "FANG Graph Öffnen"
         },
         "Messages": {
+            "SaveSuccess": "Änderungen gespeichert.",
             "ExportSuccess": "Graph-Daten erfolgreich exportiert.",
             "ImportSuccess": "Graph-Daten erfolgreich importiert.",
             "ImportError": "Import fehlgeschlagen: Ungültiges Dateiformat.",

@@ -5,6 +5,7 @@
         "ButtonOpen": "Ninjo's FANG",
         "KeybindingHint": "Opens the interactive FANG Actor relationship graph.",
         "UI": {
+            "Color": "Color",
             "TabEditor": "Editor",
             "TabView": "View",
             "TabAdvanced": "Advanced",
@@ -104,7 +105,11 @@
                     "Midnight": "Midnight",
                     "Red": "Blood Red",
                     "Grey": "Slate Grey",
-                    "Black": "Deep Black"
+                    "Black": "Deep Black",
+                    "DeepMahogany": "Deep Mahogany",
+                    "Forest": "Forest",
+                    "Ocean": "Ocean",
+                    "Shadow": "Shadow"
                 }
             }
         },
@@ -119,6 +124,7 @@
             "OpenBtn": "Open FANG Graph"
         },
         "Messages": {
+            "SaveSuccess": "Changes saved.",
             "ExportSuccess": "Graph data exported successfully.",
             "ImportSuccess": "Graph data imported successfully.",
             "ImportError": "Failed to import graph: Invalid file format.",

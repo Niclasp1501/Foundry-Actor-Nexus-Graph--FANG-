@@ -581,24 +581,6 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         container.dataset.fangTheme = normalizedTheme;
     }
 
-    _onClose(options) {
-        this._releaseMyLock();
-        document.body.classList.remove("fang-monitor");
-        if (this._resizeObserver) this._resizeObserver.disconnect();
-        if (this._monitorStyleObserver) this._monitorStyleObserver.disconnect();
-
-        // Restore Foundry UI containers if we hid them
-        ["#ui-bottom", "#hotbar", "#players", "#ui-top", "#ui-left", "#ui-right", "#navigation", "#controls", "#sidebar"].forEach(sel => {
-            const el = document.querySelector(sel);
-            if (el) el.style.removeProperty("display");
-        });
-        document.body.style.removeProperty("padding");
-        document.body.style.removeProperty("margin");
-        document.body.style.removeProperty("overflow");
-
-        super._onClose(options);
-    }
-
     setPosition(position = {}) {
         if (game.user.name.toLowerCase().includes("monitor")) {
             // Force absolute fullscreen for Monitor to avoid Foundry UI offsets
@@ -5084,10 +5066,11 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 if (payload.sourcePortrait && sourcePortrait) sourcePortrait.src = payload.sourcePortrait;
                 if (payload.targetPortrait && targetPortrait) targetPortrait.src = payload.targetPortrait;
 
-                // Handle directional indicator
+                // Handle directional indicator — toggle .hidden class
+                // (style.display cannot override CSS .hidden { display: none !important })
                 const directionalIndicator = overlay.querySelector(".edge-directional-indicator");
                 if (directionalIndicator) {
-                    directionalIndicator.style.display = payload.directional ? "flex" : "none";
+                    directionalIndicator.classList.toggle("hidden", !payload.directional);
                 }
 
                 overlay.classList.remove("hidden");
@@ -5486,7 +5469,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     _onClose(options) {
-        super._onClose(options);
+        // 1. Animation / simulation cleanup
         if (this._spotlightTimeout) clearTimeout(this._spotlightTimeout);
         if (this._spotlightOverlayTimeout) clearTimeout(this._spotlightOverlayTimeout);
         if (this._animationFrameId) cancelAnimationFrame(this._animationFrameId);
@@ -5495,8 +5478,23 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         this._initialZoomApplied = false;
         this.transform = null;
 
-        // Release edit lock if I am the holder
+        // 2. Release edit lock if I am the holder
         this._releaseMyLock();
+
+        // 3. Monitor-Mode cleanup: restore Foundry UI we may have hidden
+        document.body.classList.remove("fang-monitor");
+        if (this._resizeObserver) this._resizeObserver.disconnect();
+        if (this._monitorStyleObserver) this._monitorStyleObserver.disconnect();
+
+        ["#ui-bottom", "#hotbar", "#players", "#ui-top", "#ui-left", "#ui-right", "#navigation", "#controls", "#sidebar"].forEach(sel => {
+            const el = document.querySelector(sel);
+            if (el) el.style.removeProperty("display");
+        });
+        document.body.style.removeProperty("padding");
+        document.body.style.removeProperty("margin");
+        document.body.style.removeProperty("overflow");
+
+        return super._onClose(options);
     }
 
     async _releaseMyLock() {

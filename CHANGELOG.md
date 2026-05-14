@@ -3,6 +3,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [14.1.1-beta.2] - 2026-05-15
+### Fixed
+- **Edge-Richtungs-Pfeil nicht mehr sichtbar (Regression aus 14.1.0-beta.1):** Der Inline-Style-Refactor hatte die `style="display:none"`-Schalter auf `class="hidden"` umgestellt — die JS toggelte aber weiterhin `style.display`, was wegen `!important` in `.hidden` nicht mehr griff. Pfeile gerichteter Edges werden jetzt wieder korrekt ein-/ausgeblendet via `classList.toggle("hidden", …)`.
+- **Monitor-Mode UI-Leak beim Schließen:** Zwei `_onClose`-Methoden in `FangApplication` haben sich gegenseitig überschrieben. Die erste (Cleanup von `#ui-bottom`, `#hotbar`, `#players`, `body.fang-monitor`, ResizeObserver-Disconnect, Body-Style-Reset) lief nie. Nach Schließen des Monitor-Modes blieb die Foundry-UI versteckt. Beide Methoden zu einer gemerged.
+- **6 fehlende i18n-Keys in `en.json`:** `FANG.Messages.SaveSuccess`, `FANG.UI.Color`, `FANG.UI.Background.Palette.{DeepMahogany, Forest, Ocean, Shadow}`. Wurden im Code referenziert (`fang-app.js:79-82`, `:1790`, `:3409`) aber existierten nicht — Foundry zeigte den Rohschlüsselnamen. Schlüssel ergänzt und in alle 9 weiteren Locales übersetzt (cs, de, es, fr, it, nl, pl, pt-BR, ru).
+
 ## [14.1.0-beta.1] - 2026-05-04
 ### Beta — Design System Pass
 A focused design refactor; no functional/gameplay changes. Marked **beta** because the surface area touched is large.
