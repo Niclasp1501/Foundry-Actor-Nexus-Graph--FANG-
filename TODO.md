@@ -29,9 +29,10 @@ Status synced to `v14.2605.3` / Stand synchronisiert auf `v14.2605.3`.
 
 ## 3. Timeline and Player Knowledge / Chronik und Spielerwissen
 
-- [ ] **3.1 Player Story Timeline / Spieler-Chronik:** Curated, GM-controlled timeline of story events linked to nodes, factions, quests, and sessions / Kuratierte, vom GM gesteuerte Chronik mit Ereignissen, die mit Knoten, Fraktionen, Auftraegen und Sitzungen verknuepft sind.
-- [ ] **3.2 Timeline visibility rules / Chronik-Sichtbarkeit:** Timeline entries must use the same central visibility policy as nodes, links, quests, and factions / Chronik-Eintraege muessen dieselbe zentrale Sichtbarkeitslogik wie Knoten, Verbindungen, Auftraege und Fraktionen nutzen.
-- [ ] **3.3 Timeline first beta scope / Chronik erster Beta-Umfang:** Manual GM entries, player read-only view, linked node focus, visible/GM-only flag, and no automatic event spam / Manuelle GM-Eintraege, reine Spieler-Leseansicht, Fokus auf verknuepfte Knoten, Sichtbar/Nur-GM-Schalter und keine automatische Ereignisflut.
+- [x] **3.1 Player Story Timeline / Spieler-Chronik:** Curated, GM-controlled timeline of story events linked to nodes, factions, quests, and sessions / Kuratierte, vom GM gesteuerte Chronik mit Ereignissen, die mit Knoten, Fraktionen, Auftraegen und Sitzungen verknuepft sind.
+- [x] **3.2 Timeline visibility rules / Chronik-Sichtbarkeit:** Timeline entries must use the same central visibility policy as nodes, links, quests, and factions / Chronik-Eintraege muessen dieselbe zentrale Sichtbarkeitslogik wie Knoten, Verbindungen, Auftraege und Fraktionen nutzen.
+- [x] **3.3 Timeline first beta scope / Chronik erster Beta-Umfang:** In-canvas chronicle with manual events, player-safe visibility, token-level views, and editable player-facing text / In-Canvas-Chronik mit manuellen Ereignissen, spielersicherer Sichtbarkeit, Token-Ansichten und bearbeitbarem Spielertext.
+- [x] **3.4 Chronicle automation / Chronik-Automatik:** Graph actions create narrative default entries for appearing tokens, revealed identities, and new relationships while preserving hidden-token facades / Graph-Aktionen erzeugen erzaehlerische Standardeintraege fuer auftauchende Tokens, enthuellte Identitaeten und neue Beziehungen, ohne verdeckte Token aufzudecken.
 
 ## 4. Internationalization and Misc / Internationalisierung und Sonstiges
 

@@ -3,6 +3,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Module versions follow the Foundry-targeted `<foundry-major>.<YYMM>.<patch>` release scheme documented in `AGENTS.md`.
 
+## [Unreleased]
+### Added
+- **Chronicle MVP Beta:** Added a versioned `fang.history` store for story events, automatic game-day prefill with manual override, a global day-grouped chronicle view, and a token-level chronicle view from the node context menu. Entries keep GM/private text separate from player-safe text so automation can build on the same model without exposing hidden-token secrets.
+- **Chronicle Auto Entries:** Normal graph actions now add narrative chronicle entries when tokens appear, hidden identities are revealed, and new relationships become visible. Hidden tokens use their alias and placeholder portrait for player-facing entries.
+- **Automated Quest and Faction Chronicle Entries:** Revealed player-facing Auftraege and visible faction assignments now create chronicle entries from their existing workflows instead of requiring manual category selection.
+- **Player Chronicle Edits:** Players can create and update the visible title/text of player-facing chronicle entries without taking the graph edit lock; GMs can still fully edit or delete entries.
+
 ## [14.2605.3] - 2026-05-14
 ### Fixed
 - **Quest Journal Page Links:** Quest links now support both complete Journal entries and individual Journal pages. Opening a page-linked quest now opens the parent Journal directly on the correct page, and Quest Spotlight reads the page content instead of falling back to an empty view.

@@ -395,6 +395,818 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         return quests.filter(q => this._canUserSeeQuest(node, q, user));
     }
 
+    _localize(key, fallback) {
+        const value = game.i18n.localize(key);
+        return value && value !== key ? value : fallback;
+    }
+
+    _escapeHtml(value) {
+        const escapeHtml = foundry.utils.escapeHTML ?? ((input) => String(input ?? "").replace(/[&<>"']/g, (char) => ({
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#39;"
+        }[char])));
+        return escapeHtml(String(value ?? ""));
+    }
+
+    _getHistoryCategories() {
+        return [
+            { kind: "encounter", icon: "fa-handshake", label: this._localize("FANG.History.Categories.Encounter", "Encounter") },
+            { kind: "insight", icon: "fa-lightbulb", label: this._localize("FANG.History.Categories.Insight", "Insight") },
+            { kind: "quest", icon: "fa-scroll", label: this._localize("FANG.History.Categories.Quest", "Quest") },
+            { kind: "relationship", icon: "fa-link", label: this._localize("FANG.History.Categories.Relationship", "Relationship") },
+            { kind: "faction", icon: "fa-users", label: this._localize("FANG.History.Categories.Faction", "Faction") },
+            { kind: "note", icon: "fa-feather", label: this._localize("FANG.History.Categories.Note", "Note") }
+        ];
+    }
+
+    _getHistoryCategory(kind) {
+        return this._getHistoryCategories().find(category => category.kind === kind) || this._getHistoryCategories().find(category => category.kind === "insight");
+    }
+
+    _getManualHistoryCategories() {
+        return this._getHistoryCategories().filter(category => ["encounter", "insight", "note"].includes(category.kind));
+    }
+
+    _getHistoryType(type) {
+        return String(type || "manual");
+    }
+
+    _canCreateHistoryEntry(silent = false) {
+        if (game.user?.isGM) return true;
+
+        const monitorName = String(game.settings.get("fang", "monitorDisplayName") || "").toLowerCase();
+        const isMonitor = monitorName && String(game.user?.name || "").toLowerCase().includes(monitorName);
+        if (isMonitor) return false;
+
+        const gmOnline = Array.from(game.users || []).some(user => user?.isGM && user?.active);
+        if (!gmOnline && !silent) {
+            ui.notifications.warn(game.i18n.localize("FANG.Messages.WarnNoGMOnline"));
+        }
+        return gmOnline;
+    }
+
+    _canEditHistoryEntry(entry, user = game.user) {
+        const normalized = this._normalizeHistoryEntry(entry);
+        if (!normalized) return false;
+        if (user?.isGM) return true;
+        return normalized.visibility === "players" && normalized.editableByPlayers !== false;
+    }
+
+    _getHistoryPlayerNodeName(node) {
+        if (!node) return this._localize("FANG.Dropdowns.Unknown", "Unknown");
+        if (node.hidden) return node.displayName || this._localize("FANG.Dropdowns.Unknown", "Unknown");
+        return node.name || this._localize("FANG.Dropdowns.Unknown", "Unknown");
+    }
+
+    _getHistoryEntryImage(entry, user = game.user) {
+        const nodeRef = entry.refs?.find(ref => ref.type === "node");
+        const node = nodeRef ? this.graphData.nodes.find(n => n.id === nodeRef.id) : null;
+        if (!node) return FANG_DEFAULT_PLACEHOLDER_IMG;
+        return this._isNodeHiddenForUser(node, user) ? FANG_DEFAULT_PLACEHOLDER_IMG : this._getNodeImageSource(node);
+    }
+
+    _normalizeGameDate(gameDate = {}) {
+        if (typeof gameDate === "string") {
+            const label = gameDate || this._localize("FANG.History.UnknownDate", "Unscheduled");
+            return {
+                label,
+                sort: "",
+                source: "manual"
+            };
+        }
+        const label = String(gameDate?.label || this._localize("FANG.History.UnknownDate", "Unscheduled"));
+        return {
+            label,
+            sort: String(gameDate?.sort || ""),
+            source: String(gameDate?.source || "manual")
+        };
+    }
+
+    _calendarNumber(value) {
+        if (value === null || value === undefined) return null;
+        if (typeof value === "number" && Number.isFinite(value)) return value;
+        const match = String(value).match(/-?\d+/);
+        return match ? Number(match[0]) : null;
+    }
+
+    _formatCalendarTime(dateLike) {
+        if (!dateLike || typeof dateLike !== "object") return "";
+        const displayTime = typeof dateLike.display?.time === "string" ? dateLike.display.time.trim() : "";
+        if (displayTime && /^\d{1,2}:\d{2}/.test(displayTime)) return displayTime;
+        const time = dateLike.time && typeof dateLike.time === "object" ? dateLike.time : dateLike;
+        const hour = this._calendarNumber(time.hour ?? time.hours);
+        const minute = this._calendarNumber(time.minute ?? time.minutes);
+        if (hour === null || minute === null) return "";
+        return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+    }
+
+    _getCalendarMonthName(dateLike, api = null) {
+        const direct = dateLike?.display?.monthName
+            || dateLike?.monthName
+            || dateLike?.month?.name
+            || dateLike?.month?.label
+            || dateLike?.month?.display;
+        if (typeof direct === "string" && direct.trim()) return direct.trim();
+
+        const monthValue = this._calendarNumber(dateLike?.month?.number ?? dateLike?.month?.value ?? dateLike?.month?.index ?? dateLike?.month);
+        if (monthValue === null || !api || typeof api.getMonthNames !== "function") return "";
+        try {
+            const names = api.getMonthNames();
+            if (!Array.isArray(names)) return "";
+            const oneBased = names[monthValue - 1];
+            const zeroBased = names[monthValue];
+            return String(oneBased || zeroBased || "").trim();
+        } catch (_err) {
+            return "";
+        }
+    }
+
+    _extractCalendarEra(formatted = "") {
+        const match = String(formatted).trim().match(/\s([A-ZÄÖÜ]{2,8})$/);
+        return match ? match[1] : "";
+    }
+
+    _sanitizeCalendarLabel(label) {
+        return String(label || "")
+            .trim()
+            .replace(/^\s*\d+\s+day,\s*/i, "")
+            .replace(/\b(\d+)(st|nd|rd|th)\b/gi, "$1.")
+            .replace(/\s+/g, " ");
+    }
+
+    _formatCalendarDateObject(dateLike, api = null, formatted = "") {
+        if (!dateLike || typeof dateLike !== "object") return null;
+        const day = this._calendarNumber(dateLike.day ?? dateLike.dayOfMonth ?? dateLike.display?.day ?? dateLike.date?.day);
+        const year = this._calendarNumber(dateLike.year ?? dateLike.y ?? dateLike.display?.year ?? dateLike.date?.year);
+        const monthName = this._getCalendarMonthName(dateLike, api);
+        const monthNumber = this._calendarNumber(dateLike.month?.number ?? dateLike.month?.value ?? dateLike.month?.index ?? dateLike.month);
+        const era = dateLike.era?.abbreviation || dateLike.era?.name || dateLike.yearSuffix || dateLike.display?.yearSuffix || this._extractCalendarEra(formatted);
+        if (day !== null && year !== null && (monthName || monthNumber !== null)) {
+            const dateLabel = monthName
+                ? `${day}. ${monthName} ${year}${era ? ` ${era}` : ""}`
+                : `${day}.${monthNumber}.${year}${era ? ` ${era}` : ""}`;
+            return dateLabel;
+        }
+
+        const fallback = [
+            dateLike.display?.date,
+            dateLike.display?.long,
+            dateLike.display?.full,
+            dateLike.display,
+            dateLike.label,
+            dateLike.formatted,
+            dateLike.date,
+            dateLike.dateString,
+            formatted
+        ].find(value => typeof value === "string" && value.trim());
+        const sanitized = this._sanitizeCalendarLabel(fallback);
+        return sanitized || null;
+    }
+
+    _getCalendarSort(dateLike) {
+        if (!dateLike || typeof dateLike !== "object") return "";
+        const year = dateLike.year ?? dateLike.y;
+        const monthValue = dateLike.month?.number ?? dateLike.month?.value ?? dateLike.month?.index ?? dateLike.month;
+        const day = dateLike.day ?? dateLike.dayOfMonth ?? dateLike.date?.day;
+        if (year === undefined || monthValue === undefined || day === undefined) return "";
+        const month = Number(monthValue) + (dateLike.month?.index !== undefined ? 1 : 0);
+        return `${String(year).padStart(6, "0")}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    }
+
+    _calendarLabelLooksUsable(label) {
+        if (!label || typeof label !== "string") return false;
+        const normalized = label.trim().toLowerCase();
+        if (!normalized) return false;
+        return !["world time", "world day", "welttag"].some(token => normalized.includes(token));
+    }
+
+    _getCalendarApiCandidates() {
+        const candidates = [
+            { source: "seasons-stars", api: game.seasonsStars?.integration?.api },
+            { source: "seasons-stars", api: game.seasonsStars?.api },
+            { source: "calendaria", api: globalThis.CALENDARIA?.api || game.modules.get("calendaria")?.api },
+            { source: "simple-calendar", api: globalThis.SimpleCalendar?.api },
+            { source: "simple-calendar", api: game.modules.get("foundryvtt-simple-calendar")?.api },
+            { source: "simple-calendar", api: game.modules.get("simple-calendar")?.api },
+            { source: "simple-calendar", api: game.modules.get("simple-calendar-compat")?.api },
+            { source: "simple-calendar", api: game.modules.get("simple-calendar-reborn")?.api }
+        ];
+        return candidates.filter(candidate => candidate.api && typeof candidate.api === "object");
+    }
+
+    _detectCalendarApiGameDate() {
+        const timestamp = Number.isFinite(game.time?.worldTime) ? game.time.worldTime : 0;
+        for (const candidate of this._getCalendarApiCandidates()) {
+            const api = candidate.api;
+            try {
+                const apiTimestamp = typeof api.timestamp === "function" ? api.timestamp() : timestamp;
+                const dateLike = api.getCurrentDate?.()
+                    || api.currentDateTime?.()
+                    || api.currentDate?.()
+                    || api.getCurrentDateTime?.()
+                    || (typeof api.worldTimeToDate === "function" ? api.worldTimeToDate(timestamp) : null)
+                    || (typeof api.timestampToDate === "function" && Number.isFinite(apiTimestamp) ? api.timestampToDate(apiTimestamp) : null);
+                const formatted = typeof api.formatDate === "function" && dateLike
+                    ? api.formatDate(dateLike, { includeTime: false, format: "long" })
+                    : (typeof api.formatDateTime === "function" && dateLike ? api.formatDateTime(dateLike) : "");
+                const label = this._formatCalendarDateObject(dateLike, api, formatted) || (typeof formatted === "string" ? this._sanitizeCalendarLabel(formatted) : "");
+                if (!this._calendarLabelLooksUsable(label)) continue;
+                return {
+                    label,
+                    sort: this._getCalendarSort(dateLike),
+                    source: candidate.source
+                };
+            } catch (err) {
+                console.warn(`FANG | Calendar date detection failed for ${candidate.source}`, err);
+            }
+        }
+        return null;
+    }
+
+    _detectFoundryCalendarGameDate() {
+        const calendar = game.time?.calendar;
+        if (!calendar || typeof calendar.format !== "function") return null;
+        try {
+            const timestamp = Number.isFinite(game.time?.worldTime) ? game.time.worldTime : undefined;
+            const components = typeof calendar.timeToComponents === "function" ? calendar.timeToComponents(timestamp) : null;
+            const label = ["date", "timestamp"]
+                .map(formatter => {
+                    try {
+                        return calendar.format(timestamp, formatter, { includeTime: false });
+                    } catch (_err) {
+                        return "";
+                    }
+                })
+                .find(value => this._calendarLabelLooksUsable(value));
+            if (!label) return null;
+            return {
+                label,
+                sort: this._getCalendarSort(components),
+                source: "foundry-calendar"
+            };
+        } catch (err) {
+            console.warn("FANG | Foundry calendar date detection failed", err);
+            return null;
+        }
+    }
+
+    detectCurrentGameDate() {
+        const moduleCalendarDate = this._detectCalendarApiGameDate();
+        if (moduleCalendarDate?.label) return moduleCalendarDate;
+
+        const foundryCalendarDate = this._detectFoundryCalendarGameDate();
+        if (foundryCalendarDate?.label) return foundryCalendarDate;
+
+        const lastDate = this._normalizeGameDate(game.settings.get("fang", "historyLastGameDate"));
+        if (lastDate?.label && lastDate.label !== this._localize("FANG.History.UnknownDate", "Unscheduled")) {
+            return { ...lastDate, source: "last-used" };
+        }
+
+        return {
+            label: this._localize("FANG.History.UnknownDate", "Unscheduled"),
+            sort: "",
+            source: "unknown"
+        };
+    }
+
+    _getHistoryStore() {
+        const rawStore = game.settings.get("fang", "history");
+        const store = rawStore && typeof rawStore === "object" ? foundry.utils.duplicate(rawStore) : {};
+        store.schemaVersion = Number.isFinite(store.schemaVersion) ? store.schemaVersion : 1;
+        store.entries = Array.isArray(store.entries) ? store.entries.map(entry => this._normalizeHistoryEntry(entry)).filter(Boolean) : [];
+        return store;
+    }
+
+    _normalizeHistoryEntry(entry = {}) {
+        if (!entry || typeof entry !== "object") return null;
+        const refs = Array.isArray(entry.refs) ? entry.refs
+            .filter(ref => ref && typeof ref === "object" && ref.type && ref.id)
+            .map(ref => ({ type: String(ref.type), id: String(ref.id) }))
+            : [];
+        return {
+            schemaVersion: Number.isFinite(entry.schemaVersion) ? entry.schemaVersion : 1,
+            id: entry.id || foundry.utils.randomID(16),
+            origin: entry.origin === "auto" ? "auto" : "manual",
+            type: this._getHistoryType(entry.type || (entry.origin === "auto" ? "auto" : "manual")),
+            kind: this._getHistoryCategory(entry.kind || entry.type || "insight")?.kind || "insight",
+            createdAt: entry.createdAt || new Date().toISOString(),
+            updatedAt: entry.updatedAt || entry.createdAt || null,
+            orderKey: String(entry.orderKey || entry.createdAt || ""),
+            authorUserId: entry.authorUserId || null,
+            authorName: entry.authorName || "",
+            gameDate: this._normalizeGameDate(entry.gameDate || {
+                label: entry.gameDateLabel,
+                sort: entry.gameDateSort,
+                source: "manual"
+            }),
+            visibility: entry.visibility === "players" ? "players" : "gm",
+            title: String(entry.title || ""),
+            playerText: String(entry.playerText || entry.text || ""),
+            gmText: String(entry.gmText || ""),
+            editableByPlayers: entry.editableByPlayers !== false,
+            refs,
+            payload: entry.payload && typeof entry.payload === "object" ? foundry.utils.duplicate(entry.payload) : {}
+        };
+    }
+
+    _getHistoryEntriesForUser({ nodeId = null, user = game.user } = {}) {
+        return this._getHistoryStore().entries
+            .filter(entry => !nodeId || entry.refs.some(ref => ref.type === "node" && ref.id === nodeId))
+            .map(entry => this._getHistoryEntryForUser(entry, user))
+            .filter(Boolean)
+            .sort((a, b) => {
+                const orderCompare = String(b.orderKey || b.createdAt).localeCompare(String(a.orderKey || a.createdAt));
+                if (orderCompare) return orderCompare;
+                return String(b.createdAt || "").localeCompare(String(a.createdAt || ""));
+            });
+    }
+
+    _getHistoryEntryForUser(entry, user = game.user) {
+        const normalized = this._normalizeHistoryEntry(entry);
+        if (!normalized) return null;
+        if (!user?.isGM && normalized.visibility !== "players") return null;
+        const text = user?.isGM ? (normalized.gmText || normalized.playerText) : normalized.playerText;
+        if (!user?.isGM && !text.trim()) return null;
+        return {
+            ...normalized,
+            displayText: text,
+            displayRefs: this._getHistoryDisplayRefs(normalized, user)
+        };
+    }
+
+    _getHistoryDisplayRefs(entry, user = game.user) {
+        return entry.refs.map(ref => {
+            if (ref.type === "node") {
+                const node = this.graphData.nodes.find(n => n.id === ref.id);
+                if (!node) return null;
+                return {
+                    ...ref,
+                    label: this._getSafeNodeName(node, user),
+                    canFocus: this._canUserSeeNode(node, user) && !this._isNodeHiddenForUser(node, user)
+                };
+            }
+            if (ref.type === "faction") {
+                const faction = this.graphData.factions.find(f => f.id === ref.id);
+                if (!faction || (!user?.isGM && faction.playerVisible === false)) return null;
+                return { ...ref, label: faction.name || this._localize("FANG.History.Faction", "Faction"), canFocus: false };
+            }
+            if (ref.type === "journal" || ref.type === "quest") {
+                return { ...ref, label: this._localize("FANG.UI.Quests", "Quests"), canFocus: false };
+            }
+            return { ...ref, label: ref.id, canFocus: false };
+        }).filter(Boolean);
+    }
+
+    async _saveHistoryStore(store) {
+        if (!game.user?.isGM) return false;
+        const normalized = {
+            schemaVersion: 1,
+            entries: Array.isArray(store?.entries) ? store.entries.map(entry => this._normalizeHistoryEntry(entry)).filter(Boolean) : []
+        };
+        await game.settings.set("fang", "history", normalized);
+        return true;
+    }
+
+    async _createHistoryEntry({ node = null, refs = null, title, playerText, gmText, gameDate, kind, visibility, origin = "manual", type = "manual", editableByPlayers = true, authorUserId = null, authorName = "" }) {
+        if (!game.user?.isGM) {
+            if (!this._canCreateHistoryEntry(false)) return false;
+            game.socket.emit("module.fang", {
+                action: "playerCreateHistoryEntry",
+                payload: {
+                    nodeId: node?.id || null,
+                    refs,
+                    title,
+                    playerText,
+                    gameDate,
+                    kind,
+                    origin,
+                    type,
+                    editableByPlayers,
+                    authorUserId: game.user.id,
+                    authorName: game.user.name
+                }
+            });
+            ui.notifications.info(this._localize("FANG.History.PlayerSubmitted", "Event submitted."));
+            return true;
+        }
+
+        const store = this._getHistoryStore();
+        const normalizedGameDate = this._normalizeGameDate(gameDate);
+        if (normalizedGameDate.source === "manual" && normalizedGameDate.label && normalizedGameDate.label !== this._localize("FANG.History.UnknownDate", "Unscheduled")) {
+            await game.settings.set("fang", "historyLastGameDate", {
+                label: normalizedGameDate.label,
+                sort: normalizedGameDate.sort || normalizedGameDate.label,
+                source: "manual"
+            });
+        }
+        const entryRefs = Array.isArray(refs)
+            ? refs.filter(ref => ref?.type && ref?.id).map(ref => ({ type: String(ref.type), id: String(ref.id) }))
+            : (node?.id ? [{ type: "node", id: node.id }] : []);
+        const createdAt = new Date().toISOString();
+        store.entries.push(this._normalizeHistoryEntry({
+            id: foundry.utils.randomID(16),
+            origin: origin === "auto" ? "auto" : "manual",
+            type,
+            kind: this._getHistoryCategory(kind)?.kind || "insight",
+            createdAt,
+            orderKey: createdAt,
+            authorUserId: authorUserId || game.user.id,
+            authorName: authorName || game.user.name,
+            gameDate: normalizedGameDate,
+            visibility: visibility === "players" ? "players" : "gm",
+            title,
+            playerText,
+            gmText,
+            editableByPlayers,
+            refs: entryRefs,
+            payload: {}
+        }));
+        return this._saveHistoryStore(store);
+    }
+
+    async _deleteHistoryEntry(entryId) {
+        if (!game.user?.isGM || !entryId) return false;
+        const store = this._getHistoryStore();
+        const before = store.entries.length;
+        store.entries = store.entries.filter(entry => entry.id !== entryId);
+        if (store.entries.length === before) return false;
+        return this._saveHistoryStore(store);
+    }
+
+    async _updateHistoryEntry(entryId, patch = {}) {
+        if (!entryId) return false;
+        if (!game.user?.isGM) {
+            game.socket.emit("module.fang", {
+                action: "playerUpdateHistoryEntry",
+                payload: {
+                    entryId,
+                    title: patch.title,
+                    playerText: patch.playerText,
+                    authorUserId: game.user.id,
+                    authorName: game.user.name
+                }
+            });
+            ui.notifications.info(this._localize("FANG.History.PlayerSubmitted", "Event submitted."));
+            return true;
+        }
+        const store = this._getHistoryStore();
+        const index = store.entries.findIndex(entry => entry.id === entryId);
+        if (index === -1) return false;
+        const current = store.entries[index];
+        const next = this._normalizeHistoryEntry({
+            ...current,
+            ...patch,
+            id: current.id,
+            updatedAt: new Date().toISOString(),
+            refs: current.refs,
+            authorUserId: current.authorUserId,
+            authorName: current.authorName,
+            createdAt: current.createdAt,
+            payload: current.payload
+        });
+        store.entries[index] = next;
+        return this._saveHistoryStore(store);
+    }
+
+    async _updateHistoryEntryFromPlayer(entryId, patch = {}) {
+        if (!game.user?.isGM || !entryId) return false;
+        const entry = this._getHistoryStore().entries.find(item => item.id === entryId);
+        if (!entry || entry.visibility !== "players" || entry.editableByPlayers === false) return false;
+        const cleanPatch = {
+            title: String(patch.title || "").trim(),
+            playerText: String(patch.playerText || "").trim()
+        };
+        if (!cleanPatch.title && !cleanPatch.playerText) return false;
+        return this._updateHistoryEntry(entryId, cleanPatch);
+    }
+
+    async _recordAutoHistoryEntry({ type, nodes = [], title, playerText, gmText = "", kind = "insight" } = {}) {
+        const entryNodes = nodes.filter(Boolean);
+        if (!entryNodes.length || !playerText) return false;
+        return this._createHistoryEntry({
+            refs: entryNodes.map(node => ({ type: "node", id: node.id })),
+            title,
+            playerText,
+            gmText,
+            gameDate: this.detectCurrentGameDate(),
+            kind,
+            visibility: "players",
+            origin: "auto",
+            type,
+            editableByPlayers: true
+        });
+    }
+
+    async _recordNodeAppearedHistory(node) {
+        const name = this._getHistoryPlayerNodeName(node);
+        return this._recordAutoHistoryEntry({
+            type: "node-added",
+            nodes: [node],
+            title: this._localize("FANG.History.Auto.NodeAppearedTitle", "Appeared"),
+            playerText: this._localize("FANG.History.Auto.NodeAppearedText", "{name} tritt in Erscheinung.").replace("{name}", name),
+            gmText: node?.hidden ? `${node.name || name} wurde verdeckt als ${name} in den Graphen aufgenommen.` : "",
+            kind: "encounter"
+        });
+    }
+
+    async _recordIdentityRevealedHistory(node, previousAlias = "") {
+        return this._recordAutoHistoryEntry({
+            type: "identity-revealed",
+            nodes: [node],
+            title: this._localize("FANG.History.Auto.IdentityRevealedTitle", "Identität enthüllt"),
+            playerText: this._localize("FANG.History.Auto.IdentityRevealedText", "Die wahre Identität wird enthüllt: {name}.").replace("{name}", node?.name || this._localize("FANG.Dropdowns.Unknown", "Unknown")),
+            gmText: previousAlias ? `${previousAlias} wurde als ${node?.name || ""} enthüllt.` : "",
+            kind: "insight"
+        });
+    }
+
+    async _recordRelationshipHistory(sourceNode, targetNode, label = "") {
+        const sourceName = this._getHistoryPlayerNodeName(sourceNode);
+        const targetName = this._getHistoryPlayerNodeName(targetNode);
+        const hasLabel = String(label || "").trim();
+        const key = hasLabel ? "FANG.History.Auto.RelationshipTextWithLabel" : "FANG.History.Auto.RelationshipText";
+        const fallback = hasLabel ? "{source} und {target} stehen in Beziehung: {label}." : "Zwischen {source} und {target} wird eine Verbindung sichtbar.";
+        const playerText = this._localize(key, fallback)
+            .replace("{source}", sourceName)
+            .replace("{target}", targetName)
+            .replace("{label}", hasLabel);
+        return this._recordAutoHistoryEntry({
+            type: "relationship-added",
+            nodes: [sourceNode, targetNode],
+            title: this._localize("FANG.History.Auto.RelationshipTitle", "Neue Verbindung"),
+            playerText,
+            kind: "relationship"
+        });
+    }
+
+    _canQuestHistoryBeVisibleToPlayers(node, quest) {
+        if (!node || !quest || quest.visibleToPlayers === false) return false;
+        if (node.hidden && node.showHiddenQuestsToPlayers === false) return false;
+        return true;
+    }
+
+    async _recordQuestVisibleHistory(node, quest) {
+        if (!this._canQuestHistoryBeVisibleToPlayers(node, quest)) return false;
+        const nodeName = this._getHistoryPlayerNodeName(node);
+        const questName = quest?.name || this._localize("FANG.ContextMenu.OpenQuest", "Auftrag");
+        return this._recordAutoHistoryEntry({
+            type: "quest-visible",
+            nodes: [node],
+            title: this._localize("FANG.History.Auto.QuestVisibleTitle", "Auftrag"),
+            playerText: this._localize("FANG.History.Auto.QuestVisibleText", "{name} hat einen Auftrag: {quest}.")
+                .replace("{name}", nodeName)
+                .replace("{quest}", questName),
+            kind: "quest"
+        });
+    }
+
+    _canFactionHistoryBeVisibleToPlayers(node, faction) {
+        if (!node || !faction) return false;
+        if (node.hidden) return false;
+        return faction.playerVisible !== false;
+    }
+
+    async _recordFactionAssignedHistory(node, faction) {
+        if (!this._canFactionHistoryBeVisibleToPlayers(node, faction)) return false;
+        const nodeName = this._getHistoryPlayerNodeName(node);
+        const factionName = faction?.name || this._localize("FANG.History.Faction", "Fraktion");
+        return this._recordAutoHistoryEntry({
+            type: "faction-assigned",
+            nodes: [node],
+            title: this._localize("FANG.History.Auto.FactionAssignedTitle", "Fraktion"),
+            playerText: this._localize("FANG.History.Auto.FactionAssignedText", "{name} wird mit {faction} in Verbindung gebracht.")
+                .replace("{name}", nodeName)
+                .replace("{faction}", factionName),
+            kind: "faction"
+        });
+    }
+
+    _getHistoryPanelHost() {
+        return this.element?.querySelector(".fang-app-container") || this.element;
+    }
+
+    _closeHistoryPanel() {
+        this._getHistoryPanelHost()?.querySelector(".fang-history-canvas-panel")?.remove();
+    }
+
+    _openAddHistoryEntryDialog({ node = null, refresh = null, entry = null } = {}) {
+        if (entry ? !this._canEditHistoryEntry(entry) : !this._canCreateHistoryEntry()) return;
+        const isGM = game.user?.isGM;
+        const editingEntry = entry ? this._normalizeHistoryEntry(entry) : null;
+        const safeNodeName = node ? this._getSafeNodeName(node, game.user) : "";
+        const detectedGameDate = this.detectCurrentGameDate();
+        const categorySource = editingEntry?.origin === "auto" ? this._getHistoryCategories() : this._getManualHistoryCategories();
+        const categoryOptions = categorySource
+            .map(category => `<option value="${this._escapeHtml(category.kind)}" ${category.kind === (editingEntry?.kind || "insight") ? "selected" : ""}>${this._escapeHtml(category.label)}</option>`)
+            .join("");
+        const canEditCategory = !editingEntry || editingEntry.origin !== "auto";
+        const title = node
+            ? (editingEntry ? this._localize("FANG.History.EditEventForNode", "Edit Event for {name}") : this._localize("FANG.History.AddEventForNode", "Add Event for {name}")).replace("{name}", safeNodeName)
+            : (editingEntry ? this._localize("FANG.History.EditEvent", "Edit Event") : this._localize("FANG.History.AddEvent", "Add Event"));
+        const gmFields = isGM ? `
+                    <label>${this._escapeHtml(this._localize("FANG.History.GMText", "GM Notes"))}</label>
+                    <textarea id="fang-history-gm-text" placeholder="${this._escapeHtml(this._localize("FANG.History.GMTextHint", "Private GM context."))}">${this._escapeHtml(editingEntry?.gmText || "")}</textarea>
+                    <label class="fang-editor-check"><input type="checkbox" id="fang-history-visible" ${editingEntry?.visibility === "players" ? "checked" : ""}> ${this._escapeHtml(this._localize("FANG.History.VisibleToPlayers", "Visible to players"))}</label>` : "";
+        const formGameDate = editingEntry?.gameDate || detectedGameDate;
+        const panelHost = this._getHistoryPanelHost();
+        this._closeHistoryPanel();
+        const panel = document.createElement("div");
+        panel.className = "fang-history-canvas-panel";
+        panel.innerHTML = `
+            <div class="fang-history-canvas-card">
+                <header class="fang-history-canvas-header">
+                    <h3><i class="fas fa-feather"></i> ${this._escapeHtml(title)}</h3>
+                    <button type="button" class="fang-history-canvas-close" title="${this._escapeHtml(this._localize("FANG.UI.ClosePanel", "Close panel"))}"><i class="fas fa-times"></i></button>
+                </header>
+                <div class="fang-history-editor">
+                    ${node ? `<p class="hint">${this._escapeHtml(this._localize("FANG.History.LinkedTo", "Linked to"))}: <strong>${this._escapeHtml(safeNodeName)}</strong></p>` : ""}
+                    <label>${this._escapeHtml(this._localize("FANG.History.GameDate", "Game Date"))}</label>
+                    <input type="text" id="fang-history-date" value="${this._escapeHtml(formGameDate.label)}" data-source="${this._escapeHtml(formGameDate.source)}" data-sort="${this._escapeHtml(formGameDate.sort)}" placeholder="${this._escapeHtml(this._localize("FANG.History.GameDatePlaceholder", "e.g. 12th of Praios"))}" ${!isGM && editingEntry ? "readonly" : ""}>
+                    <label>${this._escapeHtml(this._localize("FANG.History.Category", "Category"))}</label>
+                    <select id="fang-history-kind" ${canEditCategory ? "" : "disabled"}>${categoryOptions}</select>
+                    <label>${this._escapeHtml(this._localize("FANG.History.Title", "Title"))}</label>
+                    <input type="text" id="fang-history-title" value="${this._escapeHtml(editingEntry?.title || "")}">
+                    <label>${this._escapeHtml(this._localize("FANG.History.PlayerText", "Player Text"))}</label>
+                    <textarea id="fang-history-player-text" placeholder="${this._escapeHtml(this._localize("FANG.History.PlayerTextHint", "Safe text players may see if published."))}">${this._escapeHtml(editingEntry?.playerText || "")}</textarea>
+                    ${gmFields}
+                    <div class="fang-history-editor-actions">
+                        <button type="button" class="btn action-btn fang-history-save"><i class="fas fa-save"></i> ${this._escapeHtml(this._localize("FANG.Dialogs.BtnSave", "Save"))}</button>
+                        <button type="button" class="btn secondary-btn fang-history-cancel"><i class="fas fa-arrow-left"></i> ${this._escapeHtml(this._localize("FANG.Dialogs.BtnCancel", "Cancel"))}</button>
+                    </div>
+                </div>
+            </div>`;
+        panelHost?.appendChild(panel);
+
+        panel.querySelector(".fang-history-canvas-close")?.addEventListener("click", () => this._closeHistoryPanel());
+        panel.querySelector(".fang-history-cancel")?.addEventListener("click", () => {
+            if (typeof refresh === "function") refresh();
+            else this._openHistoryDialog({ node });
+        });
+        panel.querySelector(".fang-history-save")?.addEventListener("click", async () => {
+            const entryTitle = panel.querySelector("#fang-history-title")?.value?.trim() || "";
+            const playerText = panel.querySelector("#fang-history-player-text")?.value?.trim() || "";
+            const gmText = isGM ? (panel.querySelector("#fang-history-gm-text")?.value?.trim() || "") : "";
+            if (!entryTitle && !playerText && !gmText) return;
+            const dateInput = panel.querySelector("#fang-history-date");
+            const dateLabel = dateInput?.value?.trim() || "";
+            const dateIsDetected = !editingEntry && dateLabel === detectedGameDate.label;
+            const patch = {
+                title: entryTitle || this._localize("FANG.History.Untitled", "Untitled insight"),
+                playerText,
+                gmText,
+                kind: canEditCategory ? (panel.querySelector("#fang-history-kind")?.value || "insight") : (editingEntry?.kind || "insight"),
+                gameDate: {
+                    label: dateLabel,
+                    sort: dateIsDetected ? detectedGameDate.sort : "",
+                    source: dateIsDetected ? detectedGameDate.source : "manual"
+                },
+                visibility: isGM && panel.querySelector("#fang-history-visible")?.checked ? "players" : (isGM ? "gm" : "players")
+            };
+            if (!isGM && editingEntry) {
+                delete patch.kind;
+                delete patch.gmText;
+                delete patch.gameDate;
+                delete patch.visibility;
+            }
+            if (editingEntry) await this._updateHistoryEntry(editingEntry.id, patch);
+            else await this._createHistoryEntry({ node, ...patch });
+            if (typeof refresh === "function") refresh();
+            else this._openHistoryDialog({ node });
+        });
+    }
+
+    _renderHistoryDialogContent({ node = null } = {}) {
+        const entries = this._getHistoryEntriesForUser({ nodeId: node?.id || null });
+        const grouped = new Map();
+        for (const entry of entries) {
+            const key = entry.gameDate.label || this._localize("FANG.History.UnknownDate", "Unscheduled");
+            if (!grouped.has(key)) grouped.set(key, []);
+            grouped.get(key).push(entry);
+        }
+
+        const canAdd = this._canCreateHistoryEntry(true);
+        const canDelete = game.user?.isGM;
+        const addButton = canAdd
+            ? `<button type="button" class="fang-history-add"><i class="fas fa-plus"></i> ${this._escapeHtml(this._localize("FANG.History.AddEvent", "Add Event"))}</button>`
+            : "";
+        const empty = `<div class="fang-history-empty">${this._escapeHtml(this._localize("FANG.History.Empty", "No chronicle entries yet."))}</div>`;
+        const groupsHtml = [...grouped.entries()].map(([date, dayEntries]) => `
+            <section class="fang-history-day">
+                <h3><i class="fas fa-calendar-day"></i> ${this._escapeHtml(date)}</h3>
+                <ol class="fang-history-list">
+                    ${dayEntries.map(entry => {
+                        const visibleRefs = node ? entry.displayRefs.filter(ref => !(ref.type === "node" && ref.id === node.id)) : entry.displayRefs;
+                        const refs = visibleRefs.length
+                            ? `<div class="fang-history-refs">${visibleRefs.map(ref => `<span>${this._escapeHtml(ref.label)}</span>`).join("")}</div>`
+                            : "";
+                        const focusRef = entry.displayRefs.find(ref => ref.type === "node" && ref.canFocus);
+                        const imageSrc = this._getHistoryEntryImage(entry);
+                        const canEdit = this._canEditHistoryEntry(entry);
+                        const category = this._getHistoryCategory(entry.kind);
+                        return `
+                            <li class="fang-history-entry" data-entry-id="${this._escapeHtml(entry.id)}">
+                                <div class="fang-history-entry-media">
+                                    <img src="${this._escapeHtml(imageSrc)}" alt="">
+                                    <div class="fang-history-entry-body">
+                                        <div class="fang-history-entry-head">
+                                            <strong><i class="fas ${this._escapeHtml(category.icon)}"></i> ${this._escapeHtml(entry.title || this._localize("FANG.History.Untitled", "Untitled insight"))}</strong>
+                                            <div class="fang-history-category">${this._escapeHtml(category.label)}</div>
+                                        </div>
+                                        ${entry.displayText ? `<p>${this._escapeHtml(entry.displayText)}</p>` : ""}
+                                        ${refs}
+                                    </div>
+                                </div>
+                                <div class="fang-history-actions">
+                                    ${focusRef ? `<button type="button" class="fang-icon-btn fang-history-focus" data-node-id="${this._escapeHtml(focusRef.id)}" title="${this._escapeHtml(this._localize("FANG.History.Focus", "Focus"))}"><i class="fas fa-crosshairs"></i></button>` : ""}
+                                    ${canEdit ? `<button type="button" class="fang-icon-btn fang-history-edit" title="${this._escapeHtml(this._localize("FANG.ContextMenu.Edit", "Edit"))}"><i class="fas fa-pen-to-square"></i></button>` : ""}
+                                    ${canDelete ? `<button type="button" class="fang-icon-btn danger fang-history-delete" title="${this._escapeHtml(this._localize("FANG.UI.Delete", "Delete"))}"><i class="fas fa-trash"></i></button>` : ""}
+                                </div>
+                            </li>`;
+                    }).join("")}
+                </ol>
+            </section>`).join("");
+
+        return `
+            <div class="fang-history-log">
+                <header class="fang-history-log-header">
+                    <div>
+                        <h2>${this._escapeHtml(node ? this._localize("FANG.History.NodeChronicle", "Token Chronicle") : this._localize("FANG.History.Timeline", "Chronicle"))}</h2>
+                        ${node ? `<p>${this._escapeHtml(this._getSafeNodeName(node))}</p>` : ""}
+                    </div>
+                    ${addButton}
+                </header>
+                ${entries.length ? groupsHtml : empty}
+            </div>`;
+    }
+
+    _openHistoryDialog({ node = null } = {}) {
+        const panelHost = this._getHistoryPanelHost();
+        this._closeHistoryPanel();
+        const panel = document.createElement("div");
+        panel.className = "fang-history-canvas-panel";
+        panel.innerHTML = `
+            <div class="fang-history-canvas-card">
+                <button type="button" class="fang-history-canvas-close" title="${this._escapeHtml(this._localize("FANG.UI.ClosePanel", "Close panel"))}"><i class="fas fa-times"></i></button>
+                ${this._renderHistoryDialogContent({ node })}
+            </div>`;
+        panelHost?.appendChild(panel);
+
+        const refresh = () => this._openHistoryDialog({ node });
+        panel.querySelector(".fang-history-canvas-close")?.addEventListener("click", () => this._closeHistoryPanel());
+        panel.querySelector(".fang-history-add")?.addEventListener("click", () => this._openAddHistoryEntryDialog({ node, refresh }));
+        panel.querySelectorAll(".fang-history-edit").forEach(button => {
+            button.addEventListener("click", (event) => {
+                const entryId = event.currentTarget.closest(".fang-history-entry")?.dataset?.entryId;
+                const entry = this._getHistoryStore().entries.find(item => item.id === entryId);
+                if (entry) this._openAddHistoryEntryDialog({ node, refresh, entry });
+            });
+        });
+        panel.querySelectorAll(".fang-history-delete").forEach(button => {
+            button.addEventListener("click", async (event) => {
+                const entryId = event.currentTarget.closest(".fang-history-entry")?.dataset?.entryId;
+                if (await this._deleteHistoryEntry(entryId)) refresh();
+            });
+        });
+        panel.querySelectorAll(".fang-history-focus").forEach(button => {
+            button.addEventListener("click", (event) => {
+                const nodeId = event.currentTarget?.dataset?.nodeId;
+                const targetNode = this.graphData.nodes.find(n => n.id === nodeId);
+                if (targetNode && !this._isNodeHiddenForUser(targetNode, game.user)) {
+                    this._closeHistoryPanel();
+                    this._focusNodeOnCanvas(targetNode);
+                }
+            });
+        });
+    }
+
+    _focusNodeOnCanvas(node) {
+        if (!node || !this.canvas || !this.zoom || typeof d3 === "undefined") return;
+        const sidebar = this.element ? this.element.querySelector(".sidebar") : null;
+        const sidebarWidth = (sidebar && sidebar.style.display !== "none") ? sidebar.getBoundingClientRect().width : 0;
+        const canvasBounds = this.canvas.getBoundingClientRect?.();
+        const baseWidth = this.width || this.position?.width || canvasBounds?.width || 800;
+        const baseHeight = this.height || this.position?.height || canvasBounds?.height || 600;
+        const width = Math.max(100, baseWidth - sidebarWidth);
+        const height = Math.max(100, baseHeight);
+        const scale = Math.max(this.transform?.k || 0.8, 0.85);
+        const transform = d3.zoomIdentity
+            .translate(width / 2 + sidebarWidth / 2, height / 2)
+            .scale(scale)
+            .translate(-node.x, -node.y);
+        d3.select(this.canvas).transition().duration(600).call(this.zoom.transform, transform);
+        this._hoveredNodeId = node.id;
+        this.ticked();
+        setTimeout(() => {
+            if (this._hoveredNodeId === node.id) {
+                this._hoveredNodeId = null;
+                this.ticked();
+            }
+        }, 1800);
+    }
+
     _repairGraphData(graphData = this.graphData) {
         const graph = graphData && typeof graphData === "object" ? graphData : {};
         graph.nodes = Array.isArray(graph.nodes) ? graph.nodes : [];
@@ -432,11 +1244,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         // Manage Sidebar visibility and Fullscreen classes first
         if (!game.user.isGM) {
             const sidebar = this.element.querySelector(".sidebar");
-            const allowPlayerEdit = game.settings.get("fang", "allowPlayerEditing");
-            const isGMOnline = game.users.some(u => u.isGM && u.active);
             if (sidebar) {
                 const isMonitor = game.user.name.toLowerCase().includes(monitorName);
-                sidebar.style.display = (allowPlayerEdit && isGMOnline && !isMonitor) ? "flex" : "none";
+                sidebar.style.display = !isMonitor ? "flex" : "none";
                 const gmControls = sidebar.querySelectorAll(".gm-only");
                 gmControls.forEach(el => el.style.display = "none");
             }
@@ -621,6 +1431,13 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             event.preventDefault();
             this._closeSidebarPanel();
             this._onManageFactions();
+        });
+
+        const railHistory = this.element.querySelector("#fangRailHistory");
+        if (railHistory) railHistory.addEventListener("click", (event) => {
+            event.preventDefault();
+            this._closeSidebarPanel();
+            this._openHistoryDialog();
         });
 
         const railManage = this.element.querySelector("#fangRailManage");
@@ -1507,6 +2324,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                         this.simulation.alpha(0.5).restart();
                         this._populateActors();
                         await this.saveData();
+                        await this._recordNodeAppearedHistory(node);
                     }
                 },
                 cancel: { icon: '<i class="fas fa-times"></i>', label: game.i18n.localize("FANG.Dialogs.BtnCancel") || "Cancel" }
@@ -1830,16 +2648,19 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
         if (sourceId && targetId && sourceId !== targetId) {
             // Check if nodes exist, else create them from Actors
+            const createdNodes = [];
             [sourceId, targetId].forEach(id => {
                 if (!this.graphData.nodes.find(n => n.id === id)) {
                     const actor = game.actors.get(id);
                     if (actor) {
-                            this.graphData.nodes.push({
+                        const createdNode = {
                             id: id, actorId: actor.id, isPlaceholder: false, placeholderType: null, img: actor.prototypeToken?.texture?.src || actor.img || null,
                             name: actor.name, originalName: actor.name,
                             hidden: game.settings.get("fang", "defaultHiddenMode"),
                             displayName: "", playerNotes: "", showHiddenQuestsToPlayers: true, conditions: []
-                        });
+                        };
+                        this.graphData.nodes.push(createdNode);
+                        createdNodes.push(createdNode);
                     }
                 }
             });
@@ -1853,6 +2674,10 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             this._populateActors(); // Update delete dropdown
 
             await this.saveData();
+            for (const createdNode of createdNodes) await this._recordNodeAppearedHistory(createdNode);
+            const sourceNode = this.graphData.nodes.find(n => n.id === sourceId);
+            const targetNode = this.graphData.nodes.find(n => n.id === targetId);
+            await this._recordRelationshipHistory(sourceNode, targetNode, label);
         } else if (sourceId === targetId && sourceId !== "") {
             ui.notifications.warn(game.i18n.localize("FANG.Messages.WarningSelfLink"));
         } else {
@@ -1944,6 +2769,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         this.simulation.alpha(0.3).restart();
         this._populateActors();
         await this.saveData();
+        await this._recordRelationshipHistory(sourceNode, targetNode, result.label);
         return true;
     }
 
@@ -2270,6 +3096,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     icon: '<i class="fas fa-save"></i>',
                     label: game.i18n.localize("FANG.Dialogs.BtnSave"),
                     callback: async (html) => {
+                        const previousFactionVisibility = new Map((this.graphData.factions || []).map(f => [f.id, this._normalizeFaction(f).playerVisible !== false]));
                         this.graphData.showFactionLines = html.find("#fang-show-faction-lines").is(":checked");
                         this.graphData.showFactionLegend = html.find("#fang-show-faction-legend").is(":checked");
                         const newFactions = [];
@@ -2311,6 +3138,13 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                         this.initSimulation();
                         this.simulation.alpha(0.05).restart();
                         await this.saveData();
+                        for (const faction of this.graphData.factions) {
+                            const wasVisible = previousFactionVisibility.get(faction.id);
+                            if (wasVisible === false && faction.playerVisible !== false) {
+                                const members = this.graphData.nodes.filter(node => node.factionId === faction.id);
+                                for (const member of members) await this._recordFactionAssignedHistory(member, faction);
+                            }
+                        }
                     }
                 },
                 cancel: {
@@ -2489,6 +3323,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
                                 // Find or create the source node
                                 let sourceNode = this.graphData.nodes.find(n => n.id === actor.id || n.actorId === actor.id);
+                                let createdSourceNode = false;
                                 if (!sourceNode) {
                                     // Add near target to make the simulation look nice
                                     let generatedLorePageId = null;
@@ -2513,6 +3348,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                                     }
 
                                     this.graphData.nodes.push(sourceNode);
+                                    createdSourceNode = true;
                                 }
 
                                 this.graphData.links.push({
@@ -2526,6 +3362,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                                 this.simulation.alpha(0.3).restart();
                                 this._populateActors();
                                 await this.saveData();
+                                if (createdSourceNode) await this._recordNodeAppearedHistory(sourceNode);
+                                await this._recordRelationshipHistory(sourceNode, targetNode, labelStr);
                             }
                         },
                         cancel: {
@@ -2576,6 +3414,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         } else {
             // Scenario 1: Dropped on empty canvas -> Add the node immediately without prompting
             let existingNode = this.graphData.nodes.find(n => n.id === actor.id || n.actorId === actor.id);
+            let createdNode = null;
             if (existingNode) {
                 // If it already exists, just move it to the new mouse location
                 existingNode.x = x;
@@ -2623,12 +3462,14 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 }
 
                 this.graphData.nodes.push(newNode);
+                createdNode = newNode;
             }
 
             this.initSimulation();
             this.simulation.alpha(0.8).restart();
             this._populateActors();
             await this.saveData();
+            if (createdNode) await this._recordNodeAppearedHistory(createdNode);
         }
     }
 
@@ -2775,18 +3616,21 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const btnEdit = menu.querySelector("#ctxEditActor");
         const btnSpotlight = menu.querySelector("#ctxSpotlight");
         const btnQuests = menu.querySelector("#ctxQuests");
+        const btnHistory = menu.querySelector("#ctxHistory");
         const btnDelete = menu.querySelector("#ctxDeleteNode");
 
         const newBtnInfo = btnInfo ? btnInfo.cloneNode(true) : null;
         const newBtnEdit = btnEdit ? btnEdit.cloneNode(true) : null;
         const newBtnSpotlight = btnSpotlight ? btnSpotlight.cloneNode(true) : null;
         const newBtnQuests = btnQuests ? btnQuests.cloneNode(true) : null;
+        const newBtnHistory = btnHistory ? btnHistory.cloneNode(true) : null;
         const newBtnDelete = btnDelete ? btnDelete.cloneNode(true) : null;
 
         if (btnInfo && newBtnInfo) btnInfo.parentNode.replaceChild(newBtnInfo, btnInfo);
         if (btnEdit && newBtnEdit) btnEdit.parentNode.replaceChild(newBtnEdit, btnEdit);
         if (btnSpotlight && newBtnSpotlight) btnSpotlight.parentNode.replaceChild(newBtnSpotlight, btnSpotlight);
         if (btnQuests && newBtnQuests) btnQuests.parentNode.replaceChild(newBtnQuests, btnQuests);
+        if (btnHistory && newBtnHistory) btnHistory.parentNode.replaceChild(newBtnHistory, btnHistory);
         if (btnDelete && newBtnDelete) btnDelete.parentNode.replaceChild(newBtnDelete, btnDelete);
 
         const hasLock = this._canEditGraph(true);
@@ -2797,6 +3641,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         if (newBtnInfo) newBtnInfo.style.display = canViewNode ? "flex" : "none";
         if (newBtnSpotlight) newBtnSpotlight.style.display = canSpotlightNode ? "flex" : "none";
         if (newBtnQuests) newBtnQuests.style.display = this._canUseGraphAction("manageQuests", node) ? "flex" : "none";
+        if (newBtnHistory) newBtnHistory.style.display = canViewNode ? "flex" : "none";
         if (newBtnEdit) newBtnEdit.style.display = (hasLock && (game.user.isGM || canViewNode)) ? "flex" : "none";
         if (newBtnDelete) newBtnDelete.style.display = hasLock ? "flex" : "none";
 
@@ -2817,6 +3662,11 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         newBtnQuests?.addEventListener("click", () => {
             menu.classList.add("hidden");
             this._onManageNodeQuests(node);
+        });
+
+        newBtnHistory?.addEventListener("click", () => {
+            menu.classList.add("hidden");
+            this._openHistoryDialog({ node });
         });
 
         newBtnEdit?.addEventListener("click", () => {
@@ -2938,13 +3788,16 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         if (!["JournalEntry", "JournalEntryPage"].includes(doc.documentName)) return false;
 
         if (!node.questUuids) node.questUuids = [];
+        let addedQuest = null;
         if (!node.questUuids.some(q => q.uuid === uuid)) {
-            node.questUuids.push({ uuid, name: this._getJournalDocumentTitle(doc), visibleToPlayers });
+            addedQuest = { uuid, name: this._getJournalDocumentTitle(doc), visibleToPlayers };
+            node.questUuids.push(addedQuest);
         }
         if (!node.conditions) node.conditions = [];
         if (!node.conditions.includes("questgiver")) node.conditions.push("questgiver");
         await this.saveData();
         this.ticked();
+        if (addedQuest && visibleToPlayers) await this._recordQuestVisibleHistory(node, addedQuest);
         return true;
     }
 
@@ -3063,8 +3916,12 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 const row = event.currentTarget.closest(".fang-quest-manager-row");
                 const index = Number(row?.dataset?.index);
                 if (!Number.isInteger(index) || !node.questUuids?.[index]) return;
+                const wasVisible = node.questUuids[index].visibleToPlayers !== false;
                 node.questUuids[index].visibleToPlayers = node.questUuids[index].visibleToPlayers === false;
                 await this.saveData();
+                if (!wasVisible && node.questUuids[index].visibleToPlayers !== false) {
+                    await this._recordQuestVisibleHistory(node, node.questUuids[index]);
+                }
                 refreshPanel();
             });
         });
@@ -3294,6 +4151,10 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     icon: '<i class="fas fa-save"></i>',
                     label: localize("FANG.Dialogs.BtnSave", "Save"),
                     callback: async (html) => {
+                        const wasHidden = !!node.hidden;
+                        const previousAlias = node.displayName || "";
+                        const previousFactionId = node.factionId || null;
+                        const previousShowHiddenQuests = node.showHiddenQuestsToPlayers !== false;
                         const newName = html.find("#fang-profile-name").val().trim();
                         const newRole = html.find("#fang-profile-role").val().trim();
                         const newFactionId = html.find("#fang-profile-faction").val();
@@ -3318,6 +4179,18 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                         this.ticked();
                         this._populateActors();
                         await this.saveData();
+                        if (isGM && wasHidden && !node.hidden) {
+                            await this._recordIdentityRevealedHistory(node, previousAlias);
+                        }
+                        if (isGM && previousFactionId !== node.factionId && node.factionId) {
+                            const faction = this.graphData.factions.find(f => f.id === node.factionId);
+                            await this._recordFactionAssignedHistory(node, faction);
+                        }
+                        if (isGM && !previousShowHiddenQuests && node.showHiddenQuestsToPlayers !== false) {
+                            for (const quest of node.questUuids || []) {
+                                await this._recordQuestVisibleHistory(node, quest);
+                            }
+                        }
                     }
                 },
                 cancel: {

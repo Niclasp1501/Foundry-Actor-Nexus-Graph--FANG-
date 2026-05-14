@@ -3379,3 +3379,418 @@ body:has(.actors-sidebar.sidebar-popout:has(.window-content > *)) #fang-so-actor
 .fang-app-container .canvas-container {
     min-width: 0;
 }
+
+.fang-history-log,
+.fang-history-editor {
+    color: var(--fang-text-color);
+    font-family: var(--fang-font-main);
+}
+
+.fang-app-container .fang-history-canvas-panel {
+    position: absolute;
+    inset: 0;
+    z-index: 1760;
+    pointer-events: auto;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(0, 0, 0, 0.22);
+    backdrop-filter: blur(2px);
+}
+
+.fang-app-container .fang-history-canvas-card {
+    position: relative;
+    width: min(760px, 92%);
+    min-width: 360px;
+    max-height: 85%;
+    pointer-events: auto;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    background:
+        radial-gradient(circle at top left, rgba(212, 175, 55, 0.12), transparent 34%),
+        #fdfbf7;
+    border: 2px solid var(--fang-accent-gold);
+    border-radius: 8px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 0 0 20px rgba(212, 175, 55, 0.2);
+    animation: fangCinemaEnter 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.fang-app-container .fang-history-canvas-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 24px 58px 10px 24px;
+    background: transparent;
+    color: #3a2a12;
+    border-bottom: 2px solid var(--fang-accent-gold);
+}
+
+.fang-app-container .fang-history-canvas-header h3 {
+    margin: 0;
+    color: inherit;
+    border: 0;
+    font-size: 1.35rem;
+    line-height: 1.15;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.fang-app-container .fang-history-canvas-header h3 i {
+    color: var(--fang-accent-gold);
+}
+
+.fang-app-container .fang-history-canvas-close {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    width: 34px;
+    height: 34px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: #888;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    font-size: 1.35rem;
+    z-index: 1;
+}
+
+.fang-app-container .fang-history-canvas-close:hover {
+    color: var(--fang-primary-red);
+    background: rgba(139, 0, 0, 0.06);
+}
+
+.fang-history-log {
+    max-height: min(70vh, 720px);
+    overflow-y: auto;
+    padding: 20px 24px 24px;
+}
+
+.fang-history-log-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+    border-bottom: 2px solid rgba(212, 175, 55, 0.65);
+    padding: 0 44px 10px 0;
+}
+
+.fang-history-log-header h2 {
+    margin: 0;
+    color: var(--fang-primary-red);
+    font-size: 1.25rem;
+    line-height: 1.15;
+}
+
+.fang-history-log-header p {
+    margin: 4px 0 0;
+    opacity: 0.76;
+}
+
+.fang-history-add {
+    min-height: 38px;
+    border: 2px solid var(--fang-accent-gold);
+    border-radius: 6px;
+    background: var(--fang-primary-red);
+    color: var(--fang-header-text);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-family: var(--fang-font-main);
+    font-size: 0.95rem;
+    font-weight: 800;
+    padding: 7px 13px;
+    box-shadow: 0 2px 0 rgba(0, 0, 0, 0.16), 0 0 0 3px rgba(212, 175, 55, 0.12);
+}
+
+.fang-history-add:hover {
+    background: #a00000;
+    transform: translateY(-1px);
+}
+
+.fang-history-filter-row {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    margin: 0 0 14px;
+}
+
+.fang-history-filter-row label {
+    color: var(--fang-text-color);
+    font-size: 0.86rem;
+    font-weight: 800;
+}
+
+.fang-history-filter-row select {
+    min-width: 170px;
+}
+
+.fang-history-day {
+    margin: 0 0 16px;
+}
+
+.fang-history-day h3 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 8px;
+    color: var(--fang-primary-red);
+    font-size: 0.98rem;
+}
+
+.fang-history-list {
+    display: grid;
+    gap: 8px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.fang-history-entry {
+    background: rgba(255, 250, 240, 0.78);
+    border: 1px solid rgba(139, 0, 0, 0.2);
+    border-radius: 8px;
+    padding: 10px;
+}
+
+.fang-history-entry-media {
+    display: grid;
+    grid-template-columns: 54px minmax(0, 1fr);
+    gap: 10px;
+    align-items: start;
+}
+
+.fang-history-entry-media img {
+    width: 54px;
+    height: 54px;
+    border: 2px solid rgba(212, 175, 55, 0.7);
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.65);
+    object-fit: cover;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+}
+
+.fang-history-entry-body {
+    min-width: 0;
+}
+
+.fang-history-entry-head,
+.fang-history-actions,
+.fang-history-form-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.fang-history-entry-head {
+    align-items: flex-start;
+}
+
+.fang-history-entry-head strong {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    color: var(--fang-primary-red);
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.fang-history-entry p {
+    margin: 8px 0 0;
+    line-height: 1.45;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.fang-history-category {
+    display: inline-flex;
+    flex: 0 0 auto;
+    width: fit-content;
+    margin-left: auto;
+    border: 1px solid rgba(139, 0, 0, 0.16);
+    border-radius: 999px;
+    background: rgba(212, 175, 55, 0.14);
+    color: #5d3f00;
+    font-size: 0.76rem;
+    font-weight: 800;
+    line-height: 1;
+    padding: 4px 8px;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.fang-history-refs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: 8px;
+}
+
+.fang-history-refs span {
+    border: 1px solid rgba(139, 0, 0, 0.18);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.5);
+    padding: 3px 7px;
+    font-size: 0.78rem;
+}
+
+.fang-history-actions {
+    justify-content: flex-end;
+    margin-top: 8px;
+}
+
+.fang-history-empty {
+    border: 1px dashed rgba(139, 0, 0, 0.28);
+    border-radius: 8px;
+    padding: 18px;
+    text-align: center;
+    opacity: 0.78;
+}
+
+.fang-history-editor {
+    display: grid;
+    gap: 8px;
+    overflow: auto;
+    padding: 20px 24px 24px;
+}
+
+.fang-history-editor input[type="text"],
+.fang-history-editor textarea,
+.fang-history-editor select {
+    width: 100%;
+    border: 1px solid rgba(58, 42, 18, 0.22);
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.82);
+    color: var(--fang-text-color);
+    font-family: var(--fang-font-main);
+    font-size: 0.95rem;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.fang-history-editor input[type="text"],
+.fang-history-editor select {
+    min-height: 44px;
+    padding: 8px 12px;
+}
+
+.fang-history-editor textarea {
+    min-height: 92px;
+    padding: 10px 12px;
+    resize: vertical;
+}
+
+.fang-history-editor input[type="text"]:focus,
+.fang-history-editor textarea:focus,
+.fang-history-editor select:focus {
+    border-color: var(--fang-accent-gold);
+    outline: 2px solid rgba(212, 175, 55, 0.18);
+    box-shadow: 0 0 0 1px rgba(212, 175, 55, 0.2);
+}
+
+.fang-history-editor textarea::placeholder,
+.fang-history-editor input::placeholder {
+    color: rgba(58, 42, 18, 0.55);
+}
+
+.fang-history-form-row {
+    align-items: center;
+    margin-top: 4px;
+}
+
+.fang-history-editor-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.fang-history-editor-actions .fang-history-save {
+    width: auto;
+    min-width: 150px;
+    min-height: 38px;
+    border: 2px solid var(--fang-accent-gold);
+    border-radius: 4px;
+    background: var(--fang-primary-red);
+    color: var(--fang-header-text);
+    font-weight: 800;
+    box-shadow: 0 2px 0 rgba(0, 0, 0, 0.16);
+}
+
+.fang-history-editor-actions .fang-history-save:hover {
+    background: #a00000;
+    color: var(--fang-header-text);
+}
+
+.fang-history-editor-actions .fang-history-cancel {
+    width: auto;
+    min-width: 0;
+    min-height: 34px;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    color: rgba(58, 42, 18, 0.75);
+    font-weight: 700;
+    padding: 6px 9px;
+}
+
+.fang-history-editor-actions .fang-history-cancel:hover {
+    background: rgba(139, 0, 0, 0.06);
+    color: var(--fang-primary-red);
+}
+
+.fang-app-container.fang-theme-cyberpunk .fang-history-canvas-card {
+    background: rgba(3, 15, 26, 0.95);
+    border-color: #33d9ff;
+    box-shadow: 0 0 0 1px rgba(51, 217, 255, 0.35), 0 22px 50px rgba(0, 0, 0, 0.45);
+}
+
+.fang-app-container.fang-theme-cyberpunk .fang-history-canvas-header {
+    color: #33d9ff;
+    border-bottom-color: #33d9ff;
+}
+
+.fang-app-container.fang-theme-cyberpunk .fang-history-editor input[type="text"],
+.fang-app-container.fang-theme-cyberpunk .fang-history-editor textarea,
+.fang-app-container.fang-theme-cyberpunk .fang-history-editor select {
+    background: rgba(8, 18, 31, 0.82);
+    border-color: rgba(51, 217, 255, 0.42);
+    color: #eafcff;
+}
+
+.fang-app-container.fang-theme-cyberpunk .fang-history-editor-actions .fang-history-cancel {
+    color: rgba(234, 252, 255, 0.75);
+}
+
+@media (max-width: 760px) {
+    .fang-app-container .fang-history-canvas-card {
+        width: 94%;
+        min-width: 0;
+    }
+
+    .fang-history-log-header,
+    .fang-history-filter-row,
+    .fang-history-entry-media,
+    .fang-history-form-row,
+    .fang-history-editor-actions {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .fang-history-editor-actions .fang-history-save,
+    .fang-history-editor-actions .fang-history-cancel {
+        width: 100%;
+    }
+}

@@ -389,7 +389,7 @@ Hooks.once("init", () => {
         const isMonitor = game.user.name.toLowerCase().includes(monitorName);
         const sidebar = fangApp.element.querySelector(".sidebar");
         if (sidebar) {
-          sidebar.style.display = (value && !isMonitor) ? "flex" : "none";
+          sidebar.style.display = !isMonitor ? "flex" : "none";
           // Hide GM-only controls for players
           const gmControls = sidebar.querySelectorAll(".gm-only");
           gmControls.forEach(el => el.style.display = "none");
@@ -495,6 +495,23 @@ Hooks.once("init", () => {
     config: false,
     type: Boolean,
     default: false
+  });
+
+  game.settings.register("fang", "history", {
+    scope: "world",
+    config: false,
+    type: Object,
+    default: {
+      schemaVersion: 1,
+      entries: []
+    }
+  });
+
+  game.settings.register("fang", "historyLastGameDate", {
+    scope: "world",
+    config: false,
+    type: Object,
+    default: {}
   });
 
   // --- BACKGROUND SETTINGS ---
@@ -715,6 +732,37 @@ Hooks.once("ready", async () => {
         }
         await fangApp.saveData(false);
       }, 100);
+    }
+
+    if (data.action === "playerCreateHistoryEntry" && game.user.isGM) {
+      if (!fangApp) fangApp = new FangApplication();
+      const payload = data.payload || {};
+      const hasContent = String(payload.title || payload.playerText || "").trim();
+      if (!hasContent) return;
+      await fangApp._createHistoryEntry({
+        node: payload.nodeId ? { id: payload.nodeId } : null,
+        refs: Array.isArray(payload.refs) ? payload.refs : null,
+        title: payload.title,
+        playerText: payload.playerText,
+        gmText: "",
+        gameDate: payload.gameDate,
+        kind: payload.kind,
+        visibility: "players",
+        origin: payload.origin,
+        type: payload.type,
+        editableByPlayers: payload.editableByPlayers,
+        authorUserId: payload.authorUserId,
+        authorName: payload.authorName
+      });
+    }
+
+    if (data.action === "playerUpdateHistoryEntry" && game.user.isGM) {
+      if (!fangApp) fangApp = new FangApplication();
+      const payload = data.payload || {};
+      await fangApp._updateHistoryEntryFromPlayer(payload.entryId, {
+        title: payload.title,
+        playerText: payload.playerText
+      });
     }
 
     if (data.action === "applyBackground") {
