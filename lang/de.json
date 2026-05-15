@@ -296,7 +296,9 @@
             "ActorDropVisibilityBody": "Wie soll {name} fuer Spieler erscheinen?",
             "ActorDropAliasHint": "Der Alias wird nur verwendet, wenn du den Token verdeckt hinzufuegst.",
             "ActorDropVisible": "Offen anzeigen",
-            "ActorDropHidden": "Verdeckt anzeigen"
+            "ActorDropHidden": "Verdeckt anzeigen",
+            "BtnYes": "Ja",
+            "BtnNo": "Nein"
         },
         "History": {
             "Timeline": "Chronik",

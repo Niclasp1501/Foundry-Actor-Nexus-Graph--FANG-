@@ -296,7 +296,9 @@
             "ActorDropVisibilityBody": "How should {name} appear to players?",
             "ActorDropAliasHint": "The alias is only used when you add the token hidden.",
             "ActorDropVisible": "Show openly",
-            "ActorDropHidden": "Show hidden"
+            "ActorDropHidden": "Show hidden",
+            "BtnYes": "Oui",
+            "BtnNo": "Non"
         },
         "History": {
             "Timeline": "Chronicle",
