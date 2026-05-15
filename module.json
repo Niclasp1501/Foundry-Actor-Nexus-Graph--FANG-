@@ -2,7 +2,7 @@
   "id": "fang",
   "title": "Ninjo's FANG (Foundry Actor Nexus Graph)",
   "description": "An interactive, self-arranging Actor Graph tool for visualizing Character & NPC Relationships natively in Foundry VTT V13 and V14.",
-  "version": "14.2605.5",
+  "version": "14.2605.6",
   "compatibility": {
     "minimum": "13",
     "verified": "14",
@@ -36,17 +36,17 @@
     },
     {
       "lang": "fr",
-      "name": "Français",
+      "name": "Fran\u00e7ais",
       "path": "lang/fr.json"
     },
     {
       "lang": "es",
-      "name": "Español",
+      "name": "Espa\u00f1ol",
       "path": "lang/es.json"
     },
     {
       "lang": "pt-BR",
-      "name": "Português (Brasil)",
+      "name": "Portugu\u00eas (Brasil)",
       "path": "lang/pt-BR.json"
     },
     {
@@ -61,12 +61,12 @@
     },
     {
       "lang": "ru",
-      "name": "Русский",
+      "name": "\u0420\u0443\u0441\u0441\u043a\u0438\u0439",
       "path": "lang/ru.json"
     },
     {
       "lang": "cs",
-      "name": "Čeština",
+      "name": "\u010ce\u0161tina",
       "path": "lang/cs.json"
     },
     {
