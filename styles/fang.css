@@ -3598,6 +3598,14 @@ body:has(.actors-sidebar.sidebar-popout:has(.window-content > *)) #fang-so-actor
     align-items: flex-start;
 }
 
+.fang-history-title-line {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 7px;
+    min-width: 0;
+}
+
 .fang-history-entry-head strong {
     display: flex;
     align-items: center;
@@ -3605,6 +3613,23 @@ body:has(.actors-sidebar.sidebar-popout:has(.window-content > *)) #fang-so-actor
     color: var(--fang-primary-red);
     min-width: 0;
     overflow-wrap: anywhere;
+}
+
+.fang-history-token-label {
+    display: inline-flex;
+    align-items: center;
+    max-width: 220px;
+    border: 1px solid rgba(139, 0, 0, 0.18);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.58);
+    color: #4b3315;
+    font-size: 0.78rem;
+    font-weight: 800;
+    line-height: 1;
+    padding: 4px 8px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .fang-history-entry p {

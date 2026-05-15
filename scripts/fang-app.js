@@ -1179,7 +1179,10 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 <h3><i class="fas fa-calendar-day"></i> ${this._escapeHtml(date)}</h3>
                 <ol class="fang-history-list">
                     ${dayEntries.map(entry => {
-                        const visibleRefs = node ? entry.displayRefs.filter(ref => !(ref.type === "node" && ref.id === node.id)) : entry.displayRefs;
+                        const primaryRef = node ? null : entry.displayRefs.find(ref => ref.type === "node");
+                        const visibleRefs = node
+                            ? entry.displayRefs.filter(ref => !(ref.type === "node" && ref.id === node.id))
+                            : entry.displayRefs.filter(ref => !(primaryRef && ref.type === primaryRef.type && ref.id === primaryRef.id));
                         const refs = visibleRefs.length
                             ? `<div class="fang-history-refs">${visibleRefs.map(ref => `<span>${this._escapeHtml(ref.label)}</span>`).join("")}</div>`
                             : "";
@@ -1193,7 +1196,10 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                                     <img src="${this._escapeHtml(imageSrc)}" alt="">
                                     <div class="fang-history-entry-body">
                                         <div class="fang-history-entry-head">
-                                            <strong><i class="fas ${this._escapeHtml(category.icon)}"></i> ${this._escapeHtml(entry.title || this._localize("FANG.History.Untitled", "Untitled insight"))}</strong>
+                                            <div class="fang-history-title-line">
+                                                ${primaryRef ? `<span class="fang-history-token-label">${this._escapeHtml(primaryRef.label)}</span>` : ""}
+                                                <strong><i class="fas ${this._escapeHtml(category.icon)}"></i> ${this._escapeHtml(entry.title || this._localize("FANG.History.Untitled", "Untitled insight"))}</strong>
+                                            </div>
                                             <div class="fang-history-category">${this._escapeHtml(category.label)}</div>
                                         </div>
                                         ${entry.displayText ? `<p>${this._escapeHtml(entry.displayText)}</p>` : ""}
@@ -7181,10 +7187,19 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 if (freshLock && freshLock.userId !== game.user.id) {
                     const otherName = freshLock.userName || game.i18n.localize("FANG.Messages.OtherUser") || "another user";
                     const confirmMsg = (game.i18n.localize("FANG.Messages.LockStompConfirm") || "{user} is currently editing. Take over anyway?").replace("{user}", otherName);
-                    const ok = await Dialog.confirm({
-                        title: game.i18n.localize("FANG.Messages.LockStompTitle") || "Take over edit lock?",
-                        content: `<p>${confirmMsg}</p>`,
-                        defaultYes: false
+                    const yesLabel = game.i18n.localize("FANG.Dialogs.BtnYes") || game.i18n.localize("Yes") || "Yes";
+                    const noLabel = game.i18n.localize("FANG.Dialogs.BtnNo") || game.i18n.localize("No") || "No";
+                    const ok = await new Promise(resolve => {
+                        new Dialog({
+                            title: game.i18n.localize("FANG.Messages.LockStompTitle") || "Take over edit lock?",
+                            content: `<p>${confirmMsg}</p>`,
+                            buttons: {
+                                yes: { icon: '<i class="fas fa-check"></i>', label: yesLabel, callback: () => resolve(true) },
+                                no:  { icon: '<i class="fas fa-times"></i>', label: noLabel,  callback: () => resolve(false) }
+                            },
+                            default: "no",
+                            close: () => resolve(false)
+                        }, { classes: ["dialog", "fang-dialog"], width: 420 }).render(true);
                     });
                     if (!ok) return;
                 }

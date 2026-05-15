@@ -300,7 +300,7 @@
         },
         "History": {
             "Timeline": "Chronik",
-            "NodeChronicle": "Token-Chronik",
+            "NodeChronicle": "Ereignis-Chronik",
             "Events": "Ereignisse",
             "Add": "Erkenntnis hinzufügen",
             "AddEvent": "Ereignis hinzufügen",
