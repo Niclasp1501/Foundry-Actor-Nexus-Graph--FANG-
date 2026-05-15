@@ -7185,23 +7185,18 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 // ask for confirmation before stomping. Re-fetch the flag to minimise race window.
                 const freshLock = entry.getFlag("fang", "editLock");
                 if (freshLock && freshLock.userId !== game.user.id) {
-                    const otherName = freshLock.userName || game.i18n.localize("FANG.Messages.OtherUser") || "another user";
-                    const confirmMsg = (game.i18n.localize("FANG.Messages.LockStompConfirm") || "{user} is currently editing. Take over anyway?").replace("{user}", otherName);
-                    const yesLabel = game.i18n.localize("FANG.Dialogs.BtnYes") || game.i18n.localize("Yes") || "Yes";
-                    const noLabel = game.i18n.localize("FANG.Dialogs.BtnNo") || game.i18n.localize("No") || "No";
-                    const ok = await new Promise(resolve => {
-                        new Dialog({
-                            title: game.i18n.localize("FANG.Messages.LockStompTitle") || "Take over edit lock?",
-                            content: `<p>${confirmMsg}</p>`,
-                            buttons: {
-                                yes: { icon: '<i class="fas fa-check"></i>', label: yesLabel, callback: () => resolve(true) },
-                                no:  { icon: '<i class="fas fa-times"></i>', label: noLabel,  callback: () => resolve(false) }
-                            },
-                            default: "no",
-                            close: () => resolve(false)
-                        }, { classes: ["dialog", "fang-dialog"], width: 420 }).render(true);
+                    const otherName = freshLock.userName || this._localize("FANG.Messages.OtherUser", "another user");
+                    const confirmMsg = this._localize("FANG.Messages.LockStompConfirm", "{user} is currently editing. Take over anyway?").replace("{user}", otherName);
+                    const result = await this._openCanvasPrompt({
+                        title: this._localize("FANG.Messages.LockStompTitle", "Take over edit lock?"),
+                        icon: "fa-lock",
+                        body: confirmMsg,
+                        actions: [
+                            { id: "yes", label: this._localize("FANG.Dialogs.BtnYes", "Yes"), icon: "fa-check", className: "primary" },
+                            { id: "no",  label: this._localize("FANG.Dialogs.BtnNo",  "No"),  icon: "fa-times" }
+                        ]
                     });
-                    if (!ok) return;
+                    if (result !== "yes") return;
                 }
                 await entry.setFlag("fang", "editLock", {
                     userId: game.user.id,
