@@ -728,11 +728,18 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const normalized = this._normalizeHistoryEntry(entry);
         if (!normalized) return null;
         if (!user?.isGM && normalized.visibility !== "players") return null;
-        const text = user?.isGM ? (normalized.gmText || normalized.playerText) : normalized.playerText;
-        if (!user?.isGM && !text.trim()) return null;
+        const isGM = !!user?.isGM;
+        const playerText = String(normalized.playerText || "").trim();
+        const gmText = String(normalized.gmText || "").trim();
+        // GM sees BOTH player and GM text side-by-side. Players see only the player text.
+        const displayText = playerText;
+        const displayGmText = isGM ? gmText : "";
+        if (!isGM && !playerText) return null;
+        if (isGM && !playerText && !gmText) return null;
         return {
             ...normalized,
-            displayText: text,
+            displayText,
+            displayGmText,
             displayRefs: this._getHistoryDisplayRefs(normalized, user)
         };
     }
@@ -1202,7 +1209,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                                             </div>
                                             <div class="fang-history-category">${this._escapeHtml(category.label)}</div>
                                         </div>
-                                        ${entry.displayText ? `<p>${this._escapeHtml(entry.displayText)}</p>` : ""}
+                                        ${entry.displayText ? `<p class="fang-history-player-text">${this._escapeHtml(entry.displayText)}</p>` : ""}
+                                        ${entry.displayGmText ? `<p class="fang-history-gm-text"><i class="fas fa-user-shield" aria-hidden="true"></i> <span>${this._escapeHtml(entry.displayGmText)}</span></p>` : ""}
                                         ${refs}
                                     </div>
                                 </div>

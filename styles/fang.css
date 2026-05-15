@@ -3639,6 +3639,32 @@ body:has(.actors-sidebar.sidebar-popout:has(.window-content > *)) #fang-so-actor
     overflow-wrap: anywhere;
 }
 
+/* GM-only context note below the player-visible text. Marked with a shield icon
+   and a subtle red/gold tint so the GM can distinguish their private context
+   at a glance. Players never receive this paragraph. */
+.fang-history-entry p.fang-history-gm-text {
+    margin-top: 8px;
+    padding: 8px 10px;
+    background: rgba(139, 0, 0, 0.05);
+    border-left: 3px solid var(--fang-primary-red, #8B0000);
+    border-radius: 4px;
+    font-style: italic;
+    color: #5a3315;
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+}
+
+.fang-history-entry p.fang-history-gm-text > i {
+    color: var(--fang-primary-red, #8B0000);
+    margin-top: 3px;
+    flex: 0 0 auto;
+}
+
+.fang-history-entry p.fang-history-gm-text > span {
+    flex: 1 1 auto;
+}
+
 .fang-history-category {
     display: inline-flex;
     flex: 0 0 auto;
