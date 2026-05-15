@@ -112,9 +112,14 @@
                     "Midnight": "Midnight",
                     "Red": "Blood Red",
                     "Grey": "Slate Grey",
-                    "Black": "Deep Black"
+                    "Black": "Deep Black",
+                    "DeepMahogany": "Deep Mahogany",
+                    "Forest": "Forest",
+                    "Ocean": "Ocean",
+                    "Shadow": "Shadow"
                 }
-            }
+            },
+            "Color": "Color"
         },
         "Journal": {
             "FolderName": "FANG - Do Not Delete",
@@ -172,7 +177,11 @@
             "QuickConnectLabelContent": "Relationship from {source} to {target}:",
             "QuickConnectLabelPlaceholder": "Label e.g. 'knows'",
             "PlayerLoreMissing": "A GM needs to create the player notes journal first.",
-            "PlayerLoreCreateGMOnly": "Only a GM can create the initial player notes journal."
+            "PlayerLoreCreateGMOnly": "Only a GM can create the initial player notes journal.",
+            "SaveSuccess": "Changes saved.",
+            "OtherUser": "another user",
+            "LockStompTitle": "Take over edit lock?",
+            "LockStompConfirm": "{user} is currently editing. Take over anyway?"
         },
         "ActorEditor": {
             "Title": "Edit Actor",

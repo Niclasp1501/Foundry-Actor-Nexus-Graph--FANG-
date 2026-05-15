@@ -112,9 +112,14 @@
                     "Midnight": "Полночь",
                     "Red": "Кроваво-красный",
                     "Grey": "Сланцево-серый",
-                    "Black": "Глубокий черный"
+                    "Black": "Глубокий черный",
+                    "DeepMahogany": "Тёмное махагони",
+                    "Forest": "Лес",
+                    "Ocean": "Океан",
+                    "Shadow": "Тень"
                 }
-            }
+            },
+            "Color": "Цвет"
         },
         "Journal": {
             "FolderName": "FANG - Не удалять",
@@ -172,7 +177,11 @@
             "QuickConnectLabelPlaceholder": "?????, ???????? '?????'",
             "MonitorViewClosed": "Окно монитора закрыто.",
             "PlayerLoreMissing": "GM must create the player notes journal first.",
-            "PlayerLoreCreateGMOnly": "Only a GM can create the initial player notes journal."
+            "PlayerLoreCreateGMOnly": "Only a GM can create the initial player notes journal.",
+            "SaveSuccess": "Изменения сохранены.",
+            "OtherUser": "другой пользователь",
+            "LockStompTitle": "Перехватить блокировку?",
+            "LockStompConfirm": "{user} сейчас редактирует. Всё равно перехватить?"
         },
         "ActorEditor": {
             "Title": "????????????? ??????",

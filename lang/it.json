@@ -112,9 +112,14 @@
                     "Midnight": "Mezzanotte",
                     "Red": "Rosso Sangue",
                     "Grey": "Grigio Ardesia",
-                    "Black": "Nero Profondo"
+                    "Black": "Nero Profondo",
+                    "DeepMahogany": "Mogano Scuro",
+                    "Forest": "Foresta",
+                    "Ocean": "Oceano",
+                    "Shadow": "Ombra"
                 }
-            }
+            },
+            "Color": "Colore"
         },
         "Journal": {
             "FolderName": "FANG - Non Eliminare",
@@ -172,7 +177,11 @@
             "QuickConnectLabelPlaceholder": "Etichetta, es. 'conosce'",
             "MonitorViewClosed": "Vista monitor chiusa.",
             "PlayerLoreMissing": "Il GM deve prima creare il diario delle note giocatore.",
-            "PlayerLoreCreateGMOnly": "Solo il GM puo creare il diario iniziale delle note giocatore."
+            "PlayerLoreCreateGMOnly": "Solo il GM puo creare il diario iniziale delle note giocatore.",
+            "SaveSuccess": "Modifiche salvate.",
+            "OtherUser": "un altro utente",
+            "LockStompTitle": "Acquisire blocco di modifica?",
+            "LockStompConfirm": "{user} sta modificando. Acquisire comunque?"
         },
         "ActorEditor": {
             "Title": "Modifica attore",

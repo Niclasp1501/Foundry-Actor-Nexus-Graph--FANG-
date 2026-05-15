@@ -112,9 +112,14 @@
                     "Midnight": "Midnight",
                     "Red": "Blood Red",
                     "Grey": "Slate Grey",
-                    "Black": "Deep Black"
+                    "Black": "Deep Black",
+                    "DeepMahogany": "Tmavý mahagon",
+                    "Forest": "Les",
+                    "Ocean": "Oceán",
+                    "Shadow": "Stín"
                 }
-            }
+            },
+            "Color": "Barva"
         },
         "Journal": {
             "FolderName": "FANG - Nesmazat",
@@ -172,7 +177,11 @@
             "QuickConnectLabelPlaceholder": "Popisek nap?. 'zn?'",
             "MonitorViewClosed": "Monitorovací okno zavřeno.",
             "PlayerLoreMissing": "A GM needs to create the player notes journal first.",
-            "PlayerLoreCreateGMOnly": "Only a GM can create the initial player notes journal."
+            "PlayerLoreCreateGMOnly": "Only a GM can create the initial player notes journal.",
+            "SaveSuccess": "Změny uloženy.",
+            "OtherUser": "jiný uživatel",
+            "LockStompTitle": "Převzít zámek úprav?",
+            "LockStompConfirm": "{user} právě upravuje. Přesto převzít?"
         },
         "ActorEditor": {
             "Title": "Upravit akt?ra",

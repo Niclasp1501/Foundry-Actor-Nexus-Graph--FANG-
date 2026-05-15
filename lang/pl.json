@@ -112,9 +112,14 @@
                     "Midnight": "Północ",
                     "Red": "Krwawa Czerwień",
                     "Grey": "Łupkowy Szary",
-                    "Black": "Głęboka Czerń"
+                    "Black": "Głęboka Czerń",
+                    "DeepMahogany": "Ciemny Mahoń",
+                    "Forest": "Las",
+                    "Ocean": "Ocean",
+                    "Shadow": "Cień"
                 }
-            }
+            },
+            "Color": "Kolor"
         },
         "Journal": {
             "FolderName": "FANG - Nie usuwaj",
@@ -172,7 +177,11 @@
             "QuickConnectLabelPlaceholder": "Etykieta, np. 'zna'",
             "MonitorViewClosed": "Widok monitorowania zamknięty.",
             "PlayerLoreMissing": "MG musi najpierw utworzyc dziennik notatek gracza.",
-            "PlayerLoreCreateGMOnly": "Tylko MG moze utworzyc poczatkowy dziennik notatek gracza."
+            "PlayerLoreCreateGMOnly": "Tylko MG moze utworzyc poczatkowy dziennik notatek gracza.",
+            "SaveSuccess": "Zmiany zapisane.",
+            "OtherUser": "inny użytkownik",
+            "LockStompTitle": "Przejąć blokadę edycji?",
+            "LockStompConfirm": "{user} aktualnie edytuje. Przejąć mimo to?"
         },
         "ActorEditor": {
             "Title": "Edytuj aktora",

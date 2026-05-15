@@ -112,9 +112,14 @@
                     "Midnight": "Middernacht",
                     "Red": "Bloedrood",
                     "Grey": "Leisteen Grijs",
-                    "Black": "Diep Zwart"
+                    "Black": "Diep Zwart",
+                    "DeepMahogany": "Diep Mahonie",
+                    "Forest": "Bos",
+                    "Ocean": "Oceaan",
+                    "Shadow": "Schaduw"
                 }
-            }
+            },
+            "Color": "Kleur"
         },
         "Journal": {
             "FolderName": "FANG - Niet Verwijderen",
@@ -172,7 +177,11 @@
             "QuickConnectLabelPlaceholder": "Label, bijv. 'kent'",
             "MonitorViewClosed": "Monitorweergave gesloten.",
             "PlayerLoreMissing": "De GM moet eerst het spelersnotities-journaal maken.",
-            "PlayerLoreCreateGMOnly": "Alleen de GM kan het eerste spelersnotities-journaal maken."
+            "PlayerLoreCreateGMOnly": "Alleen de GM kan het eerste spelersnotities-journaal maken.",
+            "SaveSuccess": "Wijzigingen opgeslagen.",
+            "OtherUser": "een andere gebruiker",
+            "LockStompTitle": "Bewerkingsslot overnemen?",
+            "LockStompConfirm": "{user} is momenteel aan het bewerken. Toch overnemen?"
         },
         "ActorEditor": {
             "Title": "Actor bewerken",

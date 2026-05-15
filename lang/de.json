@@ -112,9 +112,14 @@
                     "Midnight": "Mitternacht",
                     "Red": "Blutrot",
                     "Grey": "Schiefergrau",
-                    "Black": "Tiefschwarz"
+                    "Black": "Tiefschwarz",
+                    "DeepMahogany": "Dunkles Mahagoni",
+                    "Forest": "Wald",
+                    "Ocean": "Ozean",
+                    "Shadow": "Schatten"
                 }
-            }
+            },
+            "Color": "Farbe"
         },
         "Journal": {
             "FolderName": "FANG - Nicht löschen",
@@ -172,7 +177,11 @@
             "QuickConnectLabelContent": "Beziehung von {source} zu {target}:",
             "QuickConnectLabelPlaceholder": "Label z.B. 'kennt'",
             "PlayerLoreMissing": "Ein GM muss das Spieler-Notizen-Journal zuerst erstellen.",
-            "PlayerLoreCreateGMOnly": "Nur ein GM kann das erste Spieler-Notizen-Journal erstellen."
+            "PlayerLoreCreateGMOnly": "Nur ein GM kann das erste Spieler-Notizen-Journal erstellen.",
+            "SaveSuccess": "Änderungen gespeichert.",
+            "OtherUser": "ein anderer Benutzer",
+            "LockStompTitle": "Bearbeitung übernehmen?",
+            "LockStompConfirm": "{user} bearbeitet gerade. Trotzdem übernehmen?"
         },
         "ActorEditor": {
             "Title": "Akteur bearbeiten",

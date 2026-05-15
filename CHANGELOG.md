@@ -3,6 +3,25 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Module versions follow the Foundry-targeted `<foundry-major>.<YYMM>.<patch>` release scheme documented in `AGENTS.md`.
 
+## [14.2605.4] - 2026-05-15
+### Merged from claude/goofy-gagarin-d190dc design-refactor branch
+Selektiver Merge der parallelen Design-Refactor- und Hotfix-Arbeit auf 14.0.19-Linie. Beta-Stand bleibt für UI/Code-Struktur erhalten; nur orthogonale Bugfixes und i18n-Ergänzungen wurden übernommen.
+
+### Added
+- **9 fehlende i18n-Keys** in allen 10 Locales: `FANG.UI.Color`, `FANG.Messages.SaveSuccess`, `FANG.Messages.OtherUser`, `FANG.Messages.LockStompTitle`, `FANG.Messages.LockStompConfirm`, `FANG.UI.Background.Palette.{DeepMahogany, Forest, Ocean, Shadow}`. Die ersten sechs werden im Code referenziert aber existierten nicht; die letzten drei sind für den neuen Lock-Stomp-Dialog.
+
+### Fixed
+- **Edit-Lock-Race / GM-Stomping:** GM konnte ohne Warnung den aktiven Edit-Lock eines Spielers oder anderen GMs überschreiben. Nun wird der Flag vor `setFlag` frisch gelesen; bei Konflikt erscheint ein Bestätigungsdialog mit dem Namen des aktuellen Bearbeiters. Default-Antwort ist „Abbrechen".
+- **Globale role-based CSS-Klasse:** `document.body` bekommt jetzt in `Hooks.once("ready")` die Klassen `role-player` (für Spieler) bzw. `role-gm` (für GM). Damit greifen CSS-Regeln wie `body.role-player .gm-only { display: none }` zuverlässig auch für dynamisch eingefügte Elemente.
+
+### Not merged (intentional)
+- Design-Token-System (`--fang-space-*`, `--fang-radius-*`, `--fang-text-*`) — kollidiert mit der von beta entwickelten Chronik-CSS. Kann später als eigener PR aufgesetzt werden, wenn gewünscht.
+- ARIA-Tab-Pattern (Pfeiltasten-Navigation, aria-selected/-controls) — beta-HBS hat Tabs anders strukturiert. Separater A11y-Pass empfohlen.
+- Edge-Pfeil-Migration auf `.hidden`-Class — beta nutzt die alte `style.display`-Mechanik und hat den Bug nicht; meine "Verbesserung" war selbst eine Regression.
+
+### Backup
+- Tag `backup/claude-refactor-2026-05-15` zeigt auf den vollen ungemergeten Stand der parallelen Linie (`14.1.3-beta.4`).
+
 ## [Unreleased]
 ### Added
 - **Chronicle MVP Beta:** Added a versioned `fang.history` store for story events, automatic game-day prefill with manual override, a global day-grouped chronicle view, and a token-level chronicle view from the node context menu. Entries keep GM/private text separate from player-safe text so automation can build on the same model without exposing hidden-token secrets.
@@ -34,6 +53,58 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **Journal Button Robustness:** FANG journal buttons use delegated click handling so saved journal links remain compatible across Foundry v13/v14 render paths.
 - **Localization Coverage:** Updated German/English strings for the redesigned UI and kept generated locale coverage in sync for all shipped languages.
 - **Module Language Labels:** Corrected language display names in `module.json` so Foundry shows readable locale names.
+
+## [14.1.3-beta.4] - 2026-05-15
+### Added
+- **Volle ARIA-Tab-Pattern-Unterstützung:** Tabs in der Sidebar haben jetzt `aria-controls`, `tabindex="0"`/`-1` sync zu `aria-selected`, und entsprechende Tab-Panels haben `role="tabpanel"` + `aria-labelledby`. Vollständige Keyboard-Navigation: ← → ↑ ↓ wechselt zwischen sichtbaren Tabs (überspringt versteckte GM-only Tabs für Spieler), Home/End springen an Anfang/Ende, Enter/Space aktivieren. Screenreader-konform.
+
+### Changed
+- **Quest-Picker-Items komplett in CSS:** Die JS, die `.fang-quest-pick-item` per `innerHTML` baute, hatte beim Design-Refactor wieder Inline-Styles und manuelle `mouseover`/`mouseout`-Handler für den Hover-Effekt bekommen. Jetzt eine reine CSS-Klasse `.fang-quest-pick-item` mit `:hover`-Pseudoklasse, ohne Inline-Styles und ohne dedizierte JS-Handler.
+- **Visibility-Strategie vereinheitlicht:** Über 10 Stellen in `fang-app.js`, die `element.style.display = "none"/"block"/"flex"` setzten (Context-Menu-Items, Sidebar, Lock-Button), nutzen jetzt durchgängig `classList.toggle("hidden", …)`. Die `.hidden`-Klasse mit `!important` ist die alleinige Wahrheit. Das verhindert weitere Regressionen wie den Edge-Pfeil-Bug aus 14.1.0-beta.1.
+
+## [14.1.2-beta.3] - 2026-05-15
+### Fixed
+- **GM-only Elemente bleiben in dynamisch eingefügten Sub-Bäumen ungeschützt:** Die CSS-Regel `body.role-player .gm-only { display:none }` existierte, aber die Klasse wurde nie gesetzt. Stattdessen versteckte eine JS-Schleife (`gmControls.forEach(el.style.display='none')`) GM-Buttons nur bei Initial-Render. Klasse wird jetzt in `Hooks.once("ready")` global gesetzt (`role-player` / `role-gm`), redundante Schleife entfernt.
+- **Edit-Lock-Race / GM-Stomping:** GM konnte ohne Warnung einen aktiven Edit-Lock eines Spielers oder anderen GMs überschreiben. Nun: vor `setFlag` wird der Flag nochmals frisch gelesen, bei Konflikt erscheint ein Bestätigungsdialog mit dem Namen des aktuellen Bearbeiters. Standardantwort ist „Abbrechen".
+- **Localize/Concat-Operator-Bug bei Lock-Notification:** `name + " " + localize(key) || fallback` — `||` bindet an die gesamte Konkatenation, der Fallback war unerreichbar und bei fehlendem Key wurde der Rohschlüsselname angezeigt. Lokalisierter String wird jetzt separat berechnet, dann mit Username konkateniert.
+- **Quest-Picker Null-Check in falscher Reihenfolge:** `picker.querySelector(...)` lief vor `if (!picker) return`. Crash wenn das Element fehlte. Guard wurde vorgezogen.
+
+### Added
+- 3 neue i18n-Keys für Lock-Stomp-Dialog (`FANG.Messages.OtherUser`, `LockStompTitle`, `LockStompConfirm`) in allen 10 Locales.
+
+## [14.1.1-beta.2] - 2026-05-15
+### Fixed
+- **Edge-Richtungs-Pfeil nicht mehr sichtbar (Regression aus 14.1.0-beta.1):** Der Inline-Style-Refactor hatte die `style="display:none"`-Schalter auf `class="hidden"` umgestellt — die JS toggelte aber weiterhin `style.display`, was wegen `!important` in `.hidden` nicht mehr griff. Pfeile gerichteter Edges werden jetzt wieder korrekt ein-/ausgeblendet via `classList.toggle("hidden", …)`.
+- **Monitor-Mode UI-Leak beim Schließen:** Zwei `_onClose`-Methoden in `FangApplication` haben sich gegenseitig überschrieben. Die erste (Cleanup von `#ui-bottom`, `#hotbar`, `#players`, `body.fang-monitor`, ResizeObserver-Disconnect, Body-Style-Reset) lief nie. Nach Schließen des Monitor-Modes blieb die Foundry-UI versteckt. Beide Methoden zu einer gemerged.
+- **6 fehlende i18n-Keys in `en.json`:** `FANG.Messages.SaveSuccess`, `FANG.UI.Color`, `FANG.UI.Background.Palette.{DeepMahogany, Forest, Ocean, Shadow}`. Wurden im Code referenziert (`fang-app.js:79-82`, `:1790`, `:3409`) aber existierten nicht — Foundry zeigte den Rohschlüsselnamen. Schlüssel ergänzt und in alle 9 weiteren Locales übersetzt (cs, de, es, fr, it, nl, pl, pt-BR, ru).
+
+## [14.1.0-beta.1] - 2026-05-04
+### Beta — Design System Pass
+A focused design refactor; no functional/gameplay changes. Marked **beta** because the surface area touched is large.
+
+### Added
+- **Design Tokens:** New CSS custom properties for spacing (`--fang-space-1..6`), radius (`--fang-radius-sm/md/lg/pill`), text sizes (`--fang-text-xs..3xl`), shadows (`--fang-shadow-lg/xl`), motion (`--fang-anim-fast/base/slow`) and z-index layers (`--fang-z-bg/tooltip/context-menu/spectator/overlay/fullscreen`).
+- **Color Tokens:** Promoted hardcoded values to variables — `--fang-primary-red-hover`, `--fang-primary-red-light`, `--fang-text-muted/soft/faint/helper/mute-warm`, `--fang-bg-alt`, `--fang-bg-banner`, `--fang-border-hover`, `--fang-danger`, `--fang-danger-bg`.
+- **Utility Classes:** Added `.fang-form-row`, `.fang-form-label[--small]`, `.fang-inline-checkbox`, `.fang-help-text[--tight]`, `.fang-section-hint`, `.fang-edit-group`, `.fang-button-row-tight`, `.fang-slider[-group/-meta]`, `.fang-visually-hidden`, `.fang-quest-picker[-header/-list]`, `.btn--block`, `.btn--accent`.
+- **Accessibility:** Tab navigation now uses real `<button role="tab">` elements with `aria-selected` (synced via JS) and `aria-label` for icon-only tabs. `<i>` icons carry `aria-hidden="true"`. Added `:focus-visible` outlines for tabs, buttons, inputs, selects, lock-button and context-menu items. Added `prefers-reduced-motion` media query that disables all animations/transitions for affected users.
+
+### Changed
+- **CSS deduplication:** Removed ~250 lines of duplicate definitions for `.narrative-quest-item`, `.narrative-quests-header`, `#narrative-quests-container`, `.narrative-close`, `.edge-spotlight-card`, `.spectator-active-indicator`, `.button-group-nest` and the `@keyframes fangPulseIndicator` block. Single source of truth restored.
+- **Background presets:** Merged the duplicated `.preset-tile.preset-*` (config dialog) and `#fang-bg-layer.fang-bg-preset-*` (canvas layer) declarations into shared selectors. Saved 6 large `data:` SVG noise URLs from being parsed twice.
+- **Cyberpunk theme:** Three separate selectors (`:root`, `body`, `.fang-app-container`) merged into a single grouped selector. Theme also now provides muted-text overrides for cyberpunk palette.
+- **Tab markup:** `<a class="tab-btn">` → `<button type="button" class="tab-btn" role="tab">`. Properly keyboard-focusable; CSS resets the native button look.
+- **Z-index sanity:** Replaced literal `2147483647` with the `--fang-z-fullscreen` token (`200000`).
+- **`will-change` discipline:** `#fang-bg-layer` no longer permanently advertises `will-change: opacity, transform, filter`. Promotion is now opt-in via `.is-animating`.
+- **Inline styles removed:** All `style="…"` attributes inside `templates/fang-app.hbs` (≈ 25 instances) replaced with utility classes — including the large quest-picker block and the edge-directional indicator. Easier to theme & override.
+- **Danger button:** `.btn.danger-btn` is now a defined CSS variant (was previously inline-styled per-button).
+
+### Fixed
+- **Mixed `font-weight` on `.button-group-nest h4`:** removed conflicting `font-weight: 800` and `font-weight: 600` overrides — header now has a single, intentional weight.
+- **Conflicting checkbox styles:** Inline checkbox markup had `style="width:auto; margin:0; cursor:pointer"` repeated 8× — now a single `.fang-inline-checkbox` class.
+
+### Notes
+- File size: `styles/fang.css` shrunk from **2518 → ~2500** lines while gaining new utilities (net −250 duplicate lines, +250 token/utility/a11y lines).
+- No JS API changes. Foundry compatibility unchanged (V13 / V14).
 
 ## [14.0.19] - 2026-04-22
 ### Added

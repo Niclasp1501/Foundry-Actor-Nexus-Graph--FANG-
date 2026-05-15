@@ -7175,6 +7175,19 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         } else {
             // Take the lock
             if (game.user.isGM) {
+                // Edit-Lock-Race protection: if someone else holds the lock,
+                // ask for confirmation before stomping. Re-fetch the flag to minimise race window.
+                const freshLock = entry.getFlag("fang", "editLock");
+                if (freshLock && freshLock.userId !== game.user.id) {
+                    const otherName = freshLock.userName || game.i18n.localize("FANG.Messages.OtherUser") || "another user";
+                    const confirmMsg = (game.i18n.localize("FANG.Messages.LockStompConfirm") || "{user} is currently editing. Take over anyway?").replace("{user}", otherName);
+                    const ok = await Dialog.confirm({
+                        title: game.i18n.localize("FANG.Messages.LockStompTitle") || "Take over edit lock?",
+                        content: `<p>${confirmMsg}</p>`,
+                        defaultYes: false
+                    });
+                    if (!ok) return;
+                }
                 await entry.setFlag("fang", "editLock", {
                     userId: game.user.id,
                     userName: game.user.name,

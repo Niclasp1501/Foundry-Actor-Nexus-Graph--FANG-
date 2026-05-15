@@ -559,6 +559,11 @@ Hooks.once("init", () => {
 });
 
 Hooks.once("ready", async () => {
+  // Mark body for role-based CSS — enables body.role-player .gm-only { display:none }
+  // to hide GM-only elements globally, including dynamically added ones.
+  document.body.classList.toggle("role-player", !game.user.isGM);
+  document.body.classList.toggle("role-gm", game.user.isGM);
+
   if (!window._fangJournalOpenButtonFixInstalled) {
     document.addEventListener("click", _fangOpenGraphFromJournalButtonEvent, true);
     window._fangJournalOpenButtonFixInstalled = true;

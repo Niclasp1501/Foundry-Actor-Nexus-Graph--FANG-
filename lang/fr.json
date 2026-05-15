@@ -112,9 +112,14 @@
                     "Midnight": "Minuit",
                     "Red": "Rouge Sang",
                     "Grey": "Gris Ardoise",
-                    "Black": "Noir Profond"
+                    "Black": "Noir Profond",
+                    "DeepMahogany": "Acajou Profond",
+                    "Forest": "Forêt",
+                    "Ocean": "Océan",
+                    "Shadow": "Ombre"
                 }
-            }
+            },
+            "Color": "Couleur"
         },
         "Journal": {
             "FolderName": "FANG - Ne pas supprimer",
@@ -172,7 +177,11 @@
             "QuickConnectLabelPlaceholder": "Libell?, ex. 'conna?t'",
             "MonitorViewClosed": "Vue du moniteur fermée.",
             "PlayerLoreMissing": "Le MJ doit d abord creer le journal de notes joueur.",
-            "PlayerLoreCreateGMOnly": "Seul le MJ peut creer le journal initial de notes joueur."
+            "PlayerLoreCreateGMOnly": "Seul le MJ peut creer le journal initial de notes joueur.",
+            "SaveSuccess": "Modifications enregistrées.",
+            "OtherUser": "un autre utilisateur",
+            "LockStompTitle": "Reprendre le verrou d'édition ?",
+            "LockStompConfirm": "{user} est en train de modifier. Reprendre quand même ?"
         },
         "ActorEditor": {
             "Title": "Modifier l?acteur",
