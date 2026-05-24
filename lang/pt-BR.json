@@ -298,7 +298,9 @@
             "ActorDropVisible": "Show openly",
             "ActorDropHidden": "Show hidden",
             "BtnYes": "Sim",
-            "BtnNo": "Não"
+            "BtnNo": "Não",
+            "IdentityGMOnly": "GM only - hide completely",
+            "ActorDropGMOnly": "GM only"
         },
         "History": {
             "Timeline": "Chronicle",
@@ -425,6 +427,45 @@
             "DropContent": "Você deseja substituir <strong>{target}</strong> por <strong>{actor}</strong>, ou criar um relacionamento?",
             "DropReplace": "Substituir placeholder",
             "DropConnect": "Criar relacionamento"
+        },
+        "Zones": {
+            "Title": "Zonas de afiliação",
+            "Manage": "Gerenciar zonas",
+            "Hint": "Crie zonas de campanha como cidades, regiões, organizações, cortes ou submundo.",
+            "Zone": "Zona",
+            "Add": "Adicionar zona",
+            "Delete": "Excluir zona",
+            "NewZone": "Nova zona",
+            "NamePlaceholder": "Nome da zona",
+            "DescriptionPlaceholder": "Descrição curta da zona",
+            "VisibleToPlayers": "Visível para jogadores",
+            "Types": {
+                "region": "Região",
+                "city": "Cidade",
+                "organization": "Organização",
+                "court": "Corte",
+                "underworld": "Submundo",
+                "other": "Outro"
+            }
+        },
+        "RelationshipTypes": {
+            "Label": "Tipo de relação",
+            "Default": "Padrão",
+            "Custom": "Tipo personalizado",
+            "Ally": "Aliado",
+            "Enemy": "Inimigo",
+            "Family": "Família",
+            "Faction": "Facção",
+            "Quest": "Missão",
+            "Unknown": "Desconhecido"
+        },
+        "QuestStatus": {
+            "Label": "Status da missão",
+            "open": "Aberta",
+            "active": "Ativa",
+            "done": "Concluída",
+            "failed": "Fracassada",
+            "rumor": "Rumor"
         }
     }
 }

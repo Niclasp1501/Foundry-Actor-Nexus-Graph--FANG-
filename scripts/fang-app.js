@@ -315,6 +315,47 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         };
     }
 
+    _normalizeZone(zone = {}) {
+        const id = zone.id || foundry.utils.randomID();
+        return {
+            ...zone,
+            id,
+            name: String(zone.name || this._localize("FANG.Zones.NewZone", "New Zone")),
+            type: String(zone.type || "region"),
+            color: String(zone.color || "#d4af37"),
+            description: String(zone.description || ""),
+            playerVisible: zone.playerVisible !== false
+        };
+    }
+
+    _getDefaultRelationshipTypes() {
+        return [
+            { id: "ally", label: this._localize("FANG.RelationshipTypes.Ally", "Ally"), color: "#2f9e44", dash: "" },
+            { id: "enemy", label: this._localize("FANG.RelationshipTypes.Enemy", "Enemy"), color: "#b91c1c", dash: "" },
+            { id: "family", label: this._localize("FANG.RelationshipTypes.Family", "Family"), color: "#d97706", dash: "" },
+            { id: "faction", label: this._localize("FANG.RelationshipTypes.Faction", "Faction"), color: "#2563eb", dash: "8,5" },
+            { id: "quest", label: this._localize("FANG.RelationshipTypes.Quest", "Quest"), color: "#9333ea", dash: "4,4" },
+            { id: "unknown", label: this._localize("FANG.RelationshipTypes.Unknown", "Unknown"), color: "#6b7280", dash: "2,5" }
+        ];
+    }
+
+    _normalizeRelationshipType(type = {}) {
+        return {
+            ...type,
+            id: String(type.id || foundry.utils.randomID()),
+            label: String(type.label || type.name || this._localize("FANG.RelationshipTypes.Custom", "Custom")),
+            color: String(type.color || "#888888"),
+            dash: String(type.dash || "")
+        };
+    }
+
+    _getRelationshipType(typeId) {
+        const types = Array.isArray(this.graphData?.relationshipTypes) && this.graphData.relationshipTypes.length
+            ? this.graphData.relationshipTypes.map(type => this._normalizeRelationshipType(type))
+            : this._getDefaultRelationshipTypes();
+        return types.find(type => type.id === typeId) || null;
+    }
+
     _isFactionVisibleToCurrentUser(faction) {
         if (!faction) return false;
         return game.user.isGM || faction.playerVisible !== false;
@@ -332,6 +373,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
     _canUserSeeNode(node, user = game.user) {
         if (!node) return false;
+        if (!user?.isGM && node.gmOnly === true) return false;
         // Hidden nodes are still player-managed contacts. Players may interact
         // with their safe facade, but must never receive the real identity.
         return true;
@@ -350,9 +392,22 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
     _canUserSeeLink(link, user = game.user) {
         if (!link) return false;
+        if (!user?.isGM && link.gmOnly === true) return false;
         const sourceNode = this._resolveNodeReference(link.source);
         const targetNode = this._resolveNodeReference(link.target);
         return this._canUserSeeNode(sourceNode, user) && this._canUserSeeNode(targetNode, user);
+    }
+
+    _getVisibleNodesForUser(user = game.user) {
+        return (this.graphData?.nodes || []).filter(node => this._canUserSeeNode(node, user));
+    }
+
+    _getVisibleLinksForUser(user = game.user) {
+        return (this.graphData?.links || []).filter(link => this._canUserSeeLink(link, user));
+    }
+
+    _getVisibleNodeIdSetForUser(user = game.user) {
+        return new Set(this._getVisibleNodesForUser(user).map(node => node.id));
     }
 
     _canUseGraphAction(action, target, user = game.user) {
@@ -713,6 +768,11 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     _getHistoryEntriesForUser({ nodeId = null, user = game.user } = {}) {
+        if (nodeId) {
+            const scopedNode = this.graphData.nodes.find(node => node.id === nodeId);
+            if (!this._canUserSeeNode(scopedNode, user)) return [];
+        }
+
         return this._getHistoryStore().entries
             .filter(entry => !nodeId || entry.refs.some(ref => ref.type === "node" && ref.id === nodeId))
             .map(entry => this._getHistoryEntryForUser(entry, user))
@@ -736,11 +796,13 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const displayGmText = isGM ? gmText : "";
         if (!isGM && !playerText) return null;
         if (isGM && !playerText && !gmText) return null;
+        const displayRefs = this._getHistoryDisplayRefs(normalized, user);
+        if (!isGM && normalized.refs.some(ref => ref.type === "node") && !displayRefs.some(ref => ref.type === "node")) return null;
         return {
             ...normalized,
             displayText,
             displayGmText,
-            displayRefs: this._getHistoryDisplayRefs(normalized, user)
+            displayRefs
         };
     }
 
@@ -748,7 +810,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         return entry.refs.map(ref => {
             if (ref.type === "node") {
                 const node = this.graphData.nodes.find(n => n.id === ref.id);
-                if (!node) return null;
+                if (!node || !this._canUserSeeNode(node, user)) return null;
                 return {
                     ...ref,
                     label: this._getSafeNodeName(node, user),
@@ -1075,6 +1137,13 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                         hidden: true,
                         displayName: panel.querySelector(".fang-drop-alias")?.value?.trim() || unknown
                     })
+                },
+                {
+                    id: "gmOnly",
+                    label: this._localize("FANG.Dialogs.ActorDropGMOnly", "Nur GM"),
+                    icon: "fa-user-shield",
+                    className: "danger",
+                    resolve: () => ({ hidden: true, gmOnly: true, displayName: unknown })
                 }
             ]
         });
@@ -1320,11 +1389,23 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             if (node.factionId && !factionIds.has(node.factionId)) node.factionId = null;
             node.conditions = Array.isArray(node.conditions) ? node.conditions : [];
             node.questUuids = Array.isArray(node.questUuids) ? node.questUuids : [];
+            node.questUuids = node.questUuids.map(q => ({ ...q, status: q.status || "open" }));
             if (node.showHiddenQuestsToPlayers === undefined) node.showHiddenQuestsToPlayers = true;
+            if (node.gmOnly === undefined) node.gmOnly = false;
+            if (node.secretKind === undefined) node.secretKind = node.gmOnly ? "secret" : "";
+            if (node.zoneId === undefined) node.zoneId = null;
         }
+
+        graph.links.forEach(link => {
+            if (link.gmOnly === undefined) link.gmOnly = false;
+            if (link.relationshipType === undefined) link.relationshipType = "";
+            if (link.questStatus === undefined) link.questStatus = "";
+        });
 
         if (graph.showFactionLines === undefined) graph.showFactionLines = true;
         if (graph.showFactionLegend === undefined) graph.showFactionLegend = true;
+        graph.zones = Array.isArray(graph.zones) ? graph.zones.map(zone => this._normalizeZone(zone)) : [];
+        graph.relationshipTypes = Array.isArray(graph.relationshipTypes) ? graph.relationshipTypes.map(type => this._normalizeRelationshipType(type)) : this._getDefaultRelationshipTypes();
         this.graphData = graph;
         return graph;
     }
@@ -1625,6 +1706,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     new FangBackgroundConfig(this).render({ force: true });
                 });
             }
+
+            const btnManageZones = this.element.querySelector("#btnManageZones");
+            if (btnManageZones) btnManageZones.addEventListener("click", () => this._onManageZones());
         } else {
             setTimeout(() => this.resizeCanvas(), 50);
         }
@@ -1839,7 +1923,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     node.questUuids = node.questUuids.map(q => ({
                         uuid: q.uuid,
                         name: q.name || "Quest Journal",
-                        visibleToPlayers: q.visibleToPlayers !== false
+                        visibleToPlayers: q.visibleToPlayers !== false,
+                        status: q.status || "open"
                     }));
                 });
 
@@ -3257,6 +3342,91 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
         factionDialog.render(true);
     }
+
+    async _onManageZones() {
+        if (!game.user?.isGM) return;
+        const zones = Array.isArray(this.graphData.zones) ? this.graphData.zones.map(z => this._normalizeZone(z)) : [];
+        const escapeHtml = (value) => this._escapeHtml(value);
+        const localize = (key, fallback) => this._localize(key, fallback);
+        const zoneTypes = ["region", "city", "organization", "court", "underworld", "other"];
+        const renderZoneRow = (zone, index) => `
+            <div class="fang-faction-item fang-zone-item">
+                <div class="fang-faction-main-row">
+                    <input type="hidden" class="zone-id" value="${escapeHtml(zone.id || "")}">
+                    <input type="color" class="zone-color" value="${escapeHtml(zone.color || "#d4af37")}">
+                    <input type="text" class="zone-name" value="${escapeHtml(zone.name || "")}" placeholder="${escapeHtml(localize("FANG.Zones.NamePlaceholder", "Zone name"))}">
+                    <select class="zone-type">
+                        ${zoneTypes.map(type => `<option value="${type}" ${zone.type === type ? "selected" : ""}>${escapeHtml(localize(`FANG.Zones.Types.${type}`, type))}</option>`).join("")}
+                    </select>
+                </div>
+                <textarea class="zone-description" rows="2" placeholder="${escapeHtml(localize("FANG.Zones.DescriptionPlaceholder", "Short zone description"))}">${escapeHtml(zone.description || "")}</textarea>
+                <div class="fang-faction-visibility-row">
+                    <label><input type="checkbox" class="zone-player-visible" ${zone.playerVisible !== false ? "checked" : ""}> ${escapeHtml(localize("FANG.Zones.VisibleToPlayers", "Visible to players"))}</label>
+                </div>
+                <div class="fang-faction-actions-row">
+                    <button type="button" class="btn danger-btn btn-delete-zone fang-faction-delete-btn" data-index="${index}">
+                        <i class="fas fa-trash"></i> ${escapeHtml(localize("FANG.Zones.Delete", "Delete zone"))}
+                    </button>
+                </div>
+            </div>`;
+
+        const dialog = new Dialog({
+            title: localize("FANG.Zones.Title", "Affiliation Zones"),
+            content: `
+                <div class="fang-faction-manager">
+                    <header class="fang-faction-manager__header">
+                        <div>
+                            <strong>${escapeHtml(localize("FANG.Zones.Title", "Affiliation Zones"))}</strong>
+                            <p>${escapeHtml(localize("FANG.Zones.Hint", "Create campaign zones such as cities, regions, organizations, courts, or underworld groups."))}</p>
+                        </div>
+                    </header>
+                    <div id="fang-zones-list">${zones.map(renderZoneRow).join("")}</div>
+                    <button type="button" id="fang-add-zone-btn" class="btn fang-add-faction-btn">
+                        <i class="fas fa-plus"></i> ${escapeHtml(localize("FANG.Zones.Add", "Add zone"))}
+                    </button>
+                </div>`,
+            render: (html) => {
+                html.find("#fang-add-zone-btn").on("click", () => {
+                    const list = html.find("#fang-zones-list");
+                    list.append(renderZoneRow(this._normalizeZone({ name: localize("FANG.Zones.NewZone", "New Zone") }), list.children().length));
+                });
+                html.on("click", ".btn-delete-zone", (event) => event.currentTarget.closest(".fang-zone-item")?.remove());
+            },
+            buttons: {
+                save: {
+                    icon: '<i class="fas fa-save"></i>',
+                    label: localize("FANG.Dialogs.BtnSave", "Save"),
+                    callback: async (html) => {
+                        const nextZones = [];
+                        html.find(".fang-zone-item").each((_, el) => {
+                            const id = $(el).find(".zone-id").val() || foundry.utils.randomID();
+                            const name = $(el).find(".zone-name").val()?.trim();
+                            if (!name) return;
+                            nextZones.push(this._normalizeZone({
+                                id,
+                                name,
+                                type: $(el).find(".zone-type").val() || "region",
+                                color: $(el).find(".zone-color").val() || "#d4af37",
+                                description: $(el).find(".zone-description").val()?.trim() || "",
+                                playerVisible: $(el).find(".zone-player-visible").is(":checked")
+                            }));
+                        });
+                        const zoneIds = new Set(nextZones.map(z => z.id));
+                        this.graphData.nodes.forEach(node => {
+                            if (node.zoneId && !zoneIds.has(node.zoneId)) node.zoneId = null;
+                        });
+                        this.graphData.zones = nextZones;
+                        await this.saveData();
+                        this.ticked();
+                    }
+                },
+                cancel: { icon: '<i class="fas fa-times"></i>', label: localize("FANG.Dialogs.BtnCancel", "Cancel") }
+            },
+            default: "save"
+        }, { classes: ["dialog", "fang-dialog"], width: 620, height: 620, resizable: true });
+        dialog.render(true);
+    }
+
     _onDragOver(event) {
         event.preventDefault(); // Necessary to allow dropping
     }
@@ -3296,7 +3466,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         let targetNode = null;
         let minD2 = s2;
 
-        for (let node of this.graphData.nodes) {
+        for (let node of this._getVisibleNodesForUser()) {
             const dx = x - node.x;
             const dy = y - node.y;
             const d2 = dx * dx + dy * dy;
@@ -3338,7 +3508,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                             if (!targetNode.questUuids) targetNode.questUuids = [];
                             const alreadyLinked = targetNode.questUuids.some(q => q.uuid === data.uuid);
                             if (!alreadyLinked) {
-                                targetNode.questUuids.push({ uuid: data.uuid, name: this._getJournalDocumentTitle(droppedDoc), visibleToPlayers: false });
+                                targetNode.questUuids.push({ uuid: data.uuid, name: this._getJournalDocumentTitle(droppedDoc), visibleToPlayers: false, status: "open" });
                             }
                             if (!targetNode.conditions) targetNode.conditions = [];
                             if (!targetNode.conditions.includes("questgiver")) {
@@ -3435,6 +3605,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                                         name: actor.name, originalName: actor.name,
                                         x: x - 20, y: y - 20,
                                         hidden: visibility.hidden,
+                                        gmOnly: visibility.gmOnly === true,
+                                        secretKind: visibility.gmOnly ? "secret" : "",
                                         displayName: visibility.displayName || "", playerNotes: "", showHiddenQuestsToPlayers: true, conditions: [],
                                         playerLorePageId: generatedLorePageId
                                     };
@@ -3452,7 +3624,10 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                                     source: sourceNode.id,
                                     target: targetNode.id,
                                     label: labelStr,
-                                    directional: isDir
+                                    directional: isDir,
+                                    relationshipType: "",
+                                    questStatus: "",
+                                    gmOnly: sourceNode.gmOnly === true || targetNode.gmOnly === true
                                 });
 
                                 this.initSimulation();
@@ -3548,6 +3723,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     x: jitterX,
                     y: jitterY,
                     hidden: visibility.hidden,
+                    gmOnly: visibility.gmOnly === true,
+                    secretKind: visibility.gmOnly ? "secret" : "",
                     displayName: visibility.displayName || "",
                     playerNotes: "",
                     showHiddenQuestsToPlayers: true,
@@ -3608,6 +3785,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         let minLDist = threshold / (this.transform?.k || 1);
 
         this.graphData.links.forEach((link, idx) => {
+            if (!this._canUserSeeLink(link)) return;
             const s = link.source;
             const t = link.target;
             if (!s || !t || s.x === undefined || t.x === undefined) return;
@@ -3889,7 +4067,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         if (!node.questUuids) node.questUuids = [];
         let addedQuest = null;
         if (!node.questUuids.some(q => q.uuid === uuid)) {
-            addedQuest = { uuid, name: this._getJournalDocumentTitle(doc), visibleToPlayers };
+            addedQuest = { uuid, name: this._getJournalDocumentTitle(doc), visibleToPlayers, status: "open" };
             node.questUuids.push(addedQuest);
         }
         if (!node.conditions) node.conditions = [];
@@ -3927,6 +4105,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     <span class="fang-quest-title"><i class="fas fa-scroll"></i> ${escapeHtml(quest.name || "Quest Journal")}</span>
                     <div class="fang-quest-manager-actions">
                         ${game.user.isGM ? `<span class="fang-quest-visibility ${quest.visibleToPlayers === false ? "is-hidden" : "is-visible"}">${quest.visibleToPlayers === false ? localize("FANG.Dialogs.QuestHiddenFromPlayers", "Hidden from players") : localize("FANG.Dialogs.QuestVisibleToPlayers", "Visible to players")}</span>` : ""}
+                        ${canEdit ? `<select class="fang-quest-status" title="${localize("FANG.QuestStatus.Label", "Quest status")}">
+                            ${["open", "active", "done", "failed", "rumor"].map(status => `<option value="${status}" ${String(quest.status || "open") === status ? "selected" : ""}>${localize(`FANG.QuestStatus.${status}`, status)}</option>`).join("")}
+                        </select>` : ""}
                         <button type="button" class="fang-icon-btn fang-quest-open" title="${localize("FANG.ContextMenu.OpenQuest", "Open Quest Log")}" data-tooltip="${localize("FANG.ContextMenu.OpenQuest", "Open Quest Log")}"><i class="fas fa-book-open"></i></button>
                         <button type="button" class="fang-icon-btn fang-quest-spotlight" title="${localize("FANG.ContextMenu.Spotlight", "Spotlight for Everyone")}" data-tooltip="${localize("FANG.ContextMenu.Spotlight", "Spotlight for Everyone")}"><i class="fas fa-compass"></i></button>
                         ${canEdit ? `<button type="button" class="fang-icon-btn fang-quest-toggle-visibility" title="${quest.visibleToPlayers === false ? localize("FANG.Dialogs.QuestMakeVisible", "Reveal") : localize("FANG.Dialogs.QuestMakeHidden", "Hide")}" data-tooltip="${quest.visibleToPlayers === false ? localize("FANG.Dialogs.QuestMakeVisible", "Reveal") : localize("FANG.Dialogs.QuestMakeHidden", "Hide")}"><i class="fas ${quest.visibleToPlayers === false ? "fa-eye" : "fa-eye-slash"}"></i></button>` : ""}
@@ -3992,7 +4173,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         panel.querySelector(".fang-quest-canvas-close")?.addEventListener("click", () => panel.remove());
         panel.querySelectorAll(".fang-quest-manager-row").forEach(row => {
             row.addEventListener("click", async (event) => {
-                if (event.target.closest("button")) return;
+                if (event.target.closest("button, select, input")) return;
                 if (row.dataset?.uuid) await this._onQuestSpotlight(row.dataset.uuid, { broadcast: false });
             });
         });
@@ -4021,6 +4202,17 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 if (!wasVisible && node.questUuids[index].visibleToPlayers !== false) {
                     await this._recordQuestVisibleHistory(node, node.questUuids[index]);
                 }
+                refreshPanel();
+            });
+        });
+        panel.querySelectorAll(".fang-quest-status").forEach(selectEl => {
+            selectEl.addEventListener("change", async (event) => {
+                if (!canEdit) return;
+                const row = event.currentTarget.closest(".fang-quest-manager-row");
+                const index = Number(row?.dataset?.index);
+                if (!Number.isInteger(index) || !node.questUuids?.[index]) return;
+                node.questUuids[index].status = event.currentTarget.value || "open";
+                await this.saveData();
                 refreshPanel();
             });
         });
@@ -4195,6 +4387,11 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             .filter(f => this._isFactionVisibleToCurrentUser(f) || f.id === node.factionId)
             .map(f => `<option value="${escapeHtml(f.id)}" ${f.id === node.factionId ? "selected" : ""}>${escapeHtml(f.name)}</option>`)
             .join("");
+        const zoneOptions = (this.graphData.zones || [])
+            .map(z => this._normalizeZone(z))
+            .filter(z => game.user?.isGM || z.playerVisible !== false || z.id === node.zoneId)
+            .map(z => `<option value="${escapeHtml(z.id)}" ${z.id === node.zoneId ? "selected" : ""}>${escapeHtml(z.name)}</option>`)
+            .join("");
         const gmJournalLabel = node.journalUuid ? localize("FANG.ContextMenu.OpenJournal", "Open GM Journal") : "GM Journal";
         const playerLoreLabel = node.playerLorePageId
             ? localize("FANG.Dialogs.BtnOpenPlayerJournal", "Open Player Notes Journal")
@@ -4203,6 +4400,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 <section class="fang-editor-section">
                     <h3><i class="fas fa-user-secret"></i> ${localize("FANG.ActorEditor.PlayerViewGMSettings", "GM Settings for Player View")}</h3>
                     <label class="fang-editor-check"><input type="checkbox" id="fang-profile-hidden" ${node.hidden ? "checked" : ""}> ${localize("FANG.Dialogs.IdentityHidden", "Hidden for Players")}</label>
+                    <label class="fang-editor-check"><input type="checkbox" id="fang-profile-gm-only" ${node.gmOnly ? "checked" : ""}> ${localize("FANG.Dialogs.IdentityGMOnly", "GM only - hide completely")}</label>
                     <label class="fang-editor-check"><input type="checkbox" id="fang-profile-hidden-quests" ${node.showHiddenQuestsToPlayers !== false ? "checked" : ""}> ${localize("FANG.Dialogs.HiddenQuestsVisible", "Show quests while hidden")}</label>
                     <label>${localize("FANG.Dialogs.IdentityAlias", "Alias")}</label>
                     <input type="text" id="fang-profile-alias" value="${escapeHtml(node.displayName || "")}" placeholder="???">
@@ -4227,6 +4425,11 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     <select id="fang-profile-faction">
                         <option value="">-- None --</option>
                         ${factionOptions}
+                    </select>
+                    <label>${localize("FANG.Zones.Zone", "Zone")}</label>
+                    <select id="fang-profile-zone">
+                        <option value="">-- None --</option>
+                        ${zoneOptions}
                     </select>
                 </section>
                 ${playerViewSection}
@@ -4257,6 +4460,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                         const newName = html.find("#fang-profile-name").val().trim();
                         const newRole = html.find("#fang-profile-role").val().trim();
                         const newFactionId = html.find("#fang-profile-faction").val();
+                        const newZoneId = html.find("#fang-profile-zone").val();
                         const newAlias = isGM ? html.find("#fang-profile-alias").val().trim() : node.displayName;
                         const newLore = html.find("#fang-profile-lore").val().trim();
                         const newConditions = [];
@@ -4267,8 +4471,12 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                         if (newName) node.name = newName;
                         node.role = newRole || null;
                         node.factionId = newFactionId || null;
+                        node.zoneId = newZoneId || null;
                         if (isGM) {
                             node.hidden = html.find("#fang-profile-hidden").is(":checked");
+                            node.gmOnly = html.find("#fang-profile-gm-only").is(":checked");
+                            if (node.gmOnly) node.hidden = true;
+                            node.secretKind = node.gmOnly ? "secret" : (node.secretKind || "");
                             node.displayName = newAlias;
                             node.showHiddenQuestsToPlayers = html.find("#fang-profile-hidden-quests").is(":checked");
                         }
@@ -4564,6 +4772,10 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             const lblInfo = game.i18n.localize("FANG.Dialogs.InfoInput") || "Notizen";
             const lblDirectional = game.i18n.localize("FANG.Dialogs.DirectionalInput") || "Gerichtet (Pfeil)";
             const lblReverseDirection = game.i18n.localize("FANG.Dialogs.ReverseDirectionInput") || "Richtung umkehren";
+            const relationshipOptions = (this.graphData.relationshipTypes || this._getDefaultRelationshipTypes())
+                .map(t => this._normalizeRelationshipType(t))
+                .map(t => `<option value="${this._escapeHtml(t.id)}" ${link.relationshipType === t.id ? "selected" : ""}>${this._escapeHtml(t.label)}</option>`)
+                .join("");
 
             new Dialog({
                 title: title,
@@ -4576,6 +4788,17 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     </div>
                     <div class="form-group" style="height: 150px;">
                         <textarea id="fang-edit-link-info" placeholder="${lblInfo}" style="width: 100%; height: 100%; resize: none; font-family: var(--fang-font-main); padding: 5px;">${link.info || ""}</textarea>
+                    </div>
+                    <div class="form-group" style="margin-top: 10px;">
+                        <label for="fang-edit-link-type">${this._escapeHtml(this._localize("FANG.RelationshipTypes.Label", "Relationship type"))}</label>
+                        <select id="fang-edit-link-type" style="width: 100%;">
+                            <option value="">-- ${this._escapeHtml(this._localize("FANG.RelationshipTypes.Default", "Default"))} --</option>
+                            ${relationshipOptions}
+                        </select>
+                    </div>
+                    <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; margin-top: 8px;">
+                        <label for="fang-edit-link-gm-only" style="cursor: pointer;">${this._escapeHtml(this._localize("FANG.Dialogs.IdentityGMOnly", "GM only - hide completely"))}</label>
+                        <input type="checkbox" id="fang-edit-link-gm-only" ${link.gmOnly ? "checked" : ""} style="width: auto; margin: 0; cursor: pointer;">
                     </div>
                     <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; margin-top: 10px;">
                         <label for="fang-edit-link-directional" style="cursor: pointer;">${lblDirectional}</label>
@@ -4597,6 +4820,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                             const reverseDirection = html.find("#fang-edit-link-reverse").is(":checked");
                             if (newLabel) link.label = newLabel;
                             link.info = newInfo !== "" ? newInfo : null;
+                            link.relationshipType = html.find("#fang-edit-link-type").val() || "";
+                            link.gmOnly = html.find("#fang-edit-link-gm-only").is(":checked");
                             link.directional = reverseDirection ? true : newDirectional;
                             if (reverseDirection) {
                                 const oldSource = link.source;
@@ -5296,7 +5521,12 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
         // Create a lookup for rendered positions
         const renderPos = {};
-        this.graphData.nodes.forEach(node => {
+        const visibleNodes = this._getVisibleNodesForUser();
+        const visibleLinks = (this.graphData.links || [])
+            .map((link, index) => ({ link, index }))
+            .filter(entry => this._canUserSeeLink(entry.link));
+
+        visibleNodes.forEach(node => {
             let rx = node.x;
             let ry = node.y;
 
@@ -5320,7 +5550,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const connectedNodeIds = new Set();
         if (hoveredNodeId) {
             connectedNodeIds.add(hoveredNodeId);
-            this.graphData.links.forEach(link => {
+            visibleLinks.forEach(({ link }) => {
                 const sId = this._getLinkEndpointId(link.source);
                 const tId = this._getLinkEndpointId(link.target);
                 if (sId === hoveredNodeId) connectedNodeIds.add(tId);
@@ -5339,8 +5569,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
         if (isolateSearch) {
             exactNodeMatches.forEach(id => visibleNodeIds.add(id));
-            this.graphData.links.forEach((link, idx) => {
-                if (!exactLinkMatches.has(idx)) return;
+            visibleLinks.forEach(({ link, index }) => {
+                if (!exactLinkMatches.has(index)) return;
                 const sId = getId(link.source);
                 const tId = getId(link.target);
                 if (sId) visibleNodeIds.add(sId);
@@ -5352,13 +5582,48 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         this.context.clearRect(0, 0, this.width, this.height);
         this.context.translate(transform.x, transform.y);
         this.context.scale(transform.k, transform.k);
+        const nodeRadius = game.settings.get("fang", "tokenSize") || 33;
+
+        // --- Draw Affiliation Zones behind links and nodes ---
+        const visibleZones = (this.graphData.zones || [])
+            .map(z => this._normalizeZone(z))
+            .filter(z => game.user?.isGM || z.playerVisible !== false);
+        visibleZones.forEach(zone => {
+            const members = visibleNodes.filter(node => node.zoneId === zone.id);
+            if (!members.length) return;
+            const points = members.map(node => renderPos[node.id]).filter(Boolean);
+            if (!points.length) return;
+            const pad = Math.max(70, nodeRadius * 2.4);
+            const minX = Math.min(...points.map(p => p.x)) - pad;
+            const maxX = Math.max(...points.map(p => p.x)) + pad;
+            const minY = Math.min(...points.map(p => p.y)) - pad;
+            const maxY = Math.max(...points.map(p => p.y)) + pad;
+            this.context.save();
+            this.context.globalAlpha = 0.16;
+            this.context.fillStyle = zone.color || "#d4af37";
+            this.context.strokeStyle = zone.color || "#d4af37";
+            this.context.lineWidth = 2;
+            this.context.setLineDash([10, 8]);
+            this.context.beginPath();
+            this.context.roundRect(minX, minY, maxX - minX, maxY - minY, 18);
+            this.context.fill();
+            this.context.globalAlpha = 0.55;
+            this.context.stroke();
+            this.context.setLineDash([]);
+            this.context.font = `bold ${Math.max(13, nodeRadius / 2.4)}px 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif`;
+            this.context.fillStyle = zone.color || "#d4af37";
+            this.context.textAlign = "left";
+            this.context.textBaseline = "top";
+            this.context.fillText(zone.name || "", minX + 14, minY + 10);
+            this.context.restore();
+        });
 
         // --- Draw Direct Faction Member Links (Ring Topology + Adaptive Rendering) ---
         // Drawing these FIRST ensures they are UNDERNEATH regular links and nodes
         if (this.graphData.showFactionLines !== false && this.graphData.factions && this.graphData.factions.length > 0) {
             // Build a set of existing regular link pairs for overlap detection
             const regularLinkPairs = new Set();
-            this.graphData.links.forEach(l => {
+            visibleLinks.forEach(({ link: l }) => {
                 const sId = this._getLinkEndpointId(l.source);
                 const tId = this._getLinkEndpointId(l.target);
                 regularLinkPairs.add(sId < tId ? `${sId} - ${tId}` : `${tId} - ${sId}`);
@@ -5367,7 +5632,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             this.graphData.factions.forEach(faction => {
                 faction = this._normalizeFaction(faction);
                 if (!this._shouldShowFactionLinesToCurrentUser(faction)) return;
-                const members = this.graphData.nodes.filter(n => n.factionId === faction.id);
+                const members = visibleNodes.filter(n => n.factionId === faction.id);
                 if (members.length < 2) return;
 
                 // 1. Calculate Centroid for sorting
@@ -5431,7 +5696,6 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         // ----------------------------------------------------
 
         // Draw Links
-        const nodeRadius = game.settings.get("fang", "tokenSize") || 33;
         this.context.lineWidth = 2;
         this.context.strokeStyle = "#888";
         const linkFontSize = Math.max(12, Math.floor(nodeRadius / 2.5));
@@ -5440,7 +5704,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         this.context.textBaseline = "middle";
 
         this._linkCounts = {};
-        this.graphData.links.forEach((link, i) => {
+        visibleLinks.forEach(({ link, index }) => {
             const sId = this._getLinkEndpointId(link?.source);
             const tId = this._getLinkEndpointId(link?.target);
             if (!sId || !tId) return;
@@ -5450,13 +5714,13 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 this._linkCounts[pairKey] = { total: 0, links: [] };
             }
             this._linkCounts[pairKey].total++;
-            this._linkCounts[pairKey].links.push(i);
+            this._linkCounts[pairKey].links.push(index);
             link.pairKey = pairKey;
         });
 
         const labelsToDraw = [];
 
-        this.graphData.links.forEach((link, i) => {
+        visibleLinks.forEach(({ link, index: i }) => {
             const sIdRaw = this._getLinkEndpointId(link?.source);
             const tIdRaw = this._getLinkEndpointId(link?.target);
             if (!sIdRaw || !tIdRaw) return;
@@ -5489,7 +5753,14 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             this.context.globalAlpha = isRelevantLink ? 1.0 : 0.15;
 
             this.context.lineWidth = 2;
-            this.context.strokeStyle = "#888";
+            const relationshipType = this._getRelationshipType(link.relationshipType);
+            const linkColor = relationshipType?.color || "#888";
+            this.context.strokeStyle = linkColor;
+            if (relationshipType?.dash) {
+                this.context.setLineDash(relationshipType.dash.split(",").map(v => Number(v.trim())).filter(v => Number.isFinite(v) && v > 0));
+            } else {
+                this.context.setLineDash([]);
+            }
 
             const arrowSize = 10;
 
@@ -5502,7 +5773,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 context.lineTo(-arrowSize, arrowSize / 2);
                 context.lineTo(-arrowSize, -arrowSize / 2);
                 context.closePath();
-                context.fillStyle = "#888";
+                context.fillStyle = linkColor;
                 context.fill();
                 context.restore();
             };
@@ -5612,6 +5883,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
                 if (link.directional) drawArrowhead(this.context, targetX, targetY, targetAngle);
             }
+            this.context.setLineDash([]);
 
             if (link.label) {
                 const linkFontSize = Math.max(12, Math.floor(nodeRadius / 2.5));
@@ -5708,7 +5980,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             context.restore();
         };
 
-        this.graphData.nodes.forEach(node => {
+        visibleNodes.forEach(node => {
             const pos = renderPos[node.id];
             const isHidden = node.hidden && !isGM;
             const conditions = node.conditions || [];
@@ -6451,13 +6723,16 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 lore: n.lore || "",
                 playerLorePageId: n.playerLorePageId || null,
                 journalUuid: n.journalUuid || null,
-                questUuids: (n.questUuids || []).map(q => ({ uuid: q.uuid, name: q.name, visibleToPlayers: q.visibleToPlayers !== false })),
+                questUuids: (n.questUuids || []).map(q => ({ uuid: q.uuid, name: q.name, visibleToPlayers: q.visibleToPlayers !== false, status: q.status || "open" })),
                 hidden: n.hidden || false,
+                gmOnly: n.gmOnly === true,
+                secretKind: n.secretKind || "",
                 displayName: n.displayName || "",
                 playerNotes: n.playerNotes || "",
                 showHiddenQuestsToPlayers: n.showHiddenQuestsToPlayers !== false,
                 conditions: n.conditions || [],
                 factionId: n.factionId || null,
+                zoneId: n.zoneId || null,
                 role: n.role || "",
                 x: n.x,
                 y: n.y,
@@ -6469,7 +6744,10 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     source: typeof l.source === "object" ? l.source?.id : l.source,
                     target: typeof l.target === "object" ? l.target?.id : l.target,
                     label: l.label,
-                    directional: !!l.directional
+                    directional: !!l.directional,
+                    gmOnly: l.gmOnly === true,
+                    relationshipType: l.relationshipType || "",
+                    questStatus: l.questStatus || ""
                 }))
                 .filter(l => l.source && l.target),
             factions: this.graphData.factions.map(f => ({
@@ -6486,6 +6764,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 externalSource: f.externalSource ? foundry.utils.duplicate(f.externalSource) : null,
                 externalMeta: f.externalMeta ? foundry.utils.duplicate(f.externalMeta) : null
             })),
+            zones: (this.graphData.zones || []).map(z => this._normalizeZone(z)),
+            relationshipTypes: (this.graphData.relationshipTypes || this._getDefaultRelationshipTypes()).map(t => this._normalizeRelationshipType(t)),
             showFactionLines: this.graphData.showFactionLines !== false,
             showFactionLegend: this.graphData.showFactionLegend !== false
         };
@@ -6562,6 +6842,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     importedData.factions = [];
                 }
                 importedData.factions = importedData.factions.map(f => this._normalizeFaction(f));
+                importedData.zones = Array.isArray(importedData.zones) ? importedData.zones.map(z => this._normalizeZone(z)) : [];
+                importedData.relationshipTypes = Array.isArray(importedData.relationshipTypes) ? importedData.relationshipTypes.map(t => this._normalizeRelationshipType(t)) : this._getDefaultRelationshipTypes();
                 if (importedData.showFactionLines === undefined) importedData.showFactionLines = true;
                 if (importedData.showFactionLegend === undefined) importedData.showFactionLegend = true;
                 importedData.nodes = importedData.nodes.map(node => ({
@@ -6569,6 +6851,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     isPlaceholder: false,
                     placeholderType: null,
                     img: null,
+                    gmOnly: false,
+                    secretKind: "",
+                    zoneId: null,
                     ...node
                 }));
                 importedData.nodes.forEach(node => {

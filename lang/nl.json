@@ -298,7 +298,9 @@
             "ActorDropVisible": "Show openly",
             "ActorDropHidden": "Show hidden",
             "BtnYes": "Ja",
-            "BtnNo": "Nee"
+            "BtnNo": "Nee",
+            "IdentityGMOnly": "GM only - hide completely",
+            "ActorDropGMOnly": "GM only"
         },
         "History": {
             "Timeline": "Chronicle",
@@ -425,6 +427,45 @@
             "DropContent": "Wil je <strong>{target}</strong> vervangen door <strong>{actor}</strong>, of een relatie creëren?",
             "DropReplace": "Placeholder vervangen",
             "DropConnect": "Relatie creëren"
+        },
+        "Zones": {
+            "Title": "Verbonden zones",
+            "Manage": "Zones beheren",
+            "Hint": "Maak campagnezones zoals steden, regio’s, organisaties, hoven of onderwereldgroepen.",
+            "Zone": "Zone",
+            "Add": "Zone toevoegen",
+            "Delete": "Zone verwijderen",
+            "NewZone": "Nieuwe zone",
+            "NamePlaceholder": "Zonenaam",
+            "DescriptionPlaceholder": "Korte zonebeschrijving",
+            "VisibleToPlayers": "Zichtbaar voor spelers",
+            "Types": {
+                "region": "Regio",
+                "city": "Stad",
+                "organization": "Organisatie",
+                "court": "Hof",
+                "underworld": "Onderwereld",
+                "other": "Overig"
+            }
+        },
+        "RelationshipTypes": {
+            "Label": "Relatietype",
+            "Default": "Standaard",
+            "Custom": "Aangepast type",
+            "Ally": "Bondgenoot",
+            "Enemy": "Vijand",
+            "Family": "Familie",
+            "Faction": "Factie",
+            "Quest": "Quest",
+            "Unknown": "Onbekend"
+        },
+        "QuestStatus": {
+            "Label": "Queststatus",
+            "open": "Open",
+            "active": "Actief",
+            "done": "Voltooid",
+            "failed": "Mislukt",
+            "rumor": "Gerucht"
         }
     }
 }

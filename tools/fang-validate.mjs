@@ -50,7 +50,9 @@ const suspiciousPatterns = [
   /Â[\u0080-\u00BF]/,
   /Ð[\u0080-\u00BF]/,
   /Ñ[\u0080-\u00BF]/,
-  /�/
+  /�/,
+  /\w\?\w/,
+  /\?\?/
 ];
 
 for (const file of [...localeFiles, "README.md", "TODO.md", "DEVELOPER_GUIDE.md"]) {

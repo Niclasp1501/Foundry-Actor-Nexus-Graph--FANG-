@@ -1,24 +1,25 @@
-# Generic Foundry deploy script for FANG.
-# ASCII-only (PowerShell 5.1 compatibility).
-# Usage:
-#   .\tools\deploy-fang.ps1 -DryRun    # preview, no upload
-#   .\tools\deploy-fang.ps1            # real upload via scp
+# FANG Foundry module deploy script. ASCII-only for Windows PowerShell 5.1.
 [CmdletBinding()]
-param([switch]$DryRun)
+param(
+    [switch]$DryRun,
+    [ValidateSet("prod", "testv14")]
+    [string]$Target = "prod"
+)
 
 $ErrorActionPreference = "Stop"
 $ModuleId = "fang"
-
-$configPath  = Join-Path $PSScriptRoot "deploy-config.json"
-$cfg         = Get-Content $configPath -Raw | ConvertFrom-Json
-$HostAlias   = $cfg.HostAlias
-$RemoteTarget = "$($cfg.RemoteModulesPath)/$ModuleId"
 $ProjectRoot = Split-Path -Parent $PSScriptRoot
+$configPath = Join-Path $PSScriptRoot "deploy-config.json"
+$cfg = Get-Content $configPath -Raw | ConvertFrom-Json
 
-# Allowlist: only runtime files that Foundry actually loads.
-# tools/ stays OUT on purpose - dev scripts have no business on the server.
+$HostAlias = $cfg.HostAlias
+if ($Target -eq "testv14") { $HostAlias = "foundry-testv14" }
+$RemoteTarget = "$($cfg.RemoteModulesPath)/$ModuleId"
+
 $uploadItems = @(
     "module.json",
+    "README.md",
+    "CHANGELOG.md",
     "LICENSE",
     "scripts",
     "styles",
@@ -27,48 +28,55 @@ $uploadItems = @(
     "assets"
 )
 
-# Sanity check: every entry must exist locally.
-$missing = @()
+$denylist = @(
+    ".claude",
+    "tools",
+    "AGENTS.md",
+    "DEVELOPER_GUIDE.md",
+    "CONTENT-INVENTORY.md",
+    "TODO.md",
+    "node_modules",
+    ".git",
+    ".github",
+    ".vscode",
+    "*.log",
+    "module-beta.json",
+    "module-beta.zip",
+    "module.zip",
+    "dist-beta"
+)
+
+function Should-Skip($name) {
+    foreach ($p in $denylist) {
+        if ($name -like $p) { return $true }
+    }
+    return $false
+}
+
 $resolved = @()
-foreach ($i in $uploadItems) {
-    $f = Join-Path $ProjectRoot $i
-    if (Test-Path $f) {
-        $resolved += $f
-    } else {
-        $missing += $i
-    }
+foreach ($item in $uploadItems) {
+    if (Should-Skip $item) { continue }
+    $path = Join-Path $ProjectRoot $item
+    if (Test-Path $path) { $resolved += $path }
 }
 
-if ($missing.Count -gt 0) {
-    Write-Warning ("Missing locally, will be skipped: " + ($missing -join ", "))
+Write-Host "==> Deploy $ModuleId to ${HostAlias}:$RemoteTarget"
+Write-Host "==> Files:"
+foreach ($path in $resolved) { Write-Host "  - $(Split-Path -Leaf $path)" }
+
+if ($DryRun) {
+    Write-Host "==> DryRun only. No files uploaded."
+    exit 0
 }
 
-Write-Host ""
-Write-Host "==> Deploying $ModuleId to ${HostAlias}:$RemoteTarget"
-Write-Host "    Mode: $(if ($DryRun) { 'DRY RUN (no upload)' } else { 'REAL upload' })"
-Write-Host ""
+& ssh $HostAlias "mkdir -p '$RemoteTarget'"
+if ($LASTEXITCODE -ne 0) { throw "ssh mkdir failed" }
 
-if (-not $DryRun) {
-    & ssh $HostAlias "mkdir -p '$RemoteTarget'"
-    if ($LASTEXITCODE -ne 0) { throw "ssh mkdir failed" }
-}
-
-foreach ($f in $resolved) {
-    $leaf = Split-Path -Leaf $f
-    if ($DryRun) {
-        Write-Host "  [DryRun] would scp -r -p $leaf"
-        continue
-    }
-    & scp -r -p -q $f "${HostAlias}:$RemoteTarget/"
+foreach ($path in $resolved) {
+    $leaf = Split-Path -Leaf $path
+    & scp -r -p -q $path "${HostAlias}:$RemoteTarget/"
     if ($LASTEXITCODE -ne 0) { throw "scp failed on $leaf" }
     Write-Host "  OK: $leaf"
 }
 
-if (-not $DryRun) {
-    Write-Host ""
-    Write-Host "==> Verifying on server..."
-    & ssh $HostAlias "grep version '$RemoteTarget/module.json'"
-}
-
-Write-Host ""
-Write-Host "==> Done. Reload world in Foundry to pick up changes."
+Write-Host "==> Done. Reload the Foundry world in the UI. Do not restart the service."

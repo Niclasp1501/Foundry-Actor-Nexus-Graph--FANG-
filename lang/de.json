@@ -167,7 +167,7 @@
             "LockReleased": "Bearbeitung freigegeben.",
             "AlreadyEditing": "bearbeitet den Graphen gerade.",
             "SpotlightHiddenBlocked": "Decke den Charakter zuerst auf, bevor du das Spotlight nutzt!",
-            "HiddenEditBlocked": "Verdeckte Akteure k?nnen von Spielern nicht bearbeitet werden.",
+            "HiddenEditBlocked": "Players cannot edit hidden actors.",
             "MonitorViewClosed": "Monitor Ansicht geschlossen.",
             "QuickConnectEnabled": "Direktverbindung aktiv: Wähle zuerst die Quelle, dann das Ziel.",
             "QuickConnectDisabled": "Direktverbindung deaktiviert.",
@@ -188,7 +188,7 @@
             "Profile": "Profil",
             "PlayerView": "Spieleransicht",
             "PlayerNotesTitle": "Spieler-Notizen",
-            "HiddenPlayerEditHint": "Dieser Kontakt ist noch verdeckt. Du kannst den Spielernamen, Notizen und sichtbare Zust?nde bearbeiten, ohne GM-Geheimnisse aufzudecken.",
+            "HiddenPlayerEditHint": "This contact is still hidden. You can edit the player-facing name, notes, and visible status markers without revealing GM secrets.",
             "Conditions": "Zustände",
             "Notes": "Notizen",
             "PlayerViewGMSettings": "GM-Einstellungen"
@@ -230,7 +230,7 @@
             "FactionLinesForPlayers": "Fraktionslinien anzeigen",
             "ChooseFactionIcon": "Icon auswählen",
             "DeleteFaction": "Fraktion löschen",
-            "DeleteFactionConfirm": "Fraktion {name} wirklich l?schen? Tokens dieser Fraktion verlieren ihre Zuordnung.",
+            "DeleteFactionConfirm": "Really delete faction {name}? Tokens in this faction will lose their assignment.",
             "NewFaction": "Neue Fraktion",
             "ShowFactionLines": "Fraktionslinien anzeigen",
             "ShowFactionLegend": "Legende anzeigen",
@@ -298,7 +298,9 @@
             "ActorDropVisible": "Offen anzeigen",
             "ActorDropHidden": "Verdeckt anzeigen",
             "BtnYes": "Ja",
-            "BtnNo": "Nein"
+            "BtnNo": "Nein",
+            "IdentityGMOnly": "Nur GM - komplett ausblenden",
+            "ActorDropGMOnly": "Nur GM anzeigen"
         },
         "History": {
             "Timeline": "Chronik",
@@ -339,8 +341,8 @@
             "Auto": {
                 "NodeAppearedTitle": "Aufgetaucht",
                 "NodeAppearedText": "{name} tritt in Erscheinung.",
-                "IdentityRevealedTitle": "Identit?t enth?llt",
-                "IdentityRevealedText": "Die wahre Identit?t wird enth?llt: {name}.",
+                "IdentityRevealedTitle": "Identity Revealed",
+                "IdentityRevealedText": "The true identity is revealed: {name}.",
                 "RelationshipTitle": "Neue Verbindung",
                 "RelationshipText": "Zwischen {source} und {target} wird eine Verbindung sichtbar.",
                 "RelationshipTextWithLabel": "{source} und {target} stehen in Beziehung: {label}.",
@@ -411,7 +413,7 @@
             "DefaultName": "Unbekannter Kontakt",
             "CreateTitle": "Platzhalter-NPC erstellen",
             "CreateBtn": "Erstellen",
-            "PlayerCreateHint": "Erstellt einen sichtbaren Platzhalter-Kontakt. Ein GM kann Rolle, Fraktion und geheime Details sp?ter erg?nzen.",
+            "PlayerCreateHint": "Creates a visible placeholder contact. A GM can add role, faction, and secret details later.",
             "Type": "Typ",
             "Name": "Anzeigename",
             "ReplaceTitle": "Platzhalter ersetzen",
@@ -425,6 +427,45 @@
             "DropContent": "Soll <strong>{target}</strong> durch <strong>{actor}</strong> ersetzt werden, oder möchtest du eine Beziehung erstellen?",
             "DropReplace": "Platzhalter ersetzen",
             "DropConnect": "Beziehung erstellen"
+        },
+        "Zones": {
+            "Title": "Zugehörigkeitszonen",
+            "Manage": "Zonen verwalten",
+            "Hint": "Erstelle Kampagnenbereiche wie Stadt, Region, Organisation, Adelshof oder Unterwelt.",
+            "Zone": "Zone",
+            "Add": "Zone hinzufügen",
+            "Delete": "Zone löschen",
+            "NewZone": "Neue Zone",
+            "NamePlaceholder": "Zonenname",
+            "DescriptionPlaceholder": "Kurze Zonenbeschreibung",
+            "VisibleToPlayers": "Für Spieler sichtbar",
+            "Types": {
+                "region": "Region",
+                "city": "Stadt",
+                "organization": "Organisation",
+                "court": "Adelshof",
+                "underworld": "Unterwelt",
+                "other": "Sonstiges"
+            }
+        },
+        "RelationshipTypes": {
+            "Label": "Beziehungsart",
+            "Default": "Standard",
+            "Custom": "Eigene Art",
+            "Ally": "Verbündet",
+            "Enemy": "Feindlich",
+            "Family": "Familie",
+            "Faction": "Fraktion",
+            "Quest": "Auftrag",
+            "Unknown": "Unklar"
+        },
+        "QuestStatus": {
+            "Label": "Auftragsstatus",
+            "open": "Offen",
+            "active": "Aktiv",
+            "done": "Erledigt",
+            "failed": "Gescheitert",
+            "rumor": "Gerücht"
         }
     }
 }

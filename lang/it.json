@@ -230,7 +230,7 @@
             "FactionLinesForPlayers": "Mostra linee fazione",
             "ChooseFactionIcon": "Scegli icona",
             "DeleteFaction": "Elimina fazione",
-            "DeleteFactionConfirm": "Eliminare davvero la fazione {name}? I token di questa fazione perderanno l?assegnazione.",
+            "DeleteFactionConfirm": "Really delete faction {name}? Tokens in this faction will lose their assignment.",
             "NewFaction": "Nuova fazione",
             "ShowFactionLines": "Mostra Linee delle Fazioni",
             "ShowFactionLegend": "Mostra Legenda delle Fazioni",
@@ -298,7 +298,9 @@
             "ActorDropVisible": "Show openly",
             "ActorDropHidden": "Show hidden",
             "BtnYes": "Sì",
-            "BtnNo": "No"
+            "BtnNo": "No",
+            "IdentityGMOnly": "GM only - hide completely",
+            "ActorDropGMOnly": "GM only"
         },
         "History": {
             "Timeline": "Chronicle",
@@ -425,6 +427,45 @@
             "DropContent": "Vuoi sostituire <strong>{target}</strong> con <strong>{actor}</strong>, o creare una relazione?",
             "DropReplace": "Sostituisci segnaposto",
             "DropConnect": "Crea relazione"
+        },
+        "Zones": {
+            "Title": "Zone di appartenenza",
+            "Manage": "Gestisci zone",
+            "Hint": "Crea zone di campagna come città, regioni, organizzazioni, corti o malavita.",
+            "Zone": "Zona",
+            "Add": "Aggiungi zona",
+            "Delete": "Elimina zona",
+            "NewZone": "Nuova zona",
+            "NamePlaceholder": "Nome zona",
+            "DescriptionPlaceholder": "Breve descrizione della zona",
+            "VisibleToPlayers": "Visibile ai giocatori",
+            "Types": {
+                "region": "Regione",
+                "city": "Città",
+                "organization": "Organizzazione",
+                "court": "Corte",
+                "underworld": "Malavita",
+                "other": "Altro"
+            }
+        },
+        "RelationshipTypes": {
+            "Label": "Tipo di relazione",
+            "Default": "Predefinito",
+            "Custom": "Tipo personalizzato",
+            "Ally": "Alleato",
+            "Enemy": "Nemico",
+            "Family": "Famiglia",
+            "Faction": "Fazione",
+            "Quest": "Missione",
+            "Unknown": "Sconosciuto"
+        },
+        "QuestStatus": {
+            "Label": "Stato missione",
+            "open": "Aperta",
+            "active": "Attiva",
+            "done": "Completata",
+            "failed": "Fallita",
+            "rumor": "Voce"
         }
     }
 }

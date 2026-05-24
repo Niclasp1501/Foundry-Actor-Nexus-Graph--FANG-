@@ -48,6 +48,19 @@ Rules:
 - Context menus for players should still offer safe actions such as info, spotlight, quests that are visible to players, and restricted edit when player editing is allowed.
 - When adding new features, keep "can interact with safe facade" separate from "can see GM identity." Do not use one boolean for both concepts.
 
+## Visibility Policy and Leak Checks
+
+FANG has several visibility layers. Do not add new UI paths that read raw graph data directly for player-facing views.
+
+Rules:
+
+- Use the central helpers for visibility whenever a player/monitor view is rendered: `_canUserSeeNode`, `_canUserSeeLink`, `_getVisibleNodesForUser`, `_getVisibleLinksForUser`, `_getNodeQuestsForCurrentUser`, and `_getHistoryEntriesForUser`.
+- `hidden` means "show the safe facade to players." `gmOnly` means "do not show this node/link at all to players or monitor."
+- GM-only nodes must also remove all connected links from player/monitor rendering, hit detection, search results, history references, and contextual action paths.
+- Relationship types, zones, quests, and history entries must never bypass node/link visibility.
+- When adding player UI, test hidden tokens, GM-only tokens, visible quests on hidden tokens, and invisible quests on hidden tokens as separate cases.
+- Prefer one shared safe accessor over repeated local checks. Repeated local checks have caused spoiler leaks before.
+
 ## Foundry Journal Buttons and Links
 
 When module content adds custom buttons or links inside Foundry Journal pages, do not rely on a single sheet render hook as the only way to attach behavior. Foundry v13/v14 can render Journal pages through different sheet/app paths, and saved Journal HTML can outlive the exact renderer that originally created it.

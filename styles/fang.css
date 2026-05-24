@@ -545,6 +545,20 @@ body.role-player .fang-app-container .gm-only {
     flex-wrap: nowrap;
     gap: 4px;
     justify-content: flex-end;
+    align-items: center;
+}
+
+.fang-quest-status {
+    width: auto;
+    min-width: 108px;
+    height: 30px;
+    padding: 2px 26px 2px 8px;
+    border: 1px solid var(--fang-border-color);
+    border-radius: 8px;
+    background-color: #fffaf0;
+    color: #2b221a;
+    font-size: 0.78rem;
+    font-weight: 800;
 }
 
 .fang-icon-btn {

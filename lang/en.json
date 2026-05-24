@@ -298,7 +298,9 @@
             "ActorDropVisible": "Show openly",
             "ActorDropHidden": "Show hidden",
             "BtnYes": "Yes",
-            "BtnNo": "No"
+            "BtnNo": "No",
+            "IdentityGMOnly": "GM only - hide completely",
+            "ActorDropGMOnly": "GM only"
         },
         "History": {
             "Timeline": "Chronicle",
@@ -425,6 +427,45 @@
             "DropContent": "Do you want to replace <strong>{target}</strong> with <strong>{actor}</strong>, or create a relationship?",
             "DropReplace": "Replace placeholder",
             "DropConnect": "Create relationship"
+        },
+        "Zones": {
+            "Title": "Affiliation Zones",
+            "Manage": "Manage Zones",
+            "Hint": "Create campaign zones such as cities, regions, organizations, courts, or underworld groups.",
+            "Zone": "Zone",
+            "Add": "Add zone",
+            "Delete": "Delete zone",
+            "NewZone": "New Zone",
+            "NamePlaceholder": "Zone name",
+            "DescriptionPlaceholder": "Short zone description",
+            "VisibleToPlayers": "Visible to players",
+            "Types": {
+                "region": "Region",
+                "city": "City",
+                "organization": "Organization",
+                "court": "Court",
+                "underworld": "Underworld",
+                "other": "Other"
+            }
+        },
+        "RelationshipTypes": {
+            "Label": "Relationship type",
+            "Default": "Default",
+            "Custom": "Custom",
+            "Ally": "Ally",
+            "Enemy": "Enemy",
+            "Family": "Family",
+            "Faction": "Faction",
+            "Quest": "Quest",
+            "Unknown": "Unknown"
+        },
+        "QuestStatus": {
+            "Label": "Quest status",
+            "open": "Open",
+            "active": "Active",
+            "done": "Done",
+            "failed": "Failed",
+            "rumor": "Rumor"
         }
     }
 }
