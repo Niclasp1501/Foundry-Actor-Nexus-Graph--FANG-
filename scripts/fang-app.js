@@ -2659,13 +2659,18 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const matchedNodes = new Set();
         const matchedLinks = new Set();
 
+        // Search index is built and consumed LOCALLY per client — never synced via
+        // socket. Each client computes its own visible-node set based on its own user.
+        // The originalName entry below is intentionally GM-conditional so a search
+        // text dump (even via dev tools) leaks nothing extra to players.
         for (const node of this.graphData.nodes) {
             if (!this._canUserSeeNode(node)) continue;
             const faction = node.factionId ? factionsById.get(node.factionId) : null;
             const factionName = this._isFactionVisibleToCurrentUser(faction) ? faction?.name || "" : "";
+            const gmOriginalName = (game.user.isGM && node.originalName) || "";
             const nodeText = [
                 this._getSafeNodeName(node),
-                game.user.isGM ? node.originalName : "",
+                gmOriginalName,
                 node.displayName,
                 this._isNodeHiddenForUser(node) ? "" : node.role,
                 factionName
@@ -6566,8 +6571,11 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
             // If we are now hovering over a node with lore, start the timer
             if (hoveredNode && (hoveredNode.lore || hoveredNode.playerLorePageId)) {
-                // Protection: Don't show lore tooltip to players for hidden tokens
-                const canSeeLore = game.user.isGM || !hoveredNode.hidden;
+                // Protection: Don't show lore tooltip to players for hidden or
+                // GM-only tokens. _canUserSeeNode already filters gmOnly nodes from
+                // the render, but a stale hover reference could still slip through —
+                // belt-and-suspenders.
+                const canSeeLore = game.user.isGM || (!hoveredNode.hidden && !hoveredNode.gmOnly);
                 if (!canSeeLore) return;
 
                 this._hoverTimeout = setTimeout(async () => {
@@ -7016,9 +7024,14 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         if (notify) ui.notifications.info(game.i18n.localize("FANG.Messages.SpotlightStarted").replace("{actor}", payload.label));
     }
 
-    async _buildNodeSpotlightPayload(node) {
+    async _buildNodeSpotlightPayload(node, { forceAsPlayer = false } = {}) {
         if (!this._canUserSeeNode(node)) return null;
-        const hiddenForUser = this._isNodeHiddenForUser(node);
+        // Spotlight payload travels via socket to every connected player. When the GM
+        // broadcasts a spotlight, pass forceAsPlayer:true so the payload is composed
+        // from the player perspective — same fields, same hidden/alias handling. The
+        // GM then sees the player-safe overlay too (consistent across the table).
+        // Private GM context belongs in the lore editor, not the spotlight.
+        const hiddenForUser = forceAsPlayer ? !!(node.hidden) : this._isNodeHiddenForUser(node);
         const escapeHtml = foundry.utils.escapeHTML ?? ((value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({
             "&": "&amp;",
             "<": "&lt;",
@@ -7073,8 +7086,11 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
     async _onSpotlight(node) {
         if (!node || !this._canUseGraphAction("spotlightNode", node)) return;
-        // Spotlight can be used by anyone who can right-click (no lock required)
-        const payload = await this._buildNodeSpotlightPayload(node);
+        // Spotlight can be used by anyone who can right-click (no lock required).
+        // Always build the payload from the player perspective — see comment on
+        // _buildNodeSpotlightPayload. This prevents any GM-only fields (e.g. private
+        // notes in node.lore) from being shipped to players via the socket.
+        const payload = await this._buildNodeSpotlightPayload(node, { forceAsPlayer: true });
         if (!payload) return;
 
         game.socket.emit("module.fang", {

@@ -195,9 +195,16 @@ body.fang-theme-cyberpunk {
     color: #7feaff;
 }
 
-/* GM Only Elements */
-body.role-player .fang-app-container .gm-only {
+/* GM-only elements: default-hidden, shown only when the body is explicitly marked
+   as role-gm in main.js Hooks.once("ready"). This prevents a brief flash of
+   GM-only controls during the early render before the ready hook fires, and also
+   protects against the role class being unset entirely (e.g. if the hook fails). */
+.fang-app-container .gm-only {
     display: none !important;
+}
+
+body.role-gm .fang-app-container .gm-only {
+    display: revert !important;
 }
 
 /* Sidebar Styling */
