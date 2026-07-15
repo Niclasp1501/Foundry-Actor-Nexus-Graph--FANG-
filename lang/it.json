@@ -122,8 +122,8 @@
             "Color": "Colore",
             "CollaborativeWith": "Modifica collaborativa — anche qui: {users}",
             "CollaborativeAlone": "Modifica collaborativa",
-            "GroupByZone": "Raggruppa per zona",
-            "GroupByZoneHint": "Raduna i personaggi per zona. Sostituisce il raggruppamento per fazione.",
+            "GroupByZone": "Raggruppa per luogo",
+            "GroupByZoneHint": "Raduna i personaggi per luogo. Sostituisce il raggruppamento per fazione.",
             "ResetZoneGrouping": "Reimposta raggruppamento",
             "ResetZoneGroupingHint": "Ripristina la disposizione precedente al raggruppamento."
         },
@@ -189,8 +189,8 @@
             "LockStompTitle": "Acquisire blocco di modifica?",
             "LockStompConfirm": "{user} sta modificando. Acquisire comunque?",
             "GroupingReset": "Raggruppamento reimpostato — disposizione precedente ripristinata.",
-            "ZoneGroupingInsufficient": "Assegna prima i personaggi ad almeno due zone.",
-            "ZoneGroupingApplied": "Raggruppato per zona.",
+            "ZoneGroupingInsufficient": "Assegna prima i personaggi ad almeno due luoghi.",
+            "ZoneGroupingApplied": "Raggruppato per luogo.",
             "GroupingPositionsLocked": "Vista di raggruppamento — le posizioni sono bloccate. Reimposta il raggruppamento per spostare i personaggi.",
             "GroupingIsAView": "Questa è una vista — le posizioni restano bloccate finché non la reimposti."
         },

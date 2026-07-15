@@ -6564,6 +6564,23 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 this.context.filter = "none";
             }
 
+            // --- Faction ring around the portrait ---
+            // Belonging to a faction is a property of a character, not a relationship
+            // between two of them. Drawing it as lines between members says the same
+            // thing the relationship lines say, and in a busy graph the two become
+            // indistinguishable. A coloured ring states it on the character itself and
+            // stays readable no matter how many relationships cross the canvas.
+            if (visibleFaction && !isHidden) {
+                this.context.save();
+                this.context.beginPath();
+                this.context.arc(pos.x, pos.y, radius + 3, 0, Math.PI * 2);
+                this.context.lineWidth = 4;
+                this.context.strokeStyle = visibleFaction.color || "#d4af37";
+                this.context.globalAlpha = hoveredNodeId && !connectedNodeIds.has(node.id) ? 0.25 : 0.95;
+                this.context.stroke();
+                this.context.restore();
+            }
+
             // Soft dark overlay for hidden tokens (obscure but keep silhouette)
             if (isHidden) {
                 this.context.beginPath();

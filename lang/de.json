@@ -122,8 +122,8 @@
             "Color": "Farbe",
             "CollaborativeWith": "Gemeinsames Bearbeiten — ebenfalls hier: {users}",
             "CollaborativeAlone": "Gemeinsames Bearbeiten",
-            "GroupByZone": "Nach Zone gruppieren",
-            "GroupByZoneHint": "Zieht Charaktere nach Zone zusammen. Ersetzt die Fraktions-Gruppierung.",
+            "GroupByZone": "Nach Ort gruppieren",
+            "GroupByZoneHint": "Zieht Charaktere nach Ort zusammen. Ersetzt die Fraktions-Gruppierung.",
             "ResetZoneGrouping": "Gruppierung zurücksetzen",
             "ResetZoneGroupingHint": "Stellt die Anordnung von vor der Gruppierung wieder her."
         },
@@ -189,8 +189,8 @@
             "LockStompTitle": "Bearbeitung übernehmen?",
             "LockStompConfirm": "{user} bearbeitet gerade. Trotzdem übernehmen?",
             "GroupingReset": "Gruppierung zurückgesetzt — vorherige Anordnung wiederhergestellt.",
-            "ZoneGroupingInsufficient": "Weise zuerst Charaktere mindestens zwei Zonen zu.",
-            "ZoneGroupingApplied": "Nach Zone gruppiert.",
+            "ZoneGroupingInsufficient": "Weise zuerst Charaktere mindestens zwei Orten zu.",
+            "ZoneGroupingApplied": "Nach Ort gruppiert.",
             "GroupingPositionsLocked": "Gruppierungs-Ansicht — Positionen sind gesperrt. Setze die Gruppierung zurück, um Charaktere zu verschieben.",
             "GroupingIsAView": "Das ist eine Ansicht — Positionen bleiben gesperrt, bis du sie zurücksetzt."
         },

@@ -122,8 +122,8 @@
             "Color": "Cor",
             "CollaborativeWith": "Edição colaborativa — também aqui: {users}",
             "CollaborativeAlone": "Edição colaborativa",
-            "GroupByZone": "Agrupar por zona",
-            "GroupByZoneHint": "Junta os personagens por zona. Substitui o agrupamento por facção.",
+            "GroupByZone": "Agrupar por local",
+            "GroupByZoneHint": "Junta os personagens por local. Substitui o agrupamento por facção.",
             "ResetZoneGrouping": "Redefinir agrupamento",
             "ResetZoneGroupingHint": "Restaura a disposição anterior ao agrupamento."
         },
@@ -189,8 +189,8 @@
             "LockStompTitle": "Assumir bloqueio de edição?",
             "LockStompConfirm": "{user} está editando. Assumir mesmo assim?",
             "GroupingReset": "Agrupamento redefinido — disposição anterior restaurada.",
-            "ZoneGroupingInsufficient": "Primeiro atribua personagens a pelo menos duas zonas.",
-            "ZoneGroupingApplied": "Agrupado por zona.",
+            "ZoneGroupingInsufficient": "Primeiro atribua personagens a pelo menos dois locais.",
+            "ZoneGroupingApplied": "Agrupado por local.",
             "GroupingPositionsLocked": "Visão de agrupamento — as posições estão bloqueadas. Redefina o agrupamento para mover personagens.",
             "GroupingIsAView": "Isto é uma visão — as posições ficam bloqueadas até você redefinir."
         },

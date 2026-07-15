@@ -122,8 +122,8 @@
             "Color": "Barva",
             "CollaborativeWith": "Společné úpravy — také zde: {users}",
             "CollaborativeAlone": "Společné úpravy",
-            "GroupByZone": "Seskupit podle zóny",
-            "GroupByZoneHint": "Stáhne postavy k sobě podle zóny. Nahrazuje seskupení podle frakcí.",
+            "GroupByZone": "Seskupit podle místa",
+            "GroupByZoneHint": "Stáhne postavy k sobě podle místa. Nahrazuje seskupení podle frakcí.",
             "ResetZoneGrouping": "Zrušit seskupení",
             "ResetZoneGroupingHint": "Obnoví rozložení z doby před seskupením."
         },
@@ -189,8 +189,8 @@
             "LockStompTitle": "Převzít zámek úprav?",
             "LockStompConfirm": "{user} právě upravuje. Přesto převzít?",
             "GroupingReset": "Seskupení zrušeno — předchozí rozložení obnoveno.",
-            "ZoneGroupingInsufficient": "Nejprve přiřaď postavy alespoň do dvou zón.",
-            "ZoneGroupingApplied": "Seskupeno podle zóny.",
+            "ZoneGroupingInsufficient": "Nejprve přiřaď postavy alespoň do dvou míst.",
+            "ZoneGroupingApplied": "Seskupeno podle místa.",
             "GroupingPositionsLocked": "Zobrazení seskupení — pozice jsou zamčené. Pro přesun postav zruš seskupení.",
             "GroupingIsAView": "Toto je zobrazení — pozice zůstanou zamčené, dokud ho nezrušíš."
         },

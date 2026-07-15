@@ -122,8 +122,8 @@
             "Color": "Kleur",
             "CollaborativeWith": "Samen bewerken — ook hier: {users}",
             "CollaborativeAlone": "Samen bewerken",
-            "GroupByZone": "Groeperen op zone",
-            "GroupByZoneHint": "Trekt personages samen per zone. Vervangt groeperen op factie.",
+            "GroupByZone": "Groeperen op locatie",
+            "GroupByZoneHint": "Trekt personages samen per locatie. Vervangt groeperen op factie.",
             "ResetZoneGrouping": "Groepering resetten",
             "ResetZoneGroupingHint": "Herstelt de indeling van vóór het groeperen."
         },
@@ -189,8 +189,8 @@
             "LockStompTitle": "Bewerkingsslot overnemen?",
             "LockStompConfirm": "{user} is momenteel aan het bewerken. Toch overnemen?",
             "GroupingReset": "Groepering gereset — vorige indeling hersteld.",
-            "ZoneGroupingInsufficient": "Wijs eerst personages aan minstens twee zones toe.",
-            "ZoneGroupingApplied": "Gegroepeerd op zone.",
+            "ZoneGroupingInsufficient": "Wijs eerst personages aan minstens twee locaties toe.",
+            "ZoneGroupingApplied": "Gegroepeerd op locatie.",
             "GroupingPositionsLocked": "Groeperingsweergave — posities zijn vergrendeld. Reset de groepering om personages te verplaatsen.",
             "GroupingIsAView": "Dit is een weergave — posities blijven vergrendeld tot je reset."
         },

@@ -122,8 +122,8 @@
             "Color": "Kolor",
             "CollaborativeWith": "Wspólna edycja — również tutaj: {users}",
             "CollaborativeAlone": "Wspólna edycja",
-            "GroupByZone": "Grupuj wg strefy",
-            "GroupByZoneHint": "Ściąga postacie według strefy. Zastępuje grupowanie wg frakcji.",
+            "GroupByZone": "Grupuj wg miejsca",
+            "GroupByZoneHint": "Ściąga postacie według miejsca. Zastępuje grupowanie wg frakcji.",
             "ResetZoneGrouping": "Zresetuj grupowanie",
             "ResetZoneGroupingHint": "Przywraca układ sprzed grupowania."
         },
@@ -189,8 +189,8 @@
             "LockStompTitle": "Przej\u0005\u0007 blokad\u0019 edycji?",
             "LockStompConfirm": "{user} aktualnie edytuje. Przej\u0005\u0007 mimo to?",
             "GroupingReset": "Grupowanie zresetowane — przywrócono poprzedni układ.",
-            "ZoneGroupingInsufficient": "Najpierw przypisz postacie do co najmniej dwóch stref.",
-            "ZoneGroupingApplied": "Pogrupowano wg strefy.",
+            "ZoneGroupingInsufficient": "Najpierw przypisz postacie do co najmniej dwóch miejsc.",
+            "ZoneGroupingApplied": "Pogrupowano wg miejsca.",
             "GroupingPositionsLocked": "Widok grupowania — pozycje są zablokowane. Zresetuj grupowanie, aby przesuwać postacie.",
             "GroupingIsAView": "To jest widok — pozycje pozostają zablokowane do czasu zresetowania."
         },

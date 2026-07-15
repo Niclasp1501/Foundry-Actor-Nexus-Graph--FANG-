@@ -122,8 +122,8 @@
             "Color": "Color",
             "CollaborativeWith": "Collaborative editing — also here: {users}",
             "CollaborativeAlone": "Collaborative editing",
-            "GroupByZone": "Group by zone",
-            "GroupByZoneHint": "Pull characters together by zone. Replaces faction grouping.",
+            "GroupByZone": "Group by location",
+            "GroupByZoneHint": "Pull characters together by location. Replaces faction grouping.",
             "ResetZoneGrouping": "Reset grouping",
             "ResetZoneGroupingHint": "Restore the layout from before grouping."
         },
@@ -189,8 +189,8 @@
             "LockStompTitle": "Take over edit lock?",
             "LockStompConfirm": "{user} is currently editing. Take over anyway?",
             "GroupingReset": "Grouping reset — previous layout restored.",
-            "ZoneGroupingInsufficient": "Assign characters to at least two zones first.",
-            "ZoneGroupingApplied": "Grouped by zone.",
+            "ZoneGroupingInsufficient": "Assign characters to at least two locations first.",
+            "ZoneGroupingApplied": "Grouped by location.",
             "GroupingPositionsLocked": "Grouping view — positions are locked. Reset grouping to move characters.",
             "GroupingIsAView": "This is a view — positions stay locked until you reset it."
         },
