@@ -480,9 +480,9 @@
             "Ally": "Sojusznik",
             "Enemy": "Wróg",
             "Family": "Rodzina",
-            "Faction": "Frakcja",
             "Quest": "Zadanie",
-            "Unknown": "Nieznane"
+            "Unknown": "Nieznane",
+            "Hierarchy": "Hierarchia"
         },
         "QuestStatus": {
             "Label": "Status zadania",

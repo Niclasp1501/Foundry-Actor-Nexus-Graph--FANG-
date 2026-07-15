@@ -480,9 +480,9 @@
             "Ally": "Verbündet",
             "Enemy": "Feindlich",
             "Family": "Familie",
-            "Faction": "Fraktion",
             "Quest": "Auftrag",
-            "Unknown": "Unklar"
+            "Unknown": "Unklar",
+            "Hierarchy": "Hierarchie"
         },
         "QuestStatus": {
             "Label": "Auftragsstatus",

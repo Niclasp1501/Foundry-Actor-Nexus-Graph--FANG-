@@ -480,9 +480,9 @@
             "Ally": "Bondgenoot",
             "Enemy": "Vijand",
             "Family": "Familie",
-            "Faction": "Factie",
             "Quest": "Quest",
-            "Unknown": "Onbekend"
+            "Unknown": "Onbekend",
+            "Hierarchy": "Hiërarchie"
         },
         "QuestStatus": {
             "Label": "Queststatus",

@@ -480,9 +480,9 @@
             "Ally": "Spojenec",
             "Enemy": "Nepřítel",
             "Family": "Rodina",
-            "Faction": "Frakce",
             "Quest": "Úkol",
-            "Unknown": "Neznámé"
+            "Unknown": "Neznámé",
+            "Hierarchy": "Hierarchie"
         },
         "QuestStatus": {
             "Label": "Stav úkolu",

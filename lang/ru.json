@@ -480,9 +480,9 @@
             "Ally": "Союзник",
             "Enemy": "Враг",
             "Family": "Семья",
-            "Faction": "Фракция",
             "Quest": "Задание",
-            "Unknown": "Неизвестно"
+            "Unknown": "Неизвестно",
+            "Hierarchy": "Иерархия"
         },
         "QuestStatus": {
             "Label": "Статус задания",

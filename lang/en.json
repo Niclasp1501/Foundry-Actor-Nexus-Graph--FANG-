@@ -480,9 +480,9 @@
             "Ally": "Ally",
             "Enemy": "Enemy",
             "Family": "Family",
-            "Faction": "Faction",
             "Quest": "Quest",
-            "Unknown": "Unknown"
+            "Unknown": "Unknown",
+            "Hierarchy": "Hierarchy"
         },
         "QuestStatus": {
             "Label": "Quest status",

@@ -480,9 +480,9 @@
             "Ally": "Alleato",
             "Enemy": "Nemico",
             "Family": "Famiglia",
-            "Faction": "Fazione",
             "Quest": "Missione",
-            "Unknown": "Sconosciuto"
+            "Unknown": "Sconosciuto",
+            "Hierarchy": "Gerarchia"
         },
         "QuestStatus": {
             "Label": "Stato missione",

@@ -368,7 +368,12 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             { id: "ally", label: this._localize("FANG.RelationshipTypes.Ally", "Ally"), color: "#2f9e44", dash: "" },
             { id: "enemy", label: this._localize("FANG.RelationshipTypes.Enemy", "Enemy"), color: "#b91c1c", dash: "" },
             { id: "family", label: this._localize("FANG.RelationshipTypes.Family", "Family"), color: "#d97706", dash: "" },
-            { id: "faction", label: this._localize("FANG.RelationshipTypes.Faction", "Faction"), color: "#2563eb", dash: "8,5" },
+            // Note: there is deliberately no "faction" type here. Belonging to a faction
+            // is set in the faction manager and shown as a ring on the character —
+            // offering it as a relationship type as well said the same thing twice, in a
+            // place where it could never actually change the membership. "hierarchy"
+            // covers what those links really expressed: reports to, works for, serves.
+            { id: "hierarchy", label: this._localize("FANG.RelationshipTypes.Hierarchy", "Hierarchy"), color: "#2563eb", dash: "8,5" },
             { id: "quest", label: this._localize("FANG.RelationshipTypes.Quest", "Quest"), color: "#9333ea", dash: "4,4" },
             { id: "unknown", label: this._localize("FANG.RelationshipTypes.Unknown", "Unknown"), color: "#6b7280", dash: "2,5" }
         ];
@@ -1447,13 +1452,31 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             if (!link.id) link.id = foundry.utils.randomID();
             if (link.gmOnly === undefined) link.gmOnly = false;
             if (link.relationshipType === undefined) link.relationshipType = "";
+            // "faction" as a relationship type duplicated the faction manager. What those
+            // links actually meant was a chain of command, so they become "hierarchy".
+            if (link.relationshipType === "faction") link.relationshipType = "hierarchy";
             if (link.questStatus === undefined) link.questStatus = "";
         });
 
         if (graph.showFactionLines === undefined) graph.showFactionLines = true;
         if (graph.showFactionLegend === undefined) graph.showFactionLegend = true;
         graph.zones = Array.isArray(graph.zones) ? graph.zones.map(zone => this._normalizeZone(zone)) : [];
-        graph.relationshipTypes = Array.isArray(graph.relationshipTypes) ? graph.relationshipTypes.map(type => this._normalizeRelationshipType(type)) : this._getDefaultRelationshipTypes();
+        graph.relationshipTypes = Array.isArray(graph.relationshipTypes)
+            ? graph.relationshipTypes.map(type => this._normalizeRelationshipType(type))
+            : this._getDefaultRelationshipTypes();
+
+        // Worlds created before this store the old "faction" type in their own list, so
+        // dropping it from the defaults is not enough — rename it there too, and only if
+        // "hierarchy" is not already present (never produce a duplicate).
+        const legacyFactionType = graph.relationshipTypes.find(t => t.id === "faction");
+        if (legacyFactionType) {
+            if (graph.relationshipTypes.some(t => t.id === "hierarchy")) {
+                graph.relationshipTypes = graph.relationshipTypes.filter(t => t.id !== "faction");
+            } else {
+                legacyFactionType.id = "hierarchy";
+                legacyFactionType.label = this._localize("FANG.RelationshipTypes.Hierarchy", "Hierarchy");
+            }
+        }
         if (isLiveGraph) this.graphData = graph;
         return graph;
     }
@@ -1917,8 +1940,14 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
     async loadData() {
         const entry = await this.getJournalEntry();
+        // The merge baseline has to be what was actually stored, *before* migrations run.
+        // Taking it after migrating makes every migration look like "someone else changed
+        // this" on the next save — the merge then prefers the stored (unmigrated) value
+        // and quietly undoes the migration. Measured: the faction->hierarchy rename was
+        // reverted on every single save until this was fixed.
+        const storedBeforeMigration = entry?.getFlag("fang", "graphData") ?? null;
         if (entry) {
-            const data = entry.getFlag("fang", "graphData");
+            const data = storedBeforeMigration;
             if (data) {
                 this.graphData = foundry.utils.duplicate(data);
 
@@ -1999,11 +2028,12 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         this.graphData.factions = this.graphData.factions.map(f => this._normalizeFaction(f));
         this._repairGraphData();
 
-        // Baseline for the merge: what the graph looked like when we picked it up.
+        // Baseline for the merge: the stored state as it was, not what our migrations
+        // just made of it — see the comment at the top of this method.
         // Must be set *before* the DiploGlass sync, because that can trigger a save —
         // which would then merge against a missing baseline and take our whole graph
         // as "changed by us".
-        this._setBaseline(this._buildExportData());
+        this._setBaseline(storedBeforeMigration ?? this._buildExportData());
 
         await this._syncDiploGlassFactions({ saveIfChanged: true, triggerSync: true });
     }
