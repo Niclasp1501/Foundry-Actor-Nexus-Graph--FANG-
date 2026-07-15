@@ -4,6 +4,17 @@ const FANG_DEFAULT_PLACEHOLDER_IMG = "modules/fang/assets/placeholder-npc.svg";
 const FANG_FALLBACK_PLACEHOLDER_IMG = "modules/fang/assets/placeholder-npc.svg";
 const FANG_LEGACY_PLACEHOLDER_IMG_REGEX = /(?:^|\/)modules\/fang\/assets\/placeholder-npc-default\.webp(?:\?.*)?$/i;
 
+/**
+ * Fields that exist only while the graph is live and must never reach the journal flag.
+ * `imgElement` is an HTMLImageElement, `index`/`vx`/`vy`/`fx`/`fy` belong to the d3
+ * simulation, the underscore keys are lookup caches. Everything NOT listed here is
+ * persisted — so a new data field never silently disappears just because someone
+ * forgot to extend a save whitelist.
+ */
+const FANG_RUNTIME_NODE_FIELDS = ["imgElement", "index", "vx", "vy", "fx", "fy", "_gmJournalName", "_questJournalName"];
+const FANG_RUNTIME_LINK_FIELDS = ["index", "imgElement"];
+const FANG_RUNTIME_FACTION_FIELDS = ["imgElement", "index", "vx", "vy", "fx", "fy"];
+
 function normalizeLegacyPlaceholderImagePath(path) {
     if (typeof path !== "string") return path;
     const trimmed = path.trim();
@@ -1371,7 +1382,14 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         }, 1800);
     }
 
+    /**
+     * Normalize/migrate a graph structure in place and return it.
+     * Only adopts the result as the live graph when called for our own data — passing a
+     * foreign structure (e.g. a freshly read server state during a merge) must never
+     * swap out this.graphData underneath us.
+     */
     _repairGraphData(graphData = this.graphData) {
+        const isLiveGraph = graphData === this.graphData;
         const graph = graphData && typeof graphData === "object" ? graphData : {};
         graph.nodes = Array.isArray(graph.nodes) ? graph.nodes : [];
         graph.links = Array.isArray(graph.links) ? graph.links : [];
@@ -1397,6 +1415,12 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         }
 
         graph.links.forEach(link => {
+            // Stable identity for every link. Nodes and factions have had an id from the
+            // start, links were only identified by source+target — which cannot tell two
+            // parallel relations apart, and cannot distinguish "label edited" from
+            // "deleted and recreated". The merge logic needs that distinction.
+            // Migration is silent and additive: old worlds get ids on first load.
+            if (!link.id) link.id = foundry.utils.randomID();
             if (link.gmOnly === undefined) link.gmOnly = false;
             if (link.relationshipType === undefined) link.relationshipType = "";
             if (link.questStatus === undefined) link.questStatus = "";
@@ -1406,7 +1430,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         if (graph.showFactionLegend === undefined) graph.showFactionLegend = true;
         graph.zones = Array.isArray(graph.zones) ? graph.zones.map(zone => this._normalizeZone(zone)) : [];
         graph.relationshipTypes = Array.isArray(graph.relationshipTypes) ? graph.relationshipTypes.map(type => this._normalizeRelationshipType(type)) : this._getDefaultRelationshipTypes();
-        this.graphData = graph;
+        if (isLiveGraph) this.graphData = graph;
         return graph;
     }
 
@@ -2174,59 +2198,37 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const entry = await this.getJournalEntry();
         this._repairGraphData();
 
-        // Prepare the exportable state
-        const exportData = {
-            nodes: this.graphData.nodes.map(n => ({
-                id: n.id,
-                actorId: n.actorId || null,
-                isPlaceholder: !!n.isPlaceholder,
-                placeholderType: n.placeholderType || null,
-                img: n.img || null,
-                name: n.name,
-                originalName: n.originalName || n.name,
-                role: n.role,
-                factionId: n.factionId || null,
-                x: n.x,
-                y: n.y,
-                vx: n.vx,
-                vy: n.vy,
-                isCenter: n.isCenter || false,
-                lore: n.lore || "",
-                playerLorePageId: n.playerLorePageId || null,
-                journalUuid: n.journalUuid || null,
-                questUuids: (n.questUuids || []).map(q => ({ uuid: q.uuid, name: q.name, visibleToPlayers: q.visibleToPlayers !== false })),
-                hidden: n.hidden || false,
-                displayName: n.displayName || "",
-                playerNotes: n.playerNotes || "",
-                showHiddenQuestsToPlayers: n.showHiddenQuestsToPlayers !== false,
-                conditions: n.conditions || []
-            })),
-            links: this.graphData.links
-                .map(l => ({
-                    source: typeof l.source === 'object' ? l.source?.id : l.source,
-                    target: typeof l.target === 'object' ? l.target?.id : l.target,
-                    label: l.label,
-                    info: l.info || "",
-                    directional: !!l.directional
-                }))
-                .filter(l => l.source && l.target),
-            factions: this.graphData.factions.map(f => ({
-                id: f.id,
-                name: f.name,
-                icon: f.icon,
-                color: f.color,
-                description: f.description || "",
-                playerVisible: f.playerVisible !== false,
-                showInLegendForPlayers: f.showInLegendForPlayers !== false,
-                showLinesForPlayers: f.showLinesForPlayers !== false,
-                x: f.x,
-                y: f.y,
-                externalSource: f.externalSource ? foundry.utils.duplicate(f.externalSource) : null,
-                externalMeta: f.externalMeta ? foundry.utils.duplicate(f.externalMeta) : null
-            })),
-            showFactionLines: this.graphData.showFactionLines !== false,
-            showFactionLegend: this.graphData.showFactionLegend !== false
-        };
+        // Prepare the exportable state.
+        // Deny-list approach: everything in graphData is persisted except live runtime
+        // fields (see FANG_RUNTIME_* above). Previously this was a hand-maintained
+        // allow-list, which silently dropped every field a new feature added — zones,
+        // relationship types, secret flags and quest status were all lost on reload.
+        const exportData = {};
+
+        // 1. Top-level scalars/arrays (zones, relationshipTypes, showFactionLines, ...)
+        //    Collections with runtime state are handled separately below.
+        for (const [key, value] of Object.entries(this.graphData)) {
+            if (["nodes", "links", "factions"].includes(key)) continue;
+            if (value === undefined) continue;
+            exportData[key] = foundry.utils.duplicate(value);
+        }
+
+        // 2. Nodes — strip d3 state and the cached HTMLImageElement.
+        exportData.nodes = this.graphData.nodes.map(n => this._serializeForStorage(n, FANG_RUNTIME_NODE_FIELDS));
+
+        // 3. Links — d3 replaces source/target with live node objects, which would be
+        //    circular. Normalize back to plain ids before cloning.
+        exportData.links = this.graphData.links
+            .map(l => {
+                const clean = this._serializeForStorage(l, [...FANG_RUNTIME_LINK_FIELDS, "source", "target"]);
+                clean.source = this._getLinkEndpointId(l.source);
+                clean.target = this._getLinkEndpointId(l.target);
+                return clean;
+            })
+            .filter(l => l.source && l.target);
+
+        // 4. Factions
+        exportData.factions = this.graphData.factions.map(f => this._serializeForStorage(f, FANG_RUNTIME_FACTION_FIELDS));
 
         if (entry && entry.isOwner) {
             await entry.setFlag("fang", "graphData", exportData);
@@ -3767,6 +3769,29 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
     _getLinkEndpointId(endpoint) {
         return typeof endpoint === "object" ? endpoint?.id : endpoint;
+    }
+
+    /**
+     * Copy an object for persistence, dropping only the listed runtime fields.
+     * Deny-list on purpose: any field we do not explicitly reject gets saved, so new
+     * features cannot lose their data by forgetting to register a field here.
+     * Values are deep-cloned so the stored snapshot never aliases live objects.
+     */
+    _serializeForStorage(source, runtimeFields = []) {
+        const out = {};
+        for (const [key, value] of Object.entries(source ?? {})) {
+            if (runtimeFields.includes(key)) continue;
+            if (value === undefined) continue;
+            out[key] = value;
+        }
+        try {
+            return foundry.utils.duplicate(out);
+        } catch (err) {
+            // Should not happen once runtime fields are stripped, but a single bad node
+            // must never take the whole save down.
+            console.error("FANG | Could not serialize graph element, storing shallow copy.", err, source);
+            return { ...out };
+        }
     }
 
     _findNodeAtCanvasPoint(x, y, threshold = 30) {
