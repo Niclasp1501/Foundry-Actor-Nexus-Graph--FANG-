@@ -119,7 +119,9 @@
                     "Shadow": "Sombra"
                 }
             },
-            "Color": "Color"
+            "Color": "Color",
+            "CollaborativeWith": "Edición colaborativa — también aquí: {users}",
+            "CollaborativeAlone": "Edición colaborativa"
         },
         "Journal": {
             "FolderName": "FANG - No Borrar",
@@ -400,6 +402,10 @@
             "DiploGlassOneWaySync": {
                 "Name": "Sincronización Unidireccional de Facciones de DiploGlass",
                 "Hint": "Si está habilitado, FANG importa y actualiza automáticamente las facciones de la configuración del mundo de DiploGlass (solo unidireccional)."
+            },
+            "CollaborativeEditing": {
+                "Name": "Edición simultánea",
+                "Hint": "Permite que varias personas editen el grafo a la vez. Los guardados se fusionan campo por campo, de modo que cambios distintos ya no se sobrescriben. Si está desactivado, una persona mantiene el bloqueo exclusivo de edición."
             }
         },
         "Physics": {

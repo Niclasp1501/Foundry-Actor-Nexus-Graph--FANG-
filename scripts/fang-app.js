@@ -3046,22 +3046,36 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         this._rebuildSearchMatches();
     }
 
+    /** Is the world running in collaborative mode (no exclusive lock)? */
+    _isCollaborativeMode() {
+        try {
+            return game.settings.get("fang", "collaborativeEditing") === true;
+        } catch (err) {
+            return false;   // setting not registered yet (early boot)
+        }
+    }
+
     _canEditGraph(silent = false, allowGMOverride = false) {
         // GMs can bypass for specific functions (like sharing, spotlight, export)
         if (game.user.isGM && allowGMOverride) return true;
 
-        // --- NEW: Strict Lock Check for Everyone ---
-        const entry = game.journal.getName("FANG Graph");
-        const lock = entry?.getFlag("fang", "editLock");
-
-        if (!lock || lock.userId !== game.user.id) {
-            if (!silent) ui.notifications.warn(game.i18n.localize("FANG.Messages.AlreadyEditing"));
-            return false;
-        }
-
+        // Permission is independent of the lock and always applies.
         const allowPlayerEdit = game.settings.get("fang", "allowPlayerEditing");
         if (!game.user.isGM && !allowPlayerEdit) {
             if (!silent) ui.notifications.warn(game.i18n.localize("FANG.Messages.SaveNoPermission"));
+            return false;
+        }
+
+        // Collaborative mode: no exclusive lock. Saves are merged field by field, so two
+        // people working on different things no longer overwrite each other — the reason
+        // the lock existed in the first place.
+        if (this._isCollaborativeMode()) return true;
+
+        // Classic mode: whoever holds the lock may edit.
+        const entry = game.journal.getName("FANG Graph");
+        const lock = entry?.getFlag("fang", "editLock");
+        if (!lock || lock.userId !== game.user.id) {
+            if (!silent) ui.notifications.warn(game.i18n.localize("FANG.Messages.AlreadyEditing"));
             return false;
         }
 
@@ -7848,8 +7862,29 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
         if (!banner || !lockText || !btnToggleLock) return;
 
+        // Collaborative mode: there is no lock to show. Everyone who may edit, edits;
+        // the merge sorts out who changed what. Show who else is in the graph instead.
+        if (this._isCollaborativeMode()) {
+            banner.classList.remove("no-editor", "i-am-editor", "someone-else-editing", "hidden");
+            banner.classList.add("collaborative");
+            btnToggleLock.classList.add("hidden");
+            btnForce?.classList.add("hidden");
+            canvasIndicator?.classList.add("hidden");
+            sidebar?.classList.remove("sidebar-locked");
+            this.element.querySelector('.tab-content[data-tab="editor"]')?.classList.remove("tab-locked");
+            canvasEditTools?.classList.remove("hidden");
+            if (bannerIcon) bannerIcon.className = "fas fa-users";
+
+            const others = game.users.filter(u => u.active && u.id !== game.user.id && (u.isGM || game.settings.get("fang", "allowPlayerEditing")));
+            lockText.textContent = others.length
+                ? this._localize("FANG.UI.CollaborativeWith", "Collaborative editing — also here: {users}")
+                      .replace("{users}", others.map(u => u.name).join(", "))
+                : this._localize("FANG.UI.CollaborativeAlone", "Collaborative editing");
+            return;
+        }
+
         // Reset classes and visibility
-        banner.classList.remove("no-editor", "i-am-editor", "someone-else-editing");
+        banner.classList.remove("no-editor", "i-am-editor", "someone-else-editing", "collaborative");
         banner.classList.add("hidden"); // Default hidden for GM
         sidebar?.classList.remove("sidebar-locked");
 

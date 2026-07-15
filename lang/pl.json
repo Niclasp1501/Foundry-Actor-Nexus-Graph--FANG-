@@ -119,7 +119,9 @@
                     "Shadow": "Cień"
                 }
             },
-            "Color": "Kolor"
+            "Color": "Kolor",
+            "CollaborativeWith": "Wspólna edycja — również tutaj: {users}",
+            "CollaborativeAlone": "Wspólna edycja"
         },
         "Journal": {
             "FolderName": "FANG - Nie usuwaj",
@@ -400,6 +402,10 @@
             "DiploGlassOneWaySync": {
                 "Name": "DiploGlass Jednokierunkowa synchronizacja frakcji",
                 "Hint": "Jeśli włączone, FANG automatycznie importuje i aktualizuje frakcje z ustawień świata DiploGlass (tylko jednokierunkowo)."
+            },
+            "CollaborativeEditing": {
+                "Name": "Jednoczesna edycja",
+                "Hint": "Pozwala wielu osobom edytować graf jednocześnie. Zapisy są scalane pole po polu, więc różne zmiany nie nadpisują się nawzajem. Gdy wyłączone, jedna osoba trzyma wyłączną blokadę edycji."
             }
         },
         "Physics": {

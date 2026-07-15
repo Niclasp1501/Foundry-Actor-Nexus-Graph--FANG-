@@ -401,6 +401,28 @@ Hooks.once("init", () => {
     }
   });
 
+  // Collaborative editing. Off by default: the world keeps the familiar
+  // one-editor-at-a-time behaviour until someone opts in.
+  //
+  // The exclusive edit lock existed because saving overwrote the whole graph — the
+  // second person to save wiped out the first one's work. Now that saves are merged
+  // field by field, that reason is gone and the lock can be dropped. Conflicts on the
+  // very same field still resolve last-writer-wins and are reported.
+  game.settings.register("fang", "collaborativeEditing", {
+    name: "FANG.Settings.CollaborativeEditing.Name",
+    hint: "FANG.Settings.CollaborativeEditing.Hint",
+    scope: "world",
+    config: true,
+    type: Boolean,
+    default: false,
+    onChange: () => {
+      // Everyone's lock banner and sidebar state changes meaning — refresh it live.
+      if (fangApp && fangApp.rendered) {
+        fangApp._updateLockUI();
+      }
+    }
+  });
+
   game.settings.register("fang", "inPersonGaming", {
     name: "FANG.Settings.InPersonGaming.Name",
     hint: "FANG.Settings.InPersonGaming.Hint",
@@ -998,6 +1020,10 @@ Hooks.on("renderJournalTextPageSheet", (app, html, data) => {
 
 // Auto-Release lock on Disconnect
 Hooks.on("userConnected", async (user, connected) => {
+  // In collaborative mode the banner lists who else is in the graph — keep it honest
+  // when someone joins or leaves.
+  if (fangApp?.rendered) fangApp._updateLockUI();
+
   if (!connected && game.user.isGM) {
     const entry = game.journal.getName("FANG Graph");
     if (!entry) return;

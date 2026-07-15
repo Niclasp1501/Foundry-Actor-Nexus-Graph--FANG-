@@ -317,6 +317,17 @@ body.role-gm .fang-app-container .gm-only {
     border-left: 4px solid #aaa;
 }
 
+/* Collaborative mode: no lock to hold, just a note on who else is in here.
+   Deliberately calm — this is the normal state, not a warning. */
+.fang-app-container .lock-banner.collaborative {
+    background: rgba(212, 175, 55, 0.08);
+    border-left: 4px solid var(--fang-accent-gold);
+}
+
+.fang-app-container .lock-banner.collaborative .lock-info i {
+    color: var(--fang-accent-gold);
+}
+
 .fang-app-container .lock-banner.i-am-editor {
     background: rgba(139, 0, 0, 0.05);
     border-left: 4px solid var(--fang-primary-red);

@@ -119,7 +119,9 @@
                     "Shadow": "Shadow"
                 }
             },
-            "Color": "Color"
+            "Color": "Color",
+            "CollaborativeWith": "Collaborative editing — also here: {users}",
+            "CollaborativeAlone": "Collaborative editing"
         },
         "Journal": {
             "FolderName": "FANG - Do Not Delete",
@@ -400,6 +402,10 @@
             "DiploGlassOneWaySync": {
                 "Name": "DiploGlass One-Way Faction Sync",
                 "Hint": "If enabled, FANG automatically imports and updates factions from DiploGlass world settings (one-way only)."
+            },
+            "CollaborativeEditing": {
+                "Name": "Collaborative editing",
+                "Hint": "Allow several people to edit the graph at the same time. Saves are merged field by field, so different changes no longer overwrite each other. When off, one person holds an exclusive edit lock."
             }
         },
         "Physics": {

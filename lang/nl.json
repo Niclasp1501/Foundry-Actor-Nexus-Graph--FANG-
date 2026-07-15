@@ -119,7 +119,9 @@
                     "Shadow": "Schaduw"
                 }
             },
-            "Color": "Kleur"
+            "Color": "Kleur",
+            "CollaborativeWith": "Samen bewerken — ook hier: {users}",
+            "CollaborativeAlone": "Samen bewerken"
         },
         "Journal": {
             "FolderName": "FANG - Niet Verwijderen",
@@ -400,6 +402,10 @@
             "DiploGlassOneWaySync": {
                 "Name": "DiploGlass Eénrichtingssynchronisatie Factions",
                 "Hint": "Indien ingeschakeld, importeert en werkt FANG automatisch factions bij vanuit de DiploGlass wereldinstellingen (alleen éénrichtingsverkeer)."
+            },
+            "CollaborativeEditing": {
+                "Name": "Gelijktijdig bewerken",
+                "Hint": "Laat meerdere mensen de graaf tegelijk bewerken. Opslagacties worden veld voor veld samengevoegd, zodat verschillende wijzigingen elkaar niet meer overschrijven. Staat dit uit, dan houdt één persoon het exclusieve bewerkingsslot."
             }
         },
         "Physics": {

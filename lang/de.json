@@ -119,7 +119,9 @@
                     "Shadow": "Schatten"
                 }
             },
-            "Color": "Farbe"
+            "Color": "Farbe",
+            "CollaborativeWith": "Gemeinsames Bearbeiten — ebenfalls hier: {users}",
+            "CollaborativeAlone": "Gemeinsames Bearbeiten"
         },
         "Journal": {
             "FolderName": "FANG - Nicht löschen",
@@ -400,6 +402,10 @@
             "DiploGlassOneWaySync": {
                 "Name": "DiploGlass Einweg-Fraktionsabgleich",
                 "Hint": "Wenn aktiv, importiert und aktualisiert FANG Fraktionen automatisch aus den DiploGlass-Welteinstellungen (nur in eine Richtung)."
+            },
+            "CollaborativeEditing": {
+                "Name": "Gleichzeitiges Bearbeiten",
+                "Hint": "Erlaubt mehreren Personen, den Graphen gleichzeitig zu bearbeiten. Speichervorgänge werden feldweise zusammengeführt, sodass unterschiedliche Änderungen sich nicht mehr überschreiben. Ist die Option aus, hält eine Person die exklusive Bearbeitungssperre."
             }
         },
         "Physics": {

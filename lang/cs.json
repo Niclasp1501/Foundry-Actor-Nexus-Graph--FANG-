@@ -119,7 +119,9 @@
                     "Shadow": "Stín"
                 }
             },
-            "Color": "Barva"
+            "Color": "Barva",
+            "CollaborativeWith": "Společné úpravy — také zde: {users}",
+            "CollaborativeAlone": "Společné úpravy"
         },
         "Journal": {
             "FolderName": "FANG - Nesmazat",
@@ -400,6 +402,10 @@
             "DiploGlassOneWaySync": {
                 "Name": "DiploGlass jednostranná synchronizace frakcí",
                 "Hint": "Pokud je povoleno, FANG automaticky importuje a aktualizuje frakce z nastavení světa DiploGlass (pouze jednostranně)."
+            },
+            "CollaborativeEditing": {
+                "Name": "Souběžné úpravy",
+                "Hint": "Umožní více lidem upravovat graf současně. Ukládání se slučuje po jednotlivých polích, takže různé změny se už navzájem nepřepisují. Když je vypnuto, drží výhradní zámek úprav jedna osoba."
             }
         },
         "Physics": {
