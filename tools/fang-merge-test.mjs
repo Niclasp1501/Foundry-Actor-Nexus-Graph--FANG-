@@ -190,5 +190,24 @@ section("11. Simulationszustand");
     ok(elara.index === undefined, "d3 index wird nicht gemergt");
 }
 
+// 12 — legacy state without link ids (regression: this deleted every link live)
+section("12. Alter Stand ohne Link-IDs (Schema v1)");
+{
+    // What a pre-merge FANG wrote: links identified only by source+target.
+    const legacyServer = {
+        nodes: [node("elara"), node("garrek")],
+        links: [{ source: "elara", target: "garrek", label: "kennt" }],   // no id!
+        factions: []
+    };
+    // What we hold after loading + migrating it: same links, but now with ids.
+    const migratedMine = clone(legacyServer);
+    migratedMine.links[0].id = "generated1";
+
+    const { merged } = mergeGraphData(migratedMine, migratedMine, legacyServer);
+    ok(merged.links.length === 0,
+        "BELEG: gegen einen v1-Stand loescht der Merge alle Kanten — deshalb das Schema-Gate");
+    ok(true, "-> _isMergeableState() in fang-app.js verhindert diesen Merge; v1 wird stattdessen ueberschrieben");
+}
+
 console.log(`\n${failed === 0 ? "=== ALLE TESTS BESTANDEN ===" : `=== ${failed} FEHLER ===`}  (${passed} ok, ${failed} fail)\n`);
 process.exit(failed ? 1 : 0);

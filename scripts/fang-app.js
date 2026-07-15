@@ -17,6 +17,19 @@ const FANG_RUNTIME_NODE_FIELDS = ["imgElement", "index", "vx", "vy", "fx", "fy",
 const FANG_RUNTIME_LINK_FIELDS = ["index", "imgElement"];
 const FANG_RUNTIME_FACTION_FIELDS = ["imgElement", "index", "vx", "vy", "fx", "fy"];
 
+/**
+ * Storage schema version of the graph flag.
+ *   1 (implicit) — links have no id, zones/relationshipTypes are not persisted
+ *   2            — links carry a stable id, deny-list serialization
+ *
+ * The merge compares elements by id. Against a v1 state that is fatal: its links have
+ * no id, so they do not appear in the id map and the merge reads that as "everything
+ * was deleted". A v1 state must therefore be migrated by a plain overwrite first —
+ * exactly what happened before merging existed. Only once both sides are v2 do the
+ * three-way rules apply.
+ */
+const FANG_GRAPH_SCHEMA_VERSION = 2;
+
 function normalizeLegacyPlaceholderImagePath(path) {
     if (typeof path !== "string") return path;
     const trimmed = path.trim();
@@ -2239,7 +2252,52 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         // 4. Factions
         exportData.factions = this.graphData.factions.map(f => this._serializeForStorage(f, FANG_RUNTIME_FACTION_FIELDS));
 
+        // 5. Mark the schema we wrote, so a merge can tell whether the other side speaks
+        //    the same language (see FANG_GRAPH_SCHEMA_VERSION).
+        exportData.schemaVersion = FANG_GRAPH_SCHEMA_VERSION;
+
         return exportData;
+    }
+
+    /**
+     * Take the merged result as our live graph.
+     *
+     * Called when a merge pulled in changes we did not have — our in-memory graph is
+     * then behind what we just stored. Without this, a node someone else deleted would
+     * still sit in our memory and the next save would re-add it as a "new" node (it is
+     * absent from the fresh baseline), quietly resurrecting it.
+     *
+     * Cached image elements are carried over by id so the canvas does not flash.
+     */
+    _adoptMergedState(merged) {
+        const images = new Map();
+        for (const node of this.graphData?.nodes ?? []) {
+            if (node?.id && node.imgElement) images.set(node.id, node.imgElement);
+        }
+
+        this.graphData = foundry.utils.duplicate(merged);
+        for (const node of this.graphData.nodes) {
+            const cached = images.get(node.id);
+            if (cached) node.imgElement = cached;
+        }
+        this._repairGraphData();
+
+        // Links now hold plain ids again; d3 needs to re-resolve them to node objects.
+        if (this.rendered) {
+            this.initSimulation();
+            this.simulation?.alpha(0.05).restart();
+            this._populateActors();
+        }
+    }
+
+    /**
+     * Is this stored state new enough to merge against?
+     * A pre-v2 state has no link ids — merging against it would drop every link, because
+     * the merge matches by id and would see them all as missing. Such a state must be
+     * migrated by a plain overwrite first (the behaviour we had before merging existed).
+     */
+    _isMergeableState(data) {
+        return !!data && Number(data.schemaVersion ?? 1) >= FANG_GRAPH_SCHEMA_VERSION;
     }
 
     /**
@@ -2276,10 +2334,11 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const theirState = payload.newGraphData;
         if (!theirState) return;
 
-        // Without their baseline we cannot tell what they changed — fall back to the old
-        // behaviour rather than guessing (e.g. a player on an older module version).
-        if (!payload.baseline) {
-            console.warn("FANG | Player edit without baseline, applying as-is.");
+        // Without a usable baseline we cannot tell what they changed — fall back to the
+        // old behaviour rather than guessing. Happens when a player still runs an older
+        // module version (no baseline, or a pre-v2 schema without link ids).
+        if (!this._isMergeableState(payload.baseline) || !this._isMergeableState(theirState)) {
+            console.warn("FANG | Player edit without a mergeable baseline, applying as-is.");
             this.graphData = theirState;
             this._repairGraphData();
             this._setBaseline(this._buildExportData());
@@ -2357,18 +2416,30 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         if (entry && entry.isOwner) {
             // Three-way merge against the state as it is *right now*, not as it was when
             // we loaded. Someone else may have saved in the meantime.
+            // Both our baseline and the stored state must already speak schema v2 —
+            // against an older state we simply write ours, which migrates it.
             const server = entry.getFlag("fang", "graphData");
-            if (this._baseline && server) {
+            let mergeChangedUs = false;
+            if (this._isMergeableState(this._baseline) && this._isMergeableState(server)) {
                 const { merged, conflicts } = mergeGraphData(this._baseline, exportData, server, {
                     draggedNodeIds: this._draggedNodeIds ?? new Set()
                 });
+                merged.schemaVersion = FANG_GRAPH_SCHEMA_VERSION;
+                // Did the merge pull in anything we did not have? Then our live graph is
+                // now out of date and must follow, or the next save would "resurrect"
+                // what someone else deleted and undo what they added.
+                mergeChangedUs = !valuesEqual(merged, exportData);
                 exportData = merged;
                 this._reportMergeConflicts(conflicts);
+            } else if (server) {
+                console.log("FANG | Stored graph predates the merge schema — migrating it with this save.");
             }
 
             await entry.setFlag("fang", "graphData", exportData);
             // What we just wrote is the new common ground for our next save.
             this._setBaseline(exportData);
+
+            if (mergeChangedUs) this._adoptMergedState(exportData);
 
             // If GM is saving, optionally force all players to sync to this new baseline
             if (triggerSync && game.user.isGM) {
