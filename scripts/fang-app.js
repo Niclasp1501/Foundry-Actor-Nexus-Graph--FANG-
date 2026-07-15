@@ -7269,6 +7269,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const notify = options.notify !== false;
         if (this._spotlightTimeout) clearTimeout(this._spotlightTimeout);
         this._isSpotlightActive = true;
+        this._playSpotlightSound();
 
         if (this.zoom) {
             // Center camera between the two nodes
@@ -7393,6 +7394,27 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         this.startSpotlight(payload);
     }
 
+    /**
+     * Play the configured spotlight sting.
+     *
+     * Local playback only: every spotlight is already broadcast to all clients, so each
+     * one calls this for itself. Routing the audio through Foundry's socket as well
+     * would play it twice for everyone.
+     * Silent by default (no sound configured) and never fatal — a missing file must not
+     * take the spotlight down with it.
+     */
+    _playSpotlightSound() {
+        try {
+            const src = game.settings.get("fang", "spotlightSound");
+            if (!src) return;
+            const volume = Number(game.settings.get("fang", "spotlightSoundVolume") ?? 0.6);
+            if (!(volume > 0)) return;
+            foundry.audio.AudioHelper.play({ src, volume, autoplay: true, loop: false }, false);
+        } catch (err) {
+            console.warn("FANG | Could not play spotlight sound.", err);
+        }
+    }
+
     startSpotlight(payload, options = {}) {
         if (!payload) return;
         const broadcastQuests = options.broadcastQuests !== false;
@@ -7400,6 +7422,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
         if (this._spotlightTimeout) clearTimeout(this._spotlightTimeout);
         this._isSpotlightActive = true;
+        this._playSpotlightSound();
 
         // 1. Find the node position
         const node = this.graphData.nodes.find(n => n.id === payload.nodeId);
@@ -7559,6 +7582,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const textArea = this.element.querySelector("#quest-spotlight-text");
 
         if (overlay && title && textArea) {
+            this._playSpotlightSound();
             this._stopMonitorAutoScroll();
             this._detachQuestSpotlightScrollSync();
             title.textContent = payload.name;

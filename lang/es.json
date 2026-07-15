@@ -406,6 +406,14 @@
             "CollaborativeEditing": {
                 "Name": "Edición simultánea",
                 "Hint": "Permite que varias personas editen el grafo a la vez. Los guardados se fusionan campo por campo, de modo que cambios distintos ya no se sobrescriben. Si está desactivado, una persona mantiene el bloqueo exclusivo de edición."
+            },
+            "SpotlightSound": {
+                "Name": "Sonido del foco",
+                "Hint": "Se reproduce en todos los clientes cuando se abre un foco (personaje, conexión o misión). Déjalo vacío para silencio."
+            },
+            "SpotlightSoundVolume": {
+                "Name": "Volumen del sonido del foco",
+                "Hint": "Volumen del sonido del foco."
             }
         },
         "Physics": {

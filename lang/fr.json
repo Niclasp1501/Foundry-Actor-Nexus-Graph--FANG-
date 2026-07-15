@@ -406,6 +406,14 @@
             "CollaborativeEditing": {
                 "Name": "Édition simultanée",
                 "Hint": "Permet à plusieurs personnes de modifier le graphe en même temps. Les enregistrements sont fusionnés champ par champ, de sorte que des modifications différentes ne s'écrasent plus. Désactivé, une seule personne détient le verrou d'édition."
+            },
+            "SpotlightSound": {
+                "Name": "Son du spotlight",
+                "Hint": "Joué sur tous les clients à l'ouverture d'un spotlight (personnage, relation ou quête). Laisser vide pour aucun son."
+            },
+            "SpotlightSoundVolume": {
+                "Name": "Volume du son du spotlight",
+                "Hint": "Volume du son du spotlight."
             }
         },
         "Physics": {

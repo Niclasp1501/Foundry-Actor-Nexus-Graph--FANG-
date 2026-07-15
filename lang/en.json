@@ -406,6 +406,14 @@
             "CollaborativeEditing": {
                 "Name": "Collaborative editing",
                 "Hint": "Allow several people to edit the graph at the same time. Saves are merged field by field, so different changes no longer overwrite each other. When off, one person holds an exclusive edit lock."
+            },
+            "SpotlightSound": {
+                "Name": "Spotlight sound",
+                "Hint": "Sound played on every client when a spotlight opens (character, connection or quest). Leave empty for silence."
+            },
+            "SpotlightSoundVolume": {
+                "Name": "Spotlight sound volume",
+                "Hint": "Volume of the spotlight sound."
             }
         },
         "Physics": {

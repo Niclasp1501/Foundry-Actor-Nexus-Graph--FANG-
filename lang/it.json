@@ -406,6 +406,14 @@
             "CollaborativeEditing": {
                 "Name": "Modifica simultanea",
                 "Hint": "Consente a più persone di modificare il grafo contemporaneamente. I salvataggi vengono uniti campo per campo, così modifiche diverse non si sovrascrivono più. Se disattivato, una persona detiene il blocco di modifica esclusivo."
+            },
+            "SpotlightSound": {
+                "Name": "Suono dei riflettori",
+                "Hint": "Riprodotto su tutti i client quando si apre un riflettore (personaggio, relazione o incarico). Lascia vuoto per il silenzio."
+            },
+            "SpotlightSoundVolume": {
+                "Name": "Volume del suono dei riflettori",
+                "Hint": "Volume del suono dei riflettori."
             }
         },
         "Physics": {

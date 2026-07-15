@@ -406,6 +406,14 @@
             "CollaborativeEditing": {
                 "Name": "Jednoczesna edycja",
                 "Hint": "Pozwala wielu osobom edytować graf jednocześnie. Zapisy są scalane pole po polu, więc różne zmiany nie nadpisują się nawzajem. Gdy wyłączone, jedna osoba trzyma wyłączną blokadę edycji."
+            },
+            "SpotlightSound": {
+                "Name": "Dźwięk reflektora",
+                "Hint": "Odtwarzany u wszystkich, gdy pojawia się reflektor (postać, powiązanie lub zadanie). Zostaw puste, aby wyłączyć."
+            },
+            "SpotlightSoundVolume": {
+                "Name": "Głośność dźwięku reflektora",
+                "Hint": "Głośność dźwięku reflektora."
             }
         },
         "Physics": {

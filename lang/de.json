@@ -406,6 +406,14 @@
             "CollaborativeEditing": {
                 "Name": "Gleichzeitiges Bearbeiten",
                 "Hint": "Erlaubt mehreren Personen, den Graphen gleichzeitig zu bearbeiten. Speichervorgänge werden feldweise zusammengeführt, sodass unterschiedliche Änderungen sich nicht mehr überschreiben. Ist die Option aus, hält eine Person die exklusive Bearbeitungssperre."
+            },
+            "SpotlightSound": {
+                "Name": "Spotlight-Sound",
+                "Hint": "Wird auf allen Clients abgespielt, wenn ein Spotlight erscheint (Charakter, Verbindung oder Auftrag). Leer lassen für Stille."
+            },
+            "SpotlightSoundVolume": {
+                "Name": "Lautstärke des Spotlight-Sounds",
+                "Hint": "Lautstärke des Spotlight-Sounds."
             }
         },
         "Physics": {

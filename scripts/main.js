@@ -423,6 +423,29 @@ Hooks.once("init", () => {
     }
   });
 
+  // Spotlight sound. One sting for the whole world rather than a theme per character:
+  // nobody maintains 40 leitmotifs, but a single "now look here" cue carries the moment.
+  // Empty = silent (default), so nothing changes for existing worlds.
+  game.settings.register("fang", "spotlightSound", {
+    name: "FANG.Settings.SpotlightSound.Name",
+    hint: "FANG.Settings.SpotlightSound.Hint",
+    scope: "world",
+    config: true,
+    type: String,
+    default: "",
+    filePicker: "audio"
+  });
+
+  game.settings.register("fang", "spotlightSoundVolume", {
+    name: "FANG.Settings.SpotlightSoundVolume.Name",
+    hint: "FANG.Settings.SpotlightSoundVolume.Hint",
+    scope: "world",
+    config: true,
+    type: Number,
+    range: { min: 0, max: 1, step: 0.05 },
+    default: 0.6
+  });
+
   game.settings.register("fang", "inPersonGaming", {
     name: "FANG.Settings.InPersonGaming.Name",
     hint: "FANG.Settings.InPersonGaming.Hint",

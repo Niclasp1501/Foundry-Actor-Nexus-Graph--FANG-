@@ -406,6 +406,14 @@
             "CollaborativeEditing": {
                 "Name": "Gelijktijdig bewerken",
                 "Hint": "Laat meerdere mensen de graaf tegelijk bewerken. Opslagacties worden veld voor veld samengevoegd, zodat verschillende wijzigingen elkaar niet meer overschrijven. Staat dit uit, dan houdt één persoon het exclusieve bewerkingsslot."
+            },
+            "SpotlightSound": {
+                "Name": "Spotlight-geluid",
+                "Hint": "Speelt af bij iedereen wanneer een spotlight verschijnt (personage, verbinding of opdracht). Laat leeg voor stilte."
+            },
+            "SpotlightSoundVolume": {
+                "Name": "Volume van het spotlight-geluid",
+                "Hint": "Volume van het spotlight-geluid."
             }
         },
         "Physics": {

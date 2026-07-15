@@ -406,6 +406,14 @@
             "CollaborativeEditing": {
                 "Name": "Edição simultânea",
                 "Hint": "Permite que várias pessoas editem o grafo ao mesmo tempo. Os salvamentos são mesclados campo a campo, então alterações diferentes não se sobrescrevem mais. Desativado, uma pessoa mantém o bloqueio exclusivo de edição."
+            },
+            "SpotlightSound": {
+                "Name": "Som do holofote",
+                "Hint": "Reproduzido em todos os clientes quando um holofote abre (personagem, conexão ou missão). Deixe vazio para silêncio."
+            },
+            "SpotlightSoundVolume": {
+                "Name": "Volume do som do holofote",
+                "Hint": "Volume do som do holofote."
             }
         },
         "Physics": {

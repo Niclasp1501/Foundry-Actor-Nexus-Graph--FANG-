@@ -406,6 +406,14 @@
             "CollaborativeEditing": {
                 "Name": "Souběžné úpravy",
                 "Hint": "Umožní více lidem upravovat graf současně. Ukládání se slučuje po jednotlivých polích, takže různé změny se už navzájem nepřepisují. Když je vypnuto, drží výhradní zámek úprav jedna osoba."
+            },
+            "SpotlightSound": {
+                "Name": "Zvuk reflektoru",
+                "Hint": "Přehraje se všem, když se objeví reflektor (postava, vazba nebo úkol). Ponech prázdné pro ticho."
+            },
+            "SpotlightSoundVolume": {
+                "Name": "Hlasitost zvuku reflektoru",
+                "Hint": "Hlasitost zvuku reflektoru."
             }
         },
         "Physics": {
