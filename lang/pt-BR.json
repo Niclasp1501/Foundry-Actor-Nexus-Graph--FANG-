@@ -121,7 +121,11 @@
             },
             "Color": "Cor",
             "CollaborativeWith": "Edição colaborativa — também aqui: {users}",
-            "CollaborativeAlone": "Edição colaborativa"
+            "CollaborativeAlone": "Edição colaborativa",
+            "GroupByZone": "Agrupar por zona",
+            "GroupByZoneHint": "Junta os personagens por zona. Substitui o agrupamento por facção.",
+            "ResetZoneGrouping": "Redefinir agrupamento",
+            "ResetZoneGroupingHint": "Restaura a disposição anterior ao agrupamento."
         },
         "Journal": {
             "FolderName": "FANG - Não Excluir",
@@ -183,7 +187,10 @@
             "SaveSuccess": "Alterações salvas.",
             "OtherUser": "outro usuário",
             "LockStompTitle": "Assumir bloqueio de edição?",
-            "LockStompConfirm": "{user} está editando. Assumir mesmo assim?"
+            "LockStompConfirm": "{user} está editando. Assumir mesmo assim?",
+            "GroupingReset": "Agrupamento redefinido — disposição anterior restaurada.",
+            "ZoneGroupingInsufficient": "Primeiro atribua personagens a pelo menos duas zonas.",
+            "ZoneGroupingApplied": "Agrupado por zona."
         },
         "ActorEditor": {
             "Title": "Editar ator",

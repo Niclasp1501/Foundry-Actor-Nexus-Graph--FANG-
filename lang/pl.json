@@ -121,7 +121,11 @@
             },
             "Color": "Kolor",
             "CollaborativeWith": "Wspólna edycja — również tutaj: {users}",
-            "CollaborativeAlone": "Wspólna edycja"
+            "CollaborativeAlone": "Wspólna edycja",
+            "GroupByZone": "Grupuj wg strefy",
+            "GroupByZoneHint": "Ściąga postacie według strefy. Zastępuje grupowanie wg frakcji.",
+            "ResetZoneGrouping": "Zresetuj grupowanie",
+            "ResetZoneGroupingHint": "Przywraca układ sprzed grupowania."
         },
         "Journal": {
             "FolderName": "FANG - Nie usuwaj",
@@ -183,7 +187,10 @@
             "SaveSuccess": "Zmiany zapisane.",
             "OtherUser": "inny użytkownik",
             "LockStompTitle": "Przej\u0005\u0007 blokad\u0019 edycji?",
-            "LockStompConfirm": "{user} aktualnie edytuje. Przej\u0005\u0007 mimo to?"
+            "LockStompConfirm": "{user} aktualnie edytuje. Przej\u0005\u0007 mimo to?",
+            "GroupingReset": "Grupowanie zresetowane — przywrócono poprzedni układ.",
+            "ZoneGroupingInsufficient": "Najpierw przypisz postacie do co najmniej dwóch stref.",
+            "ZoneGroupingApplied": "Pogrupowano wg strefy."
         },
         "ActorEditor": {
             "Title": "Edytuj aktora",

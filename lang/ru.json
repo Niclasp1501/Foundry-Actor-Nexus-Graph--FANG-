@@ -121,7 +121,11 @@
             },
             "Color": "Цвет",
             "CollaborativeWith": "Совместное редактирование — также здесь: {users}",
-            "CollaborativeAlone": "Совместное редактирование"
+            "CollaborativeAlone": "Совместное редактирование",
+            "GroupByZone": "Группировать по зоне",
+            "GroupByZoneHint": "Стягивает персонажей по зонам. Заменяет группировку по фракциям.",
+            "ResetZoneGrouping": "Сбросить группировку",
+            "ResetZoneGroupingHint": "Восстанавливает расположение до группировки."
         },
         "Journal": {
             "FolderName": "FANG - Не удалять",
@@ -183,7 +187,10 @@
             "SaveSuccess": "Изменения сохранены.",
             "OtherUser": "другой пользователь",
             "LockStompTitle": "\u001f5@5E20B8BL 1;>:8@>2:C?",
-            "LockStompConfirm": "{user} A59G0A @540:B8@C5B. \u0012AQ @02=> ?5@5E20B8BL?"
+            "LockStompConfirm": "{user} A59G0A @540:B8@C5B. \u0012AQ @02=> ?5@5E20B8BL?",
+            "GroupingReset": "Группировка сброшена — прежнее расположение восстановлено.",
+            "ZoneGroupingInsufficient": "Сначала назначьте персонажей минимум в две зоны.",
+            "ZoneGroupingApplied": "Сгруппировано по зонам."
         },
         "ActorEditor": {
             "Title": "Edit Actor",

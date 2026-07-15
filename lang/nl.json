@@ -121,7 +121,11 @@
             },
             "Color": "Kleur",
             "CollaborativeWith": "Samen bewerken — ook hier: {users}",
-            "CollaborativeAlone": "Samen bewerken"
+            "CollaborativeAlone": "Samen bewerken",
+            "GroupByZone": "Groeperen op zone",
+            "GroupByZoneHint": "Trekt personages samen per zone. Vervangt groeperen op factie.",
+            "ResetZoneGrouping": "Groepering resetten",
+            "ResetZoneGroupingHint": "Herstelt de indeling van vóór het groeperen."
         },
         "Journal": {
             "FolderName": "FANG - Niet Verwijderen",
@@ -183,7 +187,10 @@
             "SaveSuccess": "Wijzigingen opgeslagen.",
             "OtherUser": "een andere gebruiker",
             "LockStompTitle": "Bewerkingsslot overnemen?",
-            "LockStompConfirm": "{user} is momenteel aan het bewerken. Toch overnemen?"
+            "LockStompConfirm": "{user} is momenteel aan het bewerken. Toch overnemen?",
+            "GroupingReset": "Groepering gereset — vorige indeling hersteld.",
+            "ZoneGroupingInsufficient": "Wijs eerst personages aan minstens twee zones toe.",
+            "ZoneGroupingApplied": "Gegroepeerd op zone."
         },
         "ActorEditor": {
             "Title": "Actor bewerken",

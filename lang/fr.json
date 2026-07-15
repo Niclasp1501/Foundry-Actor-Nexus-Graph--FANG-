@@ -121,7 +121,11 @@
             },
             "Color": "Couleur",
             "CollaborativeWith": "Édition collaborative — également ici : {users}",
-            "CollaborativeAlone": "Édition collaborative"
+            "CollaborativeAlone": "Édition collaborative",
+            "GroupByZone": "Grouper par zone",
+            "GroupByZoneHint": "Rassemble les personnages par zone. Remplace le groupement par faction.",
+            "ResetZoneGrouping": "Réinitialiser le groupement",
+            "ResetZoneGroupingHint": "Restaure la disposition d'avant le groupement."
         },
         "Journal": {
             "FolderName": "FANG - Ne pas supprimer",
@@ -183,7 +187,10 @@
             "SaveSuccess": "Modifications enregistrées.",
             "OtherUser": "un autre utilisateur",
             "LockStompTitle": "Reprendre le verrou d'édition ?",
-            "LockStompConfirm": "{user} est en train de modifier. Reprendre quand même ?"
+            "LockStompConfirm": "{user} est en train de modifier. Reprendre quand même ?",
+            "GroupingReset": "Groupement réinitialisé — disposition précédente restaurée.",
+            "ZoneGroupingInsufficient": "Assignez d'abord des personnages à au moins deux zones.",
+            "ZoneGroupingApplied": "Groupé par zone."
         },
         "ActorEditor": {
             "Title": "Edit Actor",

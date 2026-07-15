@@ -121,7 +121,11 @@
             },
             "Color": "Farbe",
             "CollaborativeWith": "Gemeinsames Bearbeiten — ebenfalls hier: {users}",
-            "CollaborativeAlone": "Gemeinsames Bearbeiten"
+            "CollaborativeAlone": "Gemeinsames Bearbeiten",
+            "GroupByZone": "Nach Zone gruppieren",
+            "GroupByZoneHint": "Zieht Charaktere nach Zone zusammen. Ersetzt die Fraktions-Gruppierung.",
+            "ResetZoneGrouping": "Gruppierung zurücksetzen",
+            "ResetZoneGroupingHint": "Stellt die Anordnung von vor der Gruppierung wieder her."
         },
         "Journal": {
             "FolderName": "FANG - Nicht löschen",
@@ -183,7 +187,10 @@
             "SaveSuccess": "Änderungen gespeichert.",
             "OtherUser": "ein anderer Benutzer",
             "LockStompTitle": "Bearbeitung übernehmen?",
-            "LockStompConfirm": "{user} bearbeitet gerade. Trotzdem übernehmen?"
+            "LockStompConfirm": "{user} bearbeitet gerade. Trotzdem übernehmen?",
+            "GroupingReset": "Gruppierung zurückgesetzt — vorherige Anordnung wiederhergestellt.",
+            "ZoneGroupingInsufficient": "Weise zuerst Charaktere mindestens zwei Zonen zu.",
+            "ZoneGroupingApplied": "Nach Zone gruppiert."
         },
         "ActorEditor": {
             "Title": "Akteur bearbeiten",

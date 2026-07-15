@@ -121,7 +121,11 @@
             },
             "Color": "Color",
             "CollaborativeWith": "Collaborative editing — also here: {users}",
-            "CollaborativeAlone": "Collaborative editing"
+            "CollaborativeAlone": "Collaborative editing",
+            "GroupByZone": "Group by zone",
+            "GroupByZoneHint": "Pull characters together by zone. Replaces faction grouping.",
+            "ResetZoneGrouping": "Reset grouping",
+            "ResetZoneGroupingHint": "Restore the layout from before grouping."
         },
         "Journal": {
             "FolderName": "FANG - Do Not Delete",
@@ -183,7 +187,10 @@
             "SaveSuccess": "Changes saved.",
             "OtherUser": "another user",
             "LockStompTitle": "Take over edit lock?",
-            "LockStompConfirm": "{user} is currently editing. Take over anyway?"
+            "LockStompConfirm": "{user} is currently editing. Take over anyway?",
+            "GroupingReset": "Grouping reset — previous layout restored.",
+            "ZoneGroupingInsufficient": "Assign characters to at least two zones first.",
+            "ZoneGroupingApplied": "Grouped by zone."
         },
         "ActorEditor": {
             "Title": "Edit Actor",

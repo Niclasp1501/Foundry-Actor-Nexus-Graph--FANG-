@@ -290,8 +290,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         this._searchMatchedNodeIds = new Set();
         this._searchMatchedLinkIndices = new Set();
         this._searchUiVisible = false;
-        this._isFactionGroupingActive = false;
-        this._factionClusterTargets = null;
+        this._groupingMode = "none";        // "none" | "faction" | "zone" — never two at once
+        this._clusterTargets = null;
+        this._layoutSnapshot = null;        // layout before grouping, restored on reset
         this._quickConnectMode = false;
         this._quickConnectSourceId = null;
         this._touchLongPressTimer = null;
@@ -1684,6 +1685,12 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             if (btnGroupByFaction) btnGroupByFaction.addEventListener("click", (e) => {
                 e.preventDefault();
                 this._onToggleGroupByFaction();
+            });
+
+            const btnGroupByZone = this.element.querySelector("#btnGroupByZone");
+            if (btnGroupByZone) btnGroupByZone.addEventListener("click", (e) => {
+                e.preventDefault();
+                this._onToggleGroupByZone();
             });
 
             const cbAllowPlayerEdit = this.element.querySelector("#cbAllowPlayerEdit");
@@ -5497,19 +5504,19 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
     _getNodeTargetX(node) {
         if (node?.isCenter) return this.width / 2;
-        const groupedTarget = this._factionClusterTargets?.get(node?.id);
+        const groupedTarget = this._clusterTargets?.get(node?.id);
         return groupedTarget ? groupedTarget.x : this.width / 2;
     }
 
     _getNodeTargetY(node) {
         if (node?.isCenter) return this.height / 2;
-        const groupedTarget = this._factionClusterTargets?.get(node?.id);
+        const groupedTarget = this._clusterTargets?.get(node?.id);
         return groupedTarget ? groupedTarget.y : this.height / 2;
     }
 
     _getNodeAxisStrength(node) {
         if (node?.isCenter) return 0.4;
-        if (this._isFactionGroupingActive && this._factionClusterTargets?.has(node?.id)) return 0.11;
+        if (this._groupingMode !== "none" && this._clusterTargets?.has(node?.id)) return 0.11;
         return 0.025;
     }
 
@@ -5521,15 +5528,39 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     _buildFactionClusterTargets() {
-        const factionsById = new Set((this.graphData.factions || []).map(f => f.id));
+        return this._buildClusterTargets("faction");
+    }
+
+    /** Cluster nodes by their zone, same layout rules as factions. */
+    _buildZoneClusterTargets() {
+        return this._buildClusterTargets("zone");
+    }
+
+    /**
+     * Arrange nodes in orbiting clusters, grouped by faction or by zone.
+     *
+     * Faction and zone are mutually exclusive on purpose: a character cannot stand with
+     * their faction and inside their zone at the same time — two pulls would fight over
+     * the same node. See _setGroupingMode.
+     *
+     * @param {"faction"|"zone"} mode
+     * @returns {Map<string,{x:number,y:number}>|null} null when there is nothing to group
+     */
+    _buildClusterTargets(mode) {
+        const groupKey = mode === "zone" ? "zoneId" : "factionId";
+        const known = mode === "zone"
+            ? new Set((this.graphData.zones || []).map(z => z.id))
+            : new Set((this.graphData.factions || []).map(f => f.id));
+
         const buckets = new Map();
         const allNodes = Array.isArray(this.graphData.nodes) ? this.graphData.nodes : [];
 
         for (const node of allNodes) {
             if (!node || node.isCenter) continue;
-            if (!node.factionId || !factionsById.has(node.factionId)) continue;
-            if (!buckets.has(node.factionId)) buckets.set(node.factionId, []);
-            buckets.get(node.factionId).push(node);
+            const group = node[groupKey];
+            if (!group || !known.has(group)) continue;
+            if (!buckets.has(group)) buckets.set(group, []);
+            buckets.get(group).push(node);
         }
 
         const groupedEntries = Array.from(buckets.entries()).filter(([, nodes]) => nodes.length > 0);
@@ -5561,45 +5592,114 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         return targets;
     }
 
+    _updateGroupingButtonStates() {
+        const faction = this.element?.querySelector?.("#btnGroupByFaction");
+        if (faction) {
+            const active = this._groupingMode === "faction";
+            const textKey = active ? "FANG.UI.ResetFactionGrouping" : "FANG.UI.GroupByFaction";
+            const hintKey = active ? "FANG.UI.ResetFactionGroupingHint" : "FANG.UI.GroupByFactionHint";
+            faction.classList.toggle("active", active);
+            faction.disabled = !game.user.isGM;
+            faction.title = game.i18n.localize(hintKey);
+            faction.innerHTML = `<i class="fas ${active ? "fa-rotate-left" : "fa-object-group"}"></i> ${game.i18n.localize(textKey)}`;
+        }
+
+        const zone = this.element?.querySelector?.("#btnGroupByZone");
+        if (zone) {
+            const active = this._groupingMode === "zone";
+            zone.classList.toggle("active", active);
+            zone.disabled = !game.user.isGM;
+            zone.title = active
+                ? this._localize("FANG.UI.ResetZoneGroupingHint", "Restore the layout from before grouping.")
+                : this._localize("FANG.UI.GroupByZoneHint", "Pull characters together by zone. Replaces faction grouping.");
+            zone.innerHTML = `<i class="fas ${active ? "fa-rotate-left" : "fa-draw-polygon"}"></i> ${
+                active ? this._localize("FANG.UI.ResetZoneGrouping", "Reset grouping")
+                       : this._localize("FANG.UI.GroupByZone", "Group by zone")}`;
+        }
+    }
+
+    /** @deprecated kept so older call sites keep working — use _updateGroupingButtonStates */
     _updateGroupByFactionButtonState() {
-        const button = this.element?.querySelector?.("#btnGroupByFaction");
-        if (!button) return;
+        this._updateGroupingButtonStates();
+    }
 
-        const textKey = this._isFactionGroupingActive ? "FANG.UI.ResetFactionGrouping" : "FANG.UI.GroupByFaction";
-        const hintKey = this._isFactionGroupingActive ? "FANG.UI.ResetFactionGroupingHint" : "FANG.UI.GroupByFactionHint";
-        const iconClass = this._isFactionGroupingActive ? "fa-rotate-left" : "fa-object-group";
+    /**
+     * Remember where every node sits before we start pushing them around, so switching
+     * grouping off can put the layout back the way the user arranged it.
+     * Only taken on the first activation — switching faction <-> zone must keep the
+     * original arrangement as the thing we return to.
+     */
+    _captureLayoutSnapshot() {
+        if (this._layoutSnapshot) return;
+        this._layoutSnapshot = new Map();
+        for (const node of this.graphData.nodes ?? []) {
+            if (node?.id) this._layoutSnapshot.set(node.id, { x: node.x, y: node.y });
+        }
+    }
 
-        button.classList.toggle("active", this._isFactionGroupingActive);
-        button.disabled = !game.user.isGM;
-        button.title = game.i18n.localize(hintKey);
-        button.innerHTML = `<i class="fas ${iconClass}"></i> ${game.i18n.localize(textKey)}`;
+    /** Put the nodes back where they were before grouping started. */
+    _restoreLayoutSnapshot() {
+        if (!this._layoutSnapshot) return;
+        for (const node of this.graphData.nodes ?? []) {
+            const pos = this._layoutSnapshot.get(node.id);
+            if (!pos) continue;                 // added while grouping was on — leave it
+            node.x = pos.x;
+            node.y = pos.y;
+            node.vx = 0;                        // no leftover momentum
+            node.vy = 0;
+        }
+        this._layoutSnapshot = null;
+    }
+
+    /**
+     * Switch grouping between off, by faction and by zone.
+     *
+     * Exactly one at a time: a character belongs to a faction *and* sits in a zone, so
+     * two clustering forces would pull the same node in different directions. Picking
+     * one replaces the other.
+     *
+     * @param {"none"|"faction"|"zone"} mode
+     */
+    _setGroupingMode(mode) {
+        if (!this.simulation) return;
+        if (mode === this._groupingMode) mode = "none";      // pressing the active one turns it off
+
+        if (mode === "none") {
+            this._restoreLayoutSnapshot();
+            this._clusterTargets = null;
+            this._groupingMode = "none";
+            this._applyAxisForces();
+            this.simulation.alpha(0.35).restart();           // settle gently, don't fling
+            this._updateGroupingButtonStates();
+            ui.notifications.info(this._localize("FANG.Messages.GroupingReset", "Grouping reset — previous layout restored."));
+            return;
+        }
+
+        const targets = mode === "zone" ? this._buildZoneClusterTargets() : this._buildFactionClusterTargets();
+        if (!targets) {
+            ui.notifications.warn(mode === "zone"
+                ? this._localize("FANG.Messages.ZoneGroupingInsufficient", "Assign characters to at least two zones first.")
+                : game.i18n.localize("FANG.Messages.FactionGroupingInsufficient"));
+            return;
+        }
+
+        this._captureLayoutSnapshot();                        // before the first push only
+        this._clusterTargets = targets;
+        this._groupingMode = mode;
+        this._applyAxisForces();
+        this.simulation.alpha(0.9).restart();
+        this._updateGroupingButtonStates();
+        ui.notifications.info(mode === "zone"
+            ? this._localize("FANG.Messages.ZoneGroupingApplied", "Grouped by zone.")
+            : game.i18n.localize("FANG.Messages.FactionGroupingApplied"));
     }
 
     _onToggleGroupByFaction() {
-        if (!this.simulation) return;
+        this._setGroupingMode("faction");
+    }
 
-        if (this._isFactionGroupingActive) {
-            this._isFactionGroupingActive = false;
-            this._factionClusterTargets = null;
-            this._applyAxisForces();
-            this.simulation.alpha(0.6).restart();
-            this._updateGroupByFactionButtonState();
-            ui.notifications.info(game.i18n.localize("FANG.Messages.FactionGroupingReset"));
-            return;
-        }
-
-        const targets = this._buildFactionClusterTargets();
-        if (!targets) {
-            ui.notifications.warn(game.i18n.localize("FANG.Messages.FactionGroupingInsufficient"));
-            return;
-        }
-
-        this._factionClusterTargets = targets;
-        this._isFactionGroupingActive = true;
-        this._applyAxisForces();
-        this.simulation.alpha(0.9).restart();
-        this._updateGroupByFactionButtonState();
-        ui.notifications.info(game.i18n.localize("FANG.Messages.FactionGroupingApplied"));
+    _onToggleGroupByZone() {
+        this._setGroupingMode("zone");
     }
 
     initSimulation() {
@@ -5656,13 +5756,19 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             return nInfo;
         });
 
-        if (this._isFactionGroupingActive) {
-            const refreshedTargets = this._buildFactionClusterTargets();
+        // Graph data changed while grouping is on — recompute the cluster targets.
+        // If there is nothing left to group by, fall back to the ungrouped layout.
+        if (this._groupingMode !== "none") {
+            const refreshedTargets = this._groupingMode === "zone"
+                ? this._buildZoneClusterTargets()
+                : this._buildFactionClusterTargets();
             if (refreshedTargets) {
-                this._factionClusterTargets = refreshedTargets;
+                this._clusterTargets = refreshedTargets;
             } else {
-                this._isFactionGroupingActive = false;
-                this._factionClusterTargets = null;
+                this._restoreLayoutSnapshot();
+                this._groupingMode = "none";
+                this._clusterTargets = null;
+                this._updateGroupingButtonStates();
             }
         }
 

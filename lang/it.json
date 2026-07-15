@@ -121,7 +121,11 @@
             },
             "Color": "Colore",
             "CollaborativeWith": "Modifica collaborativa — anche qui: {users}",
-            "CollaborativeAlone": "Modifica collaborativa"
+            "CollaborativeAlone": "Modifica collaborativa",
+            "GroupByZone": "Raggruppa per zona",
+            "GroupByZoneHint": "Raduna i personaggi per zona. Sostituisce il raggruppamento per fazione.",
+            "ResetZoneGrouping": "Reimposta raggruppamento",
+            "ResetZoneGroupingHint": "Ripristina la disposizione precedente al raggruppamento."
         },
         "Journal": {
             "FolderName": "FANG - Non Eliminare",
@@ -183,7 +187,10 @@
             "SaveSuccess": "Modifiche salvate.",
             "OtherUser": "un altro utente",
             "LockStompTitle": "Acquisire blocco di modifica?",
-            "LockStompConfirm": "{user} sta modificando. Acquisire comunque?"
+            "LockStompConfirm": "{user} sta modificando. Acquisire comunque?",
+            "GroupingReset": "Raggruppamento reimpostato — disposizione precedente ripristinata.",
+            "ZoneGroupingInsufficient": "Assegna prima i personaggi ad almeno due zone.",
+            "ZoneGroupingApplied": "Raggruppato per zona."
         },
         "ActorEditor": {
             "Title": "Modifica attore",
