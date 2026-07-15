@@ -466,6 +466,10 @@
             "done": "Dokončený",
             "failed": "Neúspěšný",
             "rumor": "Fáma"
+        },
+        "Merge": {
+            "ConflictResolved": "{names} byl upravován současně — byla zachována tvoje verze.",
+            "DeletedElsewhere": "{names} byl smazán někým jiným — tvoje změna propadla."
         }
     }
 }

@@ -466,6 +466,10 @@
             "done": "Ukończone",
             "failed": "Nieudane",
             "rumor": "Plotka"
+        },
+        "Merge": {
+            "ConflictResolved": "{names} był edytowany równocześnie — zachowano twoją wersję.",
+            "DeletedElsewhere": "{names} został usunięty przez kogoś innego — twoja zmiana przepadła."
         }
     }
 }

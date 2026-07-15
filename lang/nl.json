@@ -466,6 +466,10 @@
             "done": "Voltooid",
             "failed": "Mislukt",
             "rumor": "Gerucht"
+        },
+        "Merge": {
+            "ConflictResolved": "{names} werd tegelijk bewerkt — jouw versie is behouden.",
+            "DeletedElsewhere": "{names} is door iemand anders verwijderd — jouw wijziging is vervallen."
         }
     }
 }

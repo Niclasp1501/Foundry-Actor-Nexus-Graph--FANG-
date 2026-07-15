@@ -683,7 +683,9 @@ Hooks.once("ready", async () => {
     if (data.action === "refreshGraph") {
       if (fangApp && fangApp.rendered) {
         setTimeout(async () => {
-          await fangApp.loadData();
+          // Pulls the new server state but keeps our own unsaved changes, instead of
+          // dropping them the way a plain loadData() did.
+          await fangApp.refreshFromServer();
           fangApp.initSimulation();
           fangApp._populateActors();
         }, 100);
@@ -727,8 +729,12 @@ Hooks.once("ready", async () => {
     if (data.action === "playerEditGraph" && game.user.isGM) {
       if (!fangApp) fangApp = new FangApplication();
       setTimeout(async () => {
-        if (data.payload?.newGraphData) {
-          fangApp.graphData = data.payload.newGraphData;
+        const payload = data.payload || {};
+        if (payload.newGraphData) {
+          // Apply the player's change on top of our own state instead of replacing it.
+          // Replacing meant that anything the GM changed since the player loaded was
+          // silently thrown away — including data the player never even saw.
+          await fangApp.applyRemoteGraphEdit(payload);
         }
         if (fangApp.rendered) {
           fangApp.initSimulation();

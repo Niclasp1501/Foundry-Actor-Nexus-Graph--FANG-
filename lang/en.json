@@ -466,6 +466,10 @@
             "done": "Done",
             "failed": "Failed",
             "rumor": "Rumor"
+        },
+        "Merge": {
+            "ConflictResolved": "{names} was also being edited — your version was kept.",
+            "DeletedElsewhere": "{names} was deleted by someone else — your change to it was dropped."
         }
     }
 }

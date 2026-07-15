@@ -1,3 +1,5 @@
+import { mergeGraphData, valuesEqual } from "./fang-merge.mjs";
+
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
 const FANG_DEFAULT_PLACEHOLDER_IMG = "modules/fang/assets/placeholder-npc.svg";
@@ -1968,6 +1970,13 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         if (!this.graphData.factions) this.graphData.factions = [];
         this.graphData.factions = this.graphData.factions.map(f => this._normalizeFaction(f));
         this._repairGraphData();
+
+        // Baseline for the merge: what the graph looked like when we picked it up.
+        // Must be set *before* the DiploGlass sync, because that can trigger a save —
+        // which would then merge against a missing baseline and take our whole graph
+        // as "changed by us".
+        this._setBaseline(this._buildExportData());
+
         await this._syncDiploGlassFactions({ saveIfChanged: true, triggerSync: true });
     }
 
@@ -2194,15 +2203,15 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         return true;
     }
 
-    async saveData(triggerSync = true) {
-        const entry = await this.getJournalEntry();
-        this._repairGraphData();
-
-        // Prepare the exportable state.
-        // Deny-list approach: everything in graphData is persisted except live runtime
-        // fields (see FANG_RUNTIME_* above). Previously this was a hand-maintained
-        // allow-list, which silently dropped every field a new feature added — zones,
-        // relationship types, secret flags and quest status were all lost on reload.
+    /**
+     * Build the persistable snapshot of the current graph.
+     *
+     * Deny-list approach: everything in graphData is persisted except live runtime
+     * fields (see FANG_RUNTIME_* above). Previously this was a hand-maintained
+     * allow-list, which silently dropped every field a new feature added — zones,
+     * relationship types, secret flags and quest status were all lost on reload.
+     */
+    _buildExportData() {
         const exportData = {};
 
         // 1. Top-level scalars/arrays (zones, relationshipTypes, showFactionLines, ...)
@@ -2230,15 +2239,146 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         // 4. Factions
         exportData.factions = this.graphData.factions.map(f => this._serializeForStorage(f, FANG_RUNTIME_FACTION_FIELDS));
 
+        return exportData;
+    }
+
+    /**
+     * Remember the state we started from. Every later save merges against this to work
+     * out which fields *we* touched, as opposed to someone else in the meantime.
+     */
+    _setBaseline(data) {
+        this._baseline = data ? foundry.utils.duplicate(data) : { nodes: [], links: [], factions: [] };
+        this._draggedNodeIds = new Set();
+    }
+
+    /**
+     * Do we hold changes that were never written? Cheap guard so the common case
+     * (someone else saved, we have nothing pending) stays a plain reload.
+     */
+    _hasUnsavedLocalChanges() {
+        if (!this._baseline) return false;
+        try {
+            return !valuesEqual(this._baseline, this._buildExportData());
+        } catch (err) {
+            console.warn("FANG | Could not compare local state against baseline.", err);
+            return false;
+        }
+    }
+
+    /**
+     * A player relayed an edit to us (GM). Merge their change into our state rather than
+     * adopting their graph wholesale — they may have loaded before our latest changes,
+     * and we must not resurrect what we deleted since.
+     *
+     * @param {object} payload  { newGraphData, baseline, draggedNodeIds, authorName }
+     */
+    async applyRemoteGraphEdit(payload = {}) {
+        const theirState = payload.newGraphData;
+        if (!theirState) return;
+
+        // Without their baseline we cannot tell what they changed — fall back to the old
+        // behaviour rather than guessing (e.g. a player on an older module version).
+        if (!payload.baseline) {
+            console.warn("FANG | Player edit without baseline, applying as-is.");
+            this.graphData = theirState;
+            this._repairGraphData();
+            this._setBaseline(this._buildExportData());
+            return;
+        }
+
+        try {
+            const mine = this._buildExportData();
+            const { merged, conflicts } = mergeGraphData(payload.baseline, theirState, mine, {
+                // Their perspective: nodes they dragged win over our simulation drift.
+                draggedNodeIds: new Set(payload.draggedNodeIds ?? [])
+            });
+            this.graphData = merged;
+            this._repairGraphData();
+            this._setBaseline(this._buildExportData());
+            if (conflicts.length) {
+                console.log(`FANG | Merged edit from ${payload.authorName ?? "player"} with ${conflicts.length} conflict(s).`, conflicts);
+            }
+        } catch (err) {
+            console.error("FANG | Could not merge player edit, applying as-is.", err);
+            this.graphData = theirState;
+            this._repairGraphData();
+            this._setBaseline(this._buildExportData());
+        }
+    }
+
+    /**
+     * Someone else saved. Pull their state, but keep whatever we changed locally instead
+     * of silently dropping it — which is what a plain reload used to do.
+     */
+    async refreshFromServer() {
+        if (!this._hasUnsavedLocalChanges()) {
+            await this.loadData();
+            return;
+        }
+
+        const myBaseline = foundry.utils.duplicate(this._baseline);
+        const myState = this._buildExportData();
+        const myDragged = new Set(this._draggedNodeIds ?? []);
+
+        await this.loadData();   // server state, migrated, new baseline
+
+        try {
+            const server = this._buildExportData();
+            const { merged, conflicts } = mergeGraphData(myBaseline, myState, server, { draggedNodeIds: myDragged });
+            this.graphData = merged;
+            this._repairGraphData();
+            this._setBaseline(this._buildExportData());
+            this._draggedNodeIds = myDragged;   // still ours until we save them
+            this._reportMergeConflicts(conflicts);
+        } catch (err) {
+            // A broken merge must never leave a broken graph on screen — the freshly
+            // loaded server state is already in place, so just keep that.
+            console.error("FANG | Merge on refresh failed, keeping server state.", err);
+        }
+    }
+
+    /**
+     * saveData is called from ~26 places, sometimes in quick succession. Without a queue
+     * two of our own saves could interleave between read-merge-write and lose a field.
+     * Serialize them; each save merges against whatever the previous one just wrote.
+     */
+    async saveData(triggerSync = true) {
+        const run = () => this._saveDataNow(triggerSync);
+        this._saveChain = (this._saveChain ?? Promise.resolve()).then(run, run);
+        return this._saveChain;
+    }
+
+    async _saveDataNow(triggerSync = true) {
+        const entry = await this.getJournalEntry();
+        this._repairGraphData();
+
+        let exportData = this._buildExportData();
+
         if (entry && entry.isOwner) {
+            // Three-way merge against the state as it is *right now*, not as it was when
+            // we loaded. Someone else may have saved in the meantime.
+            const server = entry.getFlag("fang", "graphData");
+            if (this._baseline && server) {
+                const { merged, conflicts } = mergeGraphData(this._baseline, exportData, server, {
+                    draggedNodeIds: this._draggedNodeIds ?? new Set()
+                });
+                exportData = merged;
+                this._reportMergeConflicts(conflicts);
+            }
+
             await entry.setFlag("fang", "graphData", exportData);
+            // What we just wrote is the new common ground for our next save.
+            this._setBaseline(exportData);
 
             // If GM is saving, optionally force all players to sync to this new baseline
             if (triggerSync && game.user.isGM) {
                 game.socket.emit("module.fang", { action: "refreshGraph" });
             }
         } else {
-            // Player Collaborative Edit Relay
+            // Player Collaborative Edit Relay.
+            // Players cannot write the flag, so the GM applies it for them. We send our
+            // baseline along so the GM can tell which fields *we* actually changed
+            // instead of blindly taking our whole graph.
             const allowPlayerEdit = game.settings.get("fang", "allowPlayerEditing");
             if (allowPlayerEdit) {
                 const isGMOnline = game.users.some(u => u.isGM && u.active);
@@ -2246,8 +2386,16 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     console.log("FANG | Sending edit request to GM via socket.");
                     game.socket.emit("module.fang", {
                         action: "playerEditGraph",
-                        payload: { newGraphData: exportData }
+                        payload: {
+                            newGraphData: exportData,
+                            baseline: this._baseline ?? null,
+                            draggedNodeIds: Array.from(this._draggedNodeIds ?? []),
+                            authorName: game.user.name
+                        }
                     });
+                    // Our request is on its way; treat it as our new starting point so a
+                    // follow-up save does not re-send the same diff.
+                    this._setBaseline(exportData);
                 } else {
                     ui.notifications.warn(game.i18n.localize("FANG.Messages.WarnNoGMOnline"));
                 }
@@ -2255,6 +2403,34 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 ui.notifications.warn(game.i18n.localize("FANG.Messages.SaveNoPermission"));
             }
         }
+    }
+
+    /**
+     * Tell the user when their change collided with someone else's. One notification per
+     * save, summarized — never a dialog. A merge conflict prompt would be overkill at a
+     * roleplaying table; knowing that it happened is enough to have a quick word.
+     */
+    _reportMergeConflicts(conflicts) {
+        if (!conflicts?.length) return;
+
+        const deleted = conflicts.filter(c => c.type.endsWith(".deleted"));
+        const edited = conflicts.filter(c => !c.type.endsWith(".deleted"));
+
+        if (deleted.length) {
+            const names = [...new Set(deleted.map(c => c.name))].join(", ");
+            ui.notifications.warn(
+                this._localize("FANG.Merge.DeletedElsewhere", "{names} was deleted by someone else — your change to it was dropped.")
+                    .replace("{names}", names)
+            );
+        }
+        if (edited.length) {
+            const names = [...new Set(edited.map(c => c.name))].join(", ");
+            ui.notifications.info(
+                this._localize("FANG.Merge.ConflictResolved", "{names} was also being edited — your version was kept.")
+                    .replace("{names}", names)
+            );
+        }
+        console.log("FANG | Merge conflicts resolved:", conflicts);
     }
 
     // --- BACKGROUND LOGIC ---
@@ -6361,6 +6537,12 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         if (event.subject.type === 'node') {
             event.subject.data.fx = null;
             event.subject.data.fy = null;
+            // Remember that *we* placed this node. Only dragged nodes are allowed to
+            // write their position during a merge — everything else the simulation
+            // moved is drift, not intent, and must not overwrite other clients.
+            if (event.subject.data.id && this._hasDragged) {
+                (this._draggedNodeIds ??= new Set()).add(event.subject.data.id);
+            }
         }
         if (this._hasDragged) {
             this._lastDragTime = Date.now();
