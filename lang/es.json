@@ -190,7 +190,9 @@
             "LockStompConfirm": "{user} está editando actualmente. ¿Tomar el control de todas formas?",
             "GroupingReset": "Agrupación restablecida — disposición anterior restaurada.",
             "ZoneGroupingInsufficient": "Primero asigna personajes a al menos dos zonas.",
-            "ZoneGroupingApplied": "Agrupado por zona."
+            "ZoneGroupingApplied": "Agrupado por zona.",
+            "GroupingPositionsLocked": "Vista de agrupación — las posiciones están bloqueadas. Restablece la agrupación para mover personajes.",
+            "GroupingIsAView": "Esto es una vista — las posiciones siguen bloqueadas hasta que la restablezcas."
         },
         "ActorEditor": {
             "Title": "Editar actor",

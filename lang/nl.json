@@ -190,7 +190,9 @@
             "LockStompConfirm": "{user} is momenteel aan het bewerken. Toch overnemen?",
             "GroupingReset": "Groepering gereset — vorige indeling hersteld.",
             "ZoneGroupingInsufficient": "Wijs eerst personages aan minstens twee zones toe.",
-            "ZoneGroupingApplied": "Gegroepeerd op zone."
+            "ZoneGroupingApplied": "Gegroepeerd op zone.",
+            "GroupingPositionsLocked": "Groeperingsweergave — posities zijn vergrendeld. Reset de groepering om personages te verplaatsen.",
+            "GroupingIsAView": "Dit is een weergave — posities blijven vergrendeld tot je reset."
         },
         "ActorEditor": {
             "Title": "Actor bewerken",

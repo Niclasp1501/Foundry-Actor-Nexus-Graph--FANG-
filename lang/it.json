@@ -190,7 +190,9 @@
             "LockStompConfirm": "{user} sta modificando. Acquisire comunque?",
             "GroupingReset": "Raggruppamento reimpostato — disposizione precedente ripristinata.",
             "ZoneGroupingInsufficient": "Assegna prima i personaggi ad almeno due zone.",
-            "ZoneGroupingApplied": "Raggruppato per zona."
+            "ZoneGroupingApplied": "Raggruppato per zona.",
+            "GroupingPositionsLocked": "Vista di raggruppamento — le posizioni sono bloccate. Reimposta il raggruppamento per spostare i personaggi.",
+            "GroupingIsAView": "Questa è una vista — le posizioni restano bloccate finché non la reimposti."
         },
         "ActorEditor": {
             "Title": "Modifica attore",

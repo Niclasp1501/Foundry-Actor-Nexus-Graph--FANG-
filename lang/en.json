@@ -190,7 +190,9 @@
             "LockStompConfirm": "{user} is currently editing. Take over anyway?",
             "GroupingReset": "Grouping reset — previous layout restored.",
             "ZoneGroupingInsufficient": "Assign characters to at least two zones first.",
-            "ZoneGroupingApplied": "Grouped by zone."
+            "ZoneGroupingApplied": "Grouped by zone.",
+            "GroupingPositionsLocked": "Grouping view — positions are locked. Reset grouping to move characters.",
+            "GroupingIsAView": "This is a view — positions stay locked until you reset it."
         },
         "ActorEditor": {
             "Title": "Edit Actor",

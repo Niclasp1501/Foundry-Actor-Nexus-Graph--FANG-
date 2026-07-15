@@ -190,7 +190,9 @@
             "LockStompConfirm": "{user} est en train de modifier. Reprendre quand même ?",
             "GroupingReset": "Groupement réinitialisé — disposition précédente restaurée.",
             "ZoneGroupingInsufficient": "Assignez d'abord des personnages à au moins deux zones.",
-            "ZoneGroupingApplied": "Groupé par zone."
+            "ZoneGroupingApplied": "Groupé par zone.",
+            "GroupingPositionsLocked": "Vue de groupement — les positions sont verrouillées. Réinitialisez le groupement pour déplacer les personnages.",
+            "GroupingIsAView": "Ceci est une vue — les positions restent verrouillées jusqu'à la réinitialisation."
         },
         "ActorEditor": {
             "Title": "Edit Actor",

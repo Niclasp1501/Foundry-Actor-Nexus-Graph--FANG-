@@ -190,7 +190,9 @@
             "LockStompConfirm": "{user} právě upravuje. Přesto převzít?",
             "GroupingReset": "Seskupení zrušeno — předchozí rozložení obnoveno.",
             "ZoneGroupingInsufficient": "Nejprve přiřaď postavy alespoň do dvou zón.",
-            "ZoneGroupingApplied": "Seskupeno podle zóny."
+            "ZoneGroupingApplied": "Seskupeno podle zóny.",
+            "GroupingPositionsLocked": "Zobrazení seskupení — pozice jsou zamčené. Pro přesun postav zruš seskupení.",
+            "GroupingIsAView": "Toto je zobrazení — pozice zůstanou zamčené, dokud ho nezrušíš."
         },
         "ActorEditor": {
             "Title": "Edit Actor",

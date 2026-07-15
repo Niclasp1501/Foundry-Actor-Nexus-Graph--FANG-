@@ -190,7 +190,9 @@
             "LockStompConfirm": "{user} A59G0A @540:B8@C5B. \u0012AQ @02=> ?5@5E20B8BL?",
             "GroupingReset": "Группировка сброшена — прежнее расположение восстановлено.",
             "ZoneGroupingInsufficient": "Сначала назначьте персонажей минимум в две зоны.",
-            "ZoneGroupingApplied": "Сгруппировано по зонам."
+            "ZoneGroupingApplied": "Сгруппировано по зонам.",
+            "GroupingPositionsLocked": "Режим группировки — позиции заблокированы. Сбросьте группировку, чтобы двигать персонажей.",
+            "GroupingIsAView": "Это режим просмотра — позиции заблокированы до сброса."
         },
         "ActorEditor": {
             "Title": "Edit Actor",

@@ -190,7 +190,9 @@
             "LockStompConfirm": "{user} aktualnie edytuje. Przej\u0005\u0007 mimo to?",
             "GroupingReset": "Grupowanie zresetowane — przywrócono poprzedni układ.",
             "ZoneGroupingInsufficient": "Najpierw przypisz postacie do co najmniej dwóch stref.",
-            "ZoneGroupingApplied": "Pogrupowano wg strefy."
+            "ZoneGroupingApplied": "Pogrupowano wg strefy.",
+            "GroupingPositionsLocked": "Widok grupowania — pozycje są zablokowane. Zresetuj grupowanie, aby przesuwać postacie.",
+            "GroupingIsAView": "To jest widok — pozycje pozostają zablokowane do czasu zresetowania."
         },
         "ActorEditor": {
             "Title": "Edytuj aktora",

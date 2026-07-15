@@ -2756,6 +2756,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                         }
 
                         this.graphData.nodes.push(node);
+                        this._rememberDropPosition(node);
                         this.initSimulation();
                         this.simulation.alpha(0.5).restart();
                         this._populateActors();
@@ -3115,6 +3116,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                             displayName: "", playerNotes: "", showHiddenQuestsToPlayers: true, conditions: []
                         };
                         this.graphData.nodes.push(createdNode);
+                        this._rememberDropPosition(createdNode);
                         createdNodes.push(createdNode);
                     }
                 }
@@ -3904,6 +3906,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                                     }
 
                                     this.graphData.nodes.push(sourceNode);
+                                    this._rememberDropPosition(sourceNode);
                                     createdSourceNode = true;
                                 }
 
@@ -4025,6 +4028,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 }
 
                 this.graphData.nodes.push(newNode);
+                this._rememberDropPosition(newNode);
                 createdNode = newNode;
             }
 
@@ -5637,6 +5641,18 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         }
     }
 
+    /**
+     * A node created while the grouping view is on has no entry in the snapshot, so a
+     * reset would leave it wherever the clustering forces parked it. Record the spot it
+     * was actually dropped at, so reset puts it there.
+     * No-op when grouping is off — then the drop position is simply the live position.
+     */
+    _rememberDropPosition(node) {
+        if (!this._layoutSnapshot || !node?.id) return;
+        if (this._layoutSnapshot.has(node.id)) return;
+        this._layoutSnapshot.set(node.id, { x: node.x, y: node.y });
+    }
+
     /** Put the nodes back where they were before grouping started. */
     _restoreLayoutSnapshot() {
         if (!this._layoutSnapshot) return;
@@ -5689,9 +5705,12 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         this._applyAxisForces();
         this.simulation.alpha(0.9).restart();
         this._updateGroupingButtonStates();
-        ui.notifications.info(mode === "zone"
+        const applied = mode === "zone"
             ? this._localize("FANG.Messages.ZoneGroupingApplied", "Grouped by zone.")
-            : game.i18n.localize("FANG.Messages.FactionGroupingApplied"));
+            : game.i18n.localize("FANG.Messages.FactionGroupingApplied");
+        // Say up front that this is a view, so the locked positions are expected
+        // behaviour rather than a surprise.
+        ui.notifications.info(`${applied} ${this._localize("FANG.Messages.GroupingIsAView", "This is a view — positions stay locked until you reset it.")}`);
     }
 
     _onToggleGroupByFaction() {
@@ -6703,8 +6722,26 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         return subject;
     }
 
+    /**
+     * While grouping is on, node positions are off limits.
+     *
+     * There is exactly one set of positions — the one in the database. Grouping only
+     * borrows it for a look and gives it back on reset. If dragging were allowed, the
+     * dragged node would carry its *cluster* position into the saved layout and the
+     * original arrangement would be gone for good.
+     *
+     * Only node dragging is blocked; panning and zooming stay available.
+     */
+    _isNodeDragBlocked() {
+        return this._groupingMode !== "none";
+    }
+
     dragstarted(event) {
         if (!this._canEditGraph(true)) return;
+        if (event.subject.type === 'node' && this._isNodeDragBlocked()) {
+            ui.notifications.info(this._localize("FANG.Messages.GroupingPositionsLocked", "Grouping view — positions are locked. Reset grouping to move characters."));
+            return;
+        }
         if (!event.active) this.simulation.alphaTarget(0.3).restart();
         if (event.subject.type === 'node') {
             event.subject.data.fx = event.subject.data.x;
@@ -6727,6 +6764,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
     dragged(event) {
         if (event.subject.type === 'node') {
             if (!this._canEditGraph(true)) return; // Silent during rapid drag events
+            if (this._isNodeDragBlocked()) return; // Grouping view: positions are read-only
             // Invert coordinates to account for zoom/pan
             event.subject.data.fx = this.transform.invertX(event.x);
             event.subject.data.fy = this.transform.invertY(event.y);
@@ -6736,6 +6774,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
     dragended(event) {
         if (!this._canEditGraph(true)) return; // Silent at end
+        // Grouping view: nothing was moved, so there is nothing to store. Saving here
+        // would write cluster positions into the one real layout.
+        if (event.subject.type === 'node' && this._isNodeDragBlocked()) return;
         if (!event.active) this.simulation.alphaTarget(0);
         if (event.subject.type === 'node') {
             event.subject.data.fx = null;

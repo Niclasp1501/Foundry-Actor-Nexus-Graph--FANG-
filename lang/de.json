@@ -190,7 +190,9 @@
             "LockStompConfirm": "{user} bearbeitet gerade. Trotzdem übernehmen?",
             "GroupingReset": "Gruppierung zurückgesetzt — vorherige Anordnung wiederhergestellt.",
             "ZoneGroupingInsufficient": "Weise zuerst Charaktere mindestens zwei Zonen zu.",
-            "ZoneGroupingApplied": "Nach Zone gruppiert."
+            "ZoneGroupingApplied": "Nach Zone gruppiert.",
+            "GroupingPositionsLocked": "Gruppierungs-Ansicht — Positionen sind gesperrt. Setze die Gruppierung zurück, um Charaktere zu verschieben.",
+            "GroupingIsAView": "Das ist eine Ansicht — Positionen bleiben gesperrt, bis du sie zurücksetzt."
         },
         "ActorEditor": {
             "Title": "Akteur bearbeiten",
