@@ -1,4 +1,4 @@
-import { mergeGraphData, valuesEqual } from "./fang-merge.mjs";
+import { mergeGraphData, valuesEqual, structurallyEqual } from "./fang-merge.mjs";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
@@ -2313,17 +2313,42 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
      * absent from the fresh baseline), quietly resurrecting it.
      *
      * Cached image elements are carried over by id so the canvas does not flash.
+     *
+     * Positions are deliberately *not* taken from the merge unless someone actually moved
+     * the node. The merge discards our physics drift on purpose (drift is not intent, and
+     * must not overwrite other clients) — but that discarded drift is what is on screen
+     * right now. Writing the stored position back would make every node jump to where it
+     * used to be the moment we let go of a drag. So: a node whose position is unchanged
+     * against the baseline keeps its live coordinates; only a position someone really
+     * changed is adopted.
+     *
+     * @param {object} merged           the merge result we just stored
+     * @param {object|null} baselineBefore  the baseline the merge ran against
      */
-    _adoptMergedState(merged) {
-        const images = new Map();
+    _adoptMergedState(merged, baselineBefore = null) {
+        const live = new Map();
         for (const node of this.graphData?.nodes ?? []) {
-            if (node?.id && node.imgElement) images.set(node.id, node.imgElement);
+            if (node?.id) live.set(node.id, node);
+        }
+        const baseById = new Map();
+        for (const node of baselineBefore?.nodes ?? []) {
+            if (node?.id) baseById.set(node.id, node);
         }
 
         this.graphData = foundry.utils.duplicate(merged);
         for (const node of this.graphData.nodes) {
-            const cached = images.get(node.id);
-            if (cached) node.imgElement = cached;
+            const liveNode = live.get(node.id);
+            if (!liveNode) continue;              // new to us — take it as merged, images load on init
+            node.imgElement = liveNode.imgElement;
+
+            const base = baseById.get(node.id);
+            const movedByOther = base && (!valuesEqual(base.x, node.x) || !valuesEqual(base.y, node.y));
+            if (!movedByOther) {
+                node.x = liveNode.x;
+                node.y = liveNode.y;
+                node.vx = liveNode.vx;
+                node.vy = liveNode.vy;
+            }
         }
         this._repairGraphData();
 
@@ -2464,6 +2489,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             // Both our baseline and the stored state must already speak schema v2 —
             // against an older state we simply write ours, which migrates it.
             const server = entry.getFlag("fang", "graphData");
+            const baselineBefore = this._baseline;
             let mergeChangedUs = false;
             if (this._isMergeableState(this._baseline) && this._isMergeableState(server)) {
                 const { merged, conflicts } = mergeGraphData(this._baseline, exportData, server, {
@@ -2473,7 +2499,10 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 // Did the merge pull in anything we did not have? Then our live graph is
                 // now out of date and must follow, or the next save would "resurrect"
                 // what someone else deleted and undo what they added.
-                mergeChangedUs = !valuesEqual(merged, exportData);
+                // Positions are excluded on purpose: the merge always drops our physics
+                // drift, so comparing them would report a change on literally every save
+                // and rebuild the simulation each time we let go of a node.
+                mergeChangedUs = !structurallyEqual(merged, exportData);
                 exportData = merged;
                 this._reportMergeConflicts(conflicts);
             } else if (server) {
@@ -2484,7 +2513,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             // What we just wrote is the new common ground for our next save.
             this._setBaseline(exportData);
 
-            if (mergeChangedUs) this._adoptMergedState(exportData);
+            if (mergeChangedUs) this._adoptMergedState(exportData, baselineBefore);
 
             // If GM is saving, optionally force all players to sync to this new baseline
             if (triggerSync && game.user.isGM) {
@@ -5497,7 +5526,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         this.canvas.width = this.width;
         this.canvas.height = this.height;
         if (this.simulation) {
-            this.simulation.force("center", d3.forceCenter(this.width / 2, this.height / 2));
+            // _applyAxisForces rebuilds forceX/forceY against the new width/height, which is
+            // all the re-centring a resize needs. (There used to be a forceCenter here too —
+            // it hard-shifted the whole graph on every resize; see initSimulation.)
             this._applyAxisForces();
             this.simulation.alpha(0.1).restart(); // Lower alpha bump on resize to prevent wild scattering
         }
@@ -5576,17 +5607,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             .force("x", d3.forceX(node => this._getNodeTargetX(node)).strength(node => this._getNodeAxisStrength(node)))
             .force("y", d3.forceY(node => this._getNodeTargetY(node)).strength(node => this._getNodeAxisStrength(node)));
 
-        // forceCenter drags the whole graph's centre of mass to the middle of the canvas.
-        // That is what we want normally, but during grouping it pulls every cluster back
-        // towards the middle and fights the targets we just computed. Measured on real
-        // data it was by far the worst offender: a ring planned at 320px settled at 541px
-        // with it, 382px without — enough to make neighbouring areas overlap.
-        // The cluster targets already say where everything belongs, so drop it.
-        if (this._groupingMode !== "none") {
-            this.simulation.force("center", null);
-        } else if (!this.simulation.force("center")) {
-            this.simulation.force("center", d3.forceCenter(this.width / 2, this.height / 2));
-        }
+        // forceCenter used to be dropped here for grouping, because it fought the cluster
+        // targets. It is gone entirely now (see initSimulation) — it fought the user just
+        // as hard everywhere else. Nothing left to do.
     }
 
     _buildFactionClusterTargets() {
@@ -5811,6 +5834,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     initSimulation() {
+        const hadSimulation = !!this.simulation;
+        const previousAlpha = this.simulation?.alpha() ?? 1;
         if (this.simulation) this.simulation.stop();
 
         const nodeIds = new Set(this.graphData.nodes.map(n => n.id));
@@ -5883,15 +5908,33 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const cosmicWindEnabled = game.settings.get("fang", "enableCosmicWind");
 
         if (this.simulation) this.simulation.stop();
+        // No forceCenter on purpose. It is not a force in the usual sense: it hard-shifts
+        // every node each tick so their centre of mass sits dead centre, ignoring alpha
+        // entirely. The graph therefore snapped back the instant anything woke the
+        // simulation — measured on real data: 606px on a plain alpha(0.05) wake-up vs
+        // 186px without it, and 146px just from opening the edit lock. Worse, dragging one
+        // node moved the centre of mass, so every *other* node got shoved the opposite way
+        // (414px vs 194px). forceX/forceY below already pull towards the middle, softly and
+        // scaled by alpha, which is the behaviour we actually want.
         this.simulation = d3.forceSimulation(nodes)
             .force("charge", d3.forceManyBody().strength(-1000))
             .force("link", d3.forceLink(links).id(d => d.id).distance(game.settings.get("fang", "tokenSize") * 4 + 140))
-            .force("center", d3.forceCenter(this.width / 2, this.height / 2))
             .force("x", d3.forceX(node => this._getNodeTargetX(node)).strength(node => this._getNodeAxisStrength(node)))
             .force("y", d3.forceY(node => this._getNodeTargetY(node)).strength(node => this._getNodeAxisStrength(node)))
             .force("collide", d3.forceCollide().radius(game.settings.get("fang", "tokenSize") + 120))
             .force("link-avoidance", this._createLinkRepulsionForce())
             .on("tick", this.ticked.bind(this));
+
+        // A fresh forceSimulation starts at full heat (alpha 1) and spends ~300 ticks
+        // rearranging everything. That is right the first time, but this method also runs
+        // on every render() — opening the edit lock re-renders, and the graph would fly
+        // apart for no reason.
+        // Carrying the previous alpha over is the point: a settled graph (alpha at the
+        // 0.001 floor) is not *balanced*, it is merely frozen — the forces are still under
+        // tension. Waking it with any fixed alpha lets it resume rearranging, which is why
+        // opening the edit lock shoved every token by 146px. Rebuilding must preserve the
+        // motion state, not invent one. Callers that *want* heat set their own alpha after.
+        if (hadSimulation) this.simulation.alpha(previousAlpha);
 
         // Start a pure visual render loop that triggers ticked() 60fps unconditionally
         if (this._animationFrameId) cancelAnimationFrame(this._animationFrameId);
@@ -6594,22 +6637,22 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 this.context.filter = "none";
             }
 
-            // --- Faction tint on the token frame ---
-            // Faction lines are the primary display; this tints the frame in the faction
+            // --- Faction tint on the token ring ---
+            // Faction lines are the primary display; this tints the ring in the faction
             // colour as a second, quieter cue so membership stays readable when the lines
             // get lost among the relationships. Tied to the same toggle as the lines, so
             // "faction display off" really means off.
-            // Follows the token's shape: portraits are drawn as squares, so the frame is a
-            // rounded rectangle — a circle around a square leaves the corners sticking out.
+            // Sits just inside the portrait edge: everything else drawn around a token is
+            // a circle, and the outward radii are taken — the centre aura owns radius+2,
+            // the search ring radius+8, the QuickConnect marker radius+12.
+            // globalAlpha is inherited on purpose. It already encodes focus and the
+            // "missing" condition; overriding it here made faded-out characters light up.
             if (visibleFaction && !isHidden && this.graphData.showFactionLines !== false) {
                 this.context.save();
                 this.context.beginPath();
-                const framePad = 3;
-                const size = (radius + framePad) * 2;
-                this.context.roundRect(pos.x - radius - framePad, pos.y - radius - framePad, size, size, 6);
-                this.context.lineWidth = 4;
+                this.context.arc(pos.x, pos.y, Math.max(2, radius - 2), 0, Math.PI * 2);
+                this.context.lineWidth = 3;
                 this.context.strokeStyle = visibleFaction.color || "#d4af37";
-                this.context.globalAlpha = hoveredNodeId && !connectedNodeIds.has(node.id) ? 0.25 : 0.95;
                 this.context.stroke();
                 this.context.restore();
             }

@@ -6,7 +6,7 @@
  * the reason the position handling exists at all — if that one ever breaks, saving a
  * bit of lore will start yanking everyone else's layout around.
  */
-import { mergeGraphData, valuesEqual } from "../scripts/fang-merge.mjs";
+import { mergeGraphData, valuesEqual, structurallyEqual } from "../scripts/fang-merge.mjs";
 
 let failed = 0;
 let passed = 0;
@@ -207,6 +207,40 @@ section("12. Alter Stand ohne Link-IDs (Schema v1)");
     ok(merged.links.length === 0,
         "BELEG: gegen einen v1-Stand loescht der Merge alle Kanten — deshalb das Schema-Gate");
     ok(true, "-> _isMergeableState() in fang-app.js verhindert diesen Merge; v1 wird stattdessen ueberschrieben");
+}
+
+// 13 — structurallyEqual: the guard that stops every save from rebuilding the simulation
+section("13. structurallyEqual ignoriert Positionen");
+{
+    // Exactly the live case: I drag one node, the other drifts. The merge keeps my drag
+    // and discards the drift -> merged != mine, but *only* in coordinates. If that counts
+    // as a change, the graph gets rebuilt on every single drag and everything jumps.
+    const base = baseGraph();
+    const mine = clone(base);
+    mine.nodes[0].x = 400; mine.nodes[0].y = 200;      // dragged by me
+    mine.nodes[1].x = 203.4; mine.nodes[1].y = 197.9;  // drift
+    const server = clone(base);
+    const { merged } = mergeGraphData(base, mine, server, { draggedNodeIds: new Set(["elara"]) });
+
+    ok(!valuesEqual(merged, mine), "Merge liefert andere Koordinaten als gesendet (Drift verworfen)");
+    ok(structurallyEqual(merged, mine),
+        "BELEG: strukturell identisch -> kein _adoptMergedState, kein Sprung beim Loslassen");
+}
+{
+    // A real change must still be reported, or deleted nodes come back to life.
+    const base = baseGraph();
+    const mine = clone(base); mine.nodes[0].x = 999;
+    const server = clone(base); server.nodes = server.nodes.filter(n => n.id !== "garrek");
+    const { merged } = mergeGraphData(base, mine, server, { draggedNodeIds: new Set(["elara"]) });
+    ok(!structurallyEqual(merged, mine), "fremde Löschung gilt weiterhin als Änderung");
+}
+{
+    const base = baseGraph();
+    const mine = clone(base);
+    const server = clone(base); server.nodes[0].lore = "Fremde Lore";
+    const { merged } = mergeGraphData(base, mine, server);
+    ok(!structurallyEqual(merged, mine), "fremde Feldänderung gilt weiterhin als Änderung");
+    ok(structurallyEqual(merged, merged), "reflexiv");
 }
 
 console.log(`\n${failed === 0 ? "=== ALLE TESTS BESTANDEN ===" : `=== ${failed} FEHLER ===`}  (${passed} ok, ${failed} fail)\n`);

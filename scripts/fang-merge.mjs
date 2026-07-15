@@ -52,6 +52,27 @@ function clone(value) {
     return value === undefined ? undefined : JSON.parse(JSON.stringify(value));
 }
 
+/**
+ * Do two graphs differ in anything other than where things sit?
+ *
+ * The caller needs this to decide whether a merge result must be pushed back into the
+ * live graph. Positions must not count: the simulation nudges every node all the time,
+ * so a merge almost always returns slightly different coordinates than we sent — and
+ * adopting those would yank every node back to its stored position on every save.
+ */
+export function structurallyEqual(a, b) {
+    const strip = (graph) => {
+        if (!graph) return graph;
+        const stripList = (list) => (Array.isArray(list) ? list : []).map(item => {
+            const copy = { ...item };
+            for (const field of [...POSITION_FIELDS, ...VELOCITY_FIELDS]) delete copy[field];
+            return copy;
+        });
+        return { ...graph, nodes: stripList(graph.nodes), factions: stripList(graph.factions) };
+    };
+    return valuesEqual(strip(a), strip(b));
+}
+
 function byId(list) {
     const map = new Map();
     for (const item of Array.isArray(list) ? list : []) {
