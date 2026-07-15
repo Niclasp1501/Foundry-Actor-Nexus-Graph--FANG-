@@ -452,26 +452,26 @@
             "DropConnect": "Utwórz relację"
         },
         "Zones": {
-            "Title": "Strefy przynależności",
-            "Manage": "Zarządzaj strefami",
-            "Hint": "Twórz strefy kampanii, takie jak miasta, regiony, organizacje, dwory lub półświatek.",
-            "Zone": "Strefa",
-            "Add": "Dodaj strefę",
-            "Delete": "Usuń strefę",
-            "NewZone": "Nowa strefa",
-            "NamePlaceholder": "Nazwa strefy",
-            "DescriptionPlaceholder": "Krótki opis strefy",
+            "Title": "Miejsca",
+            "Manage": "Zarządzaj miejscami",
+            "Hint": "Twórz miejsca takie jak regiony, miasta, dzielnice czy budynki i grupuj postacie według tego, gdzie są.",
+            "Zone": "Miejsce",
+            "Add": "Dodaj miejsce",
+            "Delete": "Usuń miejsce",
+            "NewZone": "Nowe miejsce",
+            "NamePlaceholder": "Nazwa miejsca",
+            "DescriptionPlaceholder": "Krótki opis",
             "VisibleToPlayers": "Widoczne dla graczy",
+            "MemberCount": "{count} postaci w tym miejscu",
+            "EmptyHint": "Brak postaci — miejsce rysowane jest tylko w widoku miejsc, gdy przypiszesz jakieś (prawy przycisk na postaci, Edytuj).",
             "Types": {
                 "region": "Region",
                 "city": "Miasto",
-                "organization": "Organizacja",
-                "court": "Dwór",
-                "underworld": "Półświatek",
+                "district": "Dzielnica",
+                "building": "Budynek",
+                "realm": "Królestwo",
                 "other": "Inne"
-            },
-            "MemberCount": "{count} postaci w tej strefie",
-            "EmptyHint": "Brak postaci — strefa pozostaje niewidoczna na planszy, dopóki jakiejś nie przypiszesz (prawy przycisk na postaci, Edytuj)."
+            }
         },
         "RelationshipTypes": {
             "Label": "Typ relacji",

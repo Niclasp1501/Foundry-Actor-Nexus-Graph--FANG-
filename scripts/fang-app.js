@@ -344,11 +344,19 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
     _normalizeZone(zone = {}) {
         const id = zone.id || foundry.utils.randomID();
+        // A location is a place, not a group. Older data offered "organization" (that is
+        // what factions are for) and court/underworld, which read as groups just as much
+        // as places. Map them onto the closest place so nothing ends up with a type the
+        // dropdown cannot show.
+        const legacyTypes = { organization: "building", court: "building", underworld: "district" };
+        const rawType = String(zone.type || "region");
+        const type = legacyTypes[rawType] ?? rawType;
+
         return {
             ...zone,
             id,
-            name: String(zone.name || this._localize("FANG.Zones.NewZone", "New Zone")),
-            type: String(zone.type || "region"),
+            name: String(zone.name || this._localize("FANG.Zones.NewZone", "New Location")),
+            type,
             color: String(zone.color || "#d4af37"),
             description: String(zone.description || ""),
             playerVisible: zone.playerVisible !== false
@@ -3625,7 +3633,10 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const zones = Array.isArray(this.graphData.zones) ? this.graphData.zones.map(z => this._normalizeZone(z)) : [];
         const escapeHtml = (value) => this._escapeHtml(value);
         const localize = (key, fallback) => this._localize(key, fallback);
-        const zoneTypes = ["region", "city", "organization", "court", "underworld", "other"];
+        // Places, not groups. "organization" used to live here, but an organization is a
+        // faction — that is what factions are for. Legacy values are migrated in
+        // _normalizeZone.
+        const zoneTypes = ["region", "city", "district", "building", "realm", "other"];
 
         // How many characters sit in each zone? A zone is only drawn on the canvas once
         // it has members, so without this the manager gives no clue why a freshly
@@ -6013,7 +6024,16 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const nodeRadius = game.settings.get("fang", "tokenSize") || 33;
 
         // --- Draw Affiliation Zones behind links and nodes ---
-        const visibleZones = (this.graphData.zones || [])
+        // Location areas are only drawn in the location view.
+        //
+        // The area is a box around wherever the members currently sit — but the physics
+        // does not know about locations, it spreads people by links and repulsion. With
+        // scattered members two boxes overlap even when they share no member at all: one
+        // person in the corner stretches their location across the whole canvas. The box
+        // would claim an order that does not exist outside the view.
+        // Inside the location view the members are pulled together, so the area around
+        // them is honest — and separate locations no longer overlap.
+        const visibleZones = this._groupingMode !== "zone" ? [] : (this.graphData.zones || [])
             .map(z => this._normalizeZone(z))
             .filter(z => game.user?.isGM || z.playerVisible !== false);
         visibleZones.forEach(zone => {

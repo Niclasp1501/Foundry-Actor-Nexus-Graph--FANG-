@@ -452,26 +452,26 @@
             "DropConnect": "Crear relación"
         },
         "Zones": {
-            "Title": "Zonas de afiliación",
-            "Manage": "Gestionar zonas",
-            "Hint": "Crea zonas de campaña como ciudades, regiones, organizaciones, cortes o bajos fondos.",
-            "Zone": "Zona",
-            "Add": "Añadir zona",
-            "Delete": "Eliminar zona",
-            "NewZone": "Nueva zona",
-            "NamePlaceholder": "Nombre de zona",
-            "DescriptionPlaceholder": "Descripción breve de la zona",
-            "VisibleToPlayers": "Visible para jugadores",
+            "Title": "Lugares",
+            "Manage": "Gestionar lugares",
+            "Hint": "Crea lugares como regiones, ciudades, barrios o edificios y agrupa personajes según dónde están.",
+            "Zone": "Lugar",
+            "Add": "Añadir lugar",
+            "Delete": "Eliminar lugar",
+            "NewZone": "Nuevo lugar",
+            "NamePlaceholder": "Nombre del lugar",
+            "DescriptionPlaceholder": "Breve descripción",
+            "VisibleToPlayers": "Visible para los jugadores",
+            "MemberCount": "{count} personajes en este lugar",
+            "EmptyHint": "Aún no hay personajes — el lugar solo se dibuja en la vista de lugares, cuando asignes alguno (clic derecho en un personaje, Editar).",
             "Types": {
                 "region": "Región",
                 "city": "Ciudad",
-                "organization": "Organización",
-                "court": "Corte",
-                "underworld": "Bajos fondos",
+                "district": "Barrio",
+                "building": "Edificio",
+                "realm": "Reino",
                 "other": "Otro"
-            },
-            "MemberCount": "{count} personajes en esta zona",
-            "EmptyHint": "Aún no hay personajes — la zona permanece invisible en el lienzo hasta que asignes alguno (clic derecho en un personaje, Editar)."
+            }
         },
         "RelationshipTypes": {
             "Label": "Tipo de relación",

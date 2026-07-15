@@ -452,26 +452,26 @@
             "DropConnect": "Vytvořit vztah"
         },
         "Zones": {
-            "Title": "Zóny příslušnosti",
-            "Manage": "Spravovat zóny",
-            "Hint": "Vytvoř zóny kampaně, například města, regiony, organizace, dvory nebo podsvětí.",
-            "Zone": "Zóna",
-            "Add": "Přidat zónu",
-            "Delete": "Smazat zónu",
-            "NewZone": "Nová zóna",
-            "NamePlaceholder": "Název zóny",
-            "DescriptionPlaceholder": "Krátký popis zóny",
+            "Title": "Místa",
+            "Manage": "Spravovat místa",
+            "Hint": "Vytvoř místa jako regiony, města, čtvrti nebo budovy a seskup postavy podle toho, kde jsou.",
+            "Zone": "Místo",
+            "Add": "Přidat místo",
+            "Delete": "Smazat místo",
+            "NewZone": "Nové místo",
+            "NamePlaceholder": "Název místa",
+            "DescriptionPlaceholder": "Krátký popis",
             "VisibleToPlayers": "Viditelné pro hráče",
+            "MemberCount": "{count} postav na tomto místě",
+            "EmptyHint": "Zatím žádné postavy — místo se kreslí jen v zobrazení míst, jakmile nějaké přiřadíš (pravý klik na postavu, Upravit).",
             "Types": {
                 "region": "Region",
                 "city": "Město",
-                "organization": "Organizace",
-                "court": "Dvůr",
-                "underworld": "Podsvětí",
+                "district": "Čtvrť",
+                "building": "Budova",
+                "realm": "Říše",
                 "other": "Jiné"
-            },
-            "MemberCount": "{count} postav v této zóně",
-            "EmptyHint": "Zatím žádné postavy — zóna zůstane na plátně neviditelná, dokud nějakou nepřiřadíš (pravý klik na postavu, Upravit)."
+            }
         },
         "RelationshipTypes": {
             "Label": "Typ vztahu",

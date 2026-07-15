@@ -452,26 +452,26 @@
             "DropConnect": "Crea relazione"
         },
         "Zones": {
-            "Title": "Zone di appartenenza",
-            "Manage": "Gestisci zone",
-            "Hint": "Crea zone di campagna come città, regioni, organizzazioni, corti o malavita.",
-            "Zone": "Zona",
-            "Add": "Aggiungi zona",
-            "Delete": "Elimina zona",
-            "NewZone": "Nuova zona",
-            "NamePlaceholder": "Nome zona",
-            "DescriptionPlaceholder": "Breve descrizione della zona",
+            "Title": "Luoghi",
+            "Manage": "Gestisci luoghi",
+            "Hint": "Crea luoghi come regioni, città, quartieri o edifici e raggruppa i personaggi in base a dove si trovano.",
+            "Zone": "Luogo",
+            "Add": "Aggiungi luogo",
+            "Delete": "Elimina luogo",
+            "NewZone": "Nuovo luogo",
+            "NamePlaceholder": "Nome del luogo",
+            "DescriptionPlaceholder": "Breve descrizione",
             "VisibleToPlayers": "Visibile ai giocatori",
+            "MemberCount": "{count} personaggi in questo luogo",
+            "EmptyHint": "Ancora nessun personaggio — il luogo viene disegnato solo nella vista luoghi, quando ne assegni qualcuno (clic destro su un personaggio, Modifica).",
             "Types": {
                 "region": "Regione",
                 "city": "Città",
-                "organization": "Organizzazione",
-                "court": "Corte",
-                "underworld": "Malavita",
+                "district": "Quartiere",
+                "building": "Edificio",
+                "realm": "Reame",
                 "other": "Altro"
-            },
-            "MemberCount": "{count} personaggi in questa zona",
-            "EmptyHint": "Ancora nessun personaggio — la zona resta invisibile sulla tela finché non ne assegni qualcuno (clic destro su un personaggio, Modifica)."
+            }
         },
         "RelationshipTypes": {
             "Label": "Tipo di relazione",

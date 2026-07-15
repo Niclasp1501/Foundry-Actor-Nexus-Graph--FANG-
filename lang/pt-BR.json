@@ -452,26 +452,26 @@
             "DropConnect": "Criar relacionamento"
         },
         "Zones": {
-            "Title": "Zonas de afiliação",
-            "Manage": "Gerenciar zonas",
-            "Hint": "Crie zonas de campanha como cidades, regiões, organizações, cortes ou submundo.",
-            "Zone": "Zona",
-            "Add": "Adicionar zona",
-            "Delete": "Excluir zona",
-            "NewZone": "Nova zona",
-            "NamePlaceholder": "Nome da zona",
-            "DescriptionPlaceholder": "Descrição curta da zona",
-            "VisibleToPlayers": "Visível para jogadores",
+            "Title": "Locais",
+            "Manage": "Gerenciar locais",
+            "Hint": "Crie locais como regiões, cidades, bairros ou edifícios e agrupe personagens por onde estão.",
+            "Zone": "Local",
+            "Add": "Adicionar local",
+            "Delete": "Excluir local",
+            "NewZone": "Novo local",
+            "NamePlaceholder": "Nome do local",
+            "DescriptionPlaceholder": "Breve descrição",
+            "VisibleToPlayers": "Visível para os jogadores",
+            "MemberCount": "{count} personagens neste local",
+            "EmptyHint": "Ainda sem personagens — o local só é desenhado na visão de locais, quando você atribuir algum (clique direito num personagem, Editar).",
             "Types": {
                 "region": "Região",
                 "city": "Cidade",
-                "organization": "Organização",
-                "court": "Corte",
-                "underworld": "Submundo",
+                "district": "Bairro",
+                "building": "Edifício",
+                "realm": "Reino",
                 "other": "Outro"
-            },
-            "MemberCount": "{count} personagens nesta zona",
-            "EmptyHint": "Ainda sem personagens — a zona fica invisível no canvas até você atribuir algum (clique direito num personagem, Editar)."
+            }
         },
         "RelationshipTypes": {
             "Label": "Tipo de relação",

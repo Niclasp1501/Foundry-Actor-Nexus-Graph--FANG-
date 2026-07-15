@@ -452,26 +452,26 @@
             "DropConnect": "Beziehung erstellen"
         },
         "Zones": {
-            "Title": "Zugehörigkeitszonen",
-            "Manage": "Zonen verwalten",
-            "Hint": "Erstelle Kampagnenbereiche wie Stadt, Region, Organisation, Adelshof oder Unterwelt.",
-            "Zone": "Zone",
-            "Add": "Zone hinzufügen",
-            "Delete": "Zone löschen",
-            "NewZone": "Neue Zone",
-            "NamePlaceholder": "Zonenname",
-            "DescriptionPlaceholder": "Kurze Zonenbeschreibung",
+            "Title": "Orte",
+            "Manage": "Orte verwalten",
+            "Hint": "Erstelle Orte wie Regionen, Städte, Viertel oder Gebäude und gruppiere Charaktere danach, wo sie sind.",
+            "Zone": "Ort",
+            "Add": "Ort hinzufügen",
+            "Delete": "Ort löschen",
+            "NewZone": "Neuer Ort",
+            "NamePlaceholder": "Ortsname",
+            "DescriptionPlaceholder": "Kurze Beschreibung",
             "VisibleToPlayers": "Für Spieler sichtbar",
+            "MemberCount": "{count} Charaktere an diesem Ort",
+            "EmptyHint": "Noch keine Charaktere — der Ort wird nur in der Orts-Ansicht gezeichnet, sobald du welche zuweist (Rechtsklick auf einen Charakter, Bearbeiten).",
             "Types": {
                 "region": "Region",
                 "city": "Stadt",
-                "organization": "Organisation",
-                "court": "Adelshof",
-                "underworld": "Unterwelt",
+                "district": "Viertel",
+                "building": "Gebäude",
+                "realm": "Reich",
                 "other": "Sonstiges"
-            },
-            "MemberCount": "{count} Charaktere in dieser Zone",
-            "EmptyHint": "Noch keine Charaktere — die Zone bleibt auf dem Canvas unsichtbar, bis du welche zuweist (Rechtsklick auf einen Charakter, Bearbeiten)."
+            }
         },
         "RelationshipTypes": {
             "Label": "Beziehungsart",

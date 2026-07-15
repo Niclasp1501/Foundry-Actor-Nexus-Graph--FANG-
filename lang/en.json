@@ -452,26 +452,26 @@
             "DropConnect": "Create relationship"
         },
         "Zones": {
-            "Title": "Affiliation Zones",
-            "Manage": "Manage Zones",
-            "Hint": "Create campaign zones such as cities, regions, organizations, courts, or underworld groups.",
-            "Zone": "Zone",
-            "Add": "Add zone",
-            "Delete": "Delete zone",
-            "NewZone": "New Zone",
-            "NamePlaceholder": "Zone name",
-            "DescriptionPlaceholder": "Short zone description",
+            "Title": "Locations",
+            "Manage": "Manage locations",
+            "Hint": "Create places such as regions, cities, districts or buildings, then group characters by where they are.",
+            "Zone": "Location",
+            "Add": "Add location",
+            "Delete": "Delete location",
+            "NewZone": "New location",
+            "NamePlaceholder": "Location name",
+            "DescriptionPlaceholder": "Short description",
             "VisibleToPlayers": "Visible to players",
+            "MemberCount": "{count} characters at this location",
+            "EmptyHint": "No characters yet — the location is only drawn in the location view, once you assign some (right-click a character, Edit).",
             "Types": {
                 "region": "Region",
                 "city": "City",
-                "organization": "Organization",
-                "court": "Court",
-                "underworld": "Underworld",
+                "district": "District",
+                "building": "Building",
+                "realm": "Realm",
                 "other": "Other"
-            },
-            "MemberCount": "{count} characters in this zone",
-            "EmptyHint": "No characters yet — the zone stays hidden on the canvas until you assign some (right-click a character, Edit)."
+            }
         },
         "RelationshipTypes": {
             "Label": "Relationship type",

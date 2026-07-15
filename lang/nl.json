@@ -452,26 +452,26 @@
             "DropConnect": "Relatie creëren"
         },
         "Zones": {
-            "Title": "Verbonden zones",
-            "Manage": "Zones beheren",
-            "Hint": "Maak campagnezones zoals steden, regio’s, organisaties, hoven of onderwereldgroepen.",
-            "Zone": "Zone",
-            "Add": "Zone toevoegen",
-            "Delete": "Zone verwijderen",
-            "NewZone": "Nieuwe zone",
-            "NamePlaceholder": "Zonenaam",
-            "DescriptionPlaceholder": "Korte zonebeschrijving",
+            "Title": "Locaties",
+            "Manage": "Locaties beheren",
+            "Hint": "Maak locaties zoals regio's, steden, wijken of gebouwen en groepeer personages op waar ze zijn.",
+            "Zone": "Locatie",
+            "Add": "Locatie toevoegen",
+            "Delete": "Locatie verwijderen",
+            "NewZone": "Nieuwe locatie",
+            "NamePlaceholder": "Locatienaam",
+            "DescriptionPlaceholder": "Korte beschrijving",
             "VisibleToPlayers": "Zichtbaar voor spelers",
+            "MemberCount": "{count} personages op deze locatie",
+            "EmptyHint": "Nog geen personages — de locatie wordt alleen in de locatieweergave getekend, zodra je er een toewijst (rechtsklik op een personage, Bewerken).",
             "Types": {
                 "region": "Regio",
                 "city": "Stad",
-                "organization": "Organisatie",
-                "court": "Hof",
-                "underworld": "Onderwereld",
+                "district": "Wijk",
+                "building": "Gebouw",
+                "realm": "Rijk",
                 "other": "Overig"
-            },
-            "MemberCount": "{count} personages in deze zone",
-            "EmptyHint": "Nog geen personages — de zone blijft onzichtbaar op het canvas tot je er een toewijst (rechtsklik op een personage, Bewerken)."
+            }
         },
         "RelationshipTypes": {
             "Label": "Relatietype",

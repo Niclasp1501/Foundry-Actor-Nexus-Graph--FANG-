@@ -452,26 +452,26 @@
             "DropConnect": "Créer une relation"
         },
         "Zones": {
-            "Title": "Zones d’appartenance",
-            "Manage": "Gérer les zones",
-            "Hint": "Crée des zones de campagne comme des villes, régions, organisations, cours ou bas-fonds.",
-            "Zone": "Zone",
-            "Add": "Ajouter une zone",
-            "Delete": "Supprimer la zone",
-            "NewZone": "Nouvelle zone",
-            "NamePlaceholder": "Nom de la zone",
-            "DescriptionPlaceholder": "Brève description de la zone",
-            "VisibleToPlayers": "Visible par les joueurs",
+            "Title": "Lieux",
+            "Manage": "Gérer les lieux",
+            "Hint": "Créez des lieux comme des régions, villes, quartiers ou bâtiments, puis groupez les personnages selon leur position.",
+            "Zone": "Lieu",
+            "Add": "Ajouter un lieu",
+            "Delete": "Supprimer le lieu",
+            "NewZone": "Nouveau lieu",
+            "NamePlaceholder": "Nom du lieu",
+            "DescriptionPlaceholder": "Brève description",
+            "VisibleToPlayers": "Visible pour les joueurs",
+            "MemberCount": "{count} personnages dans ce lieu",
+            "EmptyHint": "Aucun personnage — le lieu n'est dessiné que dans la vue des lieux, une fois que vous en assignez (clic droit sur un personnage, Modifier).",
             "Types": {
                 "region": "Région",
                 "city": "Ville",
-                "organization": "Organisation",
-                "court": "Cour",
-                "underworld": "Bas-fonds",
+                "district": "Quartier",
+                "building": "Bâtiment",
+                "realm": "Royaume",
                 "other": "Autre"
-            },
-            "MemberCount": "{count} personnages dans cette zone",
-            "EmptyHint": "Aucun personnage — la zone reste invisible sur le canevas tant que vous n'en assignez pas (clic droit sur un personnage, Modifier)."
+            }
         },
         "RelationshipTypes": {
             "Label": "Type de relation",
