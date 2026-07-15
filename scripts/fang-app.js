@@ -5517,21 +5517,26 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         }
     }
 
+    // While grouping, the cluster target wins over isCenter: a centred character still
+    // belongs with their group. Outside the view, isCenter keeps its old meaning.
     _getNodeTargetX(node) {
-        if (node?.isCenter) return this.width / 2;
         const groupedTarget = this._clusterTargets?.get(node?.id);
-        return groupedTarget ? groupedTarget.x : this.width / 2;
+        if (groupedTarget) return groupedTarget.x;
+        return this.width / 2;
     }
 
     _getNodeTargetY(node) {
-        if (node?.isCenter) return this.height / 2;
         const groupedTarget = this._clusterTargets?.get(node?.id);
-        return groupedTarget ? groupedTarget.y : this.height / 2;
+        if (groupedTarget) return groupedTarget.y;
+        return this.height / 2;
     }
 
     _getNodeAxisStrength(node) {
+        // Grouping needs a firm hand: relationships run across groups and would otherwise
+        // drag members out of their cluster far enough to blow up the area drawn around
+        // it. Measured on real data — at 0.11 members ended up ~680px off their target.
+        if (this._groupingMode !== "none" && this._clusterTargets?.has(node?.id)) return 0.5;
         if (node?.isCenter) return 0.4;
-        if (this._groupingMode !== "none" && this._clusterTargets?.has(node?.id)) return 0.11;
         return 0.025;
     }
 
@@ -5540,6 +5545,18 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         this.simulation
             .force("x", d3.forceX(node => this._getNodeTargetX(node)).strength(node => this._getNodeAxisStrength(node)))
             .force("y", d3.forceY(node => this._getNodeTargetY(node)).strength(node => this._getNodeAxisStrength(node)));
+
+        // forceCenter drags the whole graph's centre of mass to the middle of the canvas.
+        // That is what we want normally, but during grouping it pulls every cluster back
+        // towards the middle and fights the targets we just computed. Measured on real
+        // data it was by far the worst offender: a ring planned at 320px settled at 541px
+        // with it, 382px without — enough to make neighbouring areas overlap.
+        // The cluster targets already say where everything belongs, so drop it.
+        if (this._groupingMode !== "none") {
+            this.simulation.force("center", null);
+        } else if (!this.simulation.force("center")) {
+            this.simulation.force("center", d3.forceCenter(this.width / 2, this.height / 2));
+        }
     }
 
     _buildFactionClusterTargets() {
@@ -5571,7 +5588,12 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const allNodes = Array.isArray(this.graphData.nodes) ? this.graphData.nodes : [];
 
         for (const node of allNodes) {
-            if (!node || node.isCenter) continue;
+            if (!node) continue;
+            // isCenter pins a node to the middle of the canvas — meaningful in the normal
+            // view (the boss sits centre stage), wrong here: while grouping, everyone
+            // belongs with their group. Leaving them behind stretched their group's area
+            // from the cluster all the way to the canvas centre, which is what made
+            // areas overlap even when the groups themselves were cleanly separated.
             const group = node[groupKey];
             if (!group || !known.has(group)) continue;
             if (!buckets.has(group)) buckets.set(group, []);
@@ -5582,10 +5604,36 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         if (groupedEntries.length < 2) return null;
 
         const targets = new Map();
-        const orbitRadius = Math.max(180, Math.min(this.width, this.height) * 0.3);
+
+        // The layout has to respect the physics, or the physics wins.
+        //
+        // The collide force keeps every pair of nodes at least this far apart. Planning
+        // tighter rings than that is wishful thinking: the old formula asked six members
+        // to share an 81px ring while collide demanded 320px between any two of them —
+        // the cluster settled 4.3x wider than planned, and the area drawn around it
+        // swallowed its neighbours. Now the geometry is derived from that minimum.
+        const minSeparation = (game.settings.get("fang", "tokenSize") + 120) * 2;
+
+        // Radius a ring needs so that k members sit side by side without pushing:
+        // the chord between neighbours is 2*r*sin(pi/k), and it must reach minSeparation.
+        const ringRadiusFor = (count) => count <= 1 ? 0 : minSeparation / (2 * Math.sin(Math.PI / count));
+
+        const ringRadii = groupedEntries.map(([, members]) => ringRadiusFor(members.length));
+        const widestRing = Math.max(...ringRadii);
+
+        // Same reasoning one level up: neighbouring clusters must not touch, so their
+        // centres need room for two rings plus a gap. The 1.3 accounts for the ring
+        // settling wider than planned — links and charge still tug at members across
+        // group borders (measured ~20% on real data once forceCenter was out of the way).
+        const clusterCount = groupedEntries.length;
+        const neededBetweenCentres = widestRing * 2 * 1.3 + minSeparation;
+        const orbitRadius = Math.max(
+            180,
+            neededBetweenCentres / (2 * Math.sin(Math.PI / clusterCount))
+        );
 
         groupedEntries.forEach(([, members], clusterIndex) => {
-            const clusterAngle = ((Math.PI * 2) * clusterIndex / groupedEntries.length) - (Math.PI / 2);
+            const clusterAngle = ((Math.PI * 2) * clusterIndex / clusterCount) - (Math.PI / 2);
             const clusterX = (this.width / 2) + Math.cos(clusterAngle) * orbitRadius;
             const clusterY = (this.height / 2) + Math.sin(clusterAngle) * orbitRadius;
 
@@ -5594,7 +5642,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 return;
             }
 
-            const memberRadius = Math.max(38, Math.min(150, 22 + Math.sqrt(members.length) * 24));
+            const memberRadius = ringRadii[clusterIndex];
             members.forEach((member, memberIndex) => {
                 const memberAngle = (Math.PI * 2) * memberIndex / members.length;
                 targets.set(member.id, {
