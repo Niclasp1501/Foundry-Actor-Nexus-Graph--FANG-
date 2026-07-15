@@ -1704,6 +1704,32 @@ body.fang-monitor .fang-app-container .narrative-close {
     font-size: 0.82rem;
 }
 
+/* Member count per zone. A zone is only drawn once it has members, so an empty one
+   needs to say so — otherwise a freshly created zone looks broken. */
+.fang-dialog .fang-zone-members {
+    display: flex;
+    align-items: flex-start;
+    gap: 7px;
+    margin: 6px 0 0;
+    font-size: 0.8rem;
+    line-height: 1.35;
+    color: #5a4a2f;
+}
+
+.fang-dialog .fang-zone-members > i {
+    margin-top: 2px;
+    color: var(--fang-accent-gold);
+}
+
+.fang-dialog .fang-zone-members.is-empty {
+    color: #7a6a55;
+    font-style: italic;
+}
+
+.fang-dialog .fang-zone-members.is-empty > i {
+    color: #a8956f;
+}
+
 .fang-dialog .fang-faction-visibility-row label {
     display: flex;
     align-items: center;

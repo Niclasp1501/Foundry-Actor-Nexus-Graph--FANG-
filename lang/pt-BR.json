@@ -460,7 +460,9 @@
                 "court": "Corte",
                 "underworld": "Submundo",
                 "other": "Outro"
-            }
+            },
+            "MemberCount": "{count} personagens nesta zona",
+            "EmptyHint": "Ainda sem personagens — a zona fica invisível no canvas até você atribuir algum (clique direito num personagem, Editar)."
         },
         "RelationshipTypes": {
             "Label": "Tipo de relação",

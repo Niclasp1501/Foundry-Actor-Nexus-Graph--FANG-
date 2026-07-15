@@ -3617,6 +3617,12 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const escapeHtml = (value) => this._escapeHtml(value);
         const localize = (key, fallback) => this._localize(key, fallback);
         const zoneTypes = ["region", "city", "organization", "court", "underworld", "other"];
+
+        // How many characters sit in each zone? A zone is only drawn on the canvas once
+        // it has members, so without this the manager gives no clue why a freshly
+        // created zone stays invisible.
+        const memberCount = (zoneId) => (this.graphData.nodes || []).filter(n => n.zoneId === zoneId).length;
+
         const renderZoneRow = (zone, index) => `
             <div class="fang-faction-item fang-zone-item">
                 <div class="fang-faction-main-row">
@@ -3628,6 +3634,12 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     </select>
                 </div>
                 <textarea class="zone-description" rows="2" placeholder="${escapeHtml(localize("FANG.Zones.DescriptionPlaceholder", "Short zone description"))}">${escapeHtml(zone.description || "")}</textarea>
+                ${(() => {
+                    const count = memberCount(zone.id);
+                    return count
+                        ? `<p class="fang-zone-members"><i class="fas fa-user-group" aria-hidden="true"></i> ${escapeHtml(localize("FANG.Zones.MemberCount", "{count} characters in this zone").replace("{count}", count))}</p>`
+                        : `<p class="fang-zone-members is-empty"><i class="fas fa-circle-info" aria-hidden="true"></i> ${escapeHtml(localize("FANG.Zones.EmptyHint", "No characters yet — the zone stays hidden on the canvas until you assign some (right-click a character, Edit)."))}</p>`;
+                })()}
                 <div class="fang-faction-visibility-row">
                     <label><input type="checkbox" class="zone-player-visible" ${zone.playerVisible !== false ? "checked" : ""}> ${escapeHtml(localize("FANG.Zones.VisibleToPlayers", "Visible to players"))}</label>
                 </div>

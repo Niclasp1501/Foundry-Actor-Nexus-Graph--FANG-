@@ -460,7 +460,9 @@
                 "court": "Court",
                 "underworld": "Underworld",
                 "other": "Other"
-            }
+            },
+            "MemberCount": "{count} characters in this zone",
+            "EmptyHint": "No characters yet — the zone stays hidden on the canvas until you assign some (right-click a character, Edit)."
         },
         "RelationshipTypes": {
             "Label": "Relationship type",

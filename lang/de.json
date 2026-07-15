@@ -460,7 +460,9 @@
                 "court": "Adelshof",
                 "underworld": "Unterwelt",
                 "other": "Sonstiges"
-            }
+            },
+            "MemberCount": "{count} Charaktere in dieser Zone",
+            "EmptyHint": "Noch keine Charaktere — die Zone bleibt auf dem Canvas unsichtbar, bis du welche zuweist (Rechtsklick auf einen Charakter, Bearbeiten)."
         },
         "RelationshipTypes": {
             "Label": "Beziehungsart",

@@ -460,7 +460,9 @@
                 "court": "Hof",
                 "underworld": "Onderwereld",
                 "other": "Overig"
-            }
+            },
+            "MemberCount": "{count} personages in deze zone",
+            "EmptyHint": "Nog geen personages — de zone blijft onzichtbaar op het canvas tot je er een toewijst (rechtsklik op een personage, Bewerken)."
         },
         "RelationshipTypes": {
             "Label": "Relatietype",

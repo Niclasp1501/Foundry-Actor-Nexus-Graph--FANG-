@@ -460,7 +460,9 @@
                 "court": "Dvůr",
                 "underworld": "Podsvětí",
                 "other": "Jiné"
-            }
+            },
+            "MemberCount": "{count} postav v této zóně",
+            "EmptyHint": "Zatím žádné postavy — zóna zůstane na plátně neviditelná, dokud nějakou nepřiřadíš (pravý klik na postavu, Upravit)."
         },
         "RelationshipTypes": {
             "Label": "Typ vztahu",

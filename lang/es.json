@@ -460,7 +460,9 @@
                 "court": "Corte",
                 "underworld": "Bajos fondos",
                 "other": "Otro"
-            }
+            },
+            "MemberCount": "{count} personajes en esta zona",
+            "EmptyHint": "Aún no hay personajes — la zona permanece invisible en el lienzo hasta que asignes alguno (clic derecho en un personaje, Editar)."
         },
         "RelationshipTypes": {
             "Label": "Tipo de relación",

@@ -460,7 +460,9 @@
                 "court": "Dwór",
                 "underworld": "Półświatek",
                 "other": "Inne"
-            }
+            },
+            "MemberCount": "{count} postaci w tej strefie",
+            "EmptyHint": "Brak postaci — strefa pozostaje niewidoczna na planszy, dopóki jakiejś nie przypiszesz (prawy przycisk na postaci, Edytuj)."
         },
         "RelationshipTypes": {
             "Label": "Typ relacji",

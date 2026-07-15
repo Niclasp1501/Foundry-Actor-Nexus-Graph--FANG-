@@ -460,7 +460,9 @@
                 "court": "Corte",
                 "underworld": "Malavita",
                 "other": "Altro"
-            }
+            },
+            "MemberCount": "{count} personaggi in questa zona",
+            "EmptyHint": "Ancora nessun personaggio — la zona resta invisibile sulla tela finché non ne assegni qualcuno (clic destro su un personaggio, Modifica)."
         },
         "RelationshipTypes": {
             "Label": "Tipo di relazione",

@@ -460,7 +460,9 @@
                 "court": "Cour",
                 "underworld": "Bas-fonds",
                 "other": "Autre"
-            }
+            },
+            "MemberCount": "{count} personnages dans cette zone",
+            "EmptyHint": "Aucun personnage — la zone reste invisible sur le canevas tant que vous n'en assignez pas (clic droit sur un personnage, Modifier)."
         },
         "RelationshipTypes": {
             "Label": "Type de relation",
