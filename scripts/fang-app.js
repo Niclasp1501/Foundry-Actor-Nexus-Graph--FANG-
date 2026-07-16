@@ -5565,7 +5565,11 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 .on("start", this.dragstarted.bind(this))
                 .on("drag", this.dragged.bind(this))
                 .on("end", this.dragended.bind(this)))
-            .call(this.zoom);
+            .call(this.zoom)
+            // d3.zoom installs its own double-click-to-zoom. We bind dblclick ourselves to
+            // open the character sheet, so both fired at once: the sheet opened *and* the
+            // canvas zoomed in under it. The sheet is the useful one.
+            .on("dblclick.zoom", null);
 
         this.canvas.addEventListener("mousemove", this._onMouseMove.bind(this));
         this.canvas.addEventListener("mouseleave", this._onMouseLeave.bind(this));
@@ -6225,10 +6229,14 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 this.context.setLineDash([8, 8]);
                 this.context.strokeStyle = faction.color || "#ffffff";
 
-                // Dim faction lines if hover is active and none of the members are hovered/connected
+                // Dim faction lines if hover is active and none of the members are hovered/connected.
+                // Kept as a factor: this used to assign globalAlpha directly and was then
+                // overwritten unconditionally by the per-line alpha below, so hovering never
+                // actually dimmed anything.
+                let hoverFactor = 1;
                 if (hoveredNodeId) {
                     const hasRelevantMember = members.some(m => connectedNodeIds.has(m.id));
-                    this.context.globalAlpha = hasRelevantMember ? 0.4 : 0.1;
+                    hoverFactor = hasRelevantMember ? 0.8 : 0.2;
                 }
 
                 for (let i = 0; i < sortedMembers.length; i++) {
@@ -6244,13 +6252,16 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     const hasRegularLink = regularLinkPairs.has(pairKey);
 
                     if (hasRegularLink) {
-                        // Adaptive Glow: Draw a wider, faint background trail behind the regular link
-                        this.context.lineWidth = 6;
-                        this.context.globalAlpha = 0.2;
+                        // Adaptive glow: a wider trail behind the existing relationship line.
+                        // This is the common case — faction members tend to be related — and at
+                        // the old 0.2 it vanished completely under the relationship line, which
+                        // is why the faction lines "were not shown" at all.
+                        this.context.lineWidth = 9;
+                        this.context.globalAlpha = 0.45 * hoverFactor;
                     } else {
-                        // Sharp default: Sharp thin dashed line
-                        this.context.lineWidth = 1.5;
-                        this.context.globalAlpha = 0.5; // Slightly transparent to keep it premium
+                        // Sharp default: thin dashed line, on its own against the background.
+                        this.context.lineWidth = 2.5;
+                        this.context.globalAlpha = 0.85 * hoverFactor;
                     }
 
                     this.context.beginPath();
@@ -6621,7 +6632,16 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             }
 
             if (node.imgElement && node.imgElement.complete && node.imgElement.naturalWidth !== 0) {
+                // Clip the portrait to a circle. Everything drawn around a token is round —
+                // the centre aura, the search ring, the faction ring, the hidden overlay —
+                // but portraits are whatever the actor happens to use, and a square one
+                // pokes its corners out from under every one of those rings.
+                this.context.save();
+                this.context.beginPath();
+                this.context.arc(pos.x, pos.y, radius, 0, Math.PI * 2);
+                this.context.clip();
                 this.context.drawImage(node.imgElement, pos.x - radius, pos.y - radius, radius * 2, radius * 2);
+                this.context.restore();
             } else {
                 this.context.beginPath();
                 this.context.arc(pos.x, pos.y, radius, 0, Math.PI * 2, true);
