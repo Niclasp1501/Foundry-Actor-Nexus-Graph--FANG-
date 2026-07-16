@@ -125,7 +125,17 @@
             "GroupByZone": "Group by location",
             "GroupByZoneHint": "Pull characters together by location. Replaces faction grouping.",
             "ResetZoneGrouping": "Reset grouping",
-            "ResetZoneGroupingHint": "Restore the layout from before grouping."
+            "ResetZoneGroupingHint": "Restore the layout from before grouping.",
+            "RailAffiliation": "Affiliation & location",
+            "RailSettings": "Settings",
+            "GroupingTitle": "Grouping",
+            "GroupingHint": "A temporary view. Positions are locked while it is on and return to normal afterwards.",
+            "GroupingNone": "Normal",
+            "GroupByFactionShort": "Faction",
+            "GroupByZoneShort": "Location",
+            "FactionsHint": "Factions are shown as lines between members, and as a coloured ring on the token.",
+            "SectionPermissions": "Permissions",
+            "ShowFactionLines": "Show faction display"
         },
         "Journal": {
             "FolderName": "FANG - Do Not Delete",

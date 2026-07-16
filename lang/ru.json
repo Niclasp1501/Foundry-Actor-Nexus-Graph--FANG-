@@ -125,7 +125,17 @@
             "GroupByZone": "Группировать по месту",
             "GroupByZoneHint": "Стягивает персонажей по местам. Заменяет группировку по фракциям.",
             "ResetZoneGrouping": "Сбросить группировку",
-            "ResetZoneGroupingHint": "Восстанавливает расположение до группировки."
+            "ResetZoneGroupingHint": "Восстанавливает расположение до группировки.",
+            "RailAffiliation": "Принадлежность и место",
+            "RailSettings": "Настройки",
+            "GroupingTitle": "Группировка",
+            "GroupingHint": "Временный вид. Позиции заблокированы, потом возвращаются.",
+            "GroupingNone": "Обычный",
+            "GroupByFactionShort": "Фракция",
+            "GroupByZoneShort": "Место",
+            "FactionsHint": "Фракции показаны линиями между участниками и цветным кольцом на токене.",
+            "SectionPermissions": "Права",
+            "ShowFactionLines": "Показать фракции"
         },
         "Journal": {
             "FolderName": "FANG - Не удалять",

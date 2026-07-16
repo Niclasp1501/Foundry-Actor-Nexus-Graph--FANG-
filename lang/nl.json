@@ -125,7 +125,17 @@
             "GroupByZone": "Groeperen op locatie",
             "GroupByZoneHint": "Trekt personages samen per locatie. Vervangt groeperen op factie.",
             "ResetZoneGrouping": "Groepering resetten",
-            "ResetZoneGroupingHint": "Herstelt de indeling van vóór het groeperen."
+            "ResetZoneGroupingHint": "Herstelt de indeling van vóór het groeperen.",
+            "RailAffiliation": "Toebehoren en locatie",
+            "RailSettings": "Instellingen",
+            "GroupingTitle": "Groepering",
+            "GroupingHint": "Een tijdelijke weergave. Posities zijn vergrendeld en keren daarna terug.",
+            "GroupingNone": "Normaal",
+            "GroupByFactionShort": "Factie",
+            "GroupByZoneShort": "Locatie",
+            "FactionsHint": "Facties verschijnen als lijnen tussen leden en als gekleurde ring op de token.",
+            "SectionPermissions": "Rechten",
+            "ShowFactionLines": "Facties tonen"
         },
         "Journal": {
             "FolderName": "FANG - Niet Verwijderen",

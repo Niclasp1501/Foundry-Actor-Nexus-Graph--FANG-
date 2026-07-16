@@ -125,7 +125,17 @@
             "GroupByZone": "Nach Ort gruppieren",
             "GroupByZoneHint": "Zieht Charaktere nach Ort zusammen. Ersetzt die Fraktions-Gruppierung.",
             "ResetZoneGrouping": "Gruppierung zurücksetzen",
-            "ResetZoneGroupingHint": "Stellt die Anordnung von vor der Gruppierung wieder her."
+            "ResetZoneGroupingHint": "Stellt die Anordnung von vor der Gruppierung wieder her.",
+            "RailAffiliation": "Zugehörigkeit & Ort",
+            "RailSettings": "Einstellungen",
+            "GroupingTitle": "Gruppierung",
+            "GroupingHint": "Eine Ansicht auf Zeit. Positionen sind dabei gesperrt und kehren danach zurück.",
+            "GroupingNone": "Normal",
+            "GroupByFactionShort": "Fraktion",
+            "GroupByZoneShort": "Ort",
+            "FactionsHint": "Fraktionen werden als Linien zwischen den Mitgliedern gezeigt und als farbiger Ring am Token.",
+            "SectionPermissions": "Berechtigungen",
+            "ShowFactionLines": "Fraktionsanzeige einblenden"
         },
         "Journal": {
             "FolderName": "FANG - Nicht löschen",

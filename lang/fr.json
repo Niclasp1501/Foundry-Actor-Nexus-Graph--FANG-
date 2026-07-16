@@ -125,7 +125,17 @@
             "GroupByZone": "Grouper par lieu",
             "GroupByZoneHint": "Rassemble les personnages par lieu. Remplace le groupement par faction.",
             "ResetZoneGrouping": "Réinitialiser le groupement",
-            "ResetZoneGroupingHint": "Restaure la disposition d'avant le groupement."
+            "ResetZoneGroupingHint": "Restaure la disposition d'avant le groupement.",
+            "RailAffiliation": "Appartenance et lieu",
+            "RailSettings": "Paramètres",
+            "GroupingTitle": "Regroupement",
+            "GroupingHint": "Une vue temporaire. Les positions sont verrouillées pendant, puis reviennent.",
+            "GroupingNone": "Normal",
+            "GroupByFactionShort": "Faction",
+            "GroupByZoneShort": "Lieu",
+            "FactionsHint": "Les factions apparaissent en lignes entre les membres et en anneau coloré sur le pion.",
+            "SectionPermissions": "Autorisations",
+            "ShowFactionLines": "Afficher les factions"
         },
         "Journal": {
             "FolderName": "FANG - Ne pas supprimer",

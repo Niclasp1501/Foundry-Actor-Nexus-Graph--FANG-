@@ -125,7 +125,17 @@
             "GroupByZone": "Seskupit podle místa",
             "GroupByZoneHint": "Stáhne postavy k sobě podle místa. Nahrazuje seskupení podle frakcí.",
             "ResetZoneGrouping": "Zrušit seskupení",
-            "ResetZoneGroupingHint": "Obnoví rozložení z doby před seskupením."
+            "ResetZoneGroupingHint": "Obnoví rozložení z doby před seskupením.",
+            "RailAffiliation": "Příslušnost a místo",
+            "RailSettings": "Nastavení",
+            "GroupingTitle": "Seskupení",
+            "GroupingHint": "Dočasný pohled. Pozice jsou zamčené a poté se vrátí.",
+            "GroupingNone": "Normální",
+            "GroupByFactionShort": "Frakce",
+            "GroupByZoneShort": "Místo",
+            "FactionsHint": "Frakce se zobrazují jako čáry mezi členy a barevný prstenec na tokenu.",
+            "SectionPermissions": "Oprávnění",
+            "ShowFactionLines": "Zobrazit frakce"
         },
         "Journal": {
             "FolderName": "FANG - Nesmazat",

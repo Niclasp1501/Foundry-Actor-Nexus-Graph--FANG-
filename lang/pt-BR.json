@@ -125,7 +125,17 @@
             "GroupByZone": "Agrupar por local",
             "GroupByZoneHint": "Junta os personagens por local. Substitui o agrupamento por facção.",
             "ResetZoneGrouping": "Redefinir agrupamento",
-            "ResetZoneGroupingHint": "Restaura a disposição anterior ao agrupamento."
+            "ResetZoneGroupingHint": "Restaura a disposição anterior ao agrupamento.",
+            "RailAffiliation": "Afiliação e local",
+            "RailSettings": "Configurações",
+            "GroupingTitle": "Agrupamento",
+            "GroupingHint": "Uma visão temporária. As posições ficam travadas enquanto ativa e depois retornam.",
+            "GroupingNone": "Normal",
+            "GroupByFactionShort": "Facção",
+            "GroupByZoneShort": "Local",
+            "FactionsHint": "Facções aparecem como linhas entre membros e como anel colorido no token.",
+            "SectionPermissions": "Permissões",
+            "ShowFactionLines": "Mostrar facções"
         },
         "Journal": {
             "FolderName": "FANG - Não Excluir",

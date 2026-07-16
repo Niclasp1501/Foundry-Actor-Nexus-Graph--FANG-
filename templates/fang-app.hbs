@@ -26,106 +26,79 @@
             </div>
         </div>
 
-        <nav class="tabs-nav">
-            <a class="tab-btn fang-legacy-editor-tab" data-tab="editor"><i class="fas fa-hammer"></i> {{localize
-                "FANG.UI.TabEditor"}}</a>
-            <a class="tab-btn gm-only" data-tab="view"><i class="fas fa-eye"></i> {{localize "FANG.UI.TabView"}}</a>
-            <a class="tab-btn gm-only" data-tab="advanced"><i class="fas fa-cogs"></i> {{localize "FANG.UI.TabAdvanced"}}</a>
-        </nav>
-
         <nav class="fang-rail" aria-label="FANG tools">
-            <button type="button" id="fangRailSearch" class="fang-rail-btn" title="{{localize 'FANG.UI.SearchToggle'}}">
-                <i class="fas fa-search"></i>
+            <button type="button" id="fangRailSearch" class="fang-rail-btn" title="{{localize 'FANG.UI.SearchToggle'}}"
+                data-tooltip="{{localize 'FANG.UI.SearchToggle'}}" aria-label="{{localize 'FANG.UI.SearchToggle'}}">
+                <i class="fas fa-magnifying-glass"></i>
             </button>
-            <button type="button" id="fangRailPresentation" class="fang-rail-btn gm-only" title="{{localize 'FANG.UI.Presentation'}}">
+            <button type="button" id="fangRailAffiliation" class="fang-rail-btn gm-only"
+                title="{{localize 'FANG.UI.RailAffiliation'}}" data-tooltip="{{localize 'FANG.UI.RailAffiliation'}}"
+                aria-label="{{localize 'FANG.UI.RailAffiliation'}}">
+                <i class="fas fa-sitemap"></i>
+            </button>
+            <button type="button" id="fangRailPresentation" class="fang-rail-btn gm-only"
+                title="{{localize 'FANG.UI.Presentation'}}" data-tooltip="{{localize 'FANG.UI.Presentation'}}"
+                aria-label="{{localize 'FANG.UI.Presentation'}}">
                 <i class="fas fa-display"></i>
             </button>
-            <button type="button" id="fangRailFactions" class="fang-rail-btn gm-only" title="{{localize 'FANG.UI.ManageFactions'}}">
-                <i class="fas fa-users-cog"></i>
-            </button>
-            <button type="button" id="fangRailHistory" class="fang-rail-btn" title="{{localize 'FANG.History.Timeline'}}">
+            <button type="button" id="fangRailHistory" class="fang-rail-btn"
+                title="{{localize 'FANG.History.Timeline'}}" data-tooltip="{{localize 'FANG.History.Timeline'}}"
+                aria-label="{{localize 'FANG.History.Timeline'}}">
                 <i class="fas fa-clock-rotate-left"></i>
             </button>
-            <button type="button" id="fangRailManage" class="fang-rail-btn gm-only" title="{{localize 'FANG.UI.TabAdvanced'}}">
+            <button type="button" id="fangRailManage" class="fang-rail-btn gm-only"
+                title="{{localize 'FANG.UI.RailSettings'}}" data-tooltip="{{localize 'FANG.UI.RailSettings'}}"
+                aria-label="{{localize 'FANG.UI.RailSettings'}}">
                 <i class="fas fa-sliders"></i>
             </button>
         </nav>
 
         <div class="tabs-container">
-            <!-- EDITOR TAB -->
-            <section class="tab-content fang-legacy-editor-panel" data-tab="editor">
+            <!-- ZUGEHOERIGKEIT: Fraktion (wem gehoert jemand an) + Ort (wo ist jemand).
+                 Beides sind Geschwister, deshalb verwalten UND gruppieren an einem Ort. -->
+            <section class="tab-content gm-only" data-tab="affiliation">
                 <div class="control-group">
-                    <h3>{{localize "FANG.UI.CreateConnection"}}</h3>
+                    <h3>{{localize "FANG.UI.GroupingTitle"}}</h3>
                     <div class="input-stack">
-                        <select id="sourceSelect">
-                            <option value="" disabled selected>{{localize "FANG.UI.SelectSource"}}</option>
-                        </select>
-                        <select id="targetSelect">
-                            <option value="" disabled selected>{{localize "FANG.UI.SelectTarget"}}</option>
-                        </select>
-                        <input type="text" id="linkLabel" placeholder="{{localize 'FANG.UI.LabelPlaceholder'}}">
-                        <div style="display: flex; align-items: center; gap: 5px; margin-top: 5px; margin-bottom: 5px;">
-                            <input type="checkbox" id="linkDirectional" style="width: auto; margin: 0;">
-                            <label for="linkDirectional" style="font-size: 0.9em;">{{localize
-                                "FANG.UI.Directional"}}</label>
+                        <p class="fang-hint">{{localize "FANG.UI.GroupingHint"}}</p>
+                        <div class="fang-segmented" role="radiogroup" aria-label="{{localize 'FANG.UI.GroupingTitle'}}">
+                            <button type="button" class="fang-segment active" data-grouping="none" role="radio" aria-checked="true">
+                                <i class="fas fa-circle-nodes"></i> {{localize "FANG.UI.GroupingNone"}}
+                            </button>
+                            <button type="button" class="fang-segment" data-grouping="faction" role="radio" aria-checked="false">
+                                <i class="fas fa-users"></i> {{localize "FANG.UI.GroupByFactionShort"}}
+                            </button>
+                            <button type="button" class="fang-segment" data-grouping="zone" role="radio" aria-checked="false">
+                                <i class="fas fa-location-dot"></i> {{localize "FANG.UI.GroupByZoneShort"}}
+                            </button>
                         </div>
-                        <button id="btnAddLink" class="btn secondary-btn">{{localize "FANG.UI.Connect"}}</button>
-                        <button id="btnQuickConnectMode" class="btn action-btn"
-                            title="{{localize 'FANG.UI.QuickConnectHint'}}">
-                            <i class="fas fa-route"></i> {{localize "FANG.UI.QuickConnect"}}
-                        </button>
-                        <button id="btnAddPlaceholder" class="btn action-btn">{{localize "FANG.UI.AddPlaceholder"}}</button>
+                        <p class="fang-hint fang-hint-warn" id="groupingLockedHint" hidden>
+                            <i class="fas fa-lock"></i> {{localize "FANG.Messages.GroupingPositionsLocked"}}
+                        </p>
                     </div>
                 </div>
 
                 <div class="control-group">
-                    <h3>{{localize "FANG.UI.Inspector"}}</h3>
+                    <h3>{{localize "FANG.UI.ManageFactions"}}</h3>
                     <div class="input-stack">
-                        <select id="deleteSelect">
-                            <option value="" disabled selected>{{localize "FANG.UI.SelectElement"}}</option>
-                        </select>
-                        <button id="btnDeleteElement" class="btn danger-btn"
-                            style="margin-top: 5px; width: 100%; background: #8b0000; color: white;">
-                            <i class="fas fa-trash"></i> {{localize "FANG.UI.Delete"}}
+                        <button id="btnManageFactions" class="btn action-btn fang-btn-block">
+                            <i class="fas fa-users-gear"></i> {{localize "FANG.UI.ManageFactions"}}
                         </button>
-
-                        <div id="nodeEditGroup" class="input-stack hidden"
-                            style="margin-top: 15px; border-top: 1px solid var(--fang-accent-gold); padding-top: 10px;">
-                            <h3 style="font-size: 1.1em; color: var(--fang-accent-gold); margin-bottom: 5px;">{{localize
-                                "FANG.UI.EditNodeHeader"}}</h3>
-
-                            <div style="display: flex; gap: 5px;">
-                                <button id="btnToggleCenter" class="btn action-btn" style="flex: 1;"
-                                    title="{{localize 'FANG.UI.ToggleCenterHint'}}">
-                                    <i class="fas fa-bullseye"></i> {{localize "FANG.UI.ToggleCenter"}}
-                                </button>
-                            </div>
+                        <p class="fang-hint">{{localize "FANG.UI.FactionsHint"}}</p>
+                        <div class="fang-toggle-row">
+                            <label for="cbShowFactionLines">{{localize "FANG.UI.ShowFactionLines"}}</label>
+                            <input type="checkbox" id="cbShowFactionLines">
                         </div>
+                    </div>
+                </div>
 
-                        <!-- Link Edit Group (Hidden by default) -->
-                        <div id="linkEditGroup" class="input-stack hidden"
-                            style="margin-top: 15px; border-top: 1px solid var(--fang-accent-gold); padding-top: 10px;">
-                            <h3 style="font-size: 1.1em; color: var(--fang-accent-gold); margin-bottom: 5px;">{{localize
-                                "FANG.UI.EditLinkHeader"}}</h3>
-                            <p
-                                style="font-size: 0.8em; color: #666; margin-top: 0; margin-bottom: 10px; line-height: 1.2;">
-                                {{localize "FANG.UI.EditLinkHint"}}</p>
-
-                            <input type="text" id="editLinkLabel" placeholder="{{localize 'FANG.UI.LabelPlaceholder'}}"
-                                style="margin-bottom: 5px;">
-
-                            <div
-                                style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; padding: 2px 0;">
-                                <label for="editLinkDirectional" style="font-size: 0.9em; cursor: pointer;">{{localize
-                                    "FANG.UI.Directional"}}</label>
-                                <input type="checkbox" id="editLinkDirectional"
-                                    style="width: auto; margin: 0; cursor: pointer;">
-                            </div>
-
-                            <button id="btnUpdateLink" class="btn action-btn" style="width: 100%;">
-                                <i class="fas fa-save"></i> {{localize "FANG.UI.UpdateLink"}}
-                            </button>
-                        </div>
+                <div class="control-group">
+                    <h3>{{localize "FANG.Zones.Title"}}</h3>
+                    <div class="input-stack">
+                        <button id="btnManageZones" class="btn action-btn fang-btn-block">
+                            <i class="fas fa-location-dot"></i> {{localize "FANG.Zones.Manage"}}
+                        </button>
+                        <p class="fang-hint">{{localize "FANG.Zones.Hint"}}</p>
                     </div>
                 </div>
             </section>
@@ -162,81 +135,21 @@
                             </button>
                         </div>
 
-                        <button id="btnCenterGraph" class="btn action-btn"
-                            title="{{localize 'FANG.UI.CenterGraphHint'}}"
-                            style="border-color: var(--fang-accent-gold);">
-                             <i class="fas fa-expand-arrows-alt"></i> {{localize "FANG.UI.CenterGraph"}}
-                         </button>
-
-                        <button id="btnGroupByFaction" class="btn action-btn"
-                            title="{{localize 'FANG.UI.GroupByFactionHint'}}">
-                            <i class="fas fa-object-group"></i> {{localize "FANG.UI.GroupByFaction"}}
+                        <button id="btnCenterGraph" class="btn action-btn fang-btn-accent"
+                            title="{{localize 'FANG.UI.CenterGraphHint'}}">
+                            <i class="fas fa-expand-arrows-alt"></i> {{localize "FANG.UI.CenterGraph"}}
                         </button>
-
-                        <button id="btnGroupByZone" class="btn action-btn"
-                            title="{{localize 'FANG.UI.GroupByZoneHint'}}">
-                            <i class="fas fa-draw-polygon"></i> {{localize "FANG.UI.GroupByZone"}}
-                        </button>
-
                      </div>
                  </div>
 
                 <div class="control-group">
-                    <h3>{{localize "FANG.Physics.Title"}}</h3>
-                    <div class="input-stack">
-                        <div
-                            style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px; padding: 5px 0;">
-                            <label for="cbEnableCosmicWind"
-                                style="font-size: 0.9em; font-weight: bold; cursor: pointer;">{{localize
-                                "FANG.Physics.CosmicWind"}}</label>
-                            <input type="checkbox" id="cbEnableCosmicWind"
-                                style="width: auto; margin: 0; cursor: pointer;">
-                        </div>
-                        <div style="margin-bottom: 5px;">
-                            <div
-                                style="display: flex; justify-content: space-between; font-size: 0.8em; color: #666; margin-bottom: 2px;">
-                                <span>{{localize "FANG.Physics.Strength"}}</span>
-                                <span id="wind-strength-val">4</span>
-                            </div>
-                            <input type="range" id="rngCosmicWindStrength" min="0.1" max="10" step="0.1" value="4"
-                                style="width: 100%; height: 6px; margin: 5px 0;">
-                        </div>
-                        <p style="font-size: 0.8em; color: #666; margin-top: 5px; line-height: 1.2;">
-                            {{localize "FANG.Physics.Hint"}}
-                        </p>
-                    </div>
-                </div>
-
-                <div class="control-group">
                     <h3>{{localize "FANG.UI.SpectatorMode"}}</h3>
                     <div class="input-stack">
-                        <div
-                            style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px; padding: 5px 0;">
-                            <label for="cbSyncCamera"
-                                style="font-size: 0.9em; font-weight: bold; cursor: pointer;">{{localize
-                                "FANG.UI.SyncCamera"}}</label>
-                            <input type="checkbox" id="cbSyncCamera" style="width: auto; margin: 0; cursor: pointer;">
+                        <div class="fang-toggle-row">
+                            <label for="cbSyncCamera">{{localize "FANG.UI.SyncCamera"}}</label>
+                            <input type="checkbox" id="cbSyncCamera">
                         </div>
-                        <p style="font-size: 0.8em; color: #666; margin-top: 0; margin-bottom: 5px; line-height: 1.2;">
-                            {{localize "FANG.UI.SyncCameraHint"}}
-                        </p>
-                    </div>
-                </div>
-
-                <div class="control-group">
-                    <h3>{{localize "FANG.UI.AdvancedFeatures"}}</h3>
-                    <div class="input-stack">
-                        <div
-                            style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px; padding: 5px 0;">
-                            <label for="cbAllowPlayerEdit"
-                                style="font-size: 0.9em; font-weight: bold; cursor: pointer;">{{localize
-                                "FANG.Settings.AllowPlayerEditing.Name"}}</label>
-                            <input type="checkbox" id="cbAllowPlayerEdit"
-                                style="width: auto; margin: 0; cursor: pointer;">
-                        </div>
-                        <p style="font-size: 0.8em; color: #666; margin-top: 0; margin-bottom: 5px; line-height: 1.2;">
-                            {{localize "FANG.Settings.AllowPlayerEditing.Hint"}}
-                        </p>
+                        <p class="fang-hint">{{localize "FANG.UI.SyncCameraHint"}}</p>
                     </div>
                 </div>
             </section>
@@ -244,45 +157,47 @@
             <!-- ADVANCED TAB -->
             <section class="tab-content gm-only" data-tab="advanced">
                 <div class="control-group">
-                    <h3>{{localize "FANG.ContextMenu.Identity"}}</h3>
+                    <h3>{{localize "FANG.UI.SectionPermissions"}}</h3>
                     <div class="input-stack">
-                        <div
-                            style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px; padding: 5px 0;">
-                            <label for="cbDefaultHidden"
-                                style="font-size: 0.9em; font-weight: bold; cursor: pointer;">{{localize
-                                "FANG.Settings.DefaultHidden.Name"}}</label>
-                            <input type="checkbox" id="cbDefaultHidden"
-                                style="width: auto; margin: 0; cursor: pointer;">
+                        <div class="fang-toggle-row">
+                            <label for="cbAllowPlayerEdit">{{localize "FANG.Settings.AllowPlayerEditing.Name"}}</label>
+                            <input type="checkbox" id="cbAllowPlayerEdit">
                         </div>
-                        <p style="font-size: 0.8em; color: #666; margin-top: 0; margin-bottom: 5px; line-height: 1.2;">
-                            {{localize "FANG.Settings.DefaultHidden.Hint"}}
-                        </p>
+                        <p class="fang-hint">{{localize "FANG.Settings.AllowPlayerEditing.Hint"}}</p>
+                        <div class="fang-toggle-row">
+                            <label for="cbDefaultHidden">{{localize "FANG.Settings.DefaultHidden.Name"}}</label>
+                            <input type="checkbox" id="cbDefaultHidden">
+                        </div>
+                        <p class="fang-hint">{{localize "FANG.Settings.DefaultHidden.Hint"}}</p>
                     </div>
                 </div>
 
                 <div class="control-group">
-                    <h3>{{localize "FANG.Zones.Title"}}</h3>
+                    <h3>{{localize "FANG.Physics.Title"}}</h3>
                     <div class="input-stack">
-                        <button id="btnManageZones" class="btn action-btn" style="width: 100%;">
-                            <i class="fas fa-draw-polygon"></i> {{localize "FANG.Zones.Manage"}}
-                        </button>
-                        <p class="section-hint" style="margin-top: 5px; font-size: 0.8rem; opacity: 0.8;">
-                            {{localize "FANG.Zones.Hint"}}
-                        </p>
+                        <div class="fang-toggle-row">
+                            <label for="cbEnableCosmicWind">{{localize "FANG.Physics.CosmicWind"}}</label>
+                            <input type="checkbox" id="cbEnableCosmicWind">
+                        </div>
+                        <div class="fang-range-row">
+                            <div class="fang-range-labels">
+                                <span>{{localize "FANG.Physics.Strength"}}</span>
+                                <span id="wind-strength-val">4</span>
+                            </div>
+                            <input type="range" id="rngCosmicWindStrength" min="0.1" max="10" step="0.1" value="4">
+                        </div>
+                        <p class="fang-hint">{{localize "FANG.Physics.Hint"}}</p>
                     </div>
                 </div>
 
                 <div class="control-group">
                     <h3>{{localize "FANG.UI.Background.Title"}}</h3>
                     <div class="input-stack">
-                        <button id="btnOpenBackgroundConfig" class="btn action-btn"
-                            title="{{localize 'FANG.UI.Background.BackgroundConfigTitle'}}"
-                            style="border-color: var(--fang-accent-gold); width: 100%;">
+                        <button id="btnOpenBackgroundConfig" class="btn action-btn fang-btn-block fang-btn-accent"
+                            title="{{localize 'FANG.UI.Background.BackgroundConfigTitle'}}">
                             <i class="fas fa-palette"></i> {{localize "FANG.UI.Background.BackgroundConfigTitle"}}
                         </button>
-                        <p class="section-hint" style="margin-top: 5px; font-size: 0.8rem; opacity: 0.8;">
-                            {{localize "FANG.UI.Background.Hint"}}
-                        </p>
+                        <p class="fang-hint">{{localize "FANG.UI.Background.Hint"}}</p>
                     </div>
                 </div>
 
@@ -295,7 +210,7 @@
                         <label for="importFile" class="btn action-btn file-label">
                             <i class="fas fa-file-import"></i> {{localize "FANG.UI.ImportBtn"}}
                         </label>
-                        <input type="file" id="importFile" accept=".json" style="display: none;">
+                        <input type="file" id="importFile" accept=".json" hidden>
                     </div>
                 </div>
             </section>

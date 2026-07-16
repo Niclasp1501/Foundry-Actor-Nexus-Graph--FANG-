@@ -30,6 +30,13 @@ const FANG_RUNTIME_FACTION_FIELDS = ["imgElement", "index", "vx", "vy", "fx", "f
  */
 const FANG_GRAPH_SCHEMA_VERSION = 2;
 
+/** Which rail button belongs to which sidebar panel. Add a panel -> add a line here. */
+const FANG_RAIL_BY_PANEL = {
+    affiliation: "#fangRailAffiliation",
+    view: "#fangRailPresentation",
+    advanced: "#fangRailManage"
+};
+
 function normalizeLegacyPlaceholderImagePath(path) {
     if (typeof path !== "string") return path;
     const trimmed = path.trim();
@@ -1549,7 +1556,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
         // 2. Re-initialize D3 and Canvas context
         this._initD3();
-        this._populateActors();
+        this._rebuildSearchMatches();
 
         // Manage ResizeObserver
         if (this._resizeObserver) this._resizeObserver.disconnect();
@@ -1558,21 +1565,13 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         this._resizeObserver.observe(canvasContainer);
 
         // 3. Re-attach Event Listeners (Universal)
-        this.element.querySelector("#btnAddLink").addEventListener("click", this._onAddLink.bind(this));
-        const btnQuickConnect = this.element.querySelector("#btnQuickConnectMode");
-        if (btnQuickConnect) btnQuickConnect.addEventListener("click", this._onToggleQuickConnectMode.bind(this));
+        // The old editor sidebar (link form, delete dropdown, inline link editor) is gone —
+        // it had been display:none for ages. Connecting runs through the canvas tools,
+        // deleting through the right-click menu.
         const btnCanvasQuickConnect = this.element.querySelector("#btnCanvasQuickConnect");
         if (btnCanvasQuickConnect) btnCanvasQuickConnect.addEventListener("click", this._onToggleQuickConnectMode.bind(this));
         const btnCanvasAddPlaceholder = this.element.querySelector("#btnCanvasAddPlaceholder");
         if (btnCanvasAddPlaceholder) btnCanvasAddPlaceholder.addEventListener("click", this._onAddPlaceholder.bind(this));
-        const btnAddPlaceholder = this.element.querySelector("#btnAddPlaceholder");
-        if (btnAddPlaceholder) btnAddPlaceholder.addEventListener("click", this._onAddPlaceholder.bind(this));
-        const btnDelete = this.element.querySelector("#btnDeleteElement");
-        if (btnDelete) btnDelete.addEventListener("click", this._onDeleteElement.bind(this));
-        const btnUpdateLink = this.element.querySelector("#btnUpdateLink");
-        if (btnUpdateLink) btnUpdateLink.addEventListener("click", this._onUpdateLink.bind(this));
-        const btnToggleCenter = this.element.querySelector("#btnToggleCenter");
-        if (btnToggleCenter) btnToggleCenter.addEventListener("click", this._onToggleCenterNode.bind(this));
         const btnManageFactions = this.element.querySelector("#btnManageFactions");
         if (btnManageFactions) btnManageFactions.addEventListener("click", this._onManageFactions.bind(this));
 
@@ -1595,19 +1594,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         canvas.addEventListener("contextmenu", this._onCanvasRightClick.bind(this));
         canvas.addEventListener("mousemove", this._handleCanvasMouseMove.bind(this));
 
-        // Tab Navigation Logic
-        const tabBtns = this.element.querySelectorAll(".tab-btn");
-        const tabContents = this.element.querySelectorAll(".tab-content");
-        tabBtns.forEach(btn => {
-            btn.addEventListener("click", (e) => {
-                const targetTab = e.currentTarget.dataset.tab;
-                tabBtns.forEach(b => b.classList.remove("active"));
-                tabContents.forEach(c => c.classList.remove("active"));
-                e.currentTarget.classList.add("active");
-                const targetContent = this.element.querySelector(`.tab-content[data-tab="${targetTab}"]`);
-                if (targetContent) targetContent.classList.add("active");
-            });
-        });
+        // (The old tab-bar wiring lived here. The tab bar had been display:none for ages —
+        //  the rail replaced it — so this only ever bound listeners to nothing.)
 
         // Drag & Drop Listeners
         canvasContainer.addEventListener("dragover", this._onDragOver.bind(this));
@@ -1626,7 +1614,6 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 const val = e.target.value;
                 if (!val) return;
                 const [type, id] = val.split("|").map(s => s.trim());
-                this._syncSidebarSelection(type, id);
             });
         }
 
@@ -1673,15 +1660,15 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             this._setSearchUiVisible(!this._searchUiVisible, { focus: true });
         });
 
+        // Affiliation: faction ("who does someone belong to") and location ("where is
+        // someone") are siblings, so managing and grouping by either lives in one panel.
+        // It used to be scattered: factions opened a dialog straight from the rail, the
+        // location manager sat under Advanced, and the two grouping buttons under View.
+        const railAffiliation = this.element.querySelector("#fangRailAffiliation");
+        if (railAffiliation) railAffiliation.addEventListener("click", () => this._openSidebarPanel("affiliation"));
+
         const railPresentation = this.element.querySelector("#fangRailPresentation");
         if (railPresentation) railPresentation.addEventListener("click", () => this._openSidebarPanel("view"));
-
-        const railFactions = this.element.querySelector("#fangRailFactions");
-        if (railFactions) railFactions.addEventListener("click", (event) => {
-            event.preventDefault();
-            this._closeSidebarPanel();
-            this._onManageFactions();
-        });
 
         const railHistory = this.element.querySelector("#fangRailHistory");
         if (railHistory) railHistory.addEventListener("click", (event) => {
@@ -1715,17 +1702,27 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 game.socket.emit("module.fang", { action: "centerGraph" });
             });
 
-            const btnGroupByFaction = this.element.querySelector("#btnGroupByFaction");
-            if (btnGroupByFaction) btnGroupByFaction.addEventListener("click", (e) => {
-                e.preventDefault();
-                this._onToggleGroupByFaction();
+            // Grouping is one exclusive mode, not two independent actions — a segmented
+            // control says that on its own, where two buttons said nothing about being
+            // mutually exclusive or which one was currently on.
+            this.element.querySelectorAll(".fang-segment[data-grouping]").forEach(segment => {
+                segment.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    this._setGroupingMode(segment.dataset.grouping);
+                });
             });
 
-            const btnGroupByZone = this.element.querySelector("#btnGroupByZone");
-            if (btnGroupByZone) btnGroupByZone.addEventListener("click", (e) => {
-                e.preventDefault();
-                this._onToggleGroupByZone();
-            });
+            // Faction lines: the primary way factions are shown, so the switch belongs
+            // next to the faction manager rather than buried in a dialog.
+            const cbShowFactionLines = this.element.querySelector("#cbShowFactionLines");
+            if (cbShowFactionLines) {
+                cbShowFactionLines.checked = this.graphData.showFactionLines !== false;
+                cbShowFactionLines.addEventListener("change", async (e) => {
+                    this.graphData.showFactionLines = !!e.target.checked;
+                    this.ticked();
+                    await this.saveData();
+                });
+            }
 
             const cbAllowPlayerEdit = this.element.querySelector("#cbAllowPlayerEdit");
             if (cbAllowPlayerEdit) {
@@ -2359,7 +2356,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         if (this.rendered) {
             this.initSimulation();
             this.simulation?.alpha(0.05).restart();
-            this._populateActors();
+            this._rebuildSearchMatches();
         }
     }
 
@@ -2829,7 +2826,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                         this._rememberDropPosition(node);
                         this.initSimulation();
                         this.simulation.alpha(0.5).restart();
-                        this._populateActors();
+                        this._rebuildSearchMatches();
                         await this.saveData();
                         await this._recordNodeAppearedHistory(node);
                     }
@@ -2858,7 +2855,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         }
         this.initSimulation();
         this.simulation.alpha(0.25).restart();
-        this._populateActors();
+        this._rebuildSearchMatches();
         await this.saveData();
     }
 
@@ -2940,14 +2937,11 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             return;
         }
 
-        const tabBtns = this.element.querySelectorAll(".tab-btn");
         const tabContents = this.element.querySelectorAll(".tab-content");
-        tabBtns.forEach(btn => btn.classList.toggle("active", btn.dataset.tab === tabName));
         tabContents.forEach(content => content.classList.toggle("active", content.dataset.tab === tabName));
         appContainer.classList.add("sidebar-panel-open");
         this.element.querySelectorAll(".fang-rail-btn").forEach(btn => btn.classList.remove("active"));
-        const activeRail = tabName === "view" ? "#fangRailPresentation" : "#fangRailManage";
-        this.element.querySelector(activeRail)?.classList.add("active");
+        this.element.querySelector(FANG_RAIL_BY_PANEL[tabName])?.classList.add("active");
     }
 
     _closeSidebarPanel() {
@@ -3016,114 +3010,6 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         this._searchMatchedLinkIndices = matchedLinks;
     }
 
-    _populateActors() {
-        // Populate Source/Target from game.actors
-        const selectSource = this.element.querySelector("#sourceSelect");
-        const selectTarget = this.element.querySelector("#targetSelect");
-
-        if (selectSource && selectTarget) {
-            selectSource.innerHTML = `<option value="" disabled selected>${game.i18n.localize("FANG.UI.SelectSource")}</option>`;
-            selectTarget.innerHTML = `<option value="" disabled selected>${game.i18n.localize("FANG.UI.SelectTarget")}</option>`;
-
-            // Partition actors into groups
-            const canvasActorIds = new Set(this.graphData.nodes.map(n => n.actorId || n.id));
-            const otherActors = [];
-
-            game.actors.contents.forEach(actor => {
-                if (canvasActorIds.has(actor.id)) return;
-                // Spoiling Protection: Only GMs see ALL other actors.
-                // Players only see actors they have at least Observer permission for.
-                if (game.user.isGM || actor.testUserPermission(game.user, "OBSERVER")) {
-                    otherActors.push(actor);
-                }
-            });
-
-            const sortByString = (a, b) => a.name.localeCompare(b.name);
-            otherActors.sort(sortByString);
-
-            // Populate Helper
-            const appendOptGroup = (selectElem, label, actors) => {
-                if (actors.length === 0) return;
-                const optgroup = document.createElement("optgroup");
-                optgroup.label = label;
-                actors.forEach(actor => {
-                    let opt = document.createElement("option");
-                    opt.value = actor.id;
-                    opt.textContent = actor.name;
-                    optgroup.appendChild(opt);
-                });
-                selectElem.appendChild(optgroup);
-            };
-
-            const appendCanvasNodeGroup = (selectElem) => {
-                const optgroup = document.createElement("optgroup");
-                optgroup.label = game.i18n.localize("FANG.Dropdowns.GroupCanvas");
-                let hasEntries = false;
-                const sortedNodes = [...this.graphData.nodes].sort((a, b) => (a.name || "").localeCompare(b.name || ""));
-                sortedNodes.forEach(node => {
-                    const shownName = this._getSafeNodeName(node);
-                    const actor = this._getNodeActor(node);
-                    const suffix = game.user.isGM
-                        ? (node.isPlaceholder ? ` (${game.i18n.localize("FANG.Placeholder.Tag") || "Placeholder"})` : (actor ? "" : " (?)"))
-                        : "";
-                    const opt = document.createElement("option");
-                    opt.value = node.id;
-                    opt.textContent = `${shownName}${suffix}`;
-                    optgroup.appendChild(opt);
-                    hasEntries = true;
-                });
-                if (hasEntries) selectElem.appendChild(optgroup);
-            };
-
-            const lblDirectory = game.i18n.localize("FANG.Dropdowns.GroupDirectory");
-
-            appendCanvasNodeGroup(selectSource);
-            appendOptGroup(selectSource, lblDirectory, otherActors);
-
-            appendCanvasNodeGroup(selectTarget);
-            appendOptGroup(selectTarget, lblDirectory, otherActors);
-        }
-        // Populate Delete Dropdown from current graph data
-        const selectDelete = this.element.querySelector("#deleteSelect");
-        if (selectDelete) {
-            selectDelete.innerHTML = `<option value="" disabled selected>${game.i18n.localize("FANG.UI.SelectElement")}</option>`;
-
-            // Add Nodes
-            if (this.graphData.nodes.length > 0) {
-                const optGroupN = document.createElement("optgroup");
-                optGroupN.label = game.i18n.localize("FANG.Dropdowns.Nodes");
-                this.graphData.nodes.forEach(node => {
-                    let opt = document.createElement("option");
-                    opt.value = `node|${node.id}`;
-                    const shownName = this._getSafeNodeName(node);
-                    opt.textContent = `${game.i18n.localize("FANG.Dropdowns.TokenPrefix")} ${shownName}`;
-                    optGroupN.appendChild(opt);
-                });
-                selectDelete.appendChild(optGroupN);
-            }
-
-            if (this.graphData.links.length > 0) {
-                const optGroupL = document.createElement("optgroup");
-                optGroupL.label = game.i18n.localize("FANG.Dropdowns.Links");
-                const getNodeName = (ref) => {
-                    return this._getSafeNodeName(this._resolveNodeReference(ref));
-                };
-                this.graphData.links.forEach((link, index) => {
-                    if (!this._canUserSeeLink(link) && !game.user.isGM) return;
-                    let opt = document.createElement("option");
-                    opt.value = `link|${index}`;
-                    const sourceName = getNodeName(link.source);
-                    const targetName = getNodeName(link.target);
-                    opt.textContent = `${sourceName} -> ${targetName} (${link.label})`;
-                    optGroupL.appendChild(opt);
-                });
-                selectDelete.appendChild(optGroupL);
-            }
-        }
-
-        this._rebuildSearchMatches();
-    }
-
     /** Is the world running in collaborative mode (no exclusive lock)? */
     _isCollaborativeMode() {
         try {
@@ -3160,60 +3046,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         return true;
     }
 
-    async _onAddLink() {
-        if (!this._canEditGraph()) return;
-        const sourceId = this.element.querySelector("#sourceSelect").value;
-        const targetId = this.element.querySelector("#targetSelect").value;
-        const label = this.element.querySelector("#linkLabel").value.trim();
-        const directional = this.element.querySelector("#linkDirectional").checked;
-
-        if (!label) {
-            ui.notifications.warn(game.i18n.localize("FANG.Messages.WarningNoLabel"));
-            return;
-        }
-
-        if (sourceId && targetId && sourceId !== targetId) {
-            // Check if nodes exist, else create them from Actors
-            const createdNodes = [];
-            [sourceId, targetId].forEach(id => {
-                if (!this.graphData.nodes.find(n => n.id === id)) {
-                    const actor = game.actors.get(id);
-                    if (actor) {
-                        const createdNode = {
-                            id: id, actorId: actor.id, isPlaceholder: false, placeholderType: null, img: actor.prototypeToken?.texture?.src || actor.img || null,
-                            name: actor.name, originalName: actor.name,
-                            hidden: game.settings.get("fang", "defaultHiddenMode"),
-                            displayName: "", playerNotes: "", showHiddenQuestsToPlayers: true, conditions: []
-                        };
-                        this.graphData.nodes.push(createdNode);
-                        this._rememberDropPosition(createdNode);
-                        createdNodes.push(createdNode);
-                    }
-                }
-            });
-
-            this.graphData.links.push({ source: sourceId, target: targetId, label: label, directional: directional });
-            this.element.querySelector("#linkLabel").value = "";
-            this.element.querySelector("#linkDirectional").checked = false;
-
-            this.initSimulation();
-            this.simulation.alpha(0.3).restart();
-            this._populateActors(); // Update delete dropdown
-
-            await this.saveData();
-            for (const createdNode of createdNodes) await this._recordNodeAppearedHistory(createdNode);
-            const sourceNode = this.graphData.nodes.find(n => n.id === sourceId);
-            const targetNode = this.graphData.nodes.find(n => n.id === targetId);
-            await this._recordRelationshipHistory(sourceNode, targetNode, label);
-        } else if (sourceId === targetId && sourceId !== "") {
-            ui.notifications.warn(game.i18n.localize("FANG.Messages.WarningSelfLink"));
-        } else {
-            ui.notifications.warn(game.i18n.localize("FANG.Messages.WarningNoSourceTarget"));
-        }
-    }
-
     _updateQuickConnectButtonState() {
-        const buttons = this.element?.querySelectorAll?.("#btnQuickConnectMode, #btnCanvasQuickConnect") || [];
+        const buttons = this.element?.querySelectorAll?.("#btnCanvasQuickConnect") || [];
         buttons.forEach(button => {
             button.classList.toggle("active", !!this._quickConnectMode);
             button.classList.toggle("awaiting-target", !!this._quickConnectMode && !!this._quickConnectSourceId);
@@ -3294,7 +3128,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         if (legacyLabel) legacyLabel.value = "";
         this.initSimulation();
         this.simulation.alpha(0.3).restart();
-        this._populateActors();
+        this._rebuildSearchMatches();
         await this.saveData();
         await this._recordRelationshipHistory(sourceNode, targetNode, result.label);
         return true;
@@ -3347,100 +3181,6 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         });
     }
 
-    async _onDeleteElement() {
-        if (!this._canEditGraph()) return;
-        const selectDelete = this.element.querySelector("#deleteSelect");
-        const val = selectDelete?.value;
-
-        if (!val) {
-            ui.notifications.warn(game.i18n.localize("FANG.Messages.WarningNoDeleteSelect"));
-            return;
-        }
-
-        const [selectedType, selectedId] = val.split("|").map(s => s.trim());
-
-        const deleteElement = async (type, id) => {
-            if (type === "node") {
-                this.graphData.nodes = this.graphData.nodes.filter(n => n.id !== id);
-                this.graphData.links = this.graphData.links.filter(l => {
-                    const sId = this._getLinkEndpointId(l.source);
-                    const tId = this._getLinkEndpointId(l.target);
-                    return sId !== id && tId !== id;
-                });
-                ui.notifications.info(game.i18n.localize("FANG.Messages.DeletedNode"));
-            } else if (type === "link") {
-                const lIndex = parseInt(id, 10);
-                if (!Number.isNaN(lIndex)) {
-                    this.graphData.links.splice(lIndex, 1);
-                    ui.notifications.info(game.i18n.localize("FANG.Messages.DeletedLink"));
-                }
-            }
-
-            this._toggleNodeEditor(false);
-            this._toggleLinkEditor(-1);
-
-            this.initSimulation();
-            this.simulation.alpha(0.3).restart();
-            this._populateActors();
-            await this.saveData();
-        };
-
-        const dialogTitle = game.i18n.localize("FANG.Dialogs.DeleteConfirmTitle") || "Confirm Deletion";
-
-        if (selectedType === "node") {
-            const node = this.graphData.nodes.find(n => n.id === selectedId);
-            if (!node) return;
-
-            const dialogContent = game.i18n.localize("FANG.Dialogs.DeleteNodeContent")
-                || "Are you sure you want to delete this token from the graph? Your Player Lore notes will be kept safe.";
-
-            new Dialog({
-                title: dialogTitle,
-                content: `<p style="margin-bottom: 15px;">${dialogContent}</p>`,
-                buttons: {
-                    yes: {
-                        icon: '<i class="fas fa-check"></i>',
-                        label: game.i18n.localize("Yes"),
-                        callback: async () => deleteElement("node", selectedId)
-                    },
-                    no: {
-                        icon: '<i class="fas fa-times"></i>',
-                        label: game.i18n.localize("No"),
-                        className: "cancel"
-                    }
-                },
-                default: "no"
-            }, { classes: ["dialog", "fang-dialog"], width: 400 }).render(true);
-            return;
-        }
-
-        if (selectedType === "link") {
-            const linkIndex = parseInt(selectedId, 10);
-            if (Number.isNaN(linkIndex) || !this.graphData.links[linkIndex]) return;
-
-            const dialogContent = game.i18n.localize("FANG.Dialogs.DeleteLinkContent")
-                || "Are you sure you want to delete this connection?";
-
-            new Dialog({
-                title: dialogTitle,
-                content: `<p style="margin-bottom: 15px;">${dialogContent}</p>`,
-                buttons: {
-                    yes: {
-                        icon: '<i class="fas fa-check"></i>',
-                        label: game.i18n.localize("Yes"),
-                        callback: async () => deleteElement("link", selectedId)
-                    },
-                    no: {
-                        icon: '<i class="fas fa-times"></i>',
-                        label: game.i18n.localize("No"),
-                        className: "cancel"
-                    }
-                },
-                default: "no"
-            }, { classes: ["dialog", "fang-dialog"], width: 400 }).render(true);
-        }
-    }
-
     async _onToggleCenterNode() {
         if (!this._canEditGraph()) return;
         const selectDelete = this.element.querySelector("#deleteSelect");
@@ -3470,7 +3210,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
             this.initSimulation();
             this.simulation.alpha(0.6).restart(); // High heat to let it fly to center
-            this._populateActors();
+            this._rebuildSearchMatches();
 
             // Save + sync once simulation has mostly settled (alpha < 0.05 = visually arrived)
             this.simulation.on("tick.centerSync", async () => {
@@ -3995,7 +3735,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
                                 this.initSimulation();
                                 this.simulation.alpha(0.3).restart();
-                                this._populateActors();
+                                this._rebuildSearchMatches();
                                 await this.saveData();
                                 if (createdSourceNode) await this._recordNodeAppearedHistory(sourceNode);
                                 await this._recordRelationshipHistory(sourceNode, targetNode, labelStr);
@@ -4107,7 +3847,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
             this.initSimulation();
             this.simulation.alpha(0.8).restart();
-            this._populateActors();
+            this._rebuildSearchMatches();
             await this.saveData();
             if (createdNode) await this._recordNodeAppearedHistory(createdNode);
         }
@@ -4390,7 +4130,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                         ui.notifications.info(game.i18n.localize("FANG.Messages.DeletedNode"));
                         this.initSimulation();
                         this.simulation.alpha(0.3).restart();
-                        this._populateActors();
+                        this._rebuildSearchMatches();
                         await this.saveData();
                     }
                 },
@@ -4773,7 +4513,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                             node.playerNotes = html.find("#fang-safe-player-notes").val().trim();
                             node.conditions = newConditions;
                             this.ticked();
-                            this._populateActors();
+                            this._rebuildSearchMatches();
                             await this.saveData();
                         }
                     },
@@ -4892,7 +4632,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                         node.conditions = newConditions;
 
                         this.ticked();
-                        this._populateActors();
+                        this._rebuildSearchMatches();
                         await this.saveData();
                         if (isGM && wasHidden && !node.hidden) {
                             await this._recordIdentityRevealedHistory(node, previousAlias);
@@ -5240,7 +4980,6 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                             this.initSimulation();
                             this.simulation.alpha(0.05).restart();
                             await this.saveData();
-                            this._toggleLinkEditor(linkIndex); // Sync sidebar if open
                         }
                     },
                     cancel: { icon: '<i class="fas fa-times"></i>', label: game.i18n.localize("FANG.Dialogs.BtnCancel") || "Cancel" }
@@ -5269,7 +5008,6 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                             ui.notifications.info(game.i18n.localize("FANG.Messages.DeletedLink") || "Connection deleted.");
                             this.initSimulation();
                             this.simulation.alpha(0.3).restart();
-                            this._toggleLinkEditor(-1); // Close sidebar link editor if it was open
                             await this.saveData();
                         }
                     },
@@ -5335,7 +5073,6 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 await this._openLocalNodeInfo(clickedNode);
                 return;
             }
-            this._syncSidebarSelection("node", clickedNode.id);
             return;
         }
 
@@ -5410,10 +5147,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         });
 
         if (clickedLinkIndex !== -1) {
-            this._syncSidebarSelection("link", clickedLinkIndex);
         } else {
             // Clicked empty space - Reset sidebar selection and hide context menu
-            this._syncSidebarSelection("none", null);
             const menu = this.element.querySelector("#fang-context-menu");
             if (menu) menu.classList.add("hidden");
             const edgeMenu = this.element.querySelector("#fang-edge-context-menu");
@@ -5429,38 +5164,6 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         let t = ((p.x - a.x) * dx + (p.y - a.y) * dy) / l2;
         t = Math.max(0, Math.min(1, t));
         return Math.sqrt((p.x - (a.x + t * dx)) ** 2 + (p.y - (a.y + t * dy)) ** 2);
-    }
-
-    _toggleLinkEditor(linkIndex) {
-        const group = this.element.querySelector("#linkEditGroup");
-        if (!group) return;
-
-        if (linkIndex === -1) {
-            group.classList.add("hidden");
-            return;
-        }
-
-        const link = this.graphData.links[linkIndex];
-        if (!link) {
-            group.classList.add("hidden");
-            return;
-        }
-
-        // Populate fields
-        const labelInput = this.element.querySelector("#editLinkLabel");
-        const dirCheckbox = this.element.querySelector("#editLinkDirectional");
-
-        if (labelInput) labelInput.value = link.label || "";
-        if (dirCheckbox) dirCheckbox.checked = !!link.directional;
-
-        group.classList.remove("hidden");
-    }
-
-    _toggleNodeEditor(show) {
-        const group = this.element.querySelector("#nodeEditGroup");
-        if (!group) return;
-        if (show) group.classList.remove("hidden");
-        else group.classList.add("hidden");
     }
 
     async _onUpdateLink() {
@@ -5489,7 +5192,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         // Visual Refresh
         this.initSimulation();
         this.simulation.alpha(0.1).restart();
-        this._populateActors(); // Refresh labels in dropdowns
+        this._rebuildSearchMatches(); // Refresh labels in dropdowns
 
         // Re-select to keep editor open with fresh data
         const newSelect = this.element.querySelector("#deleteSelect");
@@ -5497,41 +5200,6 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
         await this.saveData();
         ui.notifications.info(game.i18n.localize("FANG.Messages.SaveSuccess") || "Changes saved.");
-    }
-
-    _syncSidebarSelection(type, id) {
-        // Keep legacy form fields synchronized for compatibility, but never open
-        // the old editor sidebar. Modern editing lives in canvas tools/context menus.
-        if (type === "node") {
-            const sourceSelect = this.element.querySelector("#sourceSelect");
-            const deleteSelect = this.element.querySelector("#deleteSelect");
-
-            if (sourceSelect) {
-                sourceSelect.value = id;
-            }
-            if (deleteSelect) {
-                deleteSelect.value = `node|${id}`;
-            }
-            // Trigger node UI
-            this._toggleNodeEditor(true);
-            this._toggleLinkEditor(-1);
-        } else if (type === "link") {
-            const deleteSelect = this.element.querySelector("#deleteSelect");
-            if (deleteSelect) {
-                deleteSelect.value = `link|${id}`;
-            }
-            // Trigger link UI
-            this._toggleLinkEditor(id);
-            this._toggleNodeEditor(false);
-        } else if (type === "none") {
-            const sourceSelect = this.element.querySelector("#sourceSelect");
-            const deleteSelect = this.element.querySelector("#deleteSelect");
-            if (sourceSelect) sourceSelect.value = "";
-            if (deleteSelect) deleteSelect.value = "";
-
-            this._toggleNodeEditor(false);
-            this._toggleLinkEditor(-1);
-        }
     }
 
     // --- D3 Logic ---
@@ -5736,30 +5404,27 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         return targets;
     }
 
+    /**
+     * Reflect the current grouping mode in the segmented control.
+     *
+     * The label no longer flips to "Reset grouping" when a mode is active — that trick
+     * existed because two buttons had to double as their own off-switch. The control now
+     * has a "none" segment, so each segment can just say what it is and show whether it
+     * is the selected one.
+     */
     _updateGroupingButtonStates() {
-        const faction = this.element?.querySelector?.("#btnGroupByFaction");
-        if (faction) {
-            const active = this._groupingMode === "faction";
-            const textKey = active ? "FANG.UI.ResetFactionGrouping" : "FANG.UI.GroupByFaction";
-            const hintKey = active ? "FANG.UI.ResetFactionGroupingHint" : "FANG.UI.GroupByFactionHint";
-            faction.classList.toggle("active", active);
-            faction.disabled = !game.user.isGM;
-            faction.title = game.i18n.localize(hintKey);
-            faction.innerHTML = `<i class="fas ${active ? "fa-rotate-left" : "fa-object-group"}"></i> ${game.i18n.localize(textKey)}`;
+        const segments = this.element?.querySelectorAll?.(".fang-segment[data-grouping]") ?? [];
+        for (const segment of segments) {
+            const active = segment.dataset.grouping === this._groupingMode;
+            segment.classList.toggle("active", active);
+            segment.setAttribute("aria-checked", active ? "true" : "false");
+            segment.disabled = !game.user.isGM;
         }
 
-        const zone = this.element?.querySelector?.("#btnGroupByZone");
-        if (zone) {
-            const active = this._groupingMode === "zone";
-            zone.classList.toggle("active", active);
-            zone.disabled = !game.user.isGM;
-            zone.title = active
-                ? this._localize("FANG.UI.ResetZoneGroupingHint", "Restore the layout from before grouping.")
-                : this._localize("FANG.UI.GroupByZoneHint", "Pull characters together by zone. Replaces faction grouping.");
-            zone.innerHTML = `<i class="fas ${active ? "fa-rotate-left" : "fa-draw-polygon"}"></i> ${
-                active ? this._localize("FANG.UI.ResetZoneGrouping", "Reset grouping")
-                       : this._localize("FANG.UI.GroupByZone", "Group by zone")}`;
-        }
+        // While a grouping view is on, positions are read-only. Say so where it is
+        // decided, instead of only warning after someone tries to drag a token.
+        const lockedHint = this.element?.querySelector?.("#groupingLockedHint");
+        if (lockedHint) lockedHint.hidden = this._groupingMode === "none";
     }
 
     /** @deprecated kept so older call sites keep working — use _updateGroupingButtonStates */
@@ -5832,7 +5497,11 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
      */
     _setGroupingMode(mode) {
         if (!this.simulation) return;
-        if (mode === this._groupingMode) mode = "none";      // pressing the active one turns it off
+        // Picking the mode that is already on is a no-op. It used to toggle back to "none",
+        // which made sense when two buttons were the only way to switch grouping off —
+        // now the segmented control has an explicit "none", and a radio group that
+        // unselects itself when you press the selected option would just be confusing.
+        if (mode === this._groupingMode) return;
 
         if (mode === "none") {
             this._restoreLayoutSnapshot();
@@ -7015,7 +6684,6 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             event.subject.data.fx = event.subject.data.x;
             event.subject.data.fy = event.subject.data.y;
             // Immediate selection in sidebar when grabbing a node
-            this._syncSidebarSelection("node", event.subject.data.id);
         }
         this._hasDragged = false;
 
@@ -8334,7 +8002,6 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             btnForce?.classList.add("hidden");
             canvasIndicator?.classList.add("hidden");
             sidebar?.classList.remove("sidebar-locked");
-            this.element.querySelector('.tab-content[data-tab="editor"]')?.classList.remove("tab-locked");
             canvasEditTools?.classList.remove("hidden");
             if (bannerIcon) bannerIcon.className = "fas fa-users";
 
@@ -8351,9 +8018,6 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         banner.classList.add("hidden"); // Default hidden for GM
         sidebar?.classList.remove("sidebar-locked");
 
-        // Remove tab-level locking
-        const editorTab = this.element.querySelector(".tab-content[data-tab='editor']");
-        if (editorTab) editorTab.classList.remove("tab-locked");
 
         if (btnForce) btnForce.classList.add("hidden");
         if (canvasIndicator) canvasIndicator.classList.add("hidden");
@@ -8374,8 +8038,6 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             btnToggleLock.classList.remove("active");
             this._setButtonTooltip(btnToggleLock, game.i18n.localize("FANG.UI.EditMode"));
 
-            // Block editor tab exclusively for everyone until lock is taken
-            if (editorTab) editorTab.classList.add("tab-locked");
 
             const allowPlayerEdit = game.settings.get("fang", "allowPlayerEditing");
             if (!game.user.isGM) {
@@ -8417,9 +8079,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 btnToggleLock.style.display = "none";
                 if (bannerIcon) bannerIcon.className = "fas fa-lock";
 
-                // Block ONLY the editor tab for GMs, but the whole sidebar for players
                 if (game.user.isGM) {
-                    if (editorTab) editorTab.classList.add("tab-locked");
                 } else {
                     sidebar?.classList.add("sidebar-locked");
                 }

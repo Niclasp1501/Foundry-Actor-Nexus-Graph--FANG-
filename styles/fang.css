@@ -108,21 +108,6 @@ body.fang-theme-cyberpunk {
     color: #b9e8ff;
 }
 
-.fang-app-container.fang-theme-cyberpunk .tab-btn {
-    color: #7fa4c8;
-}
-
-.fang-app-container.fang-theme-cyberpunk .tab-btn:hover {
-    color: #d9ecff;
-    background: rgba(51, 217, 255, 0.08);
-}
-
-.fang-app-container.fang-theme-cyberpunk .tab-btn.active {
-    color: #f8fbff;
-    border-bottom-color: #33d9ff;
-    background: rgba(51, 217, 255, 0.08);
-}
-
 .fang-app-container.fang-theme-cyberpunk .control-group h3 {
     color: #7feaff;
 }
@@ -207,6 +192,15 @@ body.role-gm .fang-app-container .gm-only {
     display: revert !important;
 }
 
+/* A GM-only sidebar panel is still a panel: it shows only while it is the active one.
+   The rule above reverts display with !important, which beats `.tab-content {display:none}`
+   on specificity alone — so every GM-only panel rendered at once, stacked on top of each
+   other. This needs to be more specific than the revert to put the panels back in charge
+   of their own visibility. */
+body.role-gm .fang-app-container .tab-content.gm-only:not(.active) {
+    display: none !important;
+}
+
 /* Sidebar Styling */
 .fang-app-container .sidebar {
     width: 76px;
@@ -228,9 +222,136 @@ body.role-gm .fang-app-container .gm-only {
 }
 
 .fang-app-container .sidebar-header h1,
-.fang-app-container .sidebar-header p,
-.fang-app-container .tabs-nav {
+.fang-app-container .sidebar-header p {
     display: none;
+}
+
+/* ---------------------------------------------------------------------------
+   Sidebar building blocks
+   These replace the inline styles that were copy-pasted onto every toggle row,
+   hint paragraph and full-width button. One definition, one place to change.
+   --------------------------------------------------------------------------- */
+
+/* A label with its switch on the right. */
+.fang-app-container .fang-toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 6px 0;
+}
+
+.fang-app-container .fang-toggle-row label {
+    font-size: 0.9em;
+    font-weight: 600;
+    cursor: pointer;
+    margin: 0;
+}
+
+.fang-app-container .fang-toggle-row input[type="checkbox"] {
+    width: auto;
+    margin: 0;
+    cursor: pointer;
+    flex: none;
+}
+
+/* Explanatory text under a control. Quiet on purpose. */
+.fang-app-container .fang-hint {
+    font-size: 0.8em;
+    line-height: 1.35;
+    opacity: 0.75;
+    margin: 4px 0 6px;
+}
+
+.fang-app-container .fang-hint-warn {
+    color: var(--fang-accent-gold);
+    opacity: 1;
+}
+
+.fang-app-container .fang-hint-warn[hidden] {
+    display: none;
+}
+
+.fang-app-container .fang-range-row {
+    margin-bottom: 6px;
+}
+
+.fang-app-container .fang-range-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8em;
+    opacity: 0.75;
+    margin-bottom: 2px;
+}
+
+.fang-app-container .fang-range-row input[type="range"] {
+    width: 100%;
+    height: 6px;
+    margin: 5px 0;
+}
+
+.fang-app-container .fang-btn-block {
+    width: 100%;
+}
+
+.fang-app-container .fang-btn-accent {
+    border-color: var(--fang-accent-gold);
+}
+
+/* ---------------------------------------------------------------------------
+   Segmented control — for picking exactly one of N modes.
+   Grouping used to be two separate buttons, which said nothing about the modes
+   being mutually exclusive or which one was active. A radio group does both.
+   --------------------------------------------------------------------------- */
+.fang-app-container .fang-segmented {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+    gap: 2px;
+    padding: 3px;
+    background: var(--fang-nav-bg);
+    border: 1px solid var(--fang-border-color);
+    border-radius: 12px;
+}
+
+.fang-app-container .fang-segment {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: 7px 4px;
+    border: none;
+    border-radius: 9px;
+    background: transparent;
+    color: var(--fang-text-color);
+    font-family: var(--fang-font-main);
+    font-size: 0.78em;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    opacity: 0.7;
+    transition: background 0.15s ease, opacity 0.15s ease, color 0.15s ease;
+}
+
+.fang-app-container .fang-segment i {
+    font-size: 0.95em;
+}
+
+.fang-app-container .fang-segment:hover:not(.active) {
+    opacity: 1;
+    background: rgba(212, 175, 55, 0.12);
+}
+
+.fang-app-container .fang-segment.active {
+    background: var(--fang-primary-red);
+    color: #fff;
+    opacity: 1;
+    box-shadow: var(--fang-shadow-sm);
+}
+
+.fang-app-container .fang-segment:disabled {
+    cursor: not-allowed;
+    opacity: 0.35;
 }
 
 .fang-app-container .fang-rail {
@@ -386,16 +507,14 @@ body.role-gm .fang-app-container .gm-only {
 }
 
 /* Disabled UI State */
-.fang-app-container .sidebar-locked .control-group,
-.fang-app-container .tab-locked .control-group {
+.fang-app-container .sidebar-locked .control-group {
     opacity: 0.6;
     pointer-events: none;
     filter: grayscale(0.5);
     position: relative;
 }
 
-.fang-app-container .sidebar-locked .control-group::after,
-.fang-app-container .tab-locked .control-group::after {
+.fang-app-container .sidebar-locked .control-group::after {
     content: "";
     position: absolute;
     top: 0;
@@ -819,42 +938,6 @@ body.role-gm .fang-app-container .gm-only {
 }
 
 /* Tabs Navigation */
-.fang-app-container .tabs-nav {
-    display: flex;
-    background-color: var(--fang-card-bg);
-    border-bottom: 2px solid var(--fang-border-color);
-}
-
-.fang-app-container .tab-btn {
-    flex: 1;
-    padding: 10px 5px;
-    text-align: center;
-    cursor: pointer;
-    font-weight: 700;
-    font-size: 0.85rem;
-    color: #666;
-    border-bottom: 3px solid transparent;
-    transition: all 0.2s ease;
-    text-transform: uppercase;
-}
-
-.fang-app-container .tab-btn:hover {
-    color: var(--fang-primary-red);
-    background-color: rgba(139, 0, 0, 0.05);
-}
-
-.fang-app-container .tab-btn.active {
-    color: var(--fang-primary-red);
-    border-bottom-color: var(--fang-primary-red);
-    background-color: var(--fang-nav-bg);
-}
-
-.fang-app-container .tab-btn.active i {
-    color: var(--fang-accent-gold);
-    text-shadow: 0 0 8px rgba(212, 175, 55, 0.8), 0 0 15px rgba(212, 175, 55, 0.4);
-    animation: fangPulseGlow 2s infinite;
-}
-
 @keyframes fangPulseGlow {
     0% {
         text-shadow: 0 0 5px rgba(212, 175, 55, 0.5);
@@ -895,12 +978,6 @@ body.role-gm .fang-app-container .gm-only {
 
 .fang-app-container .tab-content.active {
     display: block;
-}
-
-.fang-app-container .fang-legacy-editor-tab,
-.fang-app-container .fang-legacy-editor-panel,
-.fang-app-container .fang-legacy-editor-panel.active {
-    display: none !important;
 }
 
 @keyframes fangFadeIn {
@@ -3329,10 +3406,6 @@ body:has(.actors-sidebar.sidebar-popout:has(.window-content > *)) #fang-so-actor
 }
 
 .fang-app-container .sidebar-header p,
-.fang-app-container .tabs-nav {
-    display: none !important;
-}
-
 .fang-app-container .fang-rail {
     width: 76px;
     flex: 0 0 auto;
