@@ -192,7 +192,8 @@
             "ZoneGroupingInsufficient": "Najpierw przypisz postacie do co najmniej dwóch miejsc.",
             "ZoneGroupingApplied": "Pogrupowano wg miejsca.",
             "GroupingPositionsLocked": "Widok grupowania — pozycje są zablokowane. Zresetuj grupowanie, aby przesuwać postacie.",
-            "GroupingIsAView": "To jest widok — pozycje pozostają zablokowane do czasu zresetowania."
+            "GroupingIsAView": "To jest widok — pozycje pozostają zablokowane do czasu zresetowania.",
+            "NodeUnpinned": "pozycja zwolniona."
         },
         "ActorEditor": {
             "Title": "Edytuj aktora",
@@ -217,7 +218,8 @@
             "Condition": "Stan",
             "DeleteNode": "Usuń aktora z grafu",
             "EditConnection": "Edytuj",
-            "DeleteConnection": "Usuń połączenie"
+            "DeleteConnection": "Usuń połączenie",
+            "UnpinNode": "Zwolnij pozycję"
         },
         "Dropdowns": {
             "Nodes": "Węzły (Tokeny)",

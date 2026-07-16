@@ -4279,6 +4279,10 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const btnQuests = menu.querySelector("#ctxQuests");
         const btnHistory = menu.querySelector("#ctxHistory");
         const btnDelete = menu.querySelector("#ctxDeleteNode");
+        const btnUnpin = menu.querySelector("#ctxUnpinNode");
+
+        const newBtnUnpin = btnUnpin ? btnUnpin.cloneNode(true) : null;
+        if (btnUnpin && newBtnUnpin) btnUnpin.parentNode.replaceChild(newBtnUnpin, btnUnpin);
 
         const newBtnInfo = btnInfo ? btnInfo.cloneNode(true) : null;
         const newBtnEdit = btnEdit ? btnEdit.cloneNode(true) : null;
@@ -4305,6 +4309,23 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         if (newBtnHistory) newBtnHistory.style.display = canViewNode ? "flex" : "none";
         if (newBtnEdit) newBtnEdit.style.display = (hasLock && (game.user.isGM || canViewNode)) ? "flex" : "none";
         if (newBtnDelete) newBtnDelete.style.display = hasLock ? "flex" : "none";
+        // Only worth showing on a node that is actually pinned.
+        if (newBtnUnpin) newBtnUnpin.style.display = (hasLock && node?.pinned) ? "flex" : "none";
+
+        newBtnUnpin?.addEventListener("click", async () => {
+            menu.classList.add("hidden");
+            if (!this._canEditGraph()) return;
+            const live = this.simulation?.nodes().find(n => n.id === node.id) ?? node;
+            live.pinned = false;
+            live.fx = null;
+            live.fy = null;
+            const stored = this.graphData.nodes.find(n => n.id === node.id);
+            if (stored) { stored.pinned = false; stored.fx = null; stored.fy = null; }
+            this._draggedNodeIds?.add(node.id);   // we changed this node's position on purpose
+            this.simulation?.alpha(0.3).restart();
+            ui.notifications.info(`${this._getSafeNodeName(node)} — ${this._localize("FANG.Messages.NodeUnpinned", "position released.")}`);
+            await this.saveData();
+        });
 
         newBtnInfo?.addEventListener("click", () => {
             menu.classList.add("hidden");
@@ -5779,6 +5800,20 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             node.y = pos.y;
             node.vx = 0;                        // no leftover momentum
             node.vy = 0;
+            // Pins were released to let the clustering move everyone; put them back on the
+            // restored position, not on wherever the pin used to point.
+            if (node.pinned) {
+                node.fx = pos.x;
+                node.fy = pos.y;
+            }
+        }
+        // The simulation holds different node objects than graphData after a rebuild.
+        const live = this.simulation?.nodes() ?? [];
+        for (const node of live) {
+            const pos = this._layoutSnapshot.get(node.id);
+            if (!pos) continue;
+            node.x = pos.x; node.y = pos.y; node.vx = 0; node.vy = 0;
+            if (node.pinned) { node.fx = pos.x; node.fy = pos.y; }
         }
         this._layoutSnapshot = null;
     }
@@ -5816,6 +5851,12 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         }
 
         this._captureLayoutSnapshot();                        // before the first push only
+        // Release pins for the duration of the view: a pinned node ignores the cluster
+        // forces entirely and would just sit there while its group forms elsewhere.
+        // _restoreLayoutSnapshot puts both the position and the pin back.
+        for (const node of this.simulation.nodes()) {
+            if (node.pinned) { node.fx = null; node.fy = null; }
+        }
         this._clusterTargets = targets;
         this._groupingMode = mode;
         this._applyAxisForces();
@@ -5872,6 +5913,14 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 };
             }
 
+            // A pinned node was placed by hand. fx/fy are runtime-only (never stored), so
+            // they have to be restored from the stored `pinned` flag on every rebuild —
+            // otherwise the physics reclaims the node the next time the window opens.
+            if (nInfo.pinned) {
+                nInfo.fx = nInfo.x;
+                nInfo.fy = nInfo.y;
+            }
+
             // Cache token image
             if (!nInfo.imgElement) {
                 const imgSrc = this._getNodeImageSource(nInfo);
@@ -5911,6 +5960,18 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
         const cosmicWindEnabled = game.settings.get("fang", "enableCosmicWind");
 
+        // Link distance and collision radius have to agree, or connected nodes sit in a
+        // tug-of-war forever: the link pulls them to its distance, collision shoves them
+        // back out to twice its radius, neither ever wins. Measured before this: the link
+        // wanted 300px while collision demanded 320px, and 7 of 17 connected pairs sat in
+        // that contradiction permanently. That is why the graph never actually settled —
+        // alpha reaching its floor only means frozen, the tension is still there, so
+        // anything that woke the simulation made the whole layout lurch.
+        // Deriving one from the other keeps them consistent at any token size.
+        const tokenSize = game.settings.get("fang", "tokenSize");
+        const collideRadius = tokenSize + 120;
+        const linkDistance = Math.max(tokenSize * 4 + 140, collideRadius * 2 + 20);
+
         if (this.simulation) this.simulation.stop();
         // No forceCenter on purpose. It is not a force in the usual sense: it hard-shifts
         // every node each tick so their centre of mass sits dead centre, ignoring alpha
@@ -5922,10 +5983,10 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         // scaled by alpha, which is the behaviour we actually want.
         this.simulation = d3.forceSimulation(nodes)
             .force("charge", d3.forceManyBody().strength(-1000))
-            .force("link", d3.forceLink(links).id(d => d.id).distance(game.settings.get("fang", "tokenSize") * 4 + 140))
+            .force("link", d3.forceLink(links).id(d => d.id).distance(linkDistance))
             .force("x", d3.forceX(node => this._getNodeTargetX(node)).strength(node => this._getNodeAxisStrength(node)))
             .force("y", d3.forceY(node => this._getNodeTargetY(node)).strength(node => this._getNodeAxisStrength(node)))
-            .force("collide", d3.forceCollide().radius(game.settings.get("fang", "tokenSize") + 120))
+            .force("collide", d3.forceCollide().radius(collideRadius))
             .force("link-avoidance", this._createLinkRepulsionForce())
             .on("tick", this.ticked.bind(this));
 
@@ -6677,6 +6738,29 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 this.context.restore();
             }
 
+            // --- Pin marker ---
+            // A pinned character sits still while everything else drifts. Without a mark
+            // that reads as a bug rather than a decision. Small pin at the upper right,
+            // outside the faction ring, GM-side only — players never place anyone.
+            if (node.pinned && !isHidden && game.user.isGM) {
+                const px = pos.x + radius * 0.72, py = pos.y - radius * 0.72;
+                this.context.save();
+                this.context.beginPath();
+                this.context.arc(px, py, 7, 0, Math.PI * 2);
+                this.context.fillStyle = "rgba(24, 28, 38, 0.9)";
+                this.context.fill();
+                this.context.lineWidth = 1.5;
+                this.context.strokeStyle = "rgba(212, 175, 55, 0.9)";
+                this.context.stroke();
+                // Drawn, not typed: a Font Awesome glyph would depend on the icon font
+                // being loaded and canvas-ready, which is not guaranteed.
+                this.context.beginPath();
+                this.context.arc(px, py, 2.4, 0, Math.PI * 2);
+                this.context.fillStyle = "rgba(212, 175, 55, 0.95)";
+                this.context.fill();
+                this.context.restore();
+            }
+
             // Soft dark overlay for hidden tokens (obscure but keep silhouette)
             if (isHidden) {
                 this.context.beginPath();
@@ -6960,8 +7044,20 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         if (event.subject.type === 'node' && this._isNodeDragBlocked()) return;
         if (!event.active) this.simulation.alphaTarget(0);
         if (event.subject.type === 'node') {
-            event.subject.data.fx = null;
-            event.subject.data.fy = null;
+            // Keep the node where it was dropped instead of releasing it back to the forces.
+            // Placing someone is a statement — you put the family together on purpose — and
+            // the physics cannot honour that: the relationship links pull a released node
+            // straight back. Measured: dropped 300px away, it settled 214px off target.
+            // Pinned it stays exactly put. "Position freigeben" in the right-click menu
+            // hands it back to the simulation.
+            if (this._hasDragged) {
+                event.subject.data.fx = event.subject.data.x;
+                event.subject.data.fy = event.subject.data.y;
+                event.subject.data.pinned = true;
+            } else {
+                event.subject.data.fx = null;
+                event.subject.data.fy = null;
+            }
             // Remember that *we* placed this node. Only dragged nodes are allowed to
             // write their position during a merge — everything else the simulation
             // moved is drift, not intent, and must not overwrite other clients.

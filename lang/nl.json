@@ -192,7 +192,8 @@
             "ZoneGroupingInsufficient": "Wijs eerst personages aan minstens twee locaties toe.",
             "ZoneGroupingApplied": "Gegroepeerd op locatie.",
             "GroupingPositionsLocked": "Groeperingsweergave — posities zijn vergrendeld. Reset de groepering om personages te verplaatsen.",
-            "GroupingIsAView": "Dit is een weergave — posities blijven vergrendeld tot je reset."
+            "GroupingIsAView": "Dit is een weergave — posities blijven vergrendeld tot je reset.",
+            "NodeUnpinned": "positie vrijgegeven."
         },
         "ActorEditor": {
             "Title": "Actor bewerken",
@@ -217,7 +218,8 @@
             "Condition": "Conditie",
             "DeleteNode": "Acteur uit grafiek verwijderen",
             "EditConnection": "Bewerken",
-            "DeleteConnection": "Verbinding verwijderen"
+            "DeleteConnection": "Verbinding verwijderen",
+            "UnpinNode": "Positie vrijgeven"
         },
         "Dropdowns": {
             "Nodes": "Knooppunten (Tokens)",

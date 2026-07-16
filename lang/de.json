@@ -192,7 +192,8 @@
             "ZoneGroupingInsufficient": "Weise zuerst Charaktere mindestens zwei Orten zu.",
             "ZoneGroupingApplied": "Nach Ort gruppiert.",
             "GroupingPositionsLocked": "Gruppierungs-Ansicht — Positionen sind gesperrt. Setze die Gruppierung zurück, um Charaktere zu verschieben.",
-            "GroupingIsAView": "Das ist eine Ansicht — Positionen bleiben gesperrt, bis du sie zurücksetzt."
+            "GroupingIsAView": "Das ist eine Ansicht — Positionen bleiben gesperrt, bis du sie zurücksetzt.",
+            "NodeUnpinned": "Position freigegeben."
         },
         "ActorEditor": {
             "Title": "Akteur bearbeiten",
@@ -217,7 +218,8 @@
             "Condition": "Zustand",
             "DeleteNode": "Akteur vom Graphen löschen",
             "EditConnection": "Bearbeiten",
-            "DeleteConnection": "Verbindung löschen"
+            "DeleteConnection": "Verbindung löschen",
+            "UnpinNode": "Position freigeben"
         },
         "Dropdowns": {
             "Nodes": "Knoten (Tokens)",

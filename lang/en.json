@@ -192,7 +192,8 @@
             "ZoneGroupingInsufficient": "Assign characters to at least two locations first.",
             "ZoneGroupingApplied": "Grouped by location.",
             "GroupingPositionsLocked": "Grouping view — positions are locked. Reset grouping to move characters.",
-            "GroupingIsAView": "This is a view — positions stay locked until you reset it."
+            "GroupingIsAView": "This is a view — positions stay locked until you reset it.",
+            "NodeUnpinned": "position released."
         },
         "ActorEditor": {
             "Title": "Edit Actor",
@@ -217,7 +218,8 @@
             "Condition": "Condition",
             "DeleteNode": "Delete Actor from Graph",
             "EditConnection": "Edit",
-            "DeleteConnection": "Delete Connection"
+            "DeleteConnection": "Delete Connection",
+            "UnpinNode": "Release position"
         },
         "Dropdowns": {
             "Nodes": "Nodes (Tokens)",

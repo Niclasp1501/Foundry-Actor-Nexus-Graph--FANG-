@@ -192,7 +192,8 @@
             "ZoneGroupingInsufficient": "Сначала назначьте персонажей минимум в два места.",
             "ZoneGroupingApplied": "Сгруппировано по местам.",
             "GroupingPositionsLocked": "Режим группировки — позиции заблокированы. Сбросьте группировку, чтобы двигать персонажей.",
-            "GroupingIsAView": "Это режим просмотра — позиции заблокированы до сброса."
+            "GroupingIsAView": "Это режим просмотра — позиции заблокированы до сброса.",
+            "NodeUnpinned": "позиция освобождена."
         },
         "ActorEditor": {
             "Title": "Edit Actor",
@@ -217,7 +218,8 @@
             "Condition": "Состояние",
             "DeleteNode": "Удалить актера из графа",
             "EditConnection": "Edit",
-            "DeleteConnection": "Удалить связь"
+            "DeleteConnection": "Удалить связь",
+            "UnpinNode": "Освободить позицию"
         },
         "Dropdowns": {
             "Nodes": "Актеры (Токены)",

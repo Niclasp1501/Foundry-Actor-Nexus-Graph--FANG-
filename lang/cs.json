@@ -192,7 +192,8 @@
             "ZoneGroupingInsufficient": "Nejprve přiřaď postavy alespoň do dvou míst.",
             "ZoneGroupingApplied": "Seskupeno podle místa.",
             "GroupingPositionsLocked": "Zobrazení seskupení — pozice jsou zamčené. Pro přesun postav zruš seskupení.",
-            "GroupingIsAView": "Toto je zobrazení — pozice zůstanou zamčené, dokud ho nezrušíš."
+            "GroupingIsAView": "Toto je zobrazení — pozice zůstanou zamčené, dokud ho nezrušíš.",
+            "NodeUnpinned": "pozice uvolněna."
         },
         "ActorEditor": {
             "Title": "Edit Actor",
@@ -217,7 +218,8 @@
             "Condition": "Stav",
             "DeleteNode": "Odstranit aktora z grafu",
             "EditConnection": "Upravit",
-            "DeleteConnection": "Odstranit spojení"
+            "DeleteConnection": "Odstranit spojení",
+            "UnpinNode": "Uvolnit pozici"
         },
         "Dropdowns": {
             "Nodes": "Uzly (Tokeny)",

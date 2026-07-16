@@ -192,7 +192,8 @@
             "ZoneGroupingInsufficient": "Primero asigna personajes a al menos dos lugares.",
             "ZoneGroupingApplied": "Agrupado por lugar.",
             "GroupingPositionsLocked": "Vista de agrupación — las posiciones están bloqueadas. Restablece la agrupación para mover personajes.",
-            "GroupingIsAView": "Esto es una vista — las posiciones siguen bloqueadas hasta que la restablezcas."
+            "GroupingIsAView": "Esto es una vista — las posiciones siguen bloqueadas hasta que la restablezcas.",
+            "NodeUnpinned": "posición liberada."
         },
         "ActorEditor": {
             "Title": "Editar actor",
@@ -217,7 +218,8 @@
             "Condition": "Condición",
             "DeleteNode": "Eliminar Actor del Grafo",
             "EditConnection": "Editar",
-            "DeleteConnection": "Eliminar Conexión"
+            "DeleteConnection": "Eliminar Conexión",
+            "UnpinNode": "Liberar posición"
         },
         "Dropdowns": {
             "Nodes": "Nodos (Tokens)",
