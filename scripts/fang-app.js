@@ -2305,6 +2305,73 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     /**
+     * Open a dialog on the modern application framework.
+     *
+     * FANG's dialogs were all built on `this._openDialog()` — the V1 framework, which warns on
+     * every open ("removed in Version 16") and looks like the old Foundry. This takes the
+     * shape those call sites already use and runs it on DialogV2, so the migration is one
+     * change here instead of fourteen rewrites, and the dialogs pick up the current
+     * styling on the way.
+     *
+     * Deliberately keeps the jQuery handle in `render` and `callback`: the dialog bodies
+     * are full of `html.find(...)`, and porting all of that to plain DOM in the same step
+     * would be a lot of churn for no behaviour change.
+     *
+     * @param {object} config
+     * @param {string} config.title           window title
+     * @param {string} config.content         dialog body HTML
+     * @param {object} config.buttons         { key: { label, icon?, className?, callback? } }
+     * @param {string} [config.default]       key of the button that gets focus/Enter
+     * @param {Function} [config.render]      (jQueryHtml, dialog) => void, after the body renders
+     * @param {Function} [config.close]       () => void, when the dialog closes
+     * @param {string[]} [config.classes]     CSS classes for the window
+     * @param {number} [config.width]         window width (V1 passed this flat; V2 wants position.width)
+     * @param {object} [config.options]       any further DialogV2 options
+     * @returns {Promise<any>} whatever the pressed button's callback returned, or null
+     */
+    async _openDialog({ title, content, buttons = {}, default: defaultButton, render, close, classes, width, options = {} } = {}) {
+        const toIconClass = (icon) => {
+            if (!icon) return undefined;
+            // V1 took a full `<i class="...">` tag, V2 wants the class list.
+            const match = /class=["']([^"']+)["']/.exec(icon);
+            return match ? match[1] : icon;
+        };
+
+        const buttonList = Object.entries(buttons).map(([action, config]) => ({
+            action,
+            label: config.label ?? action,
+            icon: toIconClass(config.icon),
+            class: config.className,
+            default: action === defaultButton,
+            // V2 hands us (event, button, dialog); the old bodies expect the jQuery form.
+            callback: config.callback
+                ? async (event, button, dialog) => config.callback($(dialog.element))
+                : undefined
+        }));
+
+        // A dialog with no buttons still needs a way out.
+        if (!buttonList.length) {
+            buttonList.push({ action: "close", label: game.i18n.localize("Close"), icon: "fas fa-xmark" });
+        }
+
+        // V1 dialogs were styled via classes: ["dialog", "fang-dialog"]. "dialog" is the V1
+        // window class and would drag the old look back in; the FANG ones we keep.
+        const windowClasses = (classes ?? []).filter(c => c !== "dialog");
+
+        return foundry.applications.api.DialogV2.wait({
+            window: { title },
+            content,
+            buttons: buttonList,
+            classes: windowClasses.length ? windowClasses : undefined,
+            position: width ? { width } : undefined,
+            render: render ? (event, dialog) => render($(dialog.element), dialog) : undefined,
+            close: close ? () => close() : undefined,
+            rejectClose: false,   // closing via X resolves to null instead of throwing
+            ...options
+        });
+    }
+
+    /**
      * Take the merged result as our live graph.
      *
      * Called when a merge pulled in changes we did not have — our in-memory graph is
@@ -2771,7 +2838,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const defaultName = game.i18n.localize("FANG.Placeholder.DefaultName") || "Unknown Contact";
         const isGM = game.user.isGM;
 
-        new Dialog({
+        this._openDialog({
             title: game.i18n.localize("FANG.Placeholder.CreateTitle") || "Create Placeholder NPC",
             content: `
                 <div class="form-group">
@@ -2833,8 +2900,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 },
                 cancel: { icon: '<i class="fas fa-times"></i>', label: game.i18n.localize("FANG.Dialogs.BtnCancel") || "Cancel" }
             },
-            default: "create"
-        }, { classes: ["dialog", "fang-dialog"], width: 420 }).render(true);
+            default: "create",
+            classes: ["dialog", "fang-dialog"], width: 420
+        });
     }
 
     async _applyActorToPlaceholder(node, actor, { keepName = false, keepRole = true, keepAlias = true } = {}) {
@@ -2876,7 +2944,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             return;
         }
 
-        new Dialog({
+        this._openDialog({
             title: game.i18n.localize("FANG.Placeholder.ReplaceTitle") || "Replace Placeholder",
             content: `
                 <p>${(game.i18n.localize("FANG.Placeholder.ReplaceHint") || "Select an actor to replace <strong>{name}</strong>.").replace("{name}", node.name)}</p>
@@ -2915,8 +2983,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 },
                 cancel: { icon: '<i class="fas fa-times"></i>', label: game.i18n.localize("FANG.Dialogs.BtnCancel") || "Cancel" }
             },
-            default: "replace"
-        }, { classes: ["dialog", "fang-dialog"], width: 440 }).render(true);
+            default: "replace",
+            classes: ["dialog", "fang-dialog"], width: 440
+        });
     }
 
     _setSearchUiVisible(visible, { focus = false } = {}) {
@@ -3150,7 +3219,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         }[char])));
 
         return new Promise(resolve => {
-            new Dialog({
+            this._openDialog({
                 title,
                 content: `
                     <p>${content}</p>
@@ -3176,8 +3245,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     }
                 },
                 default: "save",
-                close: () => resolve(null)
-            }, { classes: ["dialog", "fang-dialog"], width: 420 }).render(true);
+                close: () => resolve(null),
+            classes: ["dialog", "fang-dialog"], width: 420
+        });
         });
     }
 
@@ -3314,7 +3384,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             </div>
         `;
 
-        const factionDialog = new Dialog({
+        await this._openDialog({
             title: game.i18n.localize("FANG.UI.ManageFactions"),
             content: dialogContent,
             render: (html) => {
@@ -3419,15 +3489,12 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     label: game.i18n.localize("FANG.Dialogs.BtnCancel")
                 }
             },
-            default: "save"
-        }, {
+            default: "save",
             classes: ["dialog", "fang-dialog"],
             width: 560,
             height: 620,
             resizable: true
         });
-
-        factionDialog.render(true);
     }
 
     async _onManageZones() {
@@ -3472,7 +3539,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 </div>
             </div>`;
 
-        const dialog = new Dialog({
+        await this._openDialog({
             title: localize("FANG.Zones.Title", "Affiliation Zones"),
             content: `
                 <div class="fang-faction-manager">
@@ -3524,9 +3591,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 },
                 cancel: { icon: '<i class="fas fa-times"></i>', label: localize("FANG.Dialogs.BtnCancel", "Cancel") }
             },
-            default: "save"
-        }, { classes: ["dialog", "fang-dialog"], width: 620, height: 620, resizable: true });
-        dialog.render(true);
+            default: "save",
+            classes: ["dialog", "fang-dialog"], width: 620, height: 620, resizable: true
+        });
     }
 
     _onDragOver(event) {
@@ -3589,7 +3656,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 .replace("{journal}", droppedDoc.name)
                 .replace("{actor}", targetNode.name) + "</p>";
 
-            new Dialog({
+            this._openDialog({
                 title: title,
                 content: contentString,
                 buttons: {
@@ -3637,8 +3704,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                         "min-height": "60px",
                         "padding": "5px"
                     });
-                }
-            }, { classes: ["dialog", "fang-dialog"], width: 420 }).render(true);
+                },
+            classes: ["dialog", "fang-dialog"], width: 420
+        });
             return;
         }
 
@@ -3677,7 +3745,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     </div>
                 `;
 
-                new Dialog({
+                this._openDialog({
                     title: title,
                     content: dialogContent,
                     buttons: {
@@ -3746,11 +3814,10 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                             label: btnCancel
                         }
                     },
-                    default: "connect"
-                }, {
-                    classes: ["dialog", "fang-dialog"],
+                    default: "connect",
+            classes: ["dialog", "fang-dialog"],
                     width: 400
-                }).render(true);
+        });
             };
 
             const actorAlreadyOnCanvas = this.graphData.nodes.some(n =>
@@ -3762,7 +3829,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 const content = (game.i18n.localize("FANG.Placeholder.DropContent") || "Do you want to replace <strong>{target}</strong> with <strong>{actor}</strong>, or create a relationship?")
                     .replace("{target}", targetNode.name)
                     .replace("{actor}", actor.name);
-                new Dialog({
+                this._openDialog({
                     title,
                     content: `<p>${content}</p>`,
                     buttons: {
@@ -3780,8 +3847,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                         },
                         cancel: { icon: '<i class="fas fa-times"></i>', label: game.i18n.localize("FANG.Dialogs.BtnCancel") || "Cancel" }
                     },
-                    default: "replace"
-                }, { classes: ["dialog", "fang-dialog"], width: 460 }).render(true);
+                    default: "replace",
+            classes: ["dialog", "fang-dialog"], width: 460
+        });
             } else {
                 openFastLinkDialog();
             }
@@ -4112,7 +4180,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const dialogTitle = game.i18n.localize("FANG.Dialogs.DeleteConfirmTitle") || "Confirm Deletion";
         const dialogContent = game.i18n.localize("FANG.Dialogs.DeleteNodeContent") || "Are you sure you want to delete this token from the graph? Your Player Lore notes will be kept safe.";
 
-        new Dialog({
+        this._openDialog({
             title: dialogTitle,
             content: `<p style="margin-bottom: 15px;">${dialogContent}</p>`,
             buttons: {
@@ -4140,8 +4208,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     className: "cancel"
                 }
             },
-            default: "no"
-        }, { classes: ["dialog", "fang-dialog"], width: 400 }).render(true);
+            default: "no",
+            classes: ["dialog", "fang-dialog"], width: 400
+        });
     }
 
     async _openNodeJournal(node) {
@@ -4496,7 +4565,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 </section>
             </div>`;
 
-            new Dialog({
+            this._openDialog({
                 title: localize("FANG.ActorEditor.Title", "Edit Actor"),
                 content,
                 buttons: {
@@ -4525,8 +4594,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 default: "save",
                 render: (html) => {
                     html.find("#fang-safe-player-lore").on("click", async (event) => openPlayerLorePage({ createIfMissing: false, button: event.currentTarget }));
-                }
-            }, { classes: ["dialog", "fang-dialog", "fang-actor-editor-dialog"], width: 620 }).render(true);
+                },
+            classes: ["dialog", "fang-dialog", "fang-actor-editor-dialog"], width: 620
+        });
             return;
         }
 
@@ -4592,8 +4662,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 ${actionSection}
             </div>`;
 
-        let dialog;
-        dialog = new Dialog({
+        await this._openDialog({
             title: localize("FANG.ActorEditor.Title", "Edit Actor"),
             content,
             buttons: {
@@ -4654,7 +4723,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 }
             },
             default: "save",
-            render: (html) => {
+            render: (html, dialog) => {
                 if (!isGM) return;
                 html.find("#fang-profile-gm-journal").on("click", async () => this._openNodeJournal(node));
                 html.find("#fang-profile-replace").on("click", async () => {
@@ -4666,8 +4735,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     this._confirmDeleteNode(node);
                 });
                 html.find("#fang-profile-player-lore").on("click", async (event) => openPlayerLorePage({ createIfMissing: true, button: event.currentTarget }));
-            }
-        }, { classes: ["dialog", "fang-dialog", "fang-actor-editor-dialog"], width: 760 }).render(true);
+            },
+            classes: ["dialog", "fang-dialog", "fang-actor-editor-dialog"], width: 760
+        });
     }
     _onCanvasPointerDown(event) {
         if (event.pointerType !== "touch" && event.pointerType !== "pen") return;
@@ -4925,7 +4995,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 .map(t => `<option value="${this._escapeHtml(t.id)}" ${link.relationshipType === t.id ? "selected" : ""}>${this._escapeHtml(t.label)}</option>`)
                 .join("");
 
-            new Dialog({
+            this._openDialog({
                 title: title,
                 content: `
                     <p><strong>${contentString}</strong></p>
@@ -4984,8 +5054,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     },
                     cancel: { icon: '<i class="fas fa-times"></i>', label: game.i18n.localize("FANG.Dialogs.BtnCancel") || "Cancel" }
                 },
-                default: "save"
-            }, { classes: ["dialog", "fang-dialog"], width: 450 }).render(true);
+                default: "save",
+            classes: ["dialog", "fang-dialog"], width: 450
+        });
         });
 
         // Action: Delete
@@ -4996,7 +5067,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             const dialogTitle = game.i18n.localize("FANG.Dialogs.DeleteConfirmTitle") || "Confirm Deletion";
             const dialogContent = game.i18n.localize("FANG.Dialogs.DeleteLinkContent") || "Are you sure you want to delete this connection?";
 
-            new Dialog({
+            this._openDialog({
                 title: dialogTitle,
                 content: `<p style="margin-bottom: 15px;">${dialogContent}</p>`,
                 buttons: {
@@ -5017,8 +5088,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                         className: "cancel"
                     }
                 },
-                default: "no"
-            }, { classes: ["dialog", "fang-dialog"], width: 400 }).render(true);
+                default: "no",
+            classes: ["dialog", "fang-dialog"], width: 400
+        });
         });
 
         // Action: Edge Spotlight
@@ -7198,7 +7270,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
         // Confirm overwrite with custom FANG dialog styling
         const confirm = await new Promise(resolve => {
-            new Dialog({
+            this._openDialog({
                 title: game.i18n.localize("FANG.UI.Import"),
                 content: `<p>${game.i18n.localize("FANG.Messages.ConfirmImport")}</p>`,
                 buttons: {
@@ -7214,10 +7286,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     }
                 },
                 default: "no",
-                close: () => resolve(false)
-            }, {
-                classes: ["dialog", "fang-dialog"]
-            }).render(true);
+                close: () => resolve(false),
+            classes: ["dialog", "fang-dialog"]
+        });
         });
 
         if (!confirm) {
