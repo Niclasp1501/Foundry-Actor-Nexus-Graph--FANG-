@@ -323,7 +323,9 @@
             "BtnYes": "Tak",
             "BtnNo": "Nie",
             "IdentityGMOnly": "GM only - hide completely",
-            "ActorDropGMOnly": "GM only"
+            "ActorDropGMOnly": "GM only",
+            "NoFactionsTitle": "Brak frakcji",
+            "NoFactionsHint": "Utwórz frakcję, a potem przypisz do niej postacie (prawy przycisk → Edytuj)."
         },
         "History": {
             "Timeline": "Chronicle",
@@ -483,7 +485,9 @@
                 "building": "Budynek",
                 "realm": "Królestwo",
                 "other": "Inne"
-            }
+            },
+            "NoZonesTitle": "Brak miejsc",
+            "NoZonesHint": "Dodaj miejsce, a potem przypisz do niego postacie (prawy przycisk → Edytuj)."
         },
         "RelationshipTypes": {
             "Label": "Typ relacji",

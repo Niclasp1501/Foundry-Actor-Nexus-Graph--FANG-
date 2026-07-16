@@ -323,7 +323,9 @@
             "BtnYes": "Да",
             "BtnNo": "Нет",
             "IdentityGMOnly": "GM only - hide completely",
-            "ActorDropGMOnly": "GM only"
+            "ActorDropGMOnly": "GM only",
+            "NoFactionsTitle": "Фракций пока нет",
+            "NoFactionsHint": "Создайте фракцию, затем назначьте в неё персонажей (правый клик → Изменить)."
         },
         "History": {
             "Timeline": "Chronicle",
@@ -483,7 +485,9 @@
                 "building": "Здание",
                 "realm": "Царство",
                 "other": "Другое"
-            }
+            },
+            "NoZonesTitle": "Мест пока нет",
+            "NoZonesHint": "Добавьте место, затем назначьте в него персонажей (правый клик → Изменить)."
         },
         "RelationshipTypes": {
             "Label": "Тип связи",

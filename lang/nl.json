@@ -323,7 +323,9 @@
             "BtnYes": "Ja",
             "BtnNo": "Nee",
             "IdentityGMOnly": "GM only - hide completely",
-            "ActorDropGMOnly": "GM only"
+            "ActorDropGMOnly": "GM only",
+            "NoFactionsTitle": "Nog geen facties",
+            "NoFactionsHint": "Maak een factie aan en wijs er personages aan toe (rechtsklik → Bewerken)."
         },
         "History": {
             "Timeline": "Chronicle",
@@ -483,7 +485,9 @@
                 "building": "Gebouw",
                 "realm": "Rijk",
                 "other": "Overig"
-            }
+            },
+            "NoZonesTitle": "Nog geen locaties",
+            "NoZonesHint": "Voeg een locatie toe en wijs er personages aan toe (rechtsklik → Bewerken)."
         },
         "RelationshipTypes": {
             "Label": "Relatietype",

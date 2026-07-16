@@ -323,7 +323,9 @@
             "BtnYes": "Sì",
             "BtnNo": "No",
             "IdentityGMOnly": "GM only - hide completely",
-            "ActorDropGMOnly": "GM only"
+            "ActorDropGMOnly": "GM only",
+            "NoFactionsTitle": "Nessuna fazione",
+            "NoFactionsHint": "Crea una fazione, poi assegnale dei personaggi (clic destro → Modifica)."
         },
         "History": {
             "Timeline": "Chronicle",
@@ -483,7 +485,9 @@
                 "building": "Edificio",
                 "realm": "Reame",
                 "other": "Altro"
-            }
+            },
+            "NoZonesTitle": "Nessun luogo",
+            "NoZonesHint": "Aggiungi un luogo, poi assegnagli dei personaggi (clic destro → Modifica)."
         },
         "RelationshipTypes": {
             "Label": "Tipo di relazione",

@@ -1724,6 +1724,16 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 });
             }
 
+            const cbShowFactionLegend = this.element.querySelector("#cbShowFactionLegend");
+            if (cbShowFactionLegend) {
+                cbShowFactionLegend.checked = this.graphData.showFactionLegend !== false;
+                cbShowFactionLegend.addEventListener("change", async (e) => {
+                    this.graphData.showFactionLegend = !!e.target.checked;
+                    this.ticked();
+                    await this.saveData();
+                });
+            }
+
             const cbAllowPlayerEdit = this.element.querySelector("#cbAllowPlayerEdit");
             if (cbAllowPlayerEdit) {
                 cbAllowPlayerEdit.checked = game.settings.get("fang", "allowPlayerEditing");
@@ -2302,6 +2312,30 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         exportData.schemaVersion = FANG_GRAPH_SCHEMA_VERSION;
 
         return exportData;
+    }
+
+    /**
+     * The "no factions yet" placeholder, as markup.
+     *
+     * Needed in two places — when the manager opens with nothing in it, and when the last
+     * faction is deleted while it is open — so it lives here rather than being written out
+     * twice and drifting apart.
+     *
+     * @param {HTMLElement} [listElement] when given, the placeholder is rendered into it
+     * @returns {string} the markup
+     */
+    _renderFactionsEmptyState(listElement = null) {
+        const html = `
+            <div class="fang-empty-state">
+                <i class="fas fa-users-slash"></i>
+                <p class="fang-empty-state__title">${this._localize("FANG.Dialogs.NoFactionsTitle", "No factions yet")}</p>
+                <p class="fang-empty-state__hint">${this._localize("FANG.Dialogs.NoFactionsHint", "Create a faction, then assign characters to it via right-click → Edit.")}</p>
+            </div>`;
+        if (listElement) {
+            listElement.classList.add("is-empty");
+            listElement.innerHTML = html;
+        }
+        return html;
     }
 
     /**
@@ -3318,11 +3352,19 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             const name = row.querySelector(".faction-name")?.value?.trim() || localize("FANG.Dialogs.NewFaction", "New Faction");
             const title = game.i18n.localize("FANG.Dialogs.DeleteConfirmTitle") || "Confirm Deletion";
             const content = localize("FANG.Dialogs.DeleteFactionConfirm", "Delete this faction?");
-            Dialog.confirm({
-                title,
+            // DialogV2.confirm, not Dialog.confirm — the latter is the V1 framework too.
+            foundry.applications.api.DialogV2.confirm({
+                window: { title },
                 content: `<p>${content.replace("{name}", `<strong>${escapeHtml(name)}</strong>`)}</p>`,
-                yes: () => row.remove(),
-                no: () => {}
+                yes: {
+                    callback: () => {
+                        const list = row.closest("#fang-factions-list");
+                        row.remove();
+                        // Last one gone? Then say so again, instead of leaving a blank box.
+                        if (list && !list.querySelector(".fang-faction-item")) this._renderFactionsEmptyState(list);
+                    }
+                },
+                no: { callback: () => {} }
             });
         };
         const renderFactionRow = (faction, index) => {
@@ -3365,19 +3407,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                         <p>${game.i18n.localize("FANG.UI.ManageFactionsHint")}</p>
                     </div>
                 </header>
-                <div class="fang-faction-manager__toggles">
-                    <label class="fang-toggle-card" for="fang-show-faction-lines">
-                        <input type="checkbox" id="fang-show-faction-lines" ${this.graphData.showFactionLines !== false ? 'checked' : ''}>
-                        <span class="fang-toggle-card__icon"><i class="fas fa-project-diagram"></i></span>
-                        <span>${game.i18n.localize("FANG.Dialogs.ShowFactionLines")}</span>
-                    </label>
-                    <label class="fang-toggle-card" for="fang-show-faction-legend">
-                        <input type="checkbox" id="fang-show-faction-legend" ${this.graphData.showFactionLegend !== false ? 'checked' : ''}>
-                        <span class="fang-toggle-card__icon"><i class="fas fa-list"></i></span>
-                        <span>${game.i18n.localize("FANG.Dialogs.ShowFactionLegend")}</span>
-                    </label>
-                </div>
-                <div id="fang-factions-list">${factionsHtml}</div>
+                <div id="fang-factions-list" class="${this.graphData.factions.length ? "" : "is-empty"}">${factionsHtml || this._renderFactionsEmptyState()}</div>
                 <button type="button" id="fang-add-faction-btn" class="btn fang-add-faction-btn">
                     <i class="fas fa-plus"></i> ${localize("FANG.Dialogs.BtnAddFaction", "Add Faction")}
                 </button>
@@ -3390,6 +3420,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             render: (html) => {
                 html.find("#fang-add-faction-btn").on("click", () => {
                     const list = html.find("#fang-factions-list");
+                    // The empty state lives inside the list — drop it before counting, or it
+                    // would both stay on screen next to the new row and be counted as one.
+                    list.removeClass("is-empty").find(".fang-empty-state").remove();
                     const newIndex = list.children().length;
                     const randomColor = '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
                     list.append(renderFactionRow({
@@ -3434,8 +3467,10 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     label: game.i18n.localize("FANG.Dialogs.BtnSave"),
                     callback: async (html) => {
                         const previousFactionVisibility = new Map((this.graphData.factions || []).map(f => [f.id, this._normalizeFaction(f).playerVisible !== false]));
-                        this.graphData.showFactionLines = html.find("#fang-show-faction-lines").is(":checked");
-                        this.graphData.showFactionLegend = html.find("#fang-show-faction-legend").is(":checked");
+                        // The lines/legend switches moved to the Affiliation panel — this
+                        // dialog manages factions, the panel controls how they are shown.
+                        // (Reading them here would now find nothing and silently turn the
+                        // faction display off on every save.)
                         const newFactions = [];
                         html.find(".fang-faction-item").each((i, el) => {
                             const factionIdFromInput = $(el).find(".faction-id").val();
@@ -3549,7 +3584,12 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                             <p>${escapeHtml(localize("FANG.Zones.Hint", "Create campaign zones such as cities, regions, organizations, courts, or underworld groups."))}</p>
                         </div>
                     </header>
-                    <div id="fang-zones-list">${zones.map(renderZoneRow).join("")}</div>
+                    <div id="fang-zones-list" class="${zones.length ? "" : "is-empty"}">${zones.map(renderZoneRow).join("")}${zones.length ? "" : `
+                        <div class="fang-empty-state">
+                            <i class="fas fa-location-dot"></i>
+                            <p class="fang-empty-state__title">${escapeHtml(localize("FANG.Zones.NoZonesTitle", "No locations yet"))}</p>
+                            <p class="fang-empty-state__hint">${escapeHtml(localize("FANG.Zones.NoZonesHint", "Add a location, then assign characters to it via right-click → Edit."))}</p>
+                        </div>`}</div>
                     <button type="button" id="fang-add-zone-btn" class="btn fang-add-faction-btn">
                         <i class="fas fa-plus"></i> ${escapeHtml(localize("FANG.Zones.Add", "Add zone"))}
                     </button>
@@ -3557,9 +3597,25 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             render: (html) => {
                 html.find("#fang-add-zone-btn").on("click", () => {
                     const list = html.find("#fang-zones-list");
+                    // Drop the empty state before counting — it sits inside the list.
+                    list.removeClass("is-empty").find(".fang-empty-state").remove();
                     list.append(renderZoneRow(this._normalizeZone({ name: localize("FANG.Zones.NewZone", "New Zone") }), list.children().length));
                 });
-                html.on("click", ".btn-delete-zone", (event) => event.currentTarget.closest(".fang-zone-item")?.remove());
+                html.on("click", ".btn-delete-zone", (event) => {
+                    const row = event.currentTarget.closest(".fang-zone-item");
+                    const list = row?.closest("#fang-zones-list");
+                    row?.remove();
+                    // Last one gone? Bring the hint back rather than leave a blank box.
+                    if (list && !list.querySelector(".fang-zone-item")) {
+                        list.classList.add("is-empty");
+                        list.innerHTML = `
+                            <div class="fang-empty-state">
+                                <i class="fas fa-location-dot"></i>
+                                <p class="fang-empty-state__title">${escapeHtml(localize("FANG.Zones.NoZonesTitle", "No locations yet"))}</p>
+                                <p class="fang-empty-state__hint">${escapeHtml(localize("FANG.Zones.NoZonesHint", "Add a location, then assign characters to it via right-click → Edit."))}</p>
+                            </div>`;
+                    }
+                });
             },
             buttons: {
                 save: {

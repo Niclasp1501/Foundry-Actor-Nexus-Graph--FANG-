@@ -323,7 +323,9 @@
             "BtnYes": "Ja",
             "BtnNo": "Nein",
             "IdentityGMOnly": "Nur GM - komplett ausblenden",
-            "ActorDropGMOnly": "Nur GM anzeigen"
+            "ActorDropGMOnly": "Nur GM anzeigen",
+            "NoFactionsTitle": "Noch keine Fraktionen",
+            "NoFactionsHint": "Lege eine Fraktion an und weise ihr dann Charaktere zu (Rechtsklick → Bearbeiten)."
         },
         "History": {
             "Timeline": "Chronik",
@@ -483,7 +485,9 @@
                 "building": "Gebäude",
                 "realm": "Reich",
                 "other": "Sonstiges"
-            }
+            },
+            "NoZonesTitle": "Noch keine Orte",
+            "NoZonesHint": "Lege einen Ort an und weise ihm dann Charaktere zu (Rechtsklick → Bearbeiten)."
         },
         "RelationshipTypes": {
             "Label": "Beziehungsart",

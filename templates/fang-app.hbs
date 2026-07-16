@@ -89,6 +89,10 @@
                             <label for="cbShowFactionLines">{{localize "FANG.UI.ShowFactionLines"}}</label>
                             <input type="checkbox" id="cbShowFactionLines">
                         </div>
+                        <div class="fang-toggle-row">
+                            <label for="cbShowFactionLegend">{{localize "FANG.Dialogs.ShowFactionLegend"}}</label>
+                            <input type="checkbox" id="cbShowFactionLegend">
+                        </div>
                     </div>
                 </div>
 
@@ -367,35 +371,12 @@
             </div>
         </div>
         <!-- Quest Picker Panel (In-Canvas, shown when a node has multiple quests) -->
-        <div id="fang-quest-picker" class="hidden" style="
-            position: absolute;
-            z-index: 1000;
-            min-width: 220px;
-            max-width: 300px;
-            background: var(--fang-card-bg);
-            border: 1px solid var(--fang-border-color);
-            border-radius: 6px;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.25), 0 0 10px rgba(212,175,55,0.12);
-            font-family: var(--fang-font-main);
-            overflow: hidden;
-        ">
-            <div id="fang-quest-picker-header" style="
-                padding: 9px 12px;
-                background: var(--fang-primary-red);
-                color: var(--fang-header-text);
-                border-bottom: 2px solid var(--fang-accent-gold);
-                font-size: 0.85rem;
-                font-weight: bold;
-                letter-spacing: 0.05em;
-                text-transform: uppercase;
-                display: flex;
-                align-items: center;
-                gap: 8px;
-            ">
-                <i class="fas fa-scroll" style="color: var(--fang-accent-gold);"></i>
+        <div id="fang-quest-picker" class="hidden">
+            <div id="fang-quest-picker-header">
+                <i class="fas fa-scroll"></i>
                 <span id="fang-quest-picker-title"></span>
             </div>
-            <ul id="fang-quest-picker-list" style="list-style: none; margin: 0; padding: 5px 0;"></ul>
+            <ul id="fang-quest-picker-list"></ul>
         </div>
     </main>
 </div>

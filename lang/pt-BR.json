@@ -323,7 +323,9 @@
             "BtnYes": "Sim",
             "BtnNo": "Não",
             "IdentityGMOnly": "GM only - hide completely",
-            "ActorDropGMOnly": "GM only"
+            "ActorDropGMOnly": "GM only",
+            "NoFactionsTitle": "Ainda sem facções",
+            "NoFactionsHint": "Crie uma facção e atribua personagens a ela (clique direito → Editar)."
         },
         "History": {
             "Timeline": "Chronicle",
@@ -483,7 +485,9 @@
                 "building": "Edifício",
                 "realm": "Reino",
                 "other": "Outro"
-            }
+            },
+            "NoZonesTitle": "Ainda sem locais",
+            "NoZonesHint": "Adicione um local e atribua personagens a ele (clique direito → Editar)."
         },
         "RelationshipTypes": {
             "Label": "Tipo de relação",

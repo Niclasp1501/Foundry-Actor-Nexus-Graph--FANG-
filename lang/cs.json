@@ -323,7 +323,9 @@
             "BtnYes": "Ano",
             "BtnNo": "Ne",
             "IdentityGMOnly": "GM only - hide completely",
-            "ActorDropGMOnly": "GM only"
+            "ActorDropGMOnly": "GM only",
+            "NoFactionsTitle": "Zatím žádné frakce",
+            "NoFactionsHint": "Vytvoř frakci a pak jí přiřaď postavy (pravý klik → Upravit)."
         },
         "History": {
             "Timeline": "Chronicle",
@@ -483,7 +485,9 @@
                 "building": "Budova",
                 "realm": "Říše",
                 "other": "Jiné"
-            }
+            },
+            "NoZonesTitle": "Zatím žádná místa",
+            "NoZonesHint": "Přidej místo a pak mu přiřaď postavy (pravý klik → Upravit)."
         },
         "RelationshipTypes": {
             "Label": "Typ vztahu",

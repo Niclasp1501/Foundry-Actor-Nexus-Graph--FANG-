@@ -299,6 +299,97 @@ body.role-gm .fang-app-container .tab-content.gm-only:not(.active) {
 }
 
 /* ---------------------------------------------------------------------------
+   Quest picker — floating panel when a character has more than one quest.
+   Its entire appearance used to live in a style="" block in the template.
+   --------------------------------------------------------------------------- */
+#fang-quest-picker {
+    position: absolute;
+    z-index: 1000;
+    min-width: 220px;
+    max-width: 300px;
+    background: var(--fang-card-bg);
+    border: 1px solid var(--fang-border-color);
+    border-radius: 6px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25), 0 0 10px rgba(212, 175, 55, 0.12);
+    font-family: var(--fang-font-main);
+    overflow: hidden;
+}
+
+#fang-quest-picker-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 12px;
+    background: var(--fang-primary-red);
+    color: var(--fang-header-text);
+    border-bottom: 2px solid var(--fang-accent-gold);
+    font-size: 0.85rem;
+    font-weight: bold;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+#fang-quest-picker-header i {
+    color: var(--fang-accent-gold);
+}
+
+#fang-quest-picker-list {
+    list-style: none;
+    margin: 0;
+    padding: 5px 0;
+}
+
+/* ---------------------------------------------------------------------------
+   Empty state — what a manager shows before anything exists.
+   The faction and location dialogs used to render an empty box: no list, no
+   explanation, just a void with an Add button under it. If there is nothing yet,
+   that is exactly the moment to say what the thing is for.
+   --------------------------------------------------------------------------- */
+.fang-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 6px;
+    padding: 26px 18px;
+}
+
+/* Inside a manager list, the empty state *is* the content — it fills the reserved
+   height and centres, instead of leaving a blank box with a message tacked underneath. */
+.fang-dialog #fang-factions-list.is-empty,
+.fang-dialog #fang-zones-list.is-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.fang-dialog .is-empty .fang-empty-state {
+    height: 100%;
+}
+
+.fang-empty-state i {
+    font-size: 1.7rem;
+    color: var(--fang-accent-gold);
+    opacity: 0.55;
+    margin-bottom: 2px;
+}
+
+.fang-empty-state__title {
+    margin: 0;
+    font-weight: 700;
+    color: var(--fang-text-color);
+}
+
+.fang-empty-state__hint {
+    margin: 0;
+    font-size: 0.85em;
+    line-height: 1.4;
+    opacity: 0.75;
+    max-width: 42ch;
+}
+
+/* ---------------------------------------------------------------------------
    Segmented control — for picking exactly one of N modes.
    Grouping used to be two separate buttons, which said nothing about the modes
    being mutually exclusive or which one was active. A radio group does both.
