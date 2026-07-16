@@ -153,7 +153,10 @@ class FangBackgroundConfig extends HandlebarsApplicationMixin(ApplicationV2) {
         const pickerBtn = html.querySelector('.file-picker[data-target="bgImage"]');
         if (pickerBtn) {
             pickerBtn.addEventListener("click", (e) => {
-                new FilePicker({
+                // .implementation, not the bare global: the global is deprecated since V13
+                // and gone in V15, and going through implementation lets a system swap in
+                // its own picker.
+                new foundry.applications.apps.FilePicker.implementation({
                     type: "image",
                     current: game.settings.get("fang", "canvasBackgroundImage"),
                     callback: async (path) => {
@@ -3599,7 +3602,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     event.preventDefault();
                     const button = event.currentTarget;
                     const targetInput = button.dataset.target;
-                    new FilePicker({
+                    new foundry.applications.apps.FilePicker.implementation({
                         type: "image",
                         callback: (path) => {
                             html.find(`#${targetInput}`).val(path);

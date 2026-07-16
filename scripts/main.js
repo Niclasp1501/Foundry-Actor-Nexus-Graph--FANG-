@@ -297,7 +297,8 @@ Hooks.once("init", () => {
     name: "FANG.ButtonOpen",
     hint: "FANG.KeybindingHint",
     editable: [
-      { key: "KeyG", modifiers: [KeyboardManager.MODIFIER_KEYS.SHIFT] }
+      // Namespaced path: the bare global is deprecated since V13 and disappears in V15.
+      { key: "KeyG", modifiers: [foundry.helpers.interaction.KeyboardManager.MODIFIER_KEYS.SHIFT] }
     ],
     onDown: () => {
       if (!fangApp) fangApp = new FangApplication();
