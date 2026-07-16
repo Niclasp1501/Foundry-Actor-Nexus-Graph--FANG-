@@ -23,6 +23,26 @@ Selektiver Merge der parallelen Design-Refactor- und Hotfix-Arbeit auf 14.0.19-L
 - Tag `backup/claude-refactor-2026-05-15` zeigt auf den vollen ungemergeten Stand der parallelen Linie (`14.1.3-beta.4`).
 
 ## [Unreleased]
+
+### UI-Überarbeitung (Beta)
+
+#### Changed
+- **Seitenleiste nach Aufgaben gegliedert.** Fraktion („wem gehört jemand an") und Ort („wo ist jemand") sind Geschwister und liegen jetzt zusammen im Bereich **Zugehörigkeit** — verwalten *und* gruppieren an einer Stelle. Vorher war das über drei Orte verstreut: Fraktionen als Dialog direkt aus der Leiste, „Orte verwalten" unter *Erweitert*, die Gruppieren-Knöpfe unter *Ansicht*. Die übrigen Bereiche: **Präsentation** (Spieler/Monitor, Zentrieren, Zuschauer-Kamera) und **Einstellungen** (Berechtigungen, Physik, Hintergrund, Im-/Export). „Spieler dürfen bearbeiten" stand unter Präsentation — das ist eine Berechtigung.
+- **Gruppierung ist ein Schalter statt zweier Knöpfe.** Es ist ein Modus, von dem immer genau einer gilt; zwei Knöpfe sagten weder das noch welcher gerade an war. Sie mussten zusätzlich als ihr eigener Aus-Schalter dienen und dafür ihre Beschriftung zu „Gruppierung zurücksetzen" umbauen. Mit einem eigenen Segment *Normal* entfällt der Trick. Der Hinweis, dass Positionen währenddessen gesperrt sind, steht jetzt dort, wo man die Gruppierung wählt — nicht erst, wenn ein Ziehen abgelehnt wird.
+- **Alle Dialoge auf dem aktuellen Fenster-Framework** (DialogV2 statt V1).
+
+#### Added
+- **Leere Verwaltungen erklären sich.** Fraktionen und Orte öffneten auf einem leeren Kasten mit einem „Hinzufügen"-Knopf darunter. Jetzt steht dort, wofür der Bereich da ist und was als Nächstes zu tun ist.
+
+#### Fixed
+- **FANG hätte Foundry V15 nicht überlebt.** Drei Foundry-Namen (`KeyboardManager`, `FilePicker`) wurden global angesprochen; die fallen in V15 weg. Stand bei jedem Weltstart als Warnung in der Konsole.
+- **Die alten Dialoge hätten V16 nicht überlebt.** Das V1-Fenster-Framework meldete bei jedem Öffnen „removed in Version 16".
+- **GM-Bereiche wurden alle gleichzeitig angezeigt**, übereinandergestapelt: `.gm-only` erzwang Sichtbarkeit stärker, als der Bereich sie abschalten konnte. Betraf vorher schon *Präsentation* und *Erweitert*, fiel bei zwei Bereichen nur weniger auf.
+- **Doppelklick zoomte den Graphen**, während er den Charakterbogen öffnete — die Zoom-Bibliothek bringt das von Haus aus mit.
+
+#### Removed
+- **Toter Code:** eine komplette zweite Navigation (Reiterleiste, seit Langem unsichtbar, von der Symbolleiste ersetzt) samt widersprüchlichem CSS, und der abgeschaltete Editor-Bereich — dessen Formularfelder das Modul bei *jeder* Änderung weiter befüllte, inklusive eines Durchlaufs über alle Akteure der Welt für Auswahllisten, die niemand sehen konnte. 328 Zeilen.
+
 ### Added
 - **Chronicle MVP Beta:** Added a versioned `fang.history` store for story events, automatic game-day prefill with manual override, a global day-grouped chronicle view, and a token-level chronicle view from the node context menu. Entries keep GM/private text separate from player-safe text so automation can build on the same model without exposing hidden-token secrets.
 - **Chronicle Auto Entries:** Normal graph actions now add narrative chronicle entries when tokens appear, hidden identities are revealed, and new relationships become visible. Hidden tokens use their alias and placeholder portrait for player-facing entries.
