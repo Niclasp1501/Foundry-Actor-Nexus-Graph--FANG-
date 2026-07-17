@@ -5550,25 +5550,6 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
         const targets = new Map();
 
-        // The layout has to respect the physics, or the physics wins.
-        //
-        // The collide force keeps every pair of nodes at least this far apart. Planning
-        // tighter rings than that is wishful thinking: the old formula asked six members
-        // to share an 81px ring while collide demanded 320px between any two of them —
-        // the cluster settled 4.3x wider than planned, and the area drawn around it
-        // swallowed its neighbours. The geometry is derived from that minimum — and it is
-        // the *grouping* separation, not the normal one. See _getCollideRadius: the normal
-        // 320px exists so relationship lines have room; inside a cluster there are none, so
-        // members only need to not touch. Sizing the rings for 320px there is what made
-        // three clusters unable to fit — scaling shrank them below what collide wanted, the
-        // targets ended up closer than collide allows (measured: 157px apart vs 320px
-        // demanded), and members were shoved back out, drifting ~250px and overlapping.
-        const minSeparation = this._getCollideRadius("grouping") * 2;
-
-        // Radius a ring needs so that k members sit side by side without pushing:
-        // the chord between neighbours is 2*r*sin(pi/k), and it must reach minSeparation.
-        const ringRadiusFor = (count) => count <= 1 ? 0 : minSeparation / (2 * Math.sin(Math.PI / count));
-
         // Lay the clusters out on a GRID, not a ring around the centre.
         //
         // The old orbit layout put cluster centres on a circle, which wastes the corners of
@@ -5578,9 +5559,10 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         // reported as "die Kästen überlagern sich".
         //
         // A grid tiles the canvas into one cell per group. Cells cannot overlap by
-        // construction, so as long as each cluster's ring plus its padding fits inside its
-        // cell, the drawn areas cannot overlap either — regardless of how far members
-        // drift. The ring is capped to the cell for exactly that reason.
+        // construction, and the drawn area is clamped to its cell (see the draw code), so
+        // the areas cannot overlap either — regardless of how far members drift. Members
+        // are then laid out on a sub-grid *within* the cell, not a ring, so their labels
+        // have room.
         const clusterCount = groupedEntries.length;
         const pad = Math.max(70, (game.settings.get("fang", "tokenSize") || 33) * 2.4);
         const gap = 24; // breathing room between neighbouring cells
@@ -5593,13 +5575,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const cellW = this.width / cols;
         const cellH = this.height / rows;
 
-        // Largest ring that still leaves room for the padding and the inter-cell gap.
-        const maxRingInCell = Math.max(20, Math.min(cellW, cellH) / 2 - pad - gap / 2);
-
-        // Each group's cell, so the drawing can clamp its area to it. This is the belt to
-        // the ring cap's braces: even if a member drifts to the cell edge, the drawn box
-        // stops at the cell boundary and the areas can never overlap — which lets the ring
-        // stay comfortably wide (breathing room between tokens) without risking overlap.
+        // Each group's cell, so the drawing can clamp its area to it. Even if a member
+        // drifts to the cell edge, the drawn box stops at the boundary and the areas can
+        // never overlap.
         this._groupingCells = new Map();
 
         groupedEntries.forEach(([groupId, members], clusterIndex) => {
@@ -5623,12 +5601,36 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 return;
             }
 
-            const memberRadius = Math.min(ringRadiusFor(members.length), maxRingInCell);
-            members.forEach((member, memberIndex) => {
-                const memberAngle = (Math.PI * 2) * memberIndex / members.length - Math.PI / 2;
+            // Arrange members on a GRID that fills the cell, not a ring at its centre.
+            // A ring puts everyone on one small circle — fine for two or three, but five
+            // crammed onto it and, worse, their name labels (wider than the tokens) piled
+            // on top of each other: "man kann kaum was lesen". A grid spreads members
+            // across the whole rectangular cell, so each token *and its label* gets its own
+            // patch of space.
+            //
+            // Placement uses nearly the whole cell (only a small edge margin), not the
+            // padded box: the point is to push members apart for their labels, and the
+            // drawn area is clamped to the cell anyway, so a member near the edge cannot
+            // make the box bleed into a neighbour.
+            const placeMargin = 40;
+            const usableW = Math.max(1, cellW - placeMargin * 2);
+            const usableH = Math.max(1, cellH - placeMargin * 2);
+            const n = members.length;
+            // Columns matched to the cell's shape, so the grid stays roughly square.
+            const gCols = Math.max(1, Math.min(n, Math.round(Math.sqrt(n * (usableW / usableH)))));
+            const gRows = Math.ceil(n / gCols);
+            const stepX = usableW / gCols;
+            const stepY = usableH / gRows;
+
+            members.forEach((member, i) => {
+                const gc = i % gCols;
+                const gr = Math.floor(i / gCols);
+                // Last grid row may be short; centre it.
+                const inThisRow = Math.min(gCols, n - gr * gCols);
+                const rowInset = (gCols - inThisRow) * stepX / 2;
                 targets.set(member.id, {
-                    x: clusterX + Math.cos(memberAngle) * memberRadius,
-                    y: clusterY + Math.sin(memberAngle) * memberRadius
+                    x: clusterX - usableW / 2 + rowInset + (gc + 0.5) * stepX,
+                    y: clusterY - usableH / 2 + (gr + 0.5) * stepY
                 });
             });
         });
