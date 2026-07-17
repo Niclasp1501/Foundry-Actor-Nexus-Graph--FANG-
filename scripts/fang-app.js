@@ -293,6 +293,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         this._isSyncCameraActive = false;
         this._remoteSyncing = false; // Guard to prevent feedback loops
         this._hoveredNodeId = null;
+        this._hoveredFactionId = null;   // legend row under the pointer, see _factionAtLegendPoint
+        this._legendHitAreas = [];
         this._hoverLoreTooltipEnabled = false;
         this._bgImageLoaded = new Map();
         this._searchQuery = "";
@@ -4987,10 +4989,12 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     _onMouseLeave() {
-        if (this._hoveredNodeId !== null) {
-            this._hoveredNodeId = null;
-            this.ticked();
-        }
+        // Both hovers have to let go here, or a faction stays highlighted after the pointer
+        // has left the canvas entirely.
+        const warGehovert = this._hoveredNodeId !== null || this._hoveredFactionId !== null;
+        this._hoveredNodeId = null;
+        this._hoveredFactionId = null;
+        if (warGehovert) this.ticked();
     }
 
     _showEdgeContextMenu(linkIndex, mouseX, mouseY) {
@@ -5504,10 +5508,30 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         // group borders (measured ~20% on real data once forceCenter was out of the way).
         const clusterCount = groupedEntries.length;
         const neededBetweenCentres = widestRing * 2 * 1.3 + minSeparation;
-        const orbitRadius = Math.max(
+        const idealOrbit = Math.max(
             180,
             neededBetweenCentres / (2 * Math.sin(Math.PI / clusterCount))
         );
+
+        // ...and one level up again: it all has to fit on the canvas.
+        //
+        // Everything above computes what the physics *wants*. Nothing asked whether there
+        // is room for it. On a 1322x912 canvas, three factions of three wanted rings
+        // reaching 647px from the centre while only 456px exist vertically — so targets
+        // landed outside the canvas (measured: y = -166), every member was dragged towards
+        // a point off-screen, they piled up against the edge, and the areas drawn around
+        // them overlapped. The view then claimed groups that share no member at all.
+        //
+        // If it does not fit, something has to give. Scaling everything down keeps the
+        // arrangement — clusters stay separate, just tighter — whereas off-canvas targets
+        // destroy it completely. The clusters then sit closer than collide would like and
+        // it pushes back a little; that is a much smaller lie than a group drawn across
+        // half the graph.
+        const margin = 30;
+        const verfuegbar = Math.min(this.width, this.height) / 2 - margin;
+        const gewuenscht = idealOrbit + widestRing;
+        const skalierung = gewuenscht > verfuegbar ? Math.max(0.35, verfuegbar / gewuenscht) : 1;
+        const orbitRadius = idealOrbit * skalierung;
 
         groupedEntries.forEach(([, members], clusterIndex) => {
             const clusterAngle = ((Math.PI * 2) * clusterIndex / clusterCount) - (Math.PI / 2);
@@ -5519,7 +5543,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 return;
             }
 
-            const memberRadius = ringRadii[clusterIndex];
+            const memberRadius = ringRadii[clusterIndex] * skalierung;
             members.forEach((member, memberIndex) => {
                 const memberAngle = (Math.PI * 2) * memberIndex / members.length;
                 targets.set(member.id, {
@@ -6009,46 +6033,60 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         this.context.scale(transform.k, transform.k);
         const nodeRadius = game.settings.get("fang", "tokenSize") || 33;
 
-        // --- Draw Affiliation Zones behind links and nodes ---
-        // Location areas are only drawn in the location view.
+        // --- Draw grouping areas behind links and nodes ---
+        // An area is only drawn in the matching grouping view, for both factions and
+        // locations.
         //
         // The area is a box around wherever the members currently sit — but the physics
-        // does not know about locations, it spreads people by links and repulsion. With
+        // does not know about groups, it spreads people by links and repulsion. With
         // scattered members two boxes overlap even when they share no member at all: one
-        // person in the corner stretches their location across the whole canvas. The box
+        // person in the corner stretches their group across the whole canvas. The box
         // would claim an order that does not exist outside the view.
-        // Inside the location view the members are pulled together, so the area around
-        // them is honest — and separate locations no longer overlap.
-        const visibleZones = this._groupingMode !== "zone" ? [] : (this.graphData.zones || [])
-            .map(z => this._normalizeZone(z))
-            .filter(z => game.user?.isGM || z.playerVisible !== false);
-        visibleZones.forEach(zone => {
-            const members = visibleNodes.filter(node => node.zoneId === zone.id);
-            if (!members.length) return;
-            const points = members.map(node => renderPos[node.id]).filter(Boolean);
+        // Inside the grouping view the members are pulled together, so the area around
+        // them is honest — and separate groups no longer overlap.
+        const gruppenBereiche = this._groupingMode === "zone"
+            ? (this.graphData.zones || [])
+                .map(z => this._normalizeZone(z))
+                .filter(z => game.user?.isGM || z.playerVisible !== false)
+                .map(z => ({ gruppe: z, mitglieder: visibleNodes.filter(n => n.zoneId === z.id) }))
+            : this._groupingMode === "faction"
+                ? (this.graphData.factions || [])
+                    .map(f => this._normalizeFaction(f))
+                    .filter(f => this._isFactionVisibleToCurrentUser(f))
+                    .map(f => ({ gruppe: f, mitglieder: visibleNodes.filter(n => n.factionId === f.id) }))
+                : [];
+
+        gruppenBereiche.forEach(({ gruppe, mitglieder }) => {
+            if (!mitglieder.length) return;
+            const points = mitglieder.map(node => renderPos[node.id]).filter(Boolean);
             if (!points.length) return;
             const pad = Math.max(70, nodeRadius * 2.4);
             const minX = Math.min(...points.map(p => p.x)) - pad;
             const maxX = Math.max(...points.map(p => p.x)) + pad;
             const minY = Math.min(...points.map(p => p.y)) - pad;
             const maxY = Math.max(...points.map(p => p.y)) + pad;
+            const farbe = gruppe.color || "#d4af37";
+            // Hovering a legend row lifts that faction's box out of the rest.
+            const gedimmt = this._hoveredFactionId && this._hoveredFactionId !== gruppe.id;
+            const betont = this._hoveredFactionId === gruppe.id;
+
             this.context.save();
-            this.context.globalAlpha = 0.16;
-            this.context.fillStyle = zone.color || "#d4af37";
-            this.context.strokeStyle = zone.color || "#d4af37";
-            this.context.lineWidth = 2;
+            this.context.globalAlpha = gedimmt ? 0.05 : (betont ? 0.26 : 0.16);
+            this.context.fillStyle = farbe;
+            this.context.strokeStyle = farbe;
+            this.context.lineWidth = betont ? 3 : 2;
             this.context.setLineDash([10, 8]);
             this.context.beginPath();
             this.context.roundRect(minX, minY, maxX - minX, maxY - minY, 18);
             this.context.fill();
-            this.context.globalAlpha = 0.55;
+            this.context.globalAlpha = gedimmt ? 0.18 : (betont ? 0.95 : 0.55);
             this.context.stroke();
             this.context.setLineDash([]);
             this.context.font = `bold ${Math.max(13, nodeRadius / 2.4)}px 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif`;
-            this.context.fillStyle = zone.color || "#d4af37";
+            this.context.fillStyle = farbe;
             this.context.textAlign = "left";
             this.context.textBaseline = "top";
-            this.context.fillText(zone.name || "", minX + 14, minY + 10);
+            this.context.fillText(gruppe.name || "", minX + 14, minY + 10);
             this.context.restore();
         });
 
@@ -6089,15 +6127,29 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 this.context.save();
                 this.context.setLineDash([8, 8]);
                 this.context.strokeStyle = faction.color || "#ffffff";
+                this.context.lineCap = "round";
 
-                // Dim faction lines if hover is active and none of the members are hovered/connected.
-                // Kept as a factor: this used to assign globalAlpha directly and was then
-                // overwritten unconditionally by the per-line alpha below, so hovering never
-                // actually dimmed anything.
+                // How loud should this faction be?
+                //  - hovering its legend row: this one loud, the others almost gone. That is
+                //    the point of the legend hover — pick one faction out of the tangle.
+                //  - hovering a character: factions it touches stay up, the rest step back.
+                //  - otherwise: normal.
+                const isolierteFraktion = this._hoveredFactionId;
                 let hoverFactor = 1;
-                if (hoveredNodeId) {
+                if (isolierteFraktion) {
+                    hoverFactor = isolierteFraktion === faction.id ? 1 : 0.12;
+                } else if (hoveredNodeId) {
                     const hasRelevantMember = members.some(m => connectedNodeIds.has(m.id));
-                    hoverFactor = hasRelevantMember ? 0.8 : 0.2;
+                    hoverFactor = hasRelevantMember ? 0.9 : 0.15;
+                }
+                const hervorgehoben = isolierteFraktion === faction.id;
+
+                // A coloured halo under the line lifts it off the background and out from
+                // under the relationship lines. Only for the picked faction — on all of them
+                // at once it would be the same mush the lines already were.
+                if (hervorgehoben) {
+                    this.context.shadowColor = faction.color || "#ffffff";
+                    this.context.shadowBlur = 14;
                 }
 
                 for (let i = 0; i < sortedMembers.length; i++) {
@@ -6114,15 +6166,14 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
                     if (hasRegularLink) {
                         // Adaptive glow: a wider trail behind the existing relationship line.
-                        // This is the common case — faction members tend to be related — and at
-                        // the old 0.2 it vanished completely under the relationship line, which
-                        // is why the faction lines "were not shown" at all.
-                        this.context.lineWidth = 9;
-                        this.context.globalAlpha = 0.45 * hoverFactor;
+                        // This is the common case — faction members tend to be related — so it
+                        // has to hold its own under a solid line drawn on top of it.
+                        this.context.lineWidth = hervorgehoben ? 16 : 11;
+                        this.context.globalAlpha = (hervorgehoben ? 0.75 : 0.5) * hoverFactor;
                     } else {
-                        // Sharp default: thin dashed line, on its own against the background.
-                        this.context.lineWidth = 2.5;
-                        this.context.globalAlpha = 0.85 * hoverFactor;
+                        // Sharp default: dashed line, on its own against the background.
+                        this.context.lineWidth = hervorgehoben ? 4.5 : 3;
+                        this.context.globalAlpha = (hervorgehoben ? 1 : 0.9) * hoverFactor;
                     }
 
                     this.context.beginPath();
@@ -6747,8 +6798,34 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             this.context.textBaseline = "middle";
             this.context.font = "bold 13px 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
 
+            // Remember where each entry sits so the hover handler can hit-test it. The
+            // legend is drawn after restore(), i.e. in screen coordinates, so these are
+            // directly comparable to mouse position — no transform maths needed.
+            this._legendHitAreas = [];
+
             visibleLegendFactions.forEach((f, i) => {
                 const itemY = startY + padding + (i * itemHeight) + (itemHeight / 2);
+                this._legendHitAreas.push({
+                    id: f.id,
+                    x: startX, y: itemY - itemHeight / 2,
+                    w: legendWidth, h: itemHeight
+                });
+
+                const istGehovert = this._hoveredFactionId === f.id;
+                if (istGehovert) {
+                    // Mark the row so it is obvious which faction the graph is highlighting.
+                    this.context.save();
+                    this.context.beginPath();
+                    this.context.roundRect(startX + 3, itemY - itemHeight / 2 + 2, legendWidth - 6, itemHeight - 4, 5);
+                    this.context.fillStyle = f.color || "#d4af37";
+                    this.context.globalAlpha = 0.28;
+                    this.context.fill();
+                    this.context.globalAlpha = 0.9;
+                    this.context.lineWidth = 1;
+                    this.context.strokeStyle = f.color || "#d4af37";
+                    this.context.stroke();
+                    this.context.restore();
+                }
 
                 // Draw Icon or Color Circle
                 if (f.icon) {
@@ -6791,7 +6868,21 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             });
 
             this.context.restore();
+        } else {
+            this._legendHitAreas = [];
         }
+    }
+
+    /**
+     * Which legend row is the pointer over? Screen coordinates, see _legendHitAreas.
+     * @returns {string|null} faction id, or null
+     */
+    _factionAtLegendPoint(screenX, screenY) {
+        for (const area of this._legendHitAreas ?? []) {
+            if (screenX >= area.x && screenX <= area.x + area.w &&
+                screenY >= area.y && screenY <= area.y + area.h) return area.id;
+        }
+        return null;
     }
 
     dragSubject(event) {
@@ -7014,6 +7105,18 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const bounds = this.canvas.getBoundingClientRect();
         const mouseX = event.clientX - bounds.left;
         const mouseY = event.clientY - bounds.top;
+
+        // Legend first: it sits on top of the canvas in screen space, so a pointer over it
+        // is over the legend, not over whatever node happens to be underneath.
+        const legendFaction = this._factionAtLegendPoint(mouseX, mouseY);
+        if (legendFaction !== this._hoveredFactionId) {
+            this._hoveredFactionId = legendFaction;
+            this.ticked();
+        }
+        if (legendFaction) {
+            this.canvas.style.cursor = "pointer";
+            return;
+        }
 
         const x = this.transform.invertX(mouseX);
         const y = this.transform.invertY(mouseY);
