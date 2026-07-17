@@ -135,7 +135,8 @@
             "GroupByZoneShort": "Ort",
             "FactionsHint": "Fraktionen werden als Linien zwischen den Mitgliedern gezeigt und als farbiger Ring am Token.",
             "SectionPermissions": "Berechtigungen",
-            "ShowFactionLines": "Fraktionsanzeige einblenden"
+            "ShowFactionLines": "Fraktionsanzeige einblenden",
+            "PinnedHint": "Position festgehalten. Rechtsklick → Position freigeben."
         },
         "Journal": {
             "FolderName": "FANG - Nicht löschen",

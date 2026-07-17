@@ -135,7 +135,8 @@
             "GroupByZoneShort": "Miejsce",
             "FactionsHint": "Frakcje pokazywane są jako linie między członkami i kolorowy pierścień na tokenie.",
             "SectionPermissions": "Uprawnienia",
-            "ShowFactionLines": "Pokaż frakcje"
+            "ShowFactionLines": "Pokaż frakcje",
+            "PinnedHint": "Pozycja przypięta. Prawy przycisk → Zwolnij pozycję."
         },
         "Journal": {
             "FolderName": "FANG - Nie usuwaj",

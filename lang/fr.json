@@ -135,7 +135,8 @@
             "GroupByZoneShort": "Lieu",
             "FactionsHint": "Les factions apparaissent en lignes entre les membres et en anneau coloré sur le pion.",
             "SectionPermissions": "Autorisations",
-            "ShowFactionLines": "Afficher les factions"
+            "ShowFactionLines": "Afficher les factions",
+            "PinnedHint": "Position figée. Clic droit → Libérer la position."
         },
         "Journal": {
             "FolderName": "FANG - Ne pas supprimer",

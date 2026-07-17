@@ -335,6 +335,20 @@ body.role-gm .fang-app-container .tab-content.gm-only:not(.active) {
     border-color: var(--fang-accent-gold);
 }
 
+/* The pin note inside a token tooltip: a footnote to the lore, not a headline. */
+.fang-tooltip-pin {
+    margin: 6px 0 0;
+    padding-top: 6px;
+    border-top: 1px solid rgba(var(--fang-accent-gold-rgb), 0.3);
+    font-size: 0.85em;
+    opacity: 0.85;
+}
+
+.fang-tooltip-pin i {
+    color: var(--fang-accent-gold);
+    margin-right: 5px;
+}
+
 /* ---------------------------------------------------------------------------
    Quest picker — floating panel when a character has more than one quest.
    Its entire appearance used to live in a style="" block in the template.

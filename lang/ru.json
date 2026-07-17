@@ -135,7 +135,8 @@
             "GroupByZoneShort": "Место",
             "FactionsHint": "Фракции показаны линиями между участниками и цветным кольцом на токене.",
             "SectionPermissions": "Права",
-            "ShowFactionLines": "Показать фракции"
+            "ShowFactionLines": "Показать фракции",
+            "PinnedHint": "Позиция закреплена. Правый клик → Освободить позицию."
         },
         "Journal": {
             "FolderName": "FANG - Не удалять",

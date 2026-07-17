@@ -135,7 +135,8 @@
             "GroupByZoneShort": "Lugar",
             "FactionsHint": "Las facciones se muestran como líneas entre miembros y como anillo de color en la ficha.",
             "SectionPermissions": "Permisos",
-            "ShowFactionLines": "Mostrar facciones"
+            "ShowFactionLines": "Mostrar facciones",
+            "PinnedHint": "Posición fijada. Clic derecho → Liberar posición."
         },
         "Journal": {
             "FolderName": "FANG - No Borrar",

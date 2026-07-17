@@ -135,7 +135,8 @@
             "GroupByZoneShort": "Místo",
             "FactionsHint": "Frakce se zobrazují jako čáry mezi členy a barevný prstenec na tokenu.",
             "SectionPermissions": "Oprávnění",
-            "ShowFactionLines": "Zobrazit frakce"
+            "ShowFactionLines": "Zobrazit frakce",
+            "PinnedHint": "Pozice ukotvena. Pravý klik → Uvolnit pozici."
         },
         "Journal": {
             "FolderName": "FANG - Nesmazat",

@@ -135,7 +135,8 @@
             "GroupByZoneShort": "Locatie",
             "FactionsHint": "Facties verschijnen als lijnen tussen leden en als gekleurde ring op de token.",
             "SectionPermissions": "Rechten",
-            "ShowFactionLines": "Facties tonen"
+            "ShowFactionLines": "Facties tonen",
+            "PinnedHint": "Positie vastgezet. Rechtsklik → Positie vrijgeven."
         },
         "Journal": {
             "FolderName": "FANG - Niet Verwijderen",

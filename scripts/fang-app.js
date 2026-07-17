@@ -6540,24 +6540,54 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
             // --- Pin marker ---
             // A pinned character sits still while everything else drifts. Without a mark
-            // that reads as a bug rather than a decision. Small pin at the upper right,
-            // outside the faction ring, GM-side only — players never place anyone.
+            // that reads as a bug rather than a decision. Upper right, outside the faction
+            // ring, GM-side only — players never place anyone.
+            //
+            // Drawn as a thumbtack seen from the side, not a dot: a dot says "there is
+            // something here" and nothing more — the first person to see one asked what it
+            // meant, which is the whole answer on whether a dot was enough. Drawn rather
+            // than typed as an icon glyph, because that would depend on the icon font being
+            // loaded and canvas-ready, which is not guaranteed.
             if (node.pinned && !isHidden && game.user.isGM) {
                 const px = pos.x + radius * 0.72, py = pos.y - radius * 0.72;
+                const gold = "rgba(212, 175, 55, 0.95)";
                 this.context.save();
+
+                // Dark disc so the tack reads on any portrait.
                 this.context.beginPath();
-                this.context.arc(px, py, 7, 0, Math.PI * 2);
-                this.context.fillStyle = "rgba(24, 28, 38, 0.9)";
+                this.context.arc(px, py, 8, 0, Math.PI * 2);
+                this.context.fillStyle = "rgba(24, 28, 38, 0.92)";
                 this.context.fill();
-                this.context.lineWidth = 1.5;
-                this.context.strokeStyle = "rgba(212, 175, 55, 0.9)";
+                this.context.lineWidth = 1.2;
+                this.context.strokeStyle = "rgba(212, 175, 55, 0.55)";
                 this.context.stroke();
-                // Drawn, not typed: a Font Awesome glyph would depend on the icon font
-                // being loaded and canvas-ready, which is not guaranteed.
+
+                this.context.translate(px, py);
+                this.context.rotate(-Math.PI / 8);   // slight tilt, like a real tack
+                this.context.strokeStyle = gold;
+                this.context.fillStyle = gold;
+                this.context.lineCap = "round";
+
+                // Head (the flat disc you press)
                 this.context.beginPath();
-                this.context.arc(px, py, 2.4, 0, Math.PI * 2);
-                this.context.fillStyle = "rgba(212, 175, 55, 0.95)";
+                this.context.lineWidth = 2.6;
+                this.context.moveTo(-3.2, -3.4);
+                this.context.lineTo(3.2, -3.4);
+                this.context.stroke();
+                // Shaft
+                this.context.beginPath();
+                this.context.lineWidth = 1.6;
+                this.context.moveTo(0, -3.4);
+                this.context.lineTo(0, 1.2);
+                this.context.stroke();
+                // Point
+                this.context.beginPath();
+                this.context.moveTo(-1.5, 1.2);
+                this.context.lineTo(1.5, 1.2);
+                this.context.lineTo(0, 4.2);
+                this.context.closePath();
                 this.context.fill();
+
                 this.context.restore();
             }
 
@@ -7006,11 +7036,22 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const tooltip = this.element.querySelector("#fang-tooltip");
         if (!tooltip) return;
 
-        if (!this._hoverLoreTooltipEnabled) {
+        // _hoverLoreTooltipEnabled is initialised to false and never set to true anywhere —
+        // hover lore was switched off long ago and reading lore moved to the context menu
+        // (right-click → Info). The tooltip machinery below is therefore dormant, but it is
+        // still the only place that can explain the pin marker, so the pin note is allowed
+        // through while lore stays off.
+        const nurPinHinweis = !this._hoverLoreTooltipEnabled;
+        if (nurPinHinweis && !(hoveredNode?.pinned && game.user.isGM)) {
             if (this._hoverTimeout) {
                 clearTimeout(this._hoverTimeout);
                 this._hoverTimeout = null;
             }
+            // Track who we are over even when we have nothing to show. The logic below only
+            // starts its timer when the hovered node *changes*, so leaving this stale means
+            // moving from a node we skipped onto one we want to show reads as "no change"
+            // and never fires.
+            this._hoveredNodeId = hoveredNode ? hoveredNode.id : null;
             this._tooltipVisibleForNode = null;
             tooltip.classList.add("hidden");
             this.canvas.style.cursor = hoveredNode ? "pointer" : "grab";
@@ -7096,8 +7137,11 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 this.canvas.style.cursor = overLink ? "pointer" : "grab";
             }
 
-            // If we are now hovering over a node with lore, start the timer
-            if (hoveredNode && (hoveredNode.lore || hoveredNode.playerLorePageId)) {
+            // Start the timer if there is anything to say: lore, or — for the GM — the fact
+            // that this character is pinned. Without the pin case a pinned character with no
+            // lore would show the marker and never explain it.
+            const hatPinHinweis = hoveredNode?.pinned && game.user.isGM;
+            if (hoveredNode && (hoveredNode.lore || hoveredNode.playerLorePageId || hatPinHinweis)) {
                 // Protection: Don't show lore tooltip to players for hidden or
                 // GM-only tokens. _canUserSeeNode already filters gmOnly nodes from
                 // the render, but a stale hover reference could still slip through —
@@ -7109,7 +7153,12 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     const currentNodeId = hoveredNode.id;
                     let tooltipHtml = "";
 
-                    if (hoveredNode.playerLorePageId) {
+                    // Lore only when lore tooltips are actually on — otherwise this tooltip
+                    // exists solely to explain the pin, and must not leak lore that the
+                    // switch says to keep out of hover.
+                    if (nurPinHinweis) {
+                        // no lore
+                    } else if (hoveredNode.playerLorePageId) {
                         try {
                             const entry = await this.getJournalEntry();
                             if (entry) {
@@ -7130,6 +7179,14 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     }
 
                     if (this._hoveredNodeId !== currentNodeId) return;
+
+                    // Say what the pin means, in words. The marker alone only tells you
+                    // that *something* is true about this character — the first person to
+                    // see one asked what it was.
+                    if (hoveredNode.pinned && game.user.isGM) {
+                        tooltipHtml += `<p class="fang-tooltip-pin"><i class="fas fa-thumbtack"></i> ${
+                            this._localize("FANG.UI.PinnedHint", "Position held. Right-click → Release position.")}</p>`;
+                    }
 
                     this._tooltipVisibleForNode = currentNodeId;
 

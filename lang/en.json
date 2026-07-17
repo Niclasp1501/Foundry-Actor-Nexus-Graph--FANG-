@@ -135,7 +135,8 @@
             "GroupByZoneShort": "Location",
             "FactionsHint": "Factions are shown as lines between members, and as a coloured ring on the token.",
             "SectionPermissions": "Permissions",
-            "ShowFactionLines": "Show faction display"
+            "ShowFactionLines": "Show faction display",
+            "PinnedHint": "Position held. Right-click → Release position."
         },
         "Journal": {
             "FolderName": "FANG - Do Not Delete",

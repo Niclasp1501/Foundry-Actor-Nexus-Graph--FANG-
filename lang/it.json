@@ -135,7 +135,8 @@
             "GroupByZoneShort": "Luogo",
             "FactionsHint": "Le fazioni sono mostrate come linee tra i membri e come anello colorato sul token.",
             "SectionPermissions": "Permessi",
-            "ShowFactionLines": "Mostra fazioni"
+            "ShowFactionLines": "Mostra fazioni",
+            "PinnedHint": "Posizione bloccata. Clic destro → Rilascia posizione."
         },
         "Journal": {
             "FolderName": "FANG - Non Eliminare",
