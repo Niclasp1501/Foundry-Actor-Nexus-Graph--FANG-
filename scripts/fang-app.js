@@ -5424,9 +5424,60 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         // Grouping needs a firm hand: relationships run across groups and would otherwise
         // drag members out of their cluster far enough to blow up the area drawn around
         // it. Measured on real data — at 0.11 members ended up ~680px off their target.
-        if (this._groupingMode !== "none" && this._clusterTargets?.has(node?.id)) return 0.5;
+        // Paired with the weakened link force during grouping (see _applyLinkStrength),
+        // 0.9 pins members close enough to their cell that the areas stop overlapping
+        // (measured: 57px drift, 0 overlaps, down from 214px / 2 overlaps).
+        if (this._groupingMode !== "none" && this._clusterTargets?.has(node?.id)) return 0.9;
         if (node?.isCenter) return 0.4;
         return 0.025;
+    }
+
+    /**
+     * Set the link force strength for the current mode.
+     *
+     * Normal view: d3's default, 1/min(degree) — well-connected nodes pull less so the
+     * layout does not collapse. Grouping view: almost off. The cluster forces decide the
+     * layout there; leaving the links at full strength is what dragged members across cell
+     * boundaries and made the group areas overlap. Reducing them is what took the drift
+     * from 214px to 57px and the overlaps from 2 to 0.
+     */
+    _applyLinkStrength() {
+        const link = this.simulation?.force("link");
+        if (!link) return;
+        const endpointId = (v) => (typeof v === "object" ? v?.id : v);
+        const degree = new Map();
+        for (const l of link.links()) {
+            const s = endpointId(l.source), t = endpointId(l.target);
+            degree.set(s, (degree.get(s) || 0) + 1);
+            degree.set(t, (degree.get(t) || 0) + 1);
+        }
+        const grouping = this._groupingMode !== "none";
+        link.strength((l) => {
+            if (grouping) return 0.06;
+            const s = endpointId(l.source), t = endpointId(l.target);
+            return 1 / Math.max(1, Math.min(degree.get(s) || 1, degree.get(t) || 1));
+        });
+    }
+
+    /**
+     * How far apart the collide force holds any two tokens.
+     *
+     * Normal view: tokenSize + 120. The big gap is there so the relationship lines
+     * between tokens have room to be read.
+     *
+     * Grouping view: much tighter. There are no relationship lines *inside* a cluster to
+     * make room for — members only need to not visually overlap. Keeping the normal 320px
+     * here is what stopped three clusters from fitting: the rings could not be packed onto
+     * the canvas, so they were scaled down below what collide would allow, and collide then
+     * shoved every member back out (measured drift ~250px, all three areas overlapping).
+     * A snug radius lets each cluster pack into a tight ring that actually fits.
+     *
+     * @param {"normal"|"grouping"} [context]  defaults to the current grouping mode
+     * @returns {number} collide radius in px
+     */
+    _getCollideRadius(context = this._groupingMode !== "none" ? "grouping" : "normal") {
+        const tokenSize = game.settings.get("fang", "tokenSize");
+        return context === "grouping" ? tokenSize + 20 : tokenSize + 120;
     }
 
     _applyAxisForces() {
@@ -5434,6 +5485,16 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         this.simulation
             .force("x", d3.forceX(node => this._getNodeTargetX(node)).strength(node => this._getNodeAxisStrength(node)))
             .force("y", d3.forceY(node => this._getNodeTargetY(node)).strength(node => this._getNodeAxisStrength(node)));
+
+        // Collide tightens up when grouping turns on and relaxes when it turns off — the
+        // clusters need to pack closer than the normal 320px, which is only there to give
+        // relationship lines room. Applied here too, not just in initSimulation, because
+        // toggling the mode does not rebuild the simulation.
+        const collide = this.simulation.force("collide");
+        if (collide) collide.radius(this._getCollideRadius());
+
+        // Same for link strength — near-off while grouping, back to normal after.
+        this._applyLinkStrength();
 
         // forceCenter used to be dropped here for grouping, because it fought the cluster
         // targets. It is gone entirely now (see initSimulation) — it fought the user just
@@ -5492,60 +5553,63 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         // tighter rings than that is wishful thinking: the old formula asked six members
         // to share an 81px ring while collide demanded 320px between any two of them —
         // the cluster settled 4.3x wider than planned, and the area drawn around it
-        // swallowed its neighbours. Now the geometry is derived from that minimum.
-        const minSeparation = (game.settings.get("fang", "tokenSize") + 120) * 2;
+        // swallowed its neighbours. The geometry is derived from that minimum — and it is
+        // the *grouping* separation, not the normal one. See _getCollideRadius: the normal
+        // 320px exists so relationship lines have room; inside a cluster there are none, so
+        // members only need to not touch. Sizing the rings for 320px there is what made
+        // three clusters unable to fit — scaling shrank them below what collide wanted, the
+        // targets ended up closer than collide allows (measured: 157px apart vs 320px
+        // demanded), and members were shoved back out, drifting ~250px and overlapping.
+        const minSeparation = this._getCollideRadius("grouping") * 2;
 
         // Radius a ring needs so that k members sit side by side without pushing:
         // the chord between neighbours is 2*r*sin(pi/k), and it must reach minSeparation.
         const ringRadiusFor = (count) => count <= 1 ? 0 : minSeparation / (2 * Math.sin(Math.PI / count));
 
-        const ringRadii = groupedEntries.map(([, members]) => ringRadiusFor(members.length));
-        const widestRing = Math.max(...ringRadii);
-
-        // Same reasoning one level up: neighbouring clusters must not touch, so their
-        // centres need room for two rings plus a gap. The 1.3 accounts for the ring
-        // settling wider than planned — links and charge still tug at members across
-        // group borders (measured ~20% on real data once forceCenter was out of the way).
+        // Lay the clusters out on a GRID, not a ring around the centre.
+        //
+        // The old orbit layout put cluster centres on a circle, which wastes the corners of
+        // a rectangular canvas and, worse, packed the centres closer than the drawn areas
+        // need: the spacing formula only counted the rings, never the padding the box adds
+        // around them, so three areas overlapped no matter how the physics settled. Twice
+        // reported as "die Kästen überlagern sich".
+        //
+        // A grid tiles the canvas into one cell per group. Cells cannot overlap by
+        // construction, so as long as each cluster's ring plus its padding fits inside its
+        // cell, the drawn areas cannot overlap either — regardless of how far members
+        // drift. The ring is capped to the cell for exactly that reason.
         const clusterCount = groupedEntries.length;
-        const neededBetweenCentres = widestRing * 2 * 1.3 + minSeparation;
-        const idealOrbit = Math.max(
-            180,
-            neededBetweenCentres / (2 * Math.sin(Math.PI / clusterCount))
-        );
+        const pad = Math.max(70, (game.settings.get("fang", "tokenSize") || 33) * 2.4);
+        const gap = 24; // breathing room between neighbouring cells
 
-        // ...and one level up again: it all has to fit on the canvas.
-        //
-        // Everything above computes what the physics *wants*. Nothing asked whether there
-        // is room for it. On a 1322x912 canvas, three factions of three wanted rings
-        // reaching 647px from the centre while only 456px exist vertically — so targets
-        // landed outside the canvas (measured: y = -166), every member was dragged towards
-        // a point off-screen, they piled up against the edge, and the areas drawn around
-        // them overlapped. The view then claimed groups that share no member at all.
-        //
-        // If it does not fit, something has to give. Scaling everything down keeps the
-        // arrangement — clusters stay separate, just tighter — whereas off-canvas targets
-        // destroy it completely. The clusters then sit closer than collide would like and
-        // it pushes back a little; that is a much smaller lie than a group drawn across
-        // half the graph.
-        const margin = 30;
-        const verfuegbar = Math.min(this.width, this.height) / 2 - margin;
-        const gewuenscht = idealOrbit + widestRing;
-        const skalierung = gewuenscht > verfuegbar ? Math.max(0.35, verfuegbar / gewuenscht) : 1;
-        const orbitRadius = idealOrbit * skalierung;
+        // Columns/rows chosen to match the canvas shape, so cells stay as square as the
+        // aspect ratio allows (a wide canvas gets more columns).
+        const cols = Math.max(1, Math.min(clusterCount,
+            Math.round(Math.sqrt(clusterCount * (this.width / this.height)))));
+        const rows = Math.ceil(clusterCount / cols);
+        const cellW = this.width / cols;
+        const cellH = this.height / rows;
+
+        // Largest ring that still leaves room for the padding and the inter-cell gap.
+        const maxRingInCell = Math.max(20, Math.min(cellW, cellH) / 2 - pad - gap / 2);
 
         groupedEntries.forEach(([, members], clusterIndex) => {
-            const clusterAngle = ((Math.PI * 2) * clusterIndex / clusterCount) - (Math.PI / 2);
-            const clusterX = (this.width / 2) + Math.cos(clusterAngle) * orbitRadius;
-            const clusterY = (this.height / 2) + Math.sin(clusterAngle) * orbitRadius;
+            const col = clusterIndex % cols;
+            const row = Math.floor(clusterIndex / cols);
+            // Last row may be short; centre its cells across the width.
+            const itemsInRow = Math.min(cols, clusterCount - row * cols);
+            const rowOffset = (cols - itemsInRow) * cellW / 2;
+            const clusterX = rowOffset + (col + 0.5) * cellW;
+            const clusterY = (row + 0.5) * cellH;
 
             if (members.length === 1) {
                 targets.set(members[0].id, { x: clusterX, y: clusterY });
                 return;
             }
 
-            const memberRadius = ringRadii[clusterIndex] * skalierung;
+            const memberRadius = Math.min(ringRadiusFor(members.length), maxRingInCell);
             members.forEach((member, memberIndex) => {
-                const memberAngle = (Math.PI * 2) * memberIndex / members.length;
+                const memberAngle = (Math.PI * 2) * memberIndex / members.length - Math.PI / 2;
                 targets.set(member.id, {
                     x: clusterX + Math.cos(memberAngle) * memberRadius,
                     y: clusterY + Math.sin(memberAngle) * memberRadius
@@ -5793,8 +5857,10 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         // anything that woke the simulation made the whole layout lurch.
         // Deriving one from the other keeps them consistent at any token size.
         const tokenSize = game.settings.get("fang", "tokenSize");
-        const collideRadius = tokenSize + 120;
-        const linkDistance = Math.max(tokenSize * 4 + 140, collideRadius * 2 + 20);
+        const collideRadius = this._getCollideRadius();
+        // Link distance follows the *normal* collide radius, not the current one — links
+        // only exist in the normal view, and this keeps the two consistent there.
+        const linkDistance = Math.max(tokenSize * 4 + 140, (tokenSize + 120) * 2 + 20);
 
         if (this.simulation) this.simulation.stop();
         // No forceCenter on purpose. It is not a force in the usual sense: it hard-shifts
@@ -5813,6 +5879,10 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             .force("collide", d3.forceCollide().radius(collideRadius))
             .force("link-avoidance", this._createLinkRepulsionForce())
             .on("tick", this.ticked.bind(this));
+
+        // Link strength depends on the mode — full when showing relationships, almost off
+        // while grouping so the cluster forces can win.
+        this._applyLinkStrength();
 
         // A fresh forceSimulation starts at full heat (alpha 1) and spends ~300 ticks
         // rearranging everything. That is right the first time, but this method also runs
