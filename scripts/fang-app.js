@@ -5477,7 +5477,10 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
      */
     _getCollideRadius(context = this._groupingMode !== "none" ? "grouping" : "normal") {
         const tokenSize = game.settings.get("fang", "tokenSize");
-        return context === "grouping" ? tokenSize + 20 : tokenSize + 120;
+        // +45, not +20: at +20 the members packed shoulder to shoulder (106px apart) and it
+        // read as crowded. +45 gives ~150px between them — room to breathe — and still fits
+        // the cells. Not higher: past ~+70 the rings grow enough that the areas touch again.
+        return context === "grouping" ? tokenSize + 45 : tokenSize + 120;
     }
 
     _applyAxisForces() {
@@ -5593,7 +5596,13 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         // Largest ring that still leaves room for the padding and the inter-cell gap.
         const maxRingInCell = Math.max(20, Math.min(cellW, cellH) / 2 - pad - gap / 2);
 
-        groupedEntries.forEach(([, members], clusterIndex) => {
+        // Each group's cell, so the drawing can clamp its area to it. This is the belt to
+        // the ring cap's braces: even if a member drifts to the cell edge, the drawn box
+        // stops at the cell boundary and the areas can never overlap — which lets the ring
+        // stay comfortably wide (breathing room between tokens) without risking overlap.
+        this._groupingCells = new Map();
+
+        groupedEntries.forEach(([groupId, members], clusterIndex) => {
             const col = clusterIndex % cols;
             const row = Math.floor(clusterIndex / cols);
             // Last row may be short; centre its cells across the width.
@@ -5601,6 +5610,13 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             const rowOffset = (cols - itemsInRow) * cellW / 2;
             const clusterX = rowOffset + (col + 0.5) * cellW;
             const clusterY = (row + 0.5) * cellH;
+
+            this._groupingCells.set(groupId, {
+                x0: clusterX - cellW / 2 + gap / 2,
+                x1: clusterX + cellW / 2 - gap / 2,
+                y0: clusterY - cellH / 2 + gap / 2,
+                y1: clusterY + cellH / 2 - gap / 2
+            });
 
             if (members.length === 1) {
                 targets.set(members[0].id, { x: clusterX, y: clusterY });
@@ -6131,10 +6147,21 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             const points = mitglieder.map(node => renderPos[node.id]).filter(Boolean);
             if (!points.length) return;
             const pad = Math.max(70, nodeRadius * 2.4);
-            const minX = Math.min(...points.map(p => p.x)) - pad;
-            const maxX = Math.max(...points.map(p => p.x)) + pad;
-            const minY = Math.min(...points.map(p => p.y)) - pad;
-            const maxY = Math.max(...points.map(p => p.y)) + pad;
+            let minX = Math.min(...points.map(p => p.x)) - pad;
+            let maxX = Math.max(...points.map(p => p.x)) + pad;
+            let minY = Math.min(...points.map(p => p.y)) - pad;
+            let maxY = Math.max(...points.map(p => p.y)) + pad;
+            // Clamp the box to the group's grid cell. A member can drift to the cell edge,
+            // but the box stops at the boundary — so two areas can never overlap, whatever
+            // the physics does. This is what lets the ring stay wide enough to breathe.
+            const cell = this._groupingCells?.get(gruppe.id);
+            if (cell) {
+                minX = Math.max(minX, cell.x0);
+                maxX = Math.min(maxX, cell.x1);
+                minY = Math.max(minY, cell.y0);
+                maxY = Math.min(maxY, cell.y1);
+            }
+            if (maxX <= minX || maxY <= minY) return;
             const farbe = gruppe.color || "#d4af37";
             // Hovering a legend row lifts that faction's box out of the rest.
             const gedimmt = this._hoveredFactionId && this._hoveredFactionId !== gruppe.id;
