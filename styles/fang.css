@@ -16,6 +16,14 @@
     --fang-canvas-bg: #fbf9f4;
     /* Slightly darker parchment for canvas */
 
+    /* The same two accents as bare RGB components, so translucent tints can be written
+       as rgba(var(--fang-primary-red-rgb), 0.2) instead of hard-coding the colour again.
+       Without these, every rgba() tint silently stays D&D red/gold when a theme swaps the
+       accents, which is why the cyberpunk theme needed ~90 override rules to repaint what
+       should have followed along by itself. Keep in sync with the accents above. */
+    --fang-primary-red-rgb: 139, 0, 0;
+    --fang-accent-gold-rgb: 212, 175, 55;
+
     --fang-font-main: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     --fang-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
     --fang-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -76,6 +84,8 @@ body.fang-theme-cyberpunk {
     --fang-border-color: #1f3a56;
     --fang-primary-red: #ff2e88;
     --fang-accent-gold: #33d9ff;
+    --fang-primary-red-rgb: 255, 46, 136;
+    --fang-accent-gold-rgb: 51, 217, 255;
     --fang-header-text: #e8fbff;
     --fang-canvas-bg: #040911;
     --fang-font-main: "Rajdhani", "Trebuchet MS", "Segoe UI", sans-serif;
@@ -89,6 +99,8 @@ body.fang-theme-cyberpunk {
     --fang-border-color: #1f3a56;
     --fang-primary-red: #ff2e88;
     --fang-accent-gold: #33d9ff;
+    --fang-primary-red-rgb: 255, 46, 136;
+    --fang-accent-gold-rgb: 51, 217, 255;
     --fang-header-text: #e8fbff;
     --fang-canvas-bg: #040911;
     --fang-font-main: "Rajdhani", "Trebuchet MS", "Segoe UI", sans-serif;
@@ -227,6 +239,31 @@ body.role-gm .fang-app-container .tab-content.gm-only:not(.active) {
 }
 
 /* ---------------------------------------------------------------------------
+   Form controls follow the theme.
+
+   Foundry paints its own checkboxes (appearance: none), so accent-color alone does
+   nothing — the tick came out in Foundry's orange (--checkbox-checked-color: #ee9b3a)
+   no matter which FANG theme was on, which looked plain wrong next to cyan cyberpunk.
+   Setting Foundry's own variable is the polite way in: it keeps FANG out of the
+   checkbox's internals and keeps working if that markup changes. accent-color stays
+   for range sliders and any control Foundry leaves native.
+   --------------------------------------------------------------------------- */
+/* Set on the input itself, not on a container: Foundry declares this variable directly
+   on input[type="checkbox"], so a value inherited from an ancestor never reaches it. */
+.fang-app-container input[type="checkbox"],
+.fang-app-container input[type="radio"],
+.fang-dialog input[type="checkbox"],
+.fang-dialog input[type="radio"] {
+    --checkbox-checked-color: var(--fang-primary-red);
+    accent-color: var(--fang-primary-red);
+}
+
+.fang-app-container input[type="range"],
+.fang-dialog input[type="range"] {
+    accent-color: var(--fang-primary-red);
+}
+
+/* ---------------------------------------------------------------------------
    Sidebar building blocks
    These replace the inline styles that were copy-pasted onto every toggle row,
    hint paragraph and full-width button. One definition, one place to change.
@@ -310,7 +347,7 @@ body.role-gm .fang-app-container .tab-content.gm-only:not(.active) {
     background: var(--fang-card-bg);
     border: 1px solid var(--fang-border-color);
     border-radius: 6px;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25), 0 0 10px rgba(212, 175, 55, 0.12);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25), 0 0 10px rgba(var(--fang-accent-gold-rgb), 0.12);
     font-family: var(--fang-font-main);
     overflow: hidden;
 }
@@ -430,7 +467,7 @@ body.role-gm .fang-app-container .tab-content.gm-only:not(.active) {
 
 .fang-app-container .fang-segment:hover:not(.active) {
     opacity: 1;
-    background: rgba(212, 175, 55, 0.12);
+    background: rgba(var(--fang-accent-gold-rgb), 0.12);
 }
 
 .fang-app-container .fang-segment.active {
@@ -472,7 +509,7 @@ body.role-gm .fang-app-container .tab-content.gm-only:not(.active) {
 .fang-app-container .fang-rail-btn.active {
     transform: translateX(3px);
     border-color: var(--fang-accent-gold);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18), 0 0 14px rgba(212, 175, 55, 0.25);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18), 0 0 14px rgba(var(--fang-accent-gold-rgb), 0.25);
 }
 
 .fang-app-container .sidebar-header h1 {
@@ -532,7 +569,7 @@ body.role-gm .fang-app-container .tab-content.gm-only:not(.active) {
 /* Collaborative mode: no lock to hold, just a note on who else is in here.
    Deliberately calm — this is the normal state, not a warning. */
 .fang-app-container .lock-banner.collaborative {
-    background: rgba(212, 175, 55, 0.08);
+    background: rgba(var(--fang-accent-gold-rgb), 0.08);
     border-left: 4px solid var(--fang-accent-gold);
 }
 
@@ -541,7 +578,7 @@ body.role-gm .fang-app-container .tab-content.gm-only:not(.active) {
 }
 
 .fang-app-container .lock-banner.i-am-editor {
-    background: rgba(139, 0, 0, 0.05);
+    background: rgba(var(--fang-primary-red-rgb), 0.05);
     border-left: 4px solid var(--fang-primary-red);
 }
 
@@ -670,7 +707,7 @@ body.role-gm .fang-app-container .tab-content.gm-only:not(.active) {
     gap: 8px;
     padding: 8px;
     background: rgba(253, 251, 247, 0.92);
-    border: 1px solid rgba(139, 0, 0, 0.24);
+    border: 1px solid rgba(var(--fang-primary-red-rgb), 0.24);
     border-radius: 14px;
     box-shadow: 0 14px 34px rgba(0, 0, 0, 0.18);
     backdrop-filter: blur(3px);
@@ -678,7 +715,7 @@ body.role-gm .fang-app-container .tab-content.gm-only:not(.active) {
 
 .fang-app-container .fang-canvas-tool-btn {
     min-height: 40px;
-    border: 1px solid rgba(139, 0, 0, 0.3);
+    border: 1px solid rgba(var(--fang-primary-red-rgb), 0.3);
     border-radius: 10px;
     padding: 0 12px;
     display: inline-flex;
@@ -688,7 +725,7 @@ body.role-gm .fang-app-container .tab-content.gm-only:not(.active) {
     color: var(--fang-primary-red);
     font-weight: 800;
     cursor: pointer;
-    box-shadow: 0 2px 0 rgba(139, 0, 0, 0.14);
+    box-shadow: 0 2px 0 rgba(var(--fang-primary-red-rgb), 0.14);
 }
 
 .fang-app-container .fang-canvas-tool-btn:hover,
@@ -807,8 +844,8 @@ body.role-gm .fang-app-container .tab-content.gm-only:not(.active) {
 }
 
 .fang-icon-btn.danger {
-    color: #8b0000;
-    background: rgba(139, 0, 0, 0.08);
+    color: var(--fang-primary-red);
+    background: rgba(var(--fang-primary-red-rgb), 0.08);
 }
 
 .fang-quest-manager-empty {
@@ -830,7 +867,7 @@ body.role-gm .fang-app-container .tab-content.gm-only:not(.active) {
 }
 
 .fang-quest-visibility.is-hidden {
-    background: rgba(139, 0, 0, 0.1);
+    background: rgba(var(--fang-primary-red-rgb), 0.1);
     color: var(--fang-primary-red);
 }
 
@@ -854,7 +891,7 @@ body.role-gm .fang-app-container .tab-content.gm-only:not(.active) {
     padding: 12px 14px;
     border: 2px dashed var(--fang-accent-gold);
     border-radius: 14px;
-    background: linear-gradient(135deg, rgba(212, 175, 55, 0.12), rgba(139, 0, 0, 0.04));
+    background: linear-gradient(135deg, rgba(var(--fang-accent-gold-rgb), 0.12), rgba(var(--fang-primary-red-rgb), 0.04));
     color: var(--fang-primary-red);
 }
 
@@ -865,7 +902,7 @@ body.role-gm .fang-app-container .tab-content.gm-only:not(.active) {
     width: 42px;
     height: 42px;
     border-radius: 12px;
-    background: rgba(139, 0, 0, 0.1);
+    background: rgba(var(--fang-primary-red-rgb), 0.1);
     font-size: 1.25rem;
 }
 
@@ -882,15 +919,15 @@ body.role-gm .fang-app-container .tab-content.gm-only:not(.active) {
 }
 
 .fang-quest-drop-zone.drag-over {
-    background: rgba(212, 175, 55, 0.2);
-    box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.16);
+    background: rgba(var(--fang-accent-gold-rgb), 0.2);
+    box-shadow: 0 0 0 3px rgba(var(--fang-accent-gold-rgb), 0.16);
 }
 
 .fang-quest-add-picker {
     display: grid;
     gap: 8px;
     padding: 12px;
-    border: 1px solid rgba(139, 0, 0, 0.14);
+    border: 1px solid rgba(var(--fang-primary-red-rgb), 0.14);
     border-radius: 14px;
     background: rgba(255, 255, 255, 0.46);
 }
@@ -929,11 +966,11 @@ body.role-gm .fang-app-container .tab-content.gm-only:not(.active) {
     display: flex;
     flex-direction: column;
     background:
-        radial-gradient(circle at top left, rgba(212, 175, 55, 0.12), transparent 34%),
+        radial-gradient(circle at top left, rgba(var(--fang-accent-gold-rgb), 0.12), transparent 34%),
         #fdfbf7;
     border: 2px solid var(--fang-accent-gold);
     border-radius: 8px;
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 0 0 20px rgba(212, 175, 55, 0.2);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 0 0 20px rgba(var(--fang-accent-gold-rgb), 0.2);
     animation: fangCinemaEnter 0.45s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -990,7 +1027,7 @@ body.role-gm .fang-app-container .tab-content.gm-only:not(.active) {
 
 .fang-app-container .fang-quest-canvas-close:hover {
     color: var(--fang-primary-red);
-    background: rgba(139, 0, 0, 0.06);
+    background: rgba(var(--fang-primary-red-rgb), 0.06);
 }
 
 .fang-app-container .fang-quest-canvas-card .fang-quest-manager {
@@ -1031,15 +1068,15 @@ body.role-gm .fang-app-container .tab-content.gm-only:not(.active) {
 /* Tabs Navigation */
 @keyframes fangPulseGlow {
     0% {
-        text-shadow: 0 0 5px rgba(212, 175, 55, 0.5);
+        text-shadow: 0 0 5px rgba(var(--fang-accent-gold-rgb), 0.5);
     }
 
     50% {
-        text-shadow: 0 0 10px rgba(212, 175, 55, 0.9), 0 0 20px rgba(212, 175, 55, 0.5);
+        text-shadow: 0 0 10px rgba(var(--fang-accent-gold-rgb), 0.9), 0 0 20px rgba(var(--fang-accent-gold-rgb), 0.5);
     }
 
     100% {
-        text-shadow: 0 0 5px rgba(212, 175, 55, 0.5);
+        text-shadow: 0 0 5px rgba(var(--fang-accent-gold-rgb), 0.5);
     }
 }
 
@@ -1120,7 +1157,7 @@ body.role-gm .fang-app-container .tab-content.gm-only:not(.active) {
 .fang-app-container input[type="text"]:focus,
 .fang-app-container select:focus {
     border-color: var(--fang-accent-gold);
-    box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.2);
+    box-shadow: 0 0 0 2px rgba(var(--fang-accent-gold-rgb), 0.2);
 }
 
 .fang-app-container .input-row {
@@ -1243,8 +1280,8 @@ body.role-gm .fang-app-container .tab-content.gm-only:not(.active) {
     background-color: #fdfbf7;
     /* Soft antique paper texture */
     background-image:
-        radial-gradient(at 0% 0%, rgba(212, 175, 55, 0.03) 0px, transparent 50%),
-        radial-gradient(at 100% 100%, rgba(139, 0, 0, 0.02) 0px, transparent 50%),
+        radial-gradient(at 0% 0%, rgba(var(--fang-accent-gold-rgb), 0.03) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(var(--fang-primary-red-rgb), 0.02) 0px, transparent 50%),
         radial-gradient(at 50% 50%, rgba(0, 0, 0, 0.01) 0px, transparent 100%);
     box-shadow: inset 0 0 50px rgba(220, 214, 204, 0.3);
 }
@@ -1272,7 +1309,7 @@ body.role-gm .fang-app-container .tab-content.gm-only:not(.active) {
     right: 14px;
     z-index: 901;
     background: rgba(253, 251, 247, 0.9);
-    border: 1px solid rgba(212, 175, 55, 0.45);
+    border: 1px solid rgba(var(--fang-accent-gold-rgb), 0.45);
     border-radius: 8px;
     box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
     backdrop-filter: blur(2px);
@@ -1684,12 +1721,12 @@ body.fang-monitor .fang-app-container .narrative-close {
 
 .fang-dialog input[type="text"]:focus {
     border-color: var(--fang-accent-gold);
-    box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.2);
+    box-shadow: 0 0 0 2px rgba(var(--fang-accent-gold-rgb), 0.2);
 }
 
 .fang-dialog select:focus {
     border-color: var(--fang-accent-gold);
-    box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.2);
+    box-shadow: 0 0 0 2px rgba(var(--fang-accent-gold-rgb), 0.2);
 }
 
 /* Native dropdown list contrast fallback */
@@ -1743,10 +1780,10 @@ body.fang-monitor .fang-app-container .narrative-close {
 .fang-dialog .fang-faction-manager__header {
     flex: 0 0 auto;
     padding: 10px 14px;
-    border: 1px solid rgba(139, 0, 0, 0.16);
+    border: 1px solid rgba(var(--fang-primary-red-rgb), 0.16);
     border-left: 4px solid var(--fang-primary-red);
     border-radius: 12px;
-    background: linear-gradient(135deg, rgba(139, 0, 0, 0.08), rgba(212, 175, 55, 0.08));
+    background: linear-gradient(135deg, rgba(var(--fang-primary-red-rgb), 0.08), rgba(var(--fang-accent-gold-rgb), 0.08));
     box-shadow: 0 8px 22px rgba(0, 0, 0, 0.08);
 }
 
@@ -1782,7 +1819,7 @@ body.fang-monitor .fang-app-container .narrative-close {
     min-height: 42px;
     margin: 0;
     padding: 7px 10px;
-    border: 1px solid rgba(139, 0, 0, 0.18);
+    border: 1px solid rgba(var(--fang-primary-red-rgb), 0.18);
     border-radius: 12px;
     background: rgba(255, 252, 244, 0.9);
     box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.44), 0 4px 14px rgba(0, 0, 0, 0.06);
@@ -1802,7 +1839,7 @@ body.fang-monitor .fang-app-container .narrative-close {
     width: 34px;
     height: 34px;
     border-radius: 10px;
-    background: rgba(139, 0, 0, 0.09);
+    background: rgba(var(--fang-primary-red-rgb), 0.09);
     color: var(--fang-primary-red);
 }
 
@@ -1813,7 +1850,7 @@ body.fang-monitor .fang-app-container .narrative-close {
     margin-bottom: 10px;
     min-height: 300px;
     max-height: none;
-    border: 1px solid rgba(139, 0, 0, 0.14);
+    border: 1px solid rgba(var(--fang-primary-red-rgb), 0.14);
     border-radius: 14px;
     padding: 10px;
     background: rgba(255, 252, 244, 0.58);
@@ -1825,7 +1862,7 @@ body.fang-monitor .fang-app-container .narrative-close {
     gap: 7px;
     margin-bottom: 9px;
     padding: 9px;
-    border: 1px solid rgba(139, 0, 0, 0.16);
+    border: 1px solid rgba(var(--fang-primary-red-rgb), 0.16);
     border-radius: 12px;
     background: rgba(255, 255, 255, 0.72);
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.07);
@@ -1846,7 +1883,7 @@ body.fang-monitor .fang-app-container .narrative-close {
     width: 34px;
     height: 34px;
     padding: 0;
-    border: 1px solid rgba(139, 0, 0, 0.22);
+    border: 1px solid rgba(var(--fang-primary-red-rgb), 0.22);
     border-radius: 8px;
     cursor: pointer;
 }
@@ -1906,7 +1943,7 @@ body.fang-monitor .fang-app-container .narrative-close {
     min-height: 34px;
     margin: 0;
     padding: 5px 8px;
-    border: 1px solid rgba(139, 0, 0, 0.12);
+    border: 1px solid rgba(var(--fang-primary-red-rgb), 0.12);
     border-radius: 9px;
     background: rgba(255, 252, 244, 0.72);
     font-weight: 700;
@@ -1920,7 +1957,7 @@ body.fang-monitor .fang-app-container .narrative-close {
 .fang-dialog .faction-icon-preview {
     flex: 0 0 34px;
     height: 34px;
-    border: 1px solid rgba(139, 0, 0, 0.18);
+    border: 1px solid rgba(var(--fang-primary-red-rgb), 0.18);
     border-radius: 9px;
     display: flex;
     align-items: center;
@@ -1941,9 +1978,9 @@ body.fang-monitor .fang-app-container .narrative-close {
     width: auto;
     min-height: 32px;
     padding: 5px 10px;
-    border: 1px solid rgba(139, 0, 0, 0.45);
+    border: 1px solid rgba(var(--fang-primary-red-rgb), 0.45);
     border-radius: 9px;
-    background: rgba(139, 0, 0, 0.1);
+    background: rgba(var(--fang-primary-red-rgb), 0.1);
     color: var(--fang-primary-red);
     font-weight: 800;
 }
@@ -1960,7 +1997,7 @@ body.fang-monitor .fang-app-container .narrative-close {
     margin-bottom: 0;
     border: 1px solid var(--fang-accent-gold);
     border-radius: 12px;
-    background: rgba(139, 0, 0, 0.06);
+    background: rgba(var(--fang-primary-red-rgb), 0.06);
     color: var(--fang-primary-red);
     font-weight: 800;
 }
@@ -1984,10 +2021,10 @@ body.fang-theme-cyberpunk .fang-dialog select optgroup {
     color: #0f1720;
 }
 
-:root.fang-theme-cyberpunk .fang-dialog input[type="checkbox"],
-body.fang-theme-cyberpunk .fang-dialog input[type="checkbox"] {
-    accent-color: #33d9ff;
-}
+/* (The cyberpunk-only checkbox accent that used to sit here is now a themed rule for
+   every FANG checkbox/radio/range — see "Form controls follow the theme" further up.
+   It only covered .fang-dialog, which is why the sidebar switches stayed browser-orange
+   in the cyberpunk theme.) */
 
 :root.fang-theme-cyberpunk .fang-dialog .dialog-buttons button.cancel,
 body.fang-theme-cyberpunk .fang-dialog .dialog-buttons button.cancel {
@@ -2062,7 +2099,7 @@ body.fang-theme-cyberpunk .fang-dialog .faction-icon-preview {
     background: var(--fang-card-bg);
     border: 1px solid var(--fang-border-color);
     border-radius: 6px;
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15), 0 0 8px rgba(212, 175, 55, 0.1);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15), 0 0 8px rgba(var(--fang-accent-gold-rgb), 0.1);
     font-family: var(--fang-font-main);
     color: var(--fang-text-color);
     overflow: hidden;
@@ -2235,7 +2272,7 @@ body.fang-theme-cyberpunk .fang-dialog .faction-icon-preview {
     transform: translateY(10px);
     opacity: 0;
     /* Optional: A subtle glow */
-    box-shadow: 0 0 15px rgba(212, 175, 55, 0.1);
+    box-shadow: 0 0 15px rgba(var(--fang-accent-gold-rgb), 0.1);
     /* Prevent text overflow */
     word-break: break-word;
     overflow-wrap: break-word;
@@ -2279,7 +2316,7 @@ body.fang-theme-cyberpunk .fang-dialog .faction-icon-preview {
     background: #fdfbf7;
     border: 2px solid var(--fang-accent-gold);
     border-radius: 8px;
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 0 0 20px rgba(212, 175, 55, 0.2);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 0 0 20px rgba(var(--fang-accent-gold-rgb), 0.2);
     width: 90%;
     max-width: 850px;
     max-height: 85%;
@@ -2422,7 +2459,7 @@ body.fang-theme-cyberpunk .fang-dialog .faction-icon-preview {
 }
 
 .fang-app-container .narrative-quest-item:hover {
-    background: rgba(212, 175, 55, 0.08);
+    background: rgba(var(--fang-accent-gold-rgb), 0.08);
     border-left-color: var(--fang-primary-red);
     transform: translateX(4px);
     color: var(--fang-primary-red);
@@ -2482,7 +2519,7 @@ body.fang-theme-cyberpunk .fang-dialog .faction-icon-preview {
     position: absolute;
     bottom: 20px;
     right: 20px;
-    background: rgba(139, 0, 0, 0.85);
+    background: rgba(var(--fang-primary-red-rgb), 0.85);
     color: white;
     padding: 8px 20px;
     border-radius: 25px;
@@ -2496,7 +2533,7 @@ body.fang-theme-cyberpunk .fang-dialog .faction-icon-preview {
     /* Shown via JS */
     align-items: center;
     gap: 10px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4), 0 0 10px rgba(139, 0, 0, 0.4);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4), 0 0 10px rgba(var(--fang-primary-red-rgb), 0.4);
     border: 1px solid var(--fang-accent-gold);
 }
 
@@ -2617,7 +2654,7 @@ body.fang-theme-cyberpunk .fang-dialog .faction-icon-preview {
 }
 
 .fang-app-container .narrative-quest-item:hover {
-    background: rgba(212, 175, 55, 0.08);
+    background: rgba(var(--fang-accent-gold-rgb), 0.08);
     border-left-color: var(--fang-primary-red);
     transform: translateX(4px);
     color: var(--fang-primary-red);
@@ -2677,7 +2714,7 @@ body.fang-theme-cyberpunk .fang-dialog .faction-icon-preview {
     position: absolute;
     bottom: 20px;
     right: 20px;
-    background: rgba(139, 0, 0, 0.85);
+    background: rgba(var(--fang-primary-red-rgb), 0.85);
     color: white;
     padding: 8px 20px;
     border-radius: 25px;
@@ -2691,7 +2728,7 @@ body.fang-theme-cyberpunk .fang-dialog .faction-icon-preview {
     /* Shown via JS */
     align-items: center;
     gap: 10px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4), 0 0 10px rgba(139, 0, 0, 0.4);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4), 0 0 10px rgba(var(--fang-primary-red-rgb), 0.4);
     border: 1px solid var(--fang-accent-gold);
 }
 
@@ -2811,7 +2848,7 @@ body.fang-actor-panel-open .application:not(.sidebar-popout):not(.fang-app-windo
     padding: 2px 6px;
     border-radius: 4px;
     text-transform: uppercase;
-    box-shadow: 0 0 10px rgba(212, 175, 55, 0.4);
+    box-shadow: 0 0 10px rgba(var(--fang-accent-gold-rgb), 0.4);
     border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
@@ -2824,7 +2861,7 @@ body.fang-actor-panel-open .application:not(.sidebar-popout):not(.fang-app-windo
     display: flex;
     gap: 6px;
     padding: 8px;
-    background: rgba(212, 175, 55, 0.05);
+    background: rgba(var(--fang-accent-gold-rgb), 0.05);
     border-radius: 4px;
     border-left: 2px solid var(--fang-accent-gold);
 }
@@ -2949,7 +2986,7 @@ body.fang-actor-panel-open .application:not(.sidebar-popout):not(.fang-app-windo
     flex: 0 0 auto;
     width: 38px;
     height: 34px;
-    border: 1px solid rgba(212, 175, 55, 0.35);
+    border: 1px solid rgba(var(--fang-accent-gold-rgb), 0.35);
     border-radius: 2px;
     background: #fff;
     color: var(--fang-text-color);
@@ -2960,7 +2997,7 @@ body.fang-actor-panel-open .application:not(.sidebar-popout):not(.fang-app-windo
 .background-config-container .file-picker.small-btn:hover {
     transform: translateY(-1px);
     border-color: var(--fang-accent-gold);
-    box-shadow: 0 0 10px rgba(212, 175, 55, 0.25);
+    box-shadow: 0 0 10px rgba(var(--fang-accent-gold-rgb), 0.25);
 }
 
 .background-config-container .slider-group {
@@ -3042,13 +3079,13 @@ body.fang-actor-panel-open .application:not(.sidebar-popout):not(.fang-app-windo
 
 .background-config-container .preset-tile:hover {
     transform: translateY(-1px);
-    border-color: rgba(212, 175, 55, 0.55);
+    border-color: rgba(var(--fang-accent-gold-rgb), 0.55);
     box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
 }
 
 .background-config-container .preset-tile.active {
     border-color: var(--fang-accent-gold);
-    box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.25), 0 8px 20px rgba(0, 0, 0, 0.18);
+    box-shadow: 0 0 0 2px rgba(var(--fang-accent-gold-rgb), 0.25), 0 8px 20px rgba(0, 0, 0, 0.18);
 }
 
 .background-config-container .preset-name {
@@ -3148,9 +3185,9 @@ body.fang-actor-panel-open .application:not(.sidebar-popout):not(.fang-app-windo
 .background-config-container .premium-notice {
     margin-top: 30px;
     padding: 15px;
-    background: rgba(212, 175, 55, 0.08);
+    background: rgba(var(--fang-accent-gold-rgb), 0.08);
     border-radius: 6px;
-    border: 1px solid rgba(212, 175, 55, 0.35);
+    border: 1px solid rgba(var(--fang-accent-gold-rgb), 0.35);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -3172,7 +3209,7 @@ body.fang-actor-panel-open .application:not(.sidebar-popout):not(.fang-app-windo
 
 .background-config-container .premium-notice p {
     font-size: 0.78rem;
-    color: #d4af37;
+    color: var(--fang-accent-gold);
     margin: 0;
     font-style: italic;
     line-height: 1.4;
@@ -3405,7 +3442,7 @@ body.fang-theme-cyberpunk .background-config-container .premium-notice p {
     margin: 0.9em 0 0.35em;
     line-height: 1.15;
     padding-top: 2px;
-    border-bottom: 2px solid rgba(212, 175, 55, 0.85);
+    border-bottom: 2px solid rgba(var(--fang-accent-gold-rgb), 0.85);
     padding-bottom: 5px;
     text-transform: uppercase;
     letter-spacing: 0.02em;
@@ -3510,7 +3547,7 @@ body:has(.actors-sidebar.sidebar-popout:has(.window-content > *)) #fang-so-actor
 .fang-app-container .fang-sidebar-status {
     width: 76px;
     padding: 8px 6px 10px;
-    border-bottom: 1px solid rgba(139, 0, 0, 0.35);
+    border-bottom: 1px solid rgba(var(--fang-primary-red-rgb), 0.35);
 }
 
 .fang-app-container .fang-sidebar-status .lock-banner {
@@ -3554,7 +3591,7 @@ body:has(.actors-sidebar.sidebar-popout:has(.window-content > *)) #fang-so-actor
     background: #fffaf0;
     border: 2px solid var(--fang-accent-gold);
     color: var(--fang-primary-red);
-    box-shadow: 0 2px 0 rgba(139, 0, 0, 0.18);
+    box-shadow: 0 2px 0 rgba(var(--fang-primary-red-rgb), 0.18);
 }
 
 .fang-app-container .fang-sidebar-status .lock-banner.no-editor .fang-lock-btn:hover {
@@ -3632,11 +3669,11 @@ body:has(.actors-sidebar.sidebar-popout:has(.window-content > *)) #fang-so-actor
     display: flex;
     flex-direction: column;
     background:
-        radial-gradient(circle at top left, rgba(212, 175, 55, 0.12), transparent 34%),
+        radial-gradient(circle at top left, rgba(var(--fang-accent-gold-rgb), 0.12), transparent 34%),
         #fdfbf7;
     border: 2px solid var(--fang-accent-gold);
     border-radius: 8px;
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 0 0 20px rgba(212, 175, 55, 0.2);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 0 0 20px rgba(var(--fang-accent-gold-rgb), 0.2);
     animation: fangCinemaEnter 0.45s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -3686,7 +3723,7 @@ body:has(.actors-sidebar.sidebar-popout:has(.window-content > *)) #fang-so-actor
 
 .fang-app-container .fang-history-canvas-close:hover {
     color: var(--fang-primary-red);
-    background: rgba(139, 0, 0, 0.06);
+    background: rgba(var(--fang-primary-red-rgb), 0.06);
 }
 
 .fang-history-log {
@@ -3701,7 +3738,7 @@ body:has(.actors-sidebar.sidebar-popout:has(.window-content > *)) #fang-so-actor
     justify-content: space-between;
     gap: 12px;
     margin-bottom: 14px;
-    border-bottom: 2px solid rgba(212, 175, 55, 0.65);
+    border-bottom: 2px solid rgba(var(--fang-accent-gold-rgb), 0.65);
     padding: 0 44px 10px 0;
 }
 
@@ -3732,7 +3769,7 @@ body:has(.actors-sidebar.sidebar-popout:has(.window-content > *)) #fang-so-actor
     font-size: 0.95rem;
     font-weight: 800;
     padding: 7px 13px;
-    box-shadow: 0 2px 0 rgba(0, 0, 0, 0.16), 0 0 0 3px rgba(212, 175, 55, 0.12);
+    box-shadow: 0 2px 0 rgba(0, 0, 0, 0.16), 0 0 0 3px rgba(var(--fang-accent-gold-rgb), 0.12);
 }
 
 .fang-history-add:hover {
@@ -3781,7 +3818,7 @@ body:has(.actors-sidebar.sidebar-popout:has(.window-content > *)) #fang-so-actor
 
 .fang-history-entry {
     background: rgba(255, 250, 240, 0.78);
-    border: 1px solid rgba(139, 0, 0, 0.2);
+    border: 1px solid rgba(var(--fang-primary-red-rgb), 0.2);
     border-radius: 8px;
     padding: 10px;
 }
@@ -3796,7 +3833,7 @@ body:has(.actors-sidebar.sidebar-popout:has(.window-content > *)) #fang-so-actor
 .fang-history-entry-media img {
     width: 54px;
     height: 54px;
-    border: 2px solid rgba(212, 175, 55, 0.7);
+    border: 2px solid rgba(var(--fang-accent-gold-rgb), 0.7);
     border-radius: 50%;
     background: rgba(255, 255, 255, 0.65);
     object-fit: cover;
@@ -3841,7 +3878,7 @@ body:has(.actors-sidebar.sidebar-popout:has(.window-content > *)) #fang-so-actor
     display: inline-flex;
     align-items: center;
     max-width: 220px;
-    border: 1px solid rgba(139, 0, 0, 0.18);
+    border: 1px solid rgba(var(--fang-primary-red-rgb), 0.18);
     border-radius: 999px;
     background: rgba(255, 255, 255, 0.58);
     color: #4b3315;
@@ -3867,8 +3904,8 @@ body:has(.actors-sidebar.sidebar-popout:has(.window-content > *)) #fang-so-actor
 .fang-history-entry p.fang-history-gm-text {
     margin-top: 8px;
     padding: 8px 10px;
-    background: rgba(139, 0, 0, 0.05);
-    border-left: 3px solid var(--fang-primary-red, #8B0000);
+    background: rgba(var(--fang-primary-red-rgb), 0.05);
+    border-left: 3px solid var(--fang-primary-red, var(--fang-primary-red));
     border-radius: 4px;
     font-style: italic;
     color: #5a3315;
@@ -3878,7 +3915,7 @@ body:has(.actors-sidebar.sidebar-popout:has(.window-content > *)) #fang-so-actor
 }
 
 .fang-history-entry p.fang-history-gm-text > i {
-    color: var(--fang-primary-red, #8B0000);
+    color: var(--fang-primary-red, var(--fang-primary-red));
     margin-top: 3px;
     flex: 0 0 auto;
 }
@@ -3892,9 +3929,9 @@ body:has(.actors-sidebar.sidebar-popout:has(.window-content > *)) #fang-so-actor
     flex: 0 0 auto;
     width: fit-content;
     margin-left: auto;
-    border: 1px solid rgba(139, 0, 0, 0.16);
+    border: 1px solid rgba(var(--fang-primary-red-rgb), 0.16);
     border-radius: 999px;
-    background: rgba(212, 175, 55, 0.14);
+    background: rgba(var(--fang-accent-gold-rgb), 0.14);
     color: #5d3f00;
     font-size: 0.76rem;
     font-weight: 800;
@@ -3912,7 +3949,7 @@ body:has(.actors-sidebar.sidebar-popout:has(.window-content > *)) #fang-so-actor
 }
 
 .fang-history-refs span {
-    border: 1px solid rgba(139, 0, 0, 0.18);
+    border: 1px solid rgba(var(--fang-primary-red-rgb), 0.18);
     border-radius: 999px;
     background: rgba(255, 255, 255, 0.5);
     padding: 3px 7px;
@@ -3925,7 +3962,7 @@ body:has(.actors-sidebar.sidebar-popout:has(.window-content > *)) #fang-so-actor
 }
 
 .fang-history-empty {
-    border: 1px dashed rgba(139, 0, 0, 0.28);
+    border: 1px dashed rgba(var(--fang-primary-red-rgb), 0.28);
     border-radius: 8px;
     padding: 18px;
     text-align: center;
@@ -3968,8 +4005,8 @@ body:has(.actors-sidebar.sidebar-popout:has(.window-content > *)) #fang-so-actor
 .fang-history-editor textarea:focus,
 .fang-history-editor select:focus {
     border-color: var(--fang-accent-gold);
-    outline: 2px solid rgba(212, 175, 55, 0.18);
-    box-shadow: 0 0 0 1px rgba(212, 175, 55, 0.2);
+    outline: 2px solid rgba(var(--fang-accent-gold-rgb), 0.18);
+    box-shadow: 0 0 0 1px rgba(var(--fang-accent-gold-rgb), 0.2);
 }
 
 .fang-history-editor textarea::placeholder,
@@ -4020,7 +4057,7 @@ body:has(.actors-sidebar.sidebar-popout:has(.window-content > *)) #fang-so-actor
 }
 
 .fang-history-editor-actions .fang-history-cancel:hover {
-    background: rgba(139, 0, 0, 0.06);
+    background: rgba(var(--fang-primary-red-rgb), 0.06);
     color: var(--fang-primary-red);
 }
 
@@ -4065,11 +4102,11 @@ body:has(.actors-sidebar.sidebar-popout:has(.window-content > *)) #fang-so-actor
     width: min(520px, 92%);
     min-width: 320px;
     background:
-        radial-gradient(circle at top left, rgba(212, 175, 55, 0.12), transparent 34%),
+        radial-gradient(circle at top left, rgba(var(--fang-accent-gold-rgb), 0.12), transparent 34%),
         #fdfbf7;
     border: 2px solid var(--fang-accent-gold);
     border-radius: 8px;
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.48), 0 0 20px rgba(212, 175, 55, 0.18);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.48), 0 0 20px rgba(var(--fang-accent-gold-rgb), 0.18);
     overflow: hidden;
     animation: fangCinemaEnter 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -4117,7 +4154,7 @@ body:has(.actors-sidebar.sidebar-popout:has(.window-content > *)) #fang-so-actor
 
 .fang-app-container .fang-canvas-prompt-close:hover {
     color: var(--fang-primary-red);
-    background: rgba(139, 0, 0, 0.06);
+    background: rgba(var(--fang-primary-red-rgb), 0.06);
 }
 
 .fang-app-container .fang-canvas-prompt-body {
