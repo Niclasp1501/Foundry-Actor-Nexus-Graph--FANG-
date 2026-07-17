@@ -5477,10 +5477,16 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
      */
     _getCollideRadius(context = this._groupingMode !== "none" ? "grouping" : "normal") {
         const tokenSize = game.settings.get("fang", "tokenSize");
-        // +45, not +20: at +20 the members packed shoulder to shoulder (106px apart) and it
-        // read as crowded. +45 gives ~150px between them — room to breathe — and still fits
-        // the cells. Not higher: past ~+70 the rings grow enough that the areas touch again.
-        return context === "grouping" ? tokenSize + 45 : tokenSize + 120;
+        // Grouping: the binding constraint is the NAME LABEL, not the token. Labels are
+        // drawn centred under the token and run wider than it — the widest in the test
+        // graph is 171px. At the old +45 the closest tokens sat 170px apart, so two wide
+        // labels touched edge to edge: still unreadable, which is what "immer noch zu eng"
+        // was. +70 gives ~206px min separation — the 171px label plus a ~35px gap — while
+        // still fitting three across a cell (3 * 206 = 618 < 661px cell width; +80 would be
+        // 678 and no longer fit). Safe to widen now only because the areas are clamped to
+        // their grid cell, so a wider spread pushes members towards the edge, never into a
+        // neighbour.
+        return context === "grouping" ? tokenSize + 70 : tokenSize + 120;
     }
 
     _applyAxisForces() {
@@ -5612,7 +5618,11 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             // padded box: the point is to push members apart for their labels, and the
             // drawn area is clamped to the cell anyway, so a member near the edge cannot
             // make the box bleed into a neighbour.
-            const placeMargin = 40;
+            // Small margin so the grid uses almost the full cell width — the grid step then
+            // matches the collide separation (~206px), instead of the two fighting: a
+            // narrower grid would place members closer than collide wants, and collide would
+            // shove them apart into a messier layout.
+            const placeMargin = 20;
             const usableW = Math.max(1, cellW - placeMargin * 2);
             const usableH = Math.max(1, cellH - placeMargin * 2);
             const n = members.length;
