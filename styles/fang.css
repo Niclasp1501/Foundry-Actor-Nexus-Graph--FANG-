@@ -3283,12 +3283,28 @@ body.fang-theme-cyberpunk .background-config-container .premium-notice p {
     to { opacity: 1; transform: translateY(0); }
 }
 /* Background Presets - Enhanced Visuals */
+/* ---------------------------------------------------------------------------
+   Background presets.
+
+   All of them follow the same recipe, because the two that did not were broken:
+     background-color  — the base tone
+     background-image  — every layer, with the base gradient LAST (= bottom)
+   Writing `background: linear-gradient(...)` and then `background-image: ...` on
+   the next line silently drops the gradient: the shorthand resets background-image,
+   and the following declaration overwrites it. That is why "forest" rendered grey
+   instead of green and "ethereal" lost its violet — the colour existed only in the
+   source, never on screen.
+
+   Depth comes from stacking: colour wash -> texture -> vignette. The vignette is
+   always last (topmost) so it frames the whole thing.
+   --------------------------------------------------------------------------- */
+
 .fang-app-container #fang-bg-layer.fang-bg-preset-parchment {
     background-color: #f3e6cf;
-    background-image: 
+    background-image:
         radial-gradient(circle at 18% 38%, rgba(120, 75, 35, 0.10) 0%, transparent 58%),
         radial-gradient(circle at 78% 62%, rgba(120, 75, 35, 0.08) 0%, transparent 62%),
-        linear-gradient(0deg, rgba(90, 60, 30, 0.04), rgba(255,255,255,0) 45%),
+        linear-gradient(0deg, rgba(90, 60, 30, 0.04), rgba(255, 255, 255, 0) 45%),
         repeating-linear-gradient(90deg, rgba(120, 90, 50, 0.018) 0 2px, rgba(255, 255, 255, 0) 2px 7px),
         url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.95' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='260' height='260' filter='url(%23n)' opacity='.10'/%3E%3C/svg%3E"),
         radial-gradient(circle at 50% 55%, transparent 62%, rgba(60, 40, 20, 0.18) 100%);
@@ -3296,62 +3312,97 @@ body.fang-theme-cyberpunk .background-config-container .premium-notice p {
     filter: sepia(0.25) contrast(1.05);
 }
 
+/* Forest & jungle: canopy light from above left, deep green below, warm earth at the
+   bottom edge. The green base is a real layer now, not a lost shorthand. */
 .fang-app-container #fang-bg-layer.fang-bg-preset-dark {
-    background: linear-gradient(135deg, #0f2a16 0%, #1f3b1e 55%, #2b2012 100%);
+    background-color: #16301a;
     background-image:
-        radial-gradient(circle at 22% 30%, rgba(255, 238, 180, 0.13) 0%, transparent 45%),
-        radial-gradient(circle at 74% 68%, rgba(255, 238, 180, 0.10) 0%, transparent 52%),
-        radial-gradient(circle at 50% 55%, rgba(0, 0, 0, 0.35) 0%, transparent 65%),
-        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='320' height='320' filter='url(%23n)' opacity='.14'/%3E%3C/svg%3E"),
-        radial-gradient(circle at 50% 50%, transparent 58%, rgba(0,0,0,0.45) 100%);
-    background-size: cover, cover, cover, 260px 260px, cover;
-    background-blend-mode: screen, screen, multiply, overlay, normal;
+        /* shafts of light through the canopy */
+        linear-gradient(102deg, rgba(214, 238, 160, 0.13) 0 3%, transparent 3% 9%,
+                                rgba(214, 238, 160, 0.09) 9% 11%, transparent 11% 20%,
+                                rgba(214, 238, 160, 0.11) 20% 22%, transparent 22% 34%,
+                                rgba(214, 238, 160, 0.06) 34% 37%, transparent 37%),
+        radial-gradient(ellipse at 22% 8%, rgba(220, 245, 170, 0.22) 0%, transparent 55%),
+        radial-gradient(ellipse at 80% 92%, rgba(10, 24, 12, 0.5) 0%, transparent 60%),
+        /* leaf mottling */
+        radial-gradient(circle at 30% 70%, rgba(60, 110, 50, 0.35) 0%, transparent 40%),
+        radial-gradient(circle at 68% 30%, rgba(46, 92, 42, 0.3) 0%, transparent 45%),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='320' height='320' filter='url(%23n)' opacity='.16'/%3E%3C/svg%3E"),
+        /* base: canopy green into forest floor */
+        linear-gradient(160deg, #24512a 0%, #16301a 55%, #2b2415 100%),
+        radial-gradient(circle at 50% 50%, transparent 55%, rgba(0, 0, 0, 0.5) 100%);
+    background-size: cover, cover, cover, cover, cover, 320px 320px, cover, cover;
+    background-blend-mode: screen, screen, multiply, overlay, overlay, overlay, normal, normal;
 }
 
+/* Deep space nebula with two star sizes for parallax. */
 .fang-app-container #fang-bg-layer.fang-bg-preset-starfield {
-    background-color: #020205 !important;
-    background-image: 
-        radial-gradient(circle at 18% 28%, rgba(170, 80, 255, 0.28) 0%, transparent 48%),
-        radial-gradient(circle at 78% 68%, rgba(60, 140, 255, 0.22) 0%, transparent 52%),
-        radial-gradient(circle at 88% 22%, rgba(0, 200, 180, 0.10) 0%, transparent 45%),
-        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='320' height='320' filter='url(%23n)' opacity='.22'/%3E%3C/svg%3E"),
-        radial-gradient(rgba(255,255,255,0.85) 0.9px, transparent 1.1px),
-        radial-gradient(rgba(255,255,255,0.55) 0.7px, transparent 0.9px);
-    background-size: cover, cover, cover, 260px 260px, 170px 170px, 260px 260px;
-    background-position: center, center, center, 0 0, 10px 30px, 60px 90px;
-    background-blend-mode: screen, screen, screen, overlay, normal, normal;
-}
-
-.fang-app-container #fang-bg-layer.fang-bg-preset-ethereal {
-    background: linear-gradient(135deg, #1a0d2e 0%, #0c2b3b 55%, #10341f 100%) !important;
+    background-color: #05030d;
     background-image:
-        radial-gradient(circle at 24% 32%, rgba(0, 255, 208, 0.14) 0%, transparent 46%),
-        radial-gradient(circle at 70% 62%, rgba(170, 80, 255, 0.18) 0%, transparent 52%),
-        radial-gradient(circle at 85% 20%, rgba(255, 255, 255, 0.08) 0%, transparent 40%),
+        radial-gradient(rgba(255, 255, 255, 0.9) 0.9px, transparent 1.1px),
+        radial-gradient(rgba(190, 215, 255, 0.55) 0.7px, transparent 0.9px),
+        radial-gradient(ellipse at 18% 28%, rgba(170, 80, 255, 0.35) 0%, transparent 50%),
+        radial-gradient(ellipse at 78% 68%, rgba(60, 140, 255, 0.28) 0%, transparent 54%),
+        radial-gradient(ellipse at 88% 22%, rgba(0, 200, 180, 0.14) 0%, transparent 45%),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='320' height='320' filter='url(%23n)' opacity='.22'/%3E%3C/svg%3E"),
+        linear-gradient(150deg, #120a2a 0%, #05030d 60%, #0a0518 100%),
+        radial-gradient(circle at 50% 50%, transparent 60%, rgba(0, 0, 0, 0.55) 100%);
+    background-size: 170px 170px, 260px 260px, cover, cover, cover, 320px 320px, cover, cover;
+    background-position: 10px 30px, 60px 90px, center, center, center, 0 0, center, center;
+    background-blend-mode: normal, normal, screen, screen, screen, overlay, normal, normal;
+}
+
+/* Feywild mist: teal and violet drifting over deep blue-green. */
+.fang-app-container #fang-bg-layer.fang-bg-preset-ethereal {
+    background-color: #10283a;
+    background-image:
+        radial-gradient(ellipse at 24% 32%, rgba(0, 255, 208, 0.2) 0%, transparent 48%),
+        radial-gradient(ellipse at 70% 62%, rgba(170, 80, 255, 0.24) 0%, transparent 54%),
+        radial-gradient(ellipse at 85% 20%, rgba(230, 255, 250, 0.12) 0%, transparent 42%),
+        /* mist banding */
+        repeating-linear-gradient(172deg, rgba(190, 245, 255, 0.05) 0 14px, rgba(255, 255, 255, 0) 14px 46px),
         url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='360' height='360'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='360' height='360' filter='url(%23n)' opacity='.16'/%3E%3C/svg%3E"),
-        radial-gradient(circle at 50% 55%, transparent 58%, rgba(0,0,0,0.40) 100%) !important;
-    background-size: cover, cover, cover, 260px 260px, cover;
-    background-blend-mode: screen, screen, screen, overlay, normal;
-    opacity: 0.8;
+        linear-gradient(135deg, #1e0f38 0%, #0c2b3b 55%, #10341f 100%),
+        radial-gradient(circle at 50% 55%, transparent 55%, rgba(0, 0, 0, 0.45) 100%);
+    background-size: cover, cover, cover, cover, 360px 360px, cover, cover;
+    background-blend-mode: screen, screen, screen, screen, overlay, normal, normal;
 }
 
+/* Dungeon stone: courses of blocks, offset row by row, damp and unevenly lit.
+   The masonry is an SVG tile, not repeating-linear-gradient: crossed gradients can only
+   produce an aligned grid, which reads as tiling, not as a wall. The tile carries two
+   courses with the joints offset by half a block, so it stacks into real bond. */
 .fang-app-container #fang-bg-layer.fang-bg-preset-stone {
-    background-color: #2a2a2a !important;
-    background-image: 
-        repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.045) 0 1px, rgba(0, 0, 0, 0) 1px 9px),
-        radial-gradient(circle at 35% 35%, rgba(0, 0, 0, 0.35) 0%, transparent 55%),
-        linear-gradient(rgba(0,0,0,0.28), rgba(0,0,0,0.28)) !important;
-    background-blend-mode: overlay;
+    background-color: #3a3733;
+    background-image:
+        /* damp patches */
+        radial-gradient(ellipse at 28% 24%, rgba(120, 140, 120, 0.10) 0%, transparent 42%),
+        radial-gradient(ellipse at 72% 76%, rgba(90, 110, 130, 0.08) 0%, transparent 45%),
+        /* masonry: two offset courses per tile */
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='128' height='64'%3E%3Cg fill='none' stroke='rgba(18,16,14,0.55)' stroke-width='3'%3E%3Cpath d='M0 1.5H128M0 32.5H128M0 63.5H128'/%3E%3Cpath d='M32 1.5V32.5M96 1.5V32.5M0 32.5V63.5M64 32.5V63.5M128 32.5V63.5'/%3E%3C/g%3E%3Cg fill='none' stroke='rgba(255,255,255,0.06)' stroke-width='1'%3E%3Cpath d='M0 4H128M0 35H128'/%3E%3C/g%3E%3C/svg%3E"),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='.24'/%3E%3C/svg%3E"),
+        linear-gradient(165deg, #45413c 0%, #34312d 60%, #26241f 100%),
+        radial-gradient(circle at 45% 40%, transparent 45%, rgba(0, 0, 0, 0.55) 100%);
+    background-size: cover, cover, 128px 64px, 300px 300px, cover, cover;
+    background-blend-mode: screen, screen, normal, overlay, normal, normal;
 }
 
+/* Clear night sky: three star sizes, subtle milky way, no nebula. */
 .fang-app-container #fang-bg-layer.fang-bg-preset-stars {
-      background-color: #000 !important;
-      background-image: 
-        radial-gradient(white, rgba(255,255,255,.2) 2px, transparent 40px),
-        radial-gradient(white, rgba(255,255,255,.15) 1px, transparent 30px) !important;
-    background-size: 550px 550px, 350px 350px !important;
-    background-position: 40px 60px, 130px 270px !important;
+    background-color: #04060f;
+    background-image:
+        radial-gradient(rgba(255, 255, 255, 0.95) 1.1px, transparent 1.4px),
+        radial-gradient(rgba(215, 230, 255, 0.7) 0.8px, transparent 1px),
+        radial-gradient(rgba(255, 240, 210, 0.5) 0.6px, transparent 0.8px),
+        /* milky way band */
+        linear-gradient(108deg, transparent 34%, rgba(190, 205, 245, 0.09) 45%, rgba(210, 220, 255, 0.05) 52%, transparent 63%),
+        linear-gradient(180deg, #0a1024 0%, #04060f 55%, #02030a 100%),
+        radial-gradient(circle at 50% 50%, transparent 62%, rgba(0, 0, 0, 0.5) 100%);
+    background-size: 190px 190px, 120px 120px, 260px 260px, cover, cover, cover;
+    background-position: 20px 40px, 70px 110px, 140px 30px, center, center, center;
+    background-blend-mode: normal, normal, normal, screen, normal, normal;
 }
+
 
 /* --- Narrative Sidebar & Quest Quests --- */
 .fang-app-container .narrative-left-side {
