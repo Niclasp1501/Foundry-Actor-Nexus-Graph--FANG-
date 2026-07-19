@@ -2382,12 +2382,20 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             titleEl.textContent = title ?? "";
             bodyEl.innerHTML = content ?? "";
 
-            // Footer buttons, in config order. Primary (the default) gets the accent style.
+            // Footer buttons. A button with `side: "left"` (e.g. a destructive Delete) is
+            // pushed to the far left, away from Save/Cancel — the conventional place for a
+            // dangerous action so it is not next to the button you press all the time.
             footerEl.innerHTML = "";
+            const leftGroup = document.createElement("div");
+            leftGroup.className = "fang-editor-footer-left";
+            const rightGroup = document.createElement("div");
+            rightGroup.className = "fang-editor-footer-right";
             for (const [action, cfg] of Object.entries(buttons)) {
                 const btn = document.createElement("button");
                 btn.type = "button";
-                btn.className = "btn fang-editor-btn" + (action === defaultButton ? " primary" : "");
+                btn.className = "btn fang-editor-btn"
+                    + (action === defaultButton ? " primary" : "")
+                    + (cfg.className ? ` ${cfg.className}` : "");
                 const iconClass = /class=["']([^"']+)["']/.exec(cfg.icon || "")?.[1];
                 btn.innerHTML = `${iconClass ? `<i class="${iconClass}"></i> ` : ""}${cfg.label ?? action}`;
                 btn.addEventListener("click", async () => {
@@ -2395,8 +2403,10 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     if (cfg.callback) result = await cfg.callback($(bodyEl));
                     close(result ?? action);
                 });
-                footerEl.appendChild(btn);
+                (cfg.side === "left" ? leftGroup : rightGroup).appendChild(btn);
             }
+            footerEl.appendChild(leftGroup);
+            footerEl.appendChild(rightGroup);
 
             closeBtn.onclick = () => close(null);
             backdrop.onclick = () => close(null);
@@ -4739,12 +4749,16 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     <input type="text" id="fang-profile-alias" value="${escapeHtml(node.displayName || "")}" placeholder="???">
                     <button type="button" id="fang-profile-player-lore" class="btn action-btn"><i class="fas fa-book-open"></i> ${playerLoreLabel}</button>
                 </section>` : "";
-        const actionSection = isGM ? `
-                <section class="fang-editor-actions">
-                    ${node.journalUuid ? `<button type="button" id="fang-profile-gm-journal" class="btn action-btn"><i class="fas fa-book"></i> ${gmJournalLabel}</button>` : ""}
-                    ${node.isPlaceholder ? `<button type="button" id="fang-profile-replace" class="btn action-btn"><i class="fas fa-random"></i> ${localize("FANG.ContextMenu.ReplacePlaceholder", "Replace with Actor")}</button>` : ""}
-                    <button type="button" id="fang-profile-delete" class="btn danger-btn"><i class="fas fa-trash"></i> ${localize("FANG.ContextMenu.DeleteNode", "Delete Actor")}</button>
-                </section>` : "";
+        // Delete lives in the footer (bottom-left, danger) now, not here — a destructive
+        // action does not belong in the middle of the form next to Save. Only the
+        // navigational actions (open journal, replace placeholder) stay in the body, and
+        // the section is omitted entirely when there are none.
+        const bodyActions = [
+            node.journalUuid ? `<button type="button" id="fang-profile-gm-journal" class="btn action-btn fang-btn-block"><i class="fas fa-book"></i> ${gmJournalLabel}</button>` : "",
+            node.isPlaceholder ? `<button type="button" id="fang-profile-replace" class="btn action-btn fang-btn-block"><i class="fas fa-random"></i> ${localize("FANG.ContextMenu.ReplacePlaceholder", "Replace with Actor")}</button>` : ""
+        ].filter(Boolean).join("");
+        const actionSection = (isGM && bodyActions) ? `
+                <section class="fang-editor-actions">${bodyActions}</section>` : "";
 
         const content = `
             <div class="fang-actor-editor">
@@ -4835,7 +4849,17 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 cancel: {
                     icon: '<i class="fas fa-times"></i>',
                     label: localize("FANG.Dialogs.BtnCancel", "Cancel")
-                }
+                },
+                // Destructive action, pinned bottom-left away from Save. Only for the GM.
+                ...(isGM ? {
+                    delete: {
+                        icon: '<i class="fas fa-trash"></i>',
+                        label: localize("FANG.ContextMenu.DeleteNode", "Delete Actor"),
+                        className: "danger-btn",
+                        side: "left",
+                        callback: () => { this._confirmDeleteNode(node); }
+                    }
+                } : {})
             },
             default: "save",
             render: (html, dialog) => {
@@ -4844,10 +4868,6 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 html.find("#fang-profile-replace").on("click", async () => {
                     dialog.close();
                     await this._onReplacePlaceholder(node);
-                });
-                html.find("#fang-profile-delete").on("click", () => {
-                    dialog.close();
-                    this._confirmDeleteNode(node);
                 });
                 html.find("#fang-profile-player-lore").on("click", async (event) => openPlayerLorePage({ createIfMissing: true, button: event.currentTarget }));
             },

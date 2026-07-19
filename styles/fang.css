@@ -1885,11 +1885,33 @@ body.fang-monitor .fang-app-container .narrative-close {
 .fang-editor-footer {
     flex: 0 0 auto;
     display: flex;
-    justify-content: flex-end;
+    align-items: center;
+    justify-content: space-between;
     gap: 10px;
     padding: 14px 20px;
     border-top: 1px solid var(--fang-border-color);
     background: var(--fang-nav-bg);
+}
+
+/* Left group holds destructive actions; right group holds Save/Cancel. When there is
+   no left button the right group still sits at the far right (space-between + empty
+   left group). */
+.fang-editor-footer-left,
+.fang-editor-footer-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.fang-editor-btn.danger-btn {
+    background: var(--fang-primary-red);
+    border-color: var(--fang-primary-red);
+    color: #fff;
+    opacity: 0.9;
+}
+
+.fang-editor-btn.danger-btn:hover {
+    opacity: 1;
 }
 
 .fang-editor-btn {
@@ -2402,9 +2424,13 @@ body.fang-theme-cyberpunk .fang-dialog .faction-icon-preview {
     min-height: 36px;
 }
 
+/* A simple stack of full-width buttons. It used to be a 4-column grid built for the
+   wide dialog, which squeezed each button into a quarter-width cell — the long German
+   "Delete Actor" label then overflowed its box. Delete moved to the footer; what is
+   left (open journal, replace placeholder) just stacks. */
 .fang-actor-editor .fang-editor-actions {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    display: flex;
+    flex-direction: column;
     gap: 8px;
 }
 
@@ -2416,10 +2442,6 @@ body.fang-theme-cyberpunk .fang-dialog .faction-icon-preview {
     .fang-actor-editor .fang-editor-notes,
     .fang-actor-editor .fang-editor-actions {
         grid-column: auto;
-    }
-
-    .fang-actor-editor .fang-editor-actions {
-        grid-template-columns: 1fr;
     }
 }
 
