@@ -60,6 +60,7 @@
 }
 
 .fang-app-container {
+    position: relative; /* anchor for the in-window editor overlay (inset: 0) */
     display: flex;
     height: 100%;
     width: 100%;
@@ -1707,40 +1708,43 @@ body.fang-monitor .fang-app-container .narrative-close {
 }
 
 
-.fang-dialog input[type="text"] {
+/* One modern rule for every text control in a dialog. textarea was missing before,
+   so it fell through to Foundry's default — dark background, monospace font — which
+   is what made the description fields look like code editors next to the tidy name
+   inputs. All three now share the same light, rounded, app-font styling. */
+.fang-dialog input[type="text"],
+.fang-dialog select,
+.fang-dialog textarea {
     width: 100%;
-    padding: 8px 10px;
+    padding: 9px 12px;
     background-color: #fff;
     border: 1px solid var(--fang-border-color);
-    border-radius: 2px;
+    border-radius: 9px;
     color: var(--fang-text-color);
     font-family: var(--fang-font-main);
+    font-size: 0.92rem;
+    line-height: 1.4;
     outline: none;
-    transition: all 0.2s;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
     height: auto;
 }
 
-.fang-dialog select {
-    width: 100%;
-    padding: 8px 10px;
-    background-color: #fff;
-    border: 1px solid var(--fang-border-color);
-    border-radius: 2px;
-    color: var(--fang-text-color);
-    font-family: var(--fang-font-main);
-    outline: none;
-    transition: all 0.2s;
-    height: auto;
+.fang-dialog textarea {
+    resize: vertical;
+    min-height: 46px;
 }
 
-.fang-dialog input[type="text"]:focus {
-    border-color: var(--fang-accent-gold);
-    box-shadow: 0 0 0 2px rgba(var(--fang-accent-gold-rgb), 0.2);
+.fang-dialog input[type="text"]::placeholder,
+.fang-dialog textarea::placeholder {
+    color: rgba(43, 34, 26, 0.4);
 }
 
-.fang-dialog select:focus {
+.fang-dialog input[type="text"]:focus,
+.fang-dialog select:focus,
+.fang-dialog textarea:focus {
     border-color: var(--fang-accent-gold);
-    box-shadow: 0 0 0 2px rgba(var(--fang-accent-gold-rgb), 0.2);
+    box-shadow: 0 0 0 3px rgba(var(--fang-accent-gold-rgb), 0.22);
 }
 
 /* Native dropdown list contrast fallback */
@@ -1781,6 +1785,151 @@ body.fang-monitor .fang-app-container .narrative-close {
 
 .fang-dialog .dialog-buttons button.cancel:hover {
     background-color: #ebe5dc;
+}
+
+/* ===========================================================================
+   In-window editor panel — faction/location management opens here instead of a
+   separate Foundry window. A large modern card centred over the graph.
+   =========================================================================== */
+.fang-editor-overlay {
+    position: absolute;
+    inset: 0;
+    /* Above the FANG-internal layers — canvas tools (~930), legend, and the narrative
+       overlays (1000). This is a modal management panel; it must cover all of them. */
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 28px;
+}
+
+.fang-editor-overlay.hidden {
+    display: none;
+}
+
+.fang-editor-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(10, 8, 6, 0.5);
+    backdrop-filter: blur(3px);
+}
+
+.fang-editor-panel {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    width: min(760px, 100%);
+    max-height: 100%;
+    background: var(--fang-bg-color);
+    border: 1px solid var(--fang-border-color);
+    border-radius: 18px;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+    overflow: hidden;
+    animation: fangEditorIn 0.18s ease;
+}
+
+@keyframes fangEditorIn {
+    from { opacity: 0; transform: translateY(10px) scale(0.98); }
+    to   { opacity: 1; transform: none; }
+}
+
+.fang-editor-header {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 16px 20px;
+    background: linear-gradient(135deg, var(--fang-primary-red), rgba(var(--fang-primary-red-rgb), 0.82));
+    color: var(--fang-header-text);
+    border-bottom: 2px solid var(--fang-accent-gold);
+}
+
+.fang-editor-header h2 {
+    margin: 0;
+    font-family: var(--fang-font-header);
+    font-size: 1.2rem;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--fang-header-text);
+    border: none;
+}
+
+.fang-editor-close {
+    flex: 0 0 auto;
+    width: 34px;
+    height: 34px;
+    display: grid;
+    place-items: center;
+    border: none;
+    border-radius: 9px;
+    background: rgba(255, 255, 255, 0.14);
+    color: var(--fang-header-text);
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.fang-editor-close:hover {
+    background: rgba(255, 255, 255, 0.28);
+}
+
+.fang-editor-body {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 18px 20px;
+}
+
+.fang-editor-footer {
+    flex: 0 0 auto;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 14px 20px;
+    border-top: 1px solid var(--fang-border-color);
+    background: var(--fang-nav-bg);
+}
+
+.fang-editor-btn {
+    min-width: 130px;
+    height: 40px;
+    padding: 0 18px;
+    border-radius: 10px;
+    font-weight: 700;
+}
+
+.fang-editor-btn.primary {
+    background: var(--fang-primary-red);
+    border-color: var(--fang-primary-red);
+    color: #fff;
+}
+
+.fang-editor-lead {
+    margin: 0 0 14px;
+    color: rgba(43, 34, 26, 0.72);
+    font-size: 0.92rem;
+    line-height: 1.4;
+}
+
+/* The manager was written for a full-height dialog; inside the panel body it just
+   flows naturally. Compound selector so these beat the .fang-dialog rules the body
+   also carries (it has both classes). */
+.fang-editor-body.fang-dialog .fang-faction-manager {
+    height: auto;
+    gap: 0;
+}
+
+.fang-editor-body.fang-dialog #fang-factions-list,
+.fang-editor-body.fang-dialog #fang-zones-list {
+    min-height: 0;
+    max-height: none;
+    overflow: visible;
+    border: none;
+    padding: 0;
+    background: none;
+    margin-bottom: 12px;
 }
 
 .fang-dialog .fang-faction-manager {
@@ -2025,6 +2174,15 @@ body.fang-theme-cyberpunk .fang-dialog textarea {
     background: #0c1b2a;
     color: #d9ecff;
     border-color: #27506f;
+}
+
+/* Placeholder on the dark cyberpunk input surface — the default parchment tone is
+   invisible there. */
+:root.fang-theme-cyberpunk .fang-dialog input[type="text"]::placeholder,
+:root.fang-theme-cyberpunk .fang-dialog textarea::placeholder,
+body.fang-theme-cyberpunk .fang-dialog input[type="text"]::placeholder,
+body.fang-theme-cyberpunk .fang-dialog textarea::placeholder {
+    color: rgba(217, 236, 255, 0.4);
 }
 
 :root.fang-theme-cyberpunk .fang-dialog select option,

@@ -2341,6 +2341,73 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     /**
+     * Open an editor as a large panel INSIDE the FANG window, not as a separate Foundry
+     * dialog window.
+     *
+     * Takes the exact same config shape as _openDialog ({ title, content, render, buttons,
+     * default }), so a caller switches from a popup to this by changing one word. The
+     * faction and location managers use it: "ein schönes Fenster in unserem Fenster,
+     * statt tausende weitere Fenster".
+     *
+     * @param {object} config  same as _openDialog: { title, content, render, buttons, default }
+     * @returns {Promise<any>} resolves with the pressed button's callback result (or null on close)
+     */
+    _openPanelEditor({ title, content, buttons = {}, default: defaultButton, render } = {}) {
+        const overlay = this.element?.querySelector("#fang-editor-overlay");
+        if (!overlay) {
+            // No overlay in the DOM (shouldn't happen) — fall back to the dialog so the
+            // feature still works rather than silently doing nothing.
+            return this._openDialog({ title, content, buttons, default: defaultButton, render });
+        }
+
+        const titleEl = overlay.querySelector("#fang-editor-title");
+        const bodyEl = overlay.querySelector(".fang-editor-body");
+        const footerEl = overlay.querySelector(".fang-editor-footer");
+        const closeBtn = overlay.querySelector(".fang-editor-close");
+        const backdrop = overlay.querySelector(".fang-editor-backdrop");
+
+        return new Promise((resolve) => {
+            let settled = false;
+            const close = (result = null) => {
+                if (settled) return;
+                settled = true;
+                overlay.classList.add("hidden");
+                bodyEl.innerHTML = "";
+                footerEl.innerHTML = "";
+                document.removeEventListener("keydown", onKey, true);
+                resolve(result);
+            };
+            const onKey = (e) => { if (e.key === "Escape") { e.preventDefault(); close(null); } };
+
+            titleEl.textContent = title ?? "";
+            bodyEl.innerHTML = content ?? "";
+
+            // Footer buttons, in config order. Primary (the default) gets the accent style.
+            footerEl.innerHTML = "";
+            for (const [action, cfg] of Object.entries(buttons)) {
+                const btn = document.createElement("button");
+                btn.type = "button";
+                btn.className = "btn fang-editor-btn" + (action === defaultButton ? " primary" : "");
+                const iconClass = /class=["']([^"']+)["']/.exec(cfg.icon || "")?.[1];
+                btn.innerHTML = `${iconClass ? `<i class="${iconClass}"></i> ` : ""}${cfg.label ?? action}`;
+                btn.addEventListener("click", async () => {
+                    let result = action;
+                    if (cfg.callback) result = await cfg.callback($(bodyEl));
+                    close(result ?? action);
+                });
+                footerEl.appendChild(btn);
+            }
+
+            closeBtn.onclick = () => close(null);
+            backdrop.onclick = () => close(null);
+            document.addEventListener("keydown", onKey, true);
+
+            overlay.classList.remove("hidden");
+            if (render) render($(bodyEl), { close });
+        });
+    }
+
+    /**
      * Open a dialog on the modern application framework.
      *
      * FANG's dialogs were all built on `this._openDialog()` — the V1 framework, which warns on
@@ -3403,12 +3470,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const factionsHtml = this.graphData.factions.map((f, index) => renderFactionRow(f, index)).join("");
         const dialogContent = `
             <div class="fang-faction-manager">
-                <header class="fang-faction-manager__header">
-                    <div>
-                        <strong>${game.i18n.localize("FANG.UI.ManageFactions")}</strong>
-                        <p>${game.i18n.localize("FANG.UI.ManageFactionsHint")}</p>
-                    </div>
-                </header>
+                <p class="fang-editor-lead">${game.i18n.localize("FANG.UI.ManageFactionsHint")}</p>
                 <div id="fang-factions-list" class="${this.graphData.factions.length ? "" : "is-empty"}">${factionsHtml || this._renderFactionsEmptyState()}</div>
                 <button type="button" id="fang-add-faction-btn" class="btn fang-add-faction-btn">
                     <i class="fas fa-plus"></i> ${localize("FANG.Dialogs.BtnAddFaction", "Add Faction")}
@@ -3416,7 +3478,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             </div>
         `;
 
-        await this._openDialog({
+        await this._openPanelEditor({
             title: game.i18n.localize("FANG.UI.ManageFactions"),
             content: dialogContent,
             render: (html) => {
@@ -3576,16 +3638,11 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 </div>
             </div>`;
 
-        await this._openDialog({
+        await this._openPanelEditor({
             title: localize("FANG.Zones.Title", "Affiliation Zones"),
             content: `
                 <div class="fang-faction-manager">
-                    <header class="fang-faction-manager__header">
-                        <div>
-                            <strong>${escapeHtml(localize("FANG.Zones.Title", "Affiliation Zones"))}</strong>
-                            <p>${escapeHtml(localize("FANG.Zones.Hint", "Create campaign zones such as cities, regions, organizations, courts, or underworld groups."))}</p>
-                        </div>
-                    </header>
+                    <p class="fang-editor-lead">${escapeHtml(localize("FANG.Zones.Hint", "Create campaign zones such as cities, regions, organizations, courts, or underworld groups."))}</p>
                     <div id="fang-zones-list" class="${zones.length ? "" : "is-empty"}">${zones.map(renderZoneRow).join("")}${zones.length ? "" : `
                         <div class="fang-empty-state">
                             <i class="fas fa-location-dot"></i>

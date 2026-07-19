@@ -379,4 +379,18 @@
             <ul id="fang-quest-picker-list"></ul>
         </div>
     </main>
+
+    <!-- In-window editor panel. Faction/location management opens here instead of a
+         separate Foundry dialog window — a large, modern panel inside our own window. -->
+    <div id="fang-editor-overlay" class="fang-editor-overlay hidden">
+        <div class="fang-editor-backdrop"></div>
+        <div class="fang-editor-panel" role="dialog" aria-modal="true" aria-labelledby="fang-editor-title">
+            <header class="fang-editor-header">
+                <h2 id="fang-editor-title"></h2>
+                <button type="button" class="fang-editor-close" aria-label="Close"><i class="fas fa-xmark"></i></button>
+            </header>
+            <div class="fang-editor-body fang-dialog"></div>
+            <footer class="fang-editor-footer"></footer>
+        </div>
+    </div>
 </div>
