@@ -8326,6 +8326,11 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     });
                     if (result !== "yes") return;
                 }
+                // Editing always happens on the real layout, never on a temporary grouped
+                // view. The grouped positions are locked and not the true ones, so editing
+                // there would be editing a picture. Taking the edit lock snaps the view back
+                // to normal first (_setGroupingMode shows its own "grouping reset" notice).
+                if (this._groupingMode !== "none") this._setGroupingMode("none");
                 await entry.setFlag("fang", "editLock", {
                     userId: game.user.id,
                     userName: game.user.name,
