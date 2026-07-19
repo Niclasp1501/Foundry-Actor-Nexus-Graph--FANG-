@@ -54,30 +54,9 @@
         </nav>
 
         <div class="tabs-container">
-            <!-- ZUGEHOERIGKEIT: Fraktion (wem gehoert jemand an) + Ort (wo ist jemand).
-                 Beides sind Geschwister, deshalb verwalten UND gruppieren an einem Ort. -->
+            <!-- ZUGEHOERIGKEIT: Fraktionen und Orte definieren/verwalten. Das GRUPPIEREN
+                 danach ist eine Ansichtssache und lebt deshalb im Praesentations-Panel. -->
             <section class="tab-content gm-only" data-tab="affiliation">
-                <div class="control-group">
-                    <h3>{{localize "FANG.UI.GroupingTitle"}}</h3>
-                    <div class="input-stack">
-                        <p class="fang-hint">{{localize "FANG.UI.GroupingHint"}}</p>
-                        <div class="fang-segmented" role="radiogroup" aria-label="{{localize 'FANG.UI.GroupingTitle'}}">
-                            <button type="button" class="fang-segment active" data-grouping="none" role="radio" aria-checked="true">
-                                <i class="fas fa-circle-nodes"></i> {{localize "FANG.UI.GroupingNone"}}
-                            </button>
-                            <button type="button" class="fang-segment" data-grouping="faction" role="radio" aria-checked="false">
-                                <i class="fas fa-users"></i> {{localize "FANG.UI.GroupByFactionShort"}}
-                            </button>
-                            <button type="button" class="fang-segment" data-grouping="zone" role="radio" aria-checked="false">
-                                <i class="fas fa-location-dot"></i> {{localize "FANG.UI.GroupByZoneShort"}}
-                            </button>
-                        </div>
-                        <p class="fang-hint fang-hint-warn" id="groupingLockedHint" hidden>
-                            <i class="fas fa-lock"></i> {{localize "FANG.Messages.GroupingPositionsLocked"}}
-                        </p>
-                    </div>
-                </div>
-
                 <div class="control-group">
                     <h3>{{localize "FANG.UI.ManageFactions"}}</h3>
                     <div class="input-stack">
@@ -109,6 +88,27 @@
 
             <!-- VIEW / PRESENTATION TAB -->
             <section class="tab-content gm-only" data-tab="view">
+                <div class="control-group">
+                    <h3>{{localize "FANG.UI.GroupingTitle"}}</h3>
+                    <div class="input-stack">
+                        <p class="fang-hint">{{localize "FANG.UI.GroupingHint"}}</p>
+                        <div class="fang-segmented" role="radiogroup" aria-label="{{localize 'FANG.UI.GroupingTitle'}}">
+                            <button type="button" class="fang-segment active" data-grouping="none" role="radio" aria-checked="true">
+                                <i class="fas fa-circle-nodes"></i> {{localize "FANG.UI.GroupingNone"}}
+                            </button>
+                            <button type="button" class="fang-segment" data-grouping="faction" role="radio" aria-checked="false">
+                                <i class="fas fa-users"></i> {{localize "FANG.UI.GroupByFactionShort"}}
+                            </button>
+                            <button type="button" class="fang-segment" data-grouping="zone" role="radio" aria-checked="false">
+                                <i class="fas fa-location-dot"></i> {{localize "FANG.UI.GroupByZoneShort"}}
+                            </button>
+                        </div>
+                        <p class="fang-hint fang-hint-warn" id="groupingLockedHint" hidden>
+                            <i class="fas fa-lock"></i> {{localize "FANG.Messages.GroupingPositionsLocked"}}
+                        </p>
+                    </div>
+                </div>
+
                 <div class="control-group">
                     <h3>{{localize "FANG.UI.Presentation"}}</h3>
                     <div class="input-stack">
