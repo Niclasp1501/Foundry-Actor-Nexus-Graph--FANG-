@@ -2941,7 +2941,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const defaultName = game.i18n.localize("FANG.Placeholder.DefaultName") || "Unknown Contact";
         const isGM = game.user.isGM;
 
-        this._openDialog({
+        this._openPanelEditor({
             title: game.i18n.localize("FANG.Placeholder.CreateTitle") || "Create Placeholder NPC",
             content: `
                 <div class="form-group">
@@ -3047,7 +3047,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             return;
         }
 
-        this._openDialog({
+        this._openPanelEditor({
             title: game.i18n.localize("FANG.Placeholder.ReplaceTitle") || "Replace Placeholder",
             content: `
                 <p>${(game.i18n.localize("FANG.Placeholder.ReplaceHint") || "Select an actor to replace <strong>{name}</strong>.").replace("{name}", node.name)}</p>
@@ -3322,7 +3322,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         }[char])));
 
         return new Promise(resolve => {
-            this._openDialog({
+            this._openPanelEditor({
                 title,
                 content: `
                     <p>${content}</p>
@@ -4680,7 +4680,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 </section>
             </div>`;
 
-            this._openDialog({
+            this._openPanelEditor({
                 title: localize("FANG.ActorEditor.Title", "Edit Actor"),
                 content,
                 buttons: {
@@ -4777,7 +4777,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 ${actionSection}
             </div>`;
 
-        await this._openDialog({
+        await this._openPanelEditor({
             title: localize("FANG.ActorEditor.Title", "Edit Actor"),
             content,
             buttons: {
@@ -5112,7 +5112,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 .map(t => `<option value="${this._escapeHtml(t.id)}" ${link.relationshipType === t.id ? "selected" : ""}>${this._escapeHtml(t.label)}</option>`)
                 .join("");
 
-            this._openDialog({
+            this._openPanelEditor({
                 title: title,
                 content: `
                     <p><strong>${contentString}</strong></p>
