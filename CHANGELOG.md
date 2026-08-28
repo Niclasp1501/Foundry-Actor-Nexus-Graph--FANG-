@@ -3,6 +3,56 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Module versions follow the Foundry-targeted `<foundry-major>.<YYMM>.<patch>` release scheme documented in `AGENTS.md`.
 
+## [14.2608.1] - 2026-08-29
+
+Großes Oberflächen- und Stabilitäts-Release. Die Seitenleiste ist nach Aufgaben gegliedert, Editoren öffnen im FANG-Fenster statt in eigenen Foundry-Fenstern, Fraktionen und Orte haben eine gemeinsame Heimat — und mehrere Fehler in Datenspeicherung, Physik und Darstellung sind behoben. Enthält die gesamte Beta-Arbeit seit 14.2605.5.
+
+### Added
+- **Gemeinsames Bearbeiten (optional).** Statt der exklusiven Sperre können mehrere Personen gleichzeitig am Graphen arbeiten. Speichern führt die Änderungen feldweise zusammen (Drei-Wege-Abgleich), sodass zwei Leute an verschiedenen Dingen sich nicht mehr gegenseitig überschreiben. Physik-Drift wird dabei bewusst verworfen — nur bewusst gezogene Positionen zählen als Absicht.
+- **Orte.** Charaktere können einem Ort zugeordnet werden (Region, Stadt, Viertel, Gebäude, Reich). Fraktion beantwortet „wem gehört jemand an", Ort beantwortet „wo ist jemand".
+- **Gruppieren nach Fraktion oder Ort.** Eine Ansicht auf Zeit: Die Charaktere ordnen sich nach Gruppe, jede Gruppe bekommt einen beschrifteten Bereich, und die vorherige Anordnung kehrt beim Zurücksetzen zurück. Positionen sind währenddessen gesperrt, damit die temporäre Ansicht nicht zur gespeicherten wird.
+- **Fraktionen sichtbar machen.** Mitgliedschaft zeigt sich als Linie zwischen den Mitgliedern und als farbiger Ring am Token. Ein Zeiger über der Legende hebt genau diese Fraktion hervor und nimmt alle anderen zurück — der Weg, eine Fraktion im Gewirr zu finden.
+- **Charaktere festnageln.** Ein gezogener Charakter bleibt liegen, wo du ihn hinsetzt, statt von der Physik zurückgezogen zu werden. Eine Reißzwecke am Token zeigt das an; Rechtsklick → „Position freigeben" gibt ihn der Physik zurück.
+- **Editoren öffnen im FANG-Fenster.** Fraktionen, Orte, Charakter, Beziehung, Platzhalter und Schnellverbindung erscheinen als großes Panel im Fenster statt als eigenes Foundry-Fenster. Nur Rückfragen („Wirklich löschen?") bleiben eigene Dialoge — sie müssen sich über ein offenes Panel legen können.
+- **Leere Verwaltungen erklären sich.** Fraktionen und Orte öffneten auf einem leeren Kasten mit einem „Hinzufügen"-Knopf darunter. Jetzt steht dort, wofür der Bereich da ist und was als Nächstes zu tun ist.
+- **Mitgliederzahl je Ort**, samt Hinweis, warum ein Ort ohne Mitglieder auf der Fläche unsichtbar bleibt.
+- **Optionaler Klang beim Spotlight.**
+- **Chronicle MVP Beta:** Added a versioned `fang.history` store for story events, automatic game-day prefill with manual override, a global day-grouped chronicle view, and a token-level chronicle view from the node context menu. Entries keep GM/private text separate from player-safe text so automation can build on the same model without exposing hidden-token secrets.
+- **Chronicle Auto Entries:** Normal graph actions now add narrative chronicle entries when tokens appear, hidden identities are revealed, and new relationships become visible. Hidden tokens use their alias and placeholder portrait for player-facing entries.
+- **Automated Quest and Faction Chronicle Entries:** Revealed player-facing Auftraege and visible faction assignments now create chronicle entries from their existing workflows instead of requiring manual category selection.
+- **Player Chronicle Edits:** Players can create and update the visible title/text of player-facing chronicle entries without taking the graph edit lock; GMs can still fully edit or delete entries.
+
+### Changed
+- **Seitenleiste nach Aufgaben gegliedert.** Fraktion und Ort sind Geschwister und liegen jetzt zusammen im Bereich **Zugehörigkeit**. Vorher war das über drei Orte verstreut: Fraktionen als Dialog direkt aus der Leiste, „Orte verwalten" unter *Erweitert*, die Gruppieren-Knöpfe unter *Ansicht*. Die übrigen Bereiche: **Präsentation** (Gruppierung, Spieler/Monitor, Zentrieren, Zuschauer-Kamera) und **Einstellungen** (Berechtigungen, Physik, Hintergrund, Im-/Export). „Spieler dürfen bearbeiten" stand unter Präsentation — das ist eine Berechtigung.
+- **Gruppierung ist ein Schalter statt zweier Knöpfe.** Es ist ein Modus, von dem immer genau einer gilt; zwei Knöpfe sagten weder das noch welcher gerade an war. Sie mussten zusätzlich als ihr eigener Aus-Schalter dienen und dafür ihre Beschriftung umbauen. Mit einem eigenen Segment *Normal* entfällt der Trick. Der Schalter sitzt bei den übrigen Ansichts-Einstellungen, nicht bei der Verwaltung.
+- **Bearbeiten setzt die Gruppierung zurück.** Wer in den Bearbeitungsmodus geht, arbeitet immer auf dem echten Layout — die gruppierten Positionen sind gesperrt und nicht die wahren.
+- **Alle Fenster auf dem aktuellen Framework** (DialogV2 statt V1).
+- **Hintergrund-Stilvorlagen überarbeitet.** Wald & Dschungel, Feenwald-Nebel, Sternenmeer, Dungeon-Stein und Sternennacht haben die Tiefe bekommen, die bisher nur „Verwittertes Pergament" hatte.
+- **Löschen im Charakter-Editor** sitzt jetzt unten links in der Fußzeile, abgesetzt von Speichern — nicht mehr mitten im Formular direkt über dem Knopf, den man ständig drückt.
+
+### Fixed
+- **Datenverlust beim Speichern.** Orte, Geheimnisse und Auftragsstatus wurden beim Speichern still verworfen, weil die Serialisierung eine handgepflegte Positivliste war. Jetzt wird alles gespeichert außer ausdrücklich Ausgeschlossenem.
+- **FANG hätte Foundry V15 nicht überlebt.** Foundry-Namen (`KeyboardManager`, `FilePicker`) wurden global angesprochen; die fallen in V15 weg. Stand bei jedem Weltstart als Warnung in der Konsole.
+- **Die alten Fenster hätten V16 nicht überlebt.** Das V1-Framework meldete bei jedem Öffnen „removed in Version 16".
+- **Der Graph sprang ohne Grund.** Zwei Kräfte forderten Widersprüchliches: Die Beziehungslinie zog verbundene Charaktere auf 300px, die Kollision drückte sie auf 320px auseinander. Die Anordnung kam deshalb nie zur Ruhe, sie fror nur ein — und jedes Aufwecken entlud die Spannung. Zusätzlich verschob `forceCenter` bei jedem Bild den gesamten Graphen; ein gezogener Charakter schob dadurch alle anderen in die Gegenrichtung.
+- **Speichern rollte die eigene Ansicht zurück.** Der Abgleich verwarf Physik-Drift korrekt, schrieb die verworfenen Positionen aber auch in die laufende Anzeige zurück.
+- **Migrationen wurden bei jedem Speichern rückgängig gemacht**, weil der Abgleichs-Bezugspunkt nach statt vor der Migration genommen wurde.
+- **Portraits sind rund.** Ringe um die Token waren Kreise, das Bild darunter aber quadratisch — die Ecken standen heraus.
+- **Fraktionslinien waren unsichtbar**, wo Mitglieder ohnehin verbunden sind (der Normalfall): Die Linie lag mit 20 % Deckkraft hinter einer soliden Beziehungslinie.
+- **Doppelklick zoomte den Graphen**, während er den Charakterbogen öffnete — die Zoom-Bibliothek bringt das von Haus aus mit.
+- **GM-Bereiche wurden alle gleichzeitig angezeigt**, übereinandergestapelt: `.gm-only` erzwang Sichtbarkeit stärker, als der Bereich sie abschalten konnte.
+- **Gruppen-Bereiche überlappten sich.** Die Anordnung berechnete, was die Physik will, ohne zu prüfen, ob es auf die Fläche passt — Ziele landeten außerhalb des sichtbaren Bereichs. Gruppen sitzen jetzt in einem Raster, der gezeichnete Bereich endet an der Zellgrenze, und die Mitglieder verteilen sich darin auf einem Gitter mit Abstand nach Namensschild-Breite statt auf einem engen Ring.
+- **Stilvorlagen färbten nicht mit.** 85 Farben waren fest verdrahtet statt über die Theme-Variablen; im Cyberpunk-Thema blieben sie D&D-golden. Auch die Schalter standen auf Foundrys Orange.
+- **Chronik-Einträge** zeigten dem GM nur den Spielertext.
+
+### Removed
+- **Toter Code:** eine komplette zweite Navigation (Reiterleiste, seit Langem unsichtbar, von der Symbolleiste ersetzt) samt widersprüchlichem CSS, und der abgeschaltete Editor-Bereich — dessen Formularfelder das Modul bei *jeder* Änderung weiter befüllte, inklusive eines Durchlaufs über alle Akteure der Welt für Auswahllisten, die niemand sehen konnte. 328 Zeilen.
+
+## [14.2605.5] - 2026-05-15
+### Fixed
+- **Chronicle GM View:** GMs now see both the player-visible and the GM-only text of a chronicle entry instead of only the player-facing part.
+
+
 ## [14.2605.4] - 2026-05-15
 ### Merged from claude/goofy-gagarin-d190dc design-refactor branch
 Selektiver Merge der parallelen Design-Refactor- und Hotfix-Arbeit auf 14.0.19-Linie. Beta-Stand bleibt für UI/Code-Struktur erhalten; nur orthogonale Bugfixes und i18n-Ergänzungen wurden übernommen.
@@ -21,33 +71,6 @@ Selektiver Merge der parallelen Design-Refactor- und Hotfix-Arbeit auf 14.0.19-L
 
 ### Backup
 - Tag `backup/claude-refactor-2026-05-15` zeigt auf den vollen ungemergeten Stand der parallelen Linie (`14.1.3-beta.4`).
-
-## [Unreleased]
-
-### UI-Überarbeitung (Beta)
-
-#### Changed
-- **Seitenleiste nach Aufgaben gegliedert.** Fraktion („wem gehört jemand an") und Ort („wo ist jemand") sind Geschwister und liegen jetzt zusammen im Bereich **Zugehörigkeit** — verwalten *und* gruppieren an einer Stelle. Vorher war das über drei Orte verstreut: Fraktionen als Dialog direkt aus der Leiste, „Orte verwalten" unter *Erweitert*, die Gruppieren-Knöpfe unter *Ansicht*. Die übrigen Bereiche: **Präsentation** (Spieler/Monitor, Zentrieren, Zuschauer-Kamera) und **Einstellungen** (Berechtigungen, Physik, Hintergrund, Im-/Export). „Spieler dürfen bearbeiten" stand unter Präsentation — das ist eine Berechtigung.
-- **Gruppierung ist ein Schalter statt zweier Knöpfe.** Es ist ein Modus, von dem immer genau einer gilt; zwei Knöpfe sagten weder das noch welcher gerade an war. Sie mussten zusätzlich als ihr eigener Aus-Schalter dienen und dafür ihre Beschriftung zu „Gruppierung zurücksetzen" umbauen. Mit einem eigenen Segment *Normal* entfällt der Trick. Der Hinweis, dass Positionen währenddessen gesperrt sind, steht jetzt dort, wo man die Gruppierung wählt — nicht erst, wenn ein Ziehen abgelehnt wird.
-- **Alle Dialoge auf dem aktuellen Fenster-Framework** (DialogV2 statt V1).
-
-#### Added
-- **Leere Verwaltungen erklären sich.** Fraktionen und Orte öffneten auf einem leeren Kasten mit einem „Hinzufügen"-Knopf darunter. Jetzt steht dort, wofür der Bereich da ist und was als Nächstes zu tun ist.
-
-#### Fixed
-- **FANG hätte Foundry V15 nicht überlebt.** Drei Foundry-Namen (`KeyboardManager`, `FilePicker`) wurden global angesprochen; die fallen in V15 weg. Stand bei jedem Weltstart als Warnung in der Konsole.
-- **Die alten Dialoge hätten V16 nicht überlebt.** Das V1-Fenster-Framework meldete bei jedem Öffnen „removed in Version 16".
-- **GM-Bereiche wurden alle gleichzeitig angezeigt**, übereinandergestapelt: `.gm-only` erzwang Sichtbarkeit stärker, als der Bereich sie abschalten konnte. Betraf vorher schon *Präsentation* und *Erweitert*, fiel bei zwei Bereichen nur weniger auf.
-- **Doppelklick zoomte den Graphen**, während er den Charakterbogen öffnete — die Zoom-Bibliothek bringt das von Haus aus mit.
-
-#### Removed
-- **Toter Code:** eine komplette zweite Navigation (Reiterleiste, seit Langem unsichtbar, von der Symbolleiste ersetzt) samt widersprüchlichem CSS, und der abgeschaltete Editor-Bereich — dessen Formularfelder das Modul bei *jeder* Änderung weiter befüllte, inklusive eines Durchlaufs über alle Akteure der Welt für Auswahllisten, die niemand sehen konnte. 328 Zeilen.
-
-### Added
-- **Chronicle MVP Beta:** Added a versioned `fang.history` store for story events, automatic game-day prefill with manual override, a global day-grouped chronicle view, and a token-level chronicle view from the node context menu. Entries keep GM/private text separate from player-safe text so automation can build on the same model without exposing hidden-token secrets.
-- **Chronicle Auto Entries:** Normal graph actions now add narrative chronicle entries when tokens appear, hidden identities are revealed, and new relationships become visible. Hidden tokens use their alias and placeholder portrait for player-facing entries.
-- **Automated Quest and Faction Chronicle Entries:** Revealed player-facing Auftraege and visible faction assignments now create chronicle entries from their existing workflows instead of requiring manual category selection.
-- **Player Chronicle Edits:** Players can create and update the visible title/text of player-facing chronicle entries without taking the graph edit lock; GMs can still fully edit or delete entries.
 
 ## [14.2605.3] - 2026-05-14
 ### Fixed
