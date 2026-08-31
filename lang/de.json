@@ -419,10 +419,6 @@
                 "Name": "Monitor-Anzeigename",
                 "Hint": "Der Name des Benutzers oder der Anzeige (z.B. 'Monitor'), der für die Public-Display-Ansicht genutzt wird."
             },
-            "ReplaceOnlySheetActor": {
-                "Name": "Only-Sheet: Actor-Button ersetzen",
-                "Hint": "Wenn das 'Only-Sheet'-Modul aktiv ist, versteckt FANG den originalen Button zum Öffnen des Akteurdirektoriums und ersetzt ihn durch einen eigenen Button, der das standard Foundry Akteurverzeichnis öffnet."
-            },
             "DiploGlassOneWaySync": {
                 "Name": "DiploGlass Einweg-Fraktionsabgleich",
                 "Hint": "Wenn aktiv, importiert und aktualisiert FANG Fraktionen automatisch aus den DiploGlass-Welteinstellungen (nur in eine Richtung)."

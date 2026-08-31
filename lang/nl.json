@@ -419,10 +419,6 @@
                 "Name": "Naam Monitor Weergave",
                 "Hint": "De naam van de gebruiker of het display (bijv. 'Monitor') die wordt gebruikt voor de weergave voor publiek."
             },
-            "ReplaceOnlySheetActor": {
-                "Name": "Only-Sheet: Actorknop Vervangen",
-                "Hint": "Als de module 'Only-Sheet' actief is, verbergt FANG de originele knop voor het openen van actoren en vervangt deze door een aangepaste knop die de standaard Foundry Actor Directory opent."
-            },
             "DiploGlassOneWaySync": {
                 "Name": "DiploGlass Eénrichtingssynchronisatie Factions",
                 "Hint": "Indien ingeschakeld, importeert en werkt FANG automatisch factions bij vanuit de DiploGlass wereldinstellingen (alleen éénrichtingsverkeer)."

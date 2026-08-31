@@ -419,10 +419,6 @@
                 "Name": "Nazwa wyświetlacza monitora",
                 "Hint": "Nazwa użytkownika lub wyświetlacza (np. 'Monitor') używana do podglądu publicznego."
             },
-            "ReplaceOnlySheetActor": {
-                "Name": "Only-Sheet: Zastąp przycisk aktora",
-                "Hint": "Jeśli moduł 'Only-Sheet' jest aktywny, FANG ukryje oryginalny przycisk otwierania aktora i zastąpi go niestandardowym przyciskiem, który otwiera standardowy katalog aktorów Foundry."
-            },
             "DiploGlassOneWaySync": {
                 "Name": "DiploGlass Jednokierunkowa synchronizacja frakcji",
                 "Hint": "Jeśli włączone, FANG automatycznie importuje i aktualizuje frakcje z ustawień świata DiploGlass (tylko jednokierunkowo)."

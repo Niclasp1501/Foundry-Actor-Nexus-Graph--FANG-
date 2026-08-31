@@ -3,6 +3,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Module versions follow the Foundry-targeted `<foundry-major>.<YYMM>.<patch>` release scheme documented in `AGENTS.md`.
 
+## [14.2609.1] - 2026-09-01
+
+### Removed
+- **Die Ersetzung der Akteursauswahl von „Sheet Only" ist ausgezogen.** Sie ist nach *Ninjo's In-Person Tools* gewandert und steht dort unter „Akteursauswahl von Sheet Only ersetzen". FANG ist ein Werkzeug für Beziehungsgeflechte; eine Funktion, die die Oberfläche eines fremden Moduls umräumt, damit man bequemer am Tisch spielt, gehört zu den Tischwerkzeugen. Mitgegangen sind die Einstellung `replaceOnlySheetActor`, die Verwaltung des Popouts samt der Abwehr gegen Foundrys leere Fensterhüllen und die zugehörigen Regeln in der Stilvorlage — rund 330 Zeilen.
+
+  **Was das für dich heißt:** Wer beide Module hat, findet die Funktion an ihrem neuen Ort wieder und muss sie dort einmal einschalten; sie ist standardmäßig aus. Wer nur FANG hat, verliert das angedockte Akteursverzeichnis im Sheet-Only-Modus. Der FANG-Knopf in der Leiste von Sheet Only bleibt unverändert, ebenso alles am Graphen.
+
 ## [14.2608.1] - 2026-08-29
 
 Großes Oberflächen- und Stabilitäts-Release. Die Seitenleiste ist nach Aufgaben gegliedert, Editoren öffnen im FANG-Fenster statt in eigenen Foundry-Fenstern, Fraktionen und Orte haben eine gemeinsame Heimat — und mehrere Fehler in Datenspeicherung, Physik und Darstellung sind behoben. Enthält die gesamte Beta-Arbeit seit 14.2605.5.

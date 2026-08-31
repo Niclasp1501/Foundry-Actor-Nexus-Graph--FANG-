@@ -3,9 +3,6 @@ import { FangApplication } from "./fang-app.js";
 // Singleton instance
 let fangApp = null;
 
-const FANG_ACTOR_DIRECTORY_POPOUT_SELECTOR = ".actors-sidebar.sidebar-popout";
-let _fangActorDirectoryShellSweepQueued = false;
-let _fangActorDirectoryPopout = null;
 
 function _fangOpenGraphFromJournalButtonEvent(event) {
   const button = event?.target?.closest?.(".fang-open-btn");
@@ -16,10 +13,6 @@ function _fangOpenGraphFromJournalButtonEvent(event) {
 
   const toggleGraph = game.modules.get("fang")?.api?.toggleGraph;
   if (typeof toggleGraph === "function") toggleGraph();
-}
-
-function _fangSetActorPanelOpenState(isOpen) {
-  document.body?.classList?.toggle("fang-actor-panel-open", !!isOpen);
 }
 
 function _fangGetThemeVariant() {
@@ -45,245 +38,6 @@ function _fangApplyVisualThemeToOpenApps() {
   for (const app of _fangGetRenderedFangApps()) {
     if (typeof app._applyVisualTheme === "function") app._applyVisualTheme(themeVariant);
   }
-}
-
-function _fangGetActorDirectoryPopoutShells() {
-  return Array.from(document.querySelectorAll(FANG_ACTOR_DIRECTORY_POPOUT_SELECTOR));
-}
-
-function _fangIsGhostActorDirectoryShell(shell) {
-  if (!shell) return false;
-  const content = shell.querySelector(".window-content");
-  // Foundry's "ghost shell" reports: header remains, inner content gone.
-  if (!content) return true;
-  if (content.childElementCount === 0) return true;
-  if (!shell.querySelector(".directory, .directory-header, .directory-list, .directory-item")) return true;
-  return false;
-}
-
-function _fangForceRemoveActorDirectoryShells({ onlyGhost = false } = {}) {
-  const shells = _fangGetActorDirectoryPopoutShells();
-  for (const shell of shells) {
-    if (!onlyGhost || _fangIsGhostActorDirectoryShell(shell)) shell.remove();
-  }
-  return shells.length;
-}
-
-function _fangQueueActorDirectoryShellSweep(reason = "unknown", { onlyGhost = true, force = false } = {}) {
-  if (_fangActorDirectoryShellSweepQueued && !force) return;
-  _fangActorDirectoryShellSweepQueued = true;
-
-  const sweep = () => {
-    _fangForceRemoveActorDirectoryShells({ onlyGhost });
-  };
-
-  queueMicrotask(() => {
-    sweep();
-    _fangActorDirectoryShellSweepQueued = false;
-  });
-  setTimeout(sweep, 0);
-  setTimeout(sweep, 50);
-  setTimeout(sweep, 250);
-
-  let rafs = 0;
-  const rafSweep = () => {
-    sweep();
-    if (++rafs < 5) requestAnimationFrame(rafSweep);
-  };
-  requestAnimationFrame(rafSweep);
-
-  console.debug(`FANG | ActorDirectory shell sweep (${reason})`);
-}
-
-function _fangResolveActorDirectoryApp() {
-  const fromUi = ui?.actors ?? null;
-  if (fromUi && typeof fromUi.renderPopout === "function") return fromUi;
-
-  if (!game?.actors?.apps) return null;
-  const fromGame = Object.values(game.actors.apps).find((app) => {
-    if (typeof app?.renderPopout !== "function") return false;
-    if (app?.constructor?.name === "ActorDirectory") return true;
-    if (app?.id === "actors" || app?.tabName === "actors") return true;
-    return false;
-  });
-  return fromGame ?? null;
-}
-
-function _fangGetPopoutDomNode(popout) {
-  if (!popout) return null;
-  if (popout instanceof HTMLElement) return popout;
-  return popout.element?.[0] ?? popout.element ?? null;
-}
-
-function _fangIsActorDirectoryApp(app) {
-  if (!app) return false;
-  if (app?.constructor?.name === "ActorDirectory") return true;
-  if (app?.id === "actors" || app?.tabName === "actors") return true;
-  return false;
-}
-
-function _fangIsActorDirectoryPopoutApp(app) {
-  if (!_fangIsActorDirectoryApp(app)) return false;
-  // v14: ApplicationV2 popout state
-  if (app?.isPopout === true) return true;
-  // v13 + legacy fallback
-  if (app?.popOut === true || app?.options?.popOut === true) return true;
-  return false;
-}
-
-function _fangGetActorDirectoryPopoutFromUi() {
-  const dir = ui?.actors ?? null;
-  if (!dir) return null;
-  const popout = dir?.popout ?? dir?.popOut ?? null;
-  if (!popout) return null;
-  const el = _fangGetPopoutDomNode(popout);
-  return el ? popout : null;
-}
-
-function _fangHasLiveActorPopout() {
-  if (!_fangActorDirectoryPopout) return false;
-  const el = _fangGetPopoutDomNode(_fangActorDirectoryPopout);
-  if (!el || !document.body.contains(el)) {
-    _fangActorDirectoryPopout = null;
-    return false;
-  }
-  return true;
-}
-
-function _fangAttachActorPopoutListener(popout) {
-  const el = _fangGetPopoutDomNode(popout);
-  if (!el?.addEventListener) return;
-  el.addEventListener("close", () => {
-    _fangActorDirectoryPopout = null;
-    _fangSetActorPanelOpenState(false);
-    _fangQueueActorDirectoryShellSweep("event:close", { onlyGhost: false, force: true });
-  }, { once: true });
-}
-
-function _fangFindActorDirectoryPopoutApp() {
-  const fromUiPopout = _fangGetActorDirectoryPopoutFromUi();
-  if (fromUiPopout) return fromUiPopout;
-
-  const windows = Object.values(ui?.windows ?? {});
-  const byElement = windows.find((app) => _fangGetPopoutDomNode(app)?.matches?.(FANG_ACTOR_DIRECTORY_POPOUT_SELECTOR));
-  if (byElement) return byElement;
-  const byType = windows.find((app) => _fangIsActorDirectoryPopoutApp(app));
-  return byType ?? null;
-}
-
-async function _fangOpenActorDirectoryPopout({ reason = "unknown" } = {}) {
-  _fangForceRemoveActorDirectoryShells({ onlyGhost: true });
-
-  if (_fangHasLiveActorPopout()) {
-    try {
-      _fangActorDirectoryPopout.bringToFront?.();
-    } catch {
-      // no-op
-    }
-    return;
-  }
-
-  const dirApp = _fangResolveActorDirectoryApp();
-  if (!dirApp) return;
-
-  try {
-    const popout = typeof dirApp.renderPopout === "function"
-      ? await dirApp.renderPopout()
-      : await dirApp.render(true, { popOut: true, isPopout: true });
-
-    if (popout) {
-      _fangActorDirectoryPopout = popout;
-      _fangAttachActorPopoutListener(popout);
-      _fangSetActorPanelOpenState(true);
-      console.debug(`FANG | ActorDirectory popout opened (${reason})`);
-      return;
-    }
-  } catch (err) {
-    console.error("FANG | ActorDirectory open failed", err);
-  }
-
-  // Last-resort fallback using visible window tracking.
-  const app = _fangFindActorDirectoryPopoutApp();
-  if (app) {
-    _fangActorDirectoryPopout = app;
-    _fangAttachActorPopoutListener(app);
-  } else {
-    console.warn("FANG | ActorDirectory popout did not open", { reason });
-  }
-}
-
-async function _fangForceCloseActorDirectoryPopout({ reason = "unknown" } = {}) {
-  // Collapse layout immediately; technical close/cleanup can continue asynchronously.
-  _fangSetActorPanelOpenState(false);
-
-  // 1) Close tracked popout first (same pattern as sheet-only journal/chat).
-  if (_fangHasLiveActorPopout() && typeof _fangActorDirectoryPopout?.close === "function") {
-    try {
-      await _fangActorDirectoryPopout.close();
-    } catch {
-      try {
-        await _fangActorDirectoryPopout.close({ force: true });
-      } catch {
-        // ignore
-      }
-    }
-  }
-  _fangActorDirectoryPopout = null;
-
-  // 2) Close any remaining ActorDirectory popout app discovered via ui/ui.windows.
-  const app = _fangFindActorDirectoryPopoutApp();
-  if (app?.close) {
-    try {
-      await app.close();
-    } catch {
-      try {
-        await app.close({ force: true });
-      } catch {
-        // ignore
-      }
-    }
-  }
-
-  // 3) Hard-remove leftovers so CSS :has() cannot stick on ghost shells.
-  _fangQueueActorDirectoryShellSweep(reason, { onlyGhost: false, force: true });
-  console.debug(`FANG | ActorDirectory popout cleanup (${reason})`);
-}
-
-function _fangIsActorDirectoryOpen() {
-  if (_fangHasLiveActorPopout()) return true;
-  return !!document.querySelector(FANG_ACTOR_DIRECTORY_POPOUT_SELECTOR);
-}
-
-function _fangClearActorDirectoryPopoutRef() {
-  _fangActorDirectoryPopout = null;
-  _fangSetActorPanelOpenState(false);
-}
-
-function _fangMarkActorDirectoryPopout(popout) {
-  if (!popout) return;
-  _fangActorDirectoryPopout = popout;
-  _fangSetActorPanelOpenState(true);
-  _fangAttachActorPopoutListener(popout);
-}
-
-function _fangApplyActorDirectorySidebarStyle(app) {
-  const el = _fangGetPopoutDomNode(app);
-  if (!el) return;
-  Object.assign(el.style, {
-    position: "fixed",
-    right: "0px",
-    top: "0px",
-    left: "auto",
-    width: "300px",
-    height: "100vh",
-    maxHeight: "100vh",
-    margin: "0",
-    borderRadius: "0",
-    zIndex: "9999",
-    background: "rgba(11, 10, 19, 0.95)",
-    border: "1px solid rgb(48, 40, 49)",
-    boxShadow: "-4px 0 16px rgba(0,0,0,0.6)"
-  });
 }
 
 Hooks.once("init", () => {
@@ -496,22 +250,6 @@ Hooks.once("init", () => {
     }
   });
 
-  game.settings.register("fang", "replaceOnlySheetActor", {
-    name: "FANG.Settings.ReplaceOnlySheetActor.Name",
-    hint: "FANG.Settings.ReplaceOnlySheetActor.Hint",
-    scope: "world",
-    config: true,
-    type: Boolean,
-    default: false,
-    onChange: () => {
-      // Remove injected buttons so they get re-injected with new setting
-      document.getElementById("fang-so-btn")?.remove();
-      document.getElementById("fang-so-actors-btn")?.remove();
-      const orig = document.getElementById("so-collapse-actor-select");
-      if (orig) orig.style.display = "";
-    }
-  });
-
   game.settings.register("fang", "diploglassOneWaySync", {
     name: "FANG.Settings.DiploGlassOneWaySync.Name",
     hint: "FANG.Settings.DiploGlassOneWaySync.Hint",
@@ -613,21 +351,6 @@ Hooks.once("ready", async () => {
   if (!window._fangJournalOpenButtonFixInstalled) {
     document.addEventListener("click", _fangOpenGraphFromJournalButtonEvent, true);
     window._fangJournalOpenButtonFixInstalled = true;
-  }
-
-  // Global, robust "Ghost Shell" cleanup for Foundry v13/v14 Actor Directory popouts.
-  // Runs for players + GM, regardless of Only-Sheet usage.
-  if (!window._fangActorDirectoryGhostFixInstalled) {
-    Hooks.on("closeActorDirectory", () => {
-      _fangClearActorDirectoryPopoutRef();
-      _fangQueueActorDirectoryShellSweep("hook:closeActorDirectory", { onlyGhost: true, force: true });
-    });
-    Hooks.on("closeApplicationV2", (app) => {
-      if (!_fangIsActorDirectoryPopoutApp(app)) return;
-      _fangClearActorDirectoryPopoutRef();
-      _fangQueueActorDirectoryShellSweep("hook:closeApplicationV2", { onlyGhost: true, force: true });
-    });
-    window._fangActorDirectoryGhostFixInstalled = true;
   }
 
   // Expose API for Macros
@@ -910,46 +633,17 @@ Hooks.once("ready", async () => {
     btn.style.cursor = "pointer";
   }
 
-  // Inject FANG button (and optionally replace actor-opener) into "only-sheet" module
+  // Inject the FANG button into the "only-sheet" module's button bar.
+  //
+  // Replacing that module's actor selector with a docked directory used to live
+  // here as well. It moved to Ninjo's In-Person Tools in 14.2609.1: it rearranges
+  // another module's interface for the sake of playing at a table, which is that
+  // module's subject, not ours. FANG keeps its own button and nothing else.
   const observer = new MutationObserver((mutations) => {
     for (let mutation of mutations) {
       if (mutation.addedNodes.length) {
         const container = document.getElementById("so-main-buttons");
         if (container && !document.getElementById("fang-so-btn")) {
-          const replaceActorBtn = game.settings.get("fang", "replaceOnlySheetActor");
-
-          // 1) Optionally replace the original actor-selector button
-          if (replaceActorBtn) {
-            const orig = document.getElementById("so-collapse-actor-select");
-            if (orig) orig.style.display = "none";
-
-            if (!document.getElementById("fang-so-actors-btn")) {
-              const actorsBtn = document.createElement("button");
-              actorsBtn.id = "fang-so-actors-btn";
-              actorsBtn.title = game.i18n.localize("ACTOR.TabActor") || "Actors";
-              _applyOnlySheetStyle(actorsBtn);
-              actorsBtn.innerHTML = '<i class="fa-solid fa-user"></i>';
-              // FIX: Robust toggle and close logic for V13 + Only-Sheet
-              actorsBtn.addEventListener("click", async (e) => {
-                e.preventDefault();
-
-                // Pre-clean: remove any already-empty ghost shells so state can't desync.
-                _fangForceRemoveActorDirectoryShells({ onlyGhost: true });
-
-                if (_fangIsActorDirectoryOpen()) {
-                  await _fangForceCloseActorDirectoryPopout({ reason: "only-sheet-toggle:close" });
-                  return;
-                }
-
-                const dir = ui.actors;
-                if (dir) await _fangOpenActorDirectoryPopout({ reason: "only-sheet-toggle:open" });
-              });
-              // Insert at same position as the original (first child)
-              container.insertBefore(actorsBtn, container.firstChild);
-            }
-          }
-
-          // 2) Always inject the FANG button (matching Only-Sheet style)
           const fangBtn = document.createElement("button");
           fangBtn.id = "fang-so-btn";
           fangBtn.title = game.i18n.localize("FANG.ButtonOpen") || "Open FANG Graph";
@@ -1024,15 +718,6 @@ Hooks.on("renderActorDirectory", (app, html, data) => {
 
   // Append to the directory header
   $(html).find(".directory-header .header-actions").append(button);
-
-  // If Only-Sheet is active and this is a popout, position it like the journal panel
-  if (document.getElementById("so-main-buttons") && _fangIsActorDirectoryPopoutApp(app)) {
-    _fangMarkActorDirectoryPopout(app);
-    // Small delay to let Foundry finish positioning first
-    setTimeout(() => {
-      _fangApplyActorDirectorySidebarStyle(app);
-    }, 50);
-  }
 });
 
 

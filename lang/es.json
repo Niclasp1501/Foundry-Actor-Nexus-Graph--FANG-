@@ -419,10 +419,6 @@
                 "Name": "Nombre de Pantalla del Monitor",
                 "Hint": "El nombre del usuario o pantalla (por ejemplo, 'Monitor') utilizado para la vista pública."
             },
-            "ReplaceOnlySheetActor": {
-                "Name": "Solo-Hoja: Botón de Reemplazo de Actor",
-                "Hint": "Si el módulo 'Only-Sheet' está activo, FANG ocultará el botón original de apertura de actor y lo reemplazará con un botón personalizado que abrirá el Directorio de Actores estándar de Foundry."
-            },
             "DiploGlassOneWaySync": {
                 "Name": "Sincronización Unidireccional de Facciones de DiploGlass",
                 "Hint": "Si está habilitado, FANG importa y actualiza automáticamente las facciones de la configuración del mundo de DiploGlass (solo unidireccional)."

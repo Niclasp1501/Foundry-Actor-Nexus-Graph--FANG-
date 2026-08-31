@@ -419,10 +419,6 @@
                 "Name": "Název monitoru",
                 "Hint": "Název uživatele nebo displeje (např. 'Monitor') používaný pro zobrazení pro veřejnost."
             },
-            "ReplaceOnlySheetActor": {
-                "Name": "Only-Sheet: Nahradit tlačítko aktéra",
-                "Hint": "Pokud je aktivní modul 'Only-Sheet', FANG skryje původní tlačítko pro otevření aktéra a nahradí ho vlastním tlačítkem, které otevře standardní adresář aktérů Foundry."
-            },
             "DiploGlassOneWaySync": {
                 "Name": "DiploGlass jednostranná synchronizace frakcí",
                 "Hint": "Pokud je povoleno, FANG automaticky importuje a aktualizuje frakce z nastavení světa DiploGlass (pouze jednostranně)."
