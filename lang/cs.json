@@ -330,6 +330,7 @@
         },
         "History": {
             "Timeline": "Chronicle",
+            "JumpToDay": "Přejít na herní den",
             "NodeChronicle": "Event Chronicle",
             "Events": "Events",
             "Add": "Add Insight",

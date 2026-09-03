@@ -673,14 +673,53 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         return sanitized || null;
     }
 
+    _safeCalendarFormat(calendar, timestamp, formatter) {
+        try {
+            const value = calendar.format(timestamp, formatter, { includeTime: false });
+            return typeof value === "string" ? value.trim() : "";
+        } catch (_err) {
+            return "";
+        }
+    }
+
+    /** "0000-04-11 00:00:00" -> "0000-04-11". The timestamp formatter ignores includeTime. */
+    _stripClockFromLabel(label) {
+        return String(label || "").replace(/[s,]+d{1,2}:d{2}(:d{2})?$/, "").trim();
+    }
+
+    /**
+     * Assemble "11. April 0" from Foundry's TimeComponents when the calendar offers no readable
+     * formatter. Month and dayOfMonth are zero-based there, and month names are i18n keys.
+     */
+    _buildCalendarLabelFromComponents(components, calendar) {
+        if (!components || typeof components !== "object") return "";
+        const year = this._calendarNumber(components.year);
+        const monthIndex = this._calendarNumber(components.month);
+        const dayIndex = this._calendarNumber(components.dayOfMonth ?? components.day);
+        if (year === null || monthIndex === null || dayIndex === null) return "";
+        const months = calendar?.months?.values ?? calendar?.months;
+        const rawName = Array.isArray(months) ? (months[monthIndex]?.name || months[monthIndex]?.abbreviation || "") : "";
+        const monthName = rawName ? this._localize(rawName, rawName) : "";
+        return monthName
+            ? `${dayIndex + 1}. ${monthName} ${year}`
+            : `${dayIndex + 1}.${monthIndex + 1}.${year}`;
+    }
+
     _getCalendarSort(dateLike) {
         if (!dateLike || typeof dateLike !== "object") return "";
-        const year = dateLike.year ?? dateLike.y;
-        const monthValue = dateLike.month?.number ?? dateLike.month?.value ?? dateLike.month?.index ?? dateLike.month;
-        const day = dateLike.day ?? dateLike.dayOfMonth ?? dateLike.date?.day;
-        if (year === undefined || monthValue === undefined || day === undefined) return "";
+        const year = this._calendarNumber(dateLike.year ?? dateLike.y);
+        const monthValue = this._calendarNumber(dateLike.month?.number ?? dateLike.month?.value ?? dateLike.month?.index ?? dateLike.month);
+        // Foundry's TimeComponents carries BOTH fields: "day" is the day of the YEAR, "dayOfMonth" the
+        // day within the month. Reading "day" first produced keys like "000000-03-100" for day 100,
+        // which sorts before "000000-03-99" as a string. Calendar modules only ever send "day", so
+        // prefer dayOfMonth whenever both are present.
+        const hasBothDayFields = dateLike.dayOfMonth !== undefined && dateLike.day !== undefined;
+        const day = this._calendarNumber(hasBothDayFields ? dateLike.dayOfMonth : (dateLike.day ?? dateLike.dayOfMonth ?? dateLike.date?.day));
+        if (year === null || monthValue === null || day === null) return "";
         const month = Number(monthValue) + (dateLike.month?.index !== undefined ? 1 : 0);
-        return `${String(year).padStart(6, "0")}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+        // Three digits for the day so that a day-of-year value still compares numerically.
+        const yearKey = year < 0 ? `-${String(Math.abs(year)).padStart(6, "0")}` : String(year).padStart(6, "0");
+        return `${yearKey}-${String(month).padStart(3, "0")}-${String(day).padStart(3, "0")}`;
     }
 
     _calendarLabelLooksUsable(label) {
@@ -739,16 +778,17 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         try {
             const timestamp = Number.isFinite(game.time?.worldTime) ? game.time.worldTime : undefined;
             const components = typeof calendar.timeToComponents === "function" ? calendar.timeToComponents(timestamp) : null;
-            const label = ["date", "timestamp"]
-                .map(formatter => {
-                    try {
-                        return calendar.format(timestamp, formatter, { includeTime: false });
-                    } catch (_err) {
-                        return "";
-                    }
-                })
-                .find(value => this._calendarLabelLooksUsable(value));
-            if (!label) return null;
+            // Foundry resolves a formatter name either from CONFIG.time.formatters or from a static
+            // method on the calendar class. The base class registers only "timestamp", "duration" and
+            // "ago" -- and "timestamp" renders a machine string like "0000-04-11 00:00:00" that also
+            // ignores includeTime. Systems add readable ones (dnd5e ships formatMonthDayYear), so try
+            // those first, then build the label from the components, and keep the timestamp last.
+            const label = ["formatMonthDayYear", "formatMonthDay", "date"]
+                .map(formatter => this._safeCalendarFormat(calendar, timestamp, formatter))
+                .find(value => this._calendarLabelLooksUsable(value))
+                || this._buildCalendarLabelFromComponents(components, calendar)
+                || this._stripClockFromLabel(this._safeCalendarFormat(calendar, timestamp, "timestamp"));
+            if (!this._calendarLabelLooksUsable(label)) return null;
             return {
                 label,
                 sort: this._getCalendarSort(components),
@@ -830,6 +870,21 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             .map(entry => this._getHistoryEntryForUser(entry, user))
             .filter(Boolean)
             .sort((a, b) => {
+                // The chronicle is ordered by GAME day, newest first -- not by the real-world moment
+                // the entry was typed. Anything typed up later still lands on its own day.
+                const aSort = String(a.gameDate?.sort || "");
+                const bSort = String(b.gameDate?.sort || "");
+                if (aSort !== bSort) {
+                    // Undated entries collect at the end rather than jumping to the top.
+                    if (!aSort) return 1;
+                    if (!bSort) return -1;
+                    return bSort.localeCompare(aSort);
+                }
+                if (!aSort) {
+                    // Without a sortable date, at least keep entries of the same label together.
+                    const labelCompare = String(a.gameDate?.label || "").localeCompare(String(b.gameDate?.label || ""));
+                    if (labelCompare) return labelCompare;
+                }
                 const orderCompare = String(b.orderKey || b.createdAt).localeCompare(String(a.orderKey || a.createdAt));
                 if (orderCompare) return orderCompare;
                 return String(b.createdAt || "").localeCompare(String(a.createdAt || ""));
@@ -1109,6 +1164,52 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         return this.element?.querySelector(".fang-app-container") || this.element;
     }
 
+    /**
+     * Wire the day rail: clicking a chip scrolls its section into view, and scrolling the log marks
+     * the chip of the day currently at the top. The scroll container is .fang-history-log itself.
+     */
+    _wireHistoryTimeline(panel) {
+        const log = panel.querySelector(".fang-history-log");
+        const chips = [...panel.querySelectorAll(".fang-history-jump")];
+        const sections = [...panel.querySelectorAll(".fang-history-day")];
+        if (!log || !chips.length || !sections.length) return;
+
+        const markActive = (dayIndex) => {
+            for (const chip of chips) chip.classList.toggle("active", Number(chip.dataset.dayIndex) === dayIndex);
+        };
+
+        for (const chip of chips) {
+            chip.addEventListener("click", () => {
+                const dayIndex = Number(chip.dataset.dayIndex);
+                const section = sections.find(item => Number(item.dataset.dayIndex) === dayIndex);
+                if (!section) return;
+                // scrollIntoView would also scroll the rail itself out of sight, so move the log by hand.
+                const offset = section.offsetTop - log.offsetTop - 8;
+                log.scrollTo({ top: Math.max(0, offset), behavior: "smooth" });
+                markActive(dayIndex);
+                chip.scrollIntoView({ block: "nearest", inline: "nearest" });
+            });
+        }
+
+        let scheduled = false;
+        const syncActive = () => {
+            scheduled = false;
+            const cutoff = log.scrollTop + 24;
+            let current = sections[0];
+            for (const section of sections) {
+                if (section.offsetTop - log.offsetTop <= cutoff) current = section;
+                else break;
+            }
+            markActive(Number(current?.dataset?.dayIndex ?? 0));
+        };
+        log.addEventListener("scroll", () => {
+            if (scheduled) return;
+            scheduled = true;
+            requestAnimationFrame(syncActive);
+        });
+        markActive(0);
+    }
+
     _closeHistoryPanel() {
         this._getHistoryPanelHost()?.querySelector(".fang-history-canvas-panel")?.remove();
     }
@@ -1302,8 +1403,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             ? `<button type="button" class="fang-history-add"><i class="fas fa-plus"></i> ${this._escapeHtml(this._localize("FANG.History.AddEvent", "Add Event"))}</button>`
             : "";
         const empty = `<div class="fang-history-empty">${this._escapeHtml(this._localize("FANG.History.Empty", "No chronicle entries yet."))}</div>`;
-        const groupsHtml = [...grouped.entries()].map(([date, dayEntries]) => `
-            <section class="fang-history-day">
+        const dayGroups = [...grouped.entries()];
+        const groupsHtml = dayGroups.map(([date, dayEntries], dayIndex) => `
+            <section class="fang-history-day" data-day-index="${dayIndex}">
                 <h3><i class="fas fa-calendar-day"></i> ${this._escapeHtml(date)}</h3>
                 <ol class="fang-history-list">
                     ${dayEntries.map(entry => {
@@ -1345,6 +1447,22 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 </ol>
             </section>`).join("");
 
+        // A day rail above the log. Same order as the sections below (newest day first) so that the
+        // leftmost chip is always the topmost section -- a true oldest-to-newest axis would read the
+        // opposite way from the list and make every click a surprise.
+        const timelineHtml = dayGroups.length > 1 ? `
+            <nav class="fang-history-timeline" aria-label="${this._escapeHtml(this._localize("FANG.History.JumpToDay", "Jump to game day"))}">
+                <ol>
+                    ${dayGroups.map(([date, dayEntries], dayIndex) => `
+                        <li>
+                            <button type="button" class="fang-history-jump" data-day-index="${dayIndex}" title="${this._escapeHtml(date)}">
+                                <span class="fang-history-jump-date">${this._escapeHtml(date)}</span>
+                                <span class="fang-history-jump-count">${dayEntries.length}</span>
+                            </button>
+                        </li>`).join("")}
+                </ol>
+            </nav>` : "";
+
         return `
             <div class="fang-history-log">
                 <header class="fang-history-log-header">
@@ -1354,6 +1472,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     </div>
                     ${addButton}
                 </header>
+                ${entries.length ? timelineHtml : ""}
                 ${entries.length ? groupsHtml : empty}
             </div>`;
     }
@@ -1386,6 +1505,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 if (await this._deleteHistoryEntry(entryId)) refresh();
             });
         });
+        this._wireHistoryTimeline(panel);
         panel.querySelectorAll(".fang-history-focus").forEach(button => {
             button.addEventListener("click", (event) => {
                 const nodeId = event.currentTarget?.dataset?.nodeId;

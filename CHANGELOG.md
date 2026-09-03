@@ -5,6 +5,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [14.2609.1] - 2026-09-01
 
+### Added
+- **Zeitleiste in der Chronik.** Über dem Logbuch steht jetzt eine Leiste mit einem Knopf je Spieltag samt Anzahl der Einträge. Ein Klick springt zu diesem Tag, und beim Blättern hebt sich der Tag hervor, bei dem man gerade ist. Die Leiste bleibt beim Scrollen oben stehen — bei einer Chronik über viele Sitzungen war der Weg zu einem bestimmten Tag vorher reines Scrollen.
+
+### Fixed
+- **Die Chronik war nach Tippzeitpunkt sortiert, nicht nach Spieltag.** Jeder Eintrag trägt seit jeher einen Sortierschlüssel aus dem Spieldatum — gelesen wurde er nie. Geordnet wurde nach `createdAt`, also nach dem realen Moment der Eingabe. Wer nach der Sitzung ein Ereignis vom 9. April nachtrug, fand es über dem 12. April wieder, und die Tagesüberschriften standen in der Reihenfolge, in der man getippt hatte. Sortiert wird jetzt nach Spieltag (neuester zuerst), innerhalb eines Tages weiter nach Eingabezeit; Einträge ohne Datum sammeln sich am Ende, statt nach oben zu rutschen.
+
+- **Der Sortierschlüssel las das falsche Feld des Foundry-Kalenders.** Foundrys `TimeComponents` führt beides: `day` ist der Tag des **Jahres**, `dayOfMonth` der Tag im Monat. Gelesen wurde `day`, und die Zahl wurde auf zwei Stellen aufgefüllt — der 11. April ergab den Schlüssel `000000-03-100`, der als Zeichenkette **vor** `000000-03-99` (dem 10. April) steht. In jedem Monat, in dem der Jahrestag von zwei auf drei Stellen wächst, kippte damit die Reihenfolge. Jetzt wird `dayOfMonth` bevorzugt, sobald beide Felder da sind — Kalendermodule senden nur `day` und bleiben unberührt —, und der Tag wird dreistellig aufgefüllt.
+
+- **Der eingebaute Kalender lieferte einen Maschinen-Zeitstempel als Tagesüberschrift.** Gesucht wurde ein Formatierer namens `date`. Den gibt es nicht: Foundry kennt nur `timestamp`, `duration` und `ago`. Also fiel die Erkennung auf `timestamp` zurück und schrieb `0000-04-11 00:00:00` über den Tag — samt Uhrzeit, denn dieser Formatierer ignoriert `includeTime`. Systeme bringen lesbare Formatierer mit; dnd5e etwa `formatMonthDayYear`. Die werden jetzt zuerst probiert (Ergebnis: „April 11., 0"), danach wird die Beschriftung aus den Komponenten samt übersetztem Monatsnamen gebaut, und erst zuletzt bleibt der Zeitstempel — dann wenigstens ohne die immer gleiche Uhrzeit.
+
 ### Removed
 - **Die Ersetzung der Akteursauswahl von „Sheet Only" ist ausgezogen.** Sie ist nach *Ninjo's In-Person Tools* gewandert und steht dort unter „Akteursauswahl von Sheet Only ersetzen". FANG ist ein Werkzeug für Beziehungsgeflechte; eine Funktion, die die Oberfläche eines fremden Moduls umräumt, damit man bequemer am Tisch spielt, gehört zu den Tischwerkzeugen. Mitgegangen sind die Einstellung `replaceOnlySheetActor`, die Verwaltung des Popouts samt der Abwehr gegen Foundrys leere Fensterhüllen und die zugehörigen Regeln in der Stilvorlage — rund 330 Zeilen.
 

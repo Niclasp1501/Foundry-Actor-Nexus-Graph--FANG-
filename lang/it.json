@@ -330,6 +330,7 @@
         },
         "History": {
             "Timeline": "Chronicle",
+            "JumpToDay": "Vai a un giorno di gioco",
             "NodeChronicle": "Event Chronicle",
             "Events": "Events",
             "Add": "Add Insight",

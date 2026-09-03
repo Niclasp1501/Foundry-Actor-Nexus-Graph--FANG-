@@ -3992,6 +3992,87 @@ body.fang-theme-cyberpunk .background-config-container .premium-notice p {
     min-width: 170px;
 }
 
+/* The day rail sticks to the top of the scrolling log so it stays reachable in a long
+   chronicle. Its background has to match the card behind it, hence the own property. */
+.fang-history-timeline {
+    --fang-history-rail-bg: #fdfbf7;
+    position: sticky;
+    top: -20px;
+    z-index: 3;
+    margin: 0 -24px 16px;
+    padding: 20px 24px 10px;
+    background: var(--fang-history-rail-bg);
+    border-bottom: 1px solid rgba(var(--fang-accent-gold-rgb), 0.4);
+}
+
+.fang-history-timeline ol {
+    display: flex;
+    gap: 8px;
+    margin: 0;
+    padding: 0 0 4px;
+    list-style: none;
+    overflow-x: auto;
+    scrollbar-width: thin;
+}
+
+.fang-history-timeline li {
+    flex: 0 0 auto;
+}
+
+.fang-history-jump {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    max-width: 190px;
+    padding: 5px 10px;
+    border: 1px solid rgba(var(--fang-accent-gold-rgb), 0.55);
+    border-radius: 999px;
+    background: rgba(var(--fang-accent-gold-rgb), 0.08);
+    color: var(--fang-text-color);
+    font-family: var(--fang-font-main);
+    font-size: 0.82rem;
+    line-height: 1.2;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.fang-history-jump:hover {
+    background: rgba(var(--fang-accent-gold-rgb), 0.22);
+    border-color: var(--fang-accent-gold);
+}
+
+.fang-history-jump.active {
+    background: var(--fang-primary-red);
+    border-color: var(--fang-accent-gold);
+    color: var(--fang-header-text);
+}
+
+.fang-history-jump-date {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.fang-history-jump-count {
+    flex: 0 0 auto;
+    min-width: 18px;
+    padding: 1px 5px;
+    border-radius: 999px;
+    background: rgba(var(--fang-primary-red-rgb), 0.14);
+    font-size: 0.74rem;
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+}
+
+.fang-history-jump.active .fang-history-jump-count {
+    background: rgba(0, 0, 0, 0.28);
+}
+
+.fang-app-container.fang-theme-cyberpunk .fang-history-timeline {
+    --fang-history-rail-bg: rgba(3, 15, 26, 0.95);
+    border-bottom-color: rgba(51, 217, 255, 0.45);
+}
+
 .fang-history-day {
     margin: 0 0 16px;
 }

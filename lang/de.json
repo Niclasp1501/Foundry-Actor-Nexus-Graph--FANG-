@@ -330,6 +330,7 @@
         },
         "History": {
             "Timeline": "Chronik",
+            "JumpToDay": "Zu Spieltag springen",
             "NodeChronicle": "Ereignis-Chronik",
             "Events": "Ereignisse",
             "Add": "Erkenntnis hinzufügen",
