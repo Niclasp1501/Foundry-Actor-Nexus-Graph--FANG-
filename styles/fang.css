@@ -1807,6 +1807,30 @@ body.fang-monitor .fang-app-container .narrative-close {
     display: none;
 }
 
+/* On a tablet the window is already clamped to the screen, so every pixel of padding here
+   comes straight off the panel. Give the editor the room instead. */
+@media (max-height: 780px), (max-width: 860px) {
+    .fang-editor-overlay {
+        padding: 8px;
+    }
+
+    .fang-editor-panel {
+        border-radius: 10px;
+    }
+
+    .fang-editor-header {
+        padding: 10px 14px;
+    }
+
+    .fang-editor-body {
+        padding: 12px 14px;
+    }
+
+    .fang-editor-footer {
+        padding: 10px 14px;
+    }
+}
+
 .fang-editor-backdrop {
     position: absolute;
     inset: 0;

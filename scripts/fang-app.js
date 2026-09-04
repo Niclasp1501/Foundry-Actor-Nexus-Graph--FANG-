@@ -1837,6 +1837,16 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         this._initD3();
         this._rebuildSearchMatches();
 
+        // Rotating a tablet or opening its keyboard changes how much room there is. Re-clamp,
+        // or the window keeps a height the screen no longer has.
+        if (!this._viewportFitHandler) {
+            this._viewportFitHandler = foundry.utils.debounce(() => {
+                if (this.rendered) this.setPosition({});
+            }, 120);
+            window.addEventListener("resize", this._viewportFitHandler);
+            window.addEventListener("orientationchange", this._viewportFitHandler);
+        }
+
         // Manage ResizeObserver
         if (this._resizeObserver) this._resizeObserver.disconnect();
         const canvasContainer = this.element.querySelector(".canvas-container");
@@ -2116,6 +2126,12 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         document.body.style.removeProperty("margin");
         document.body.style.removeProperty("overflow");
 
+        if (this._viewportFitHandler) {
+            window.removeEventListener("resize", this._viewportFitHandler);
+            window.removeEventListener("orientationchange", this._viewportFitHandler);
+            this._viewportFitHandler = null;
+        }
+
         super._onClose(options);
     }
 
@@ -2124,7 +2140,33 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             // Force absolute fullscreen for Monitor to avoid Foundry UI offsets
             return this;
         }
-        return super.setPosition(position);
+        return super.setPosition(this._fitPositionToViewport(position));
+    }
+
+    /**
+     * Keep the window inside what the browser actually shows.
+     *
+     * The defaults are 1400x950, which is more than a tablet in landscape has left once the
+     * browser's own chrome is subtracted. The lower edge of the window then sits below the
+     * screen -- and with it the footer of the in-window editor, the one holding Save. Nothing
+     * scrolls it into view either: that overlay is anchored to the window, not to the page, so
+     * players simply could not save. Shrinking is the fix; the panel bodies scroll on their own.
+     */
+    _fitPositionToViewport(position = {}) {
+        const margin = 12;
+        const maxWidth = Math.max(320, window.innerWidth - margin * 2);
+        const maxHeight = Math.max(320, window.innerHeight - margin * 2);
+        const fitted = { ...position };
+        const width = Number.isFinite(fitted.width) ? fitted.width : this.position?.width;
+        const height = Number.isFinite(fitted.height) ? fitted.height : this.position?.height;
+
+        if (Number.isFinite(width) && width > maxWidth) fitted.width = maxWidth;
+        if (Number.isFinite(height) && height > maxHeight) fitted.height = maxHeight;
+        // A window that had to shrink is as wide or tall as the screen allows, so its only
+        // valid origin is the margin. Leaving the old offset would push it back off the edge.
+        if (fitted.width === maxWidth) fitted.left = margin;
+        if (fitted.height === maxHeight) fitted.top = margin;
+        return fitted;
     }
 
     /** Override _updatePosition to prevent Foundry from constraining window dimensions for Monitor */
