@@ -3,7 +3,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Module versions follow the Foundry-targeted `<foundry-major>.<YYMM>.<patch>` release scheme documented in `AGENTS.md`.
 
-## [14.2609.1] - 2026-09-01
+## [14.2609.1] - 2026-09-05
 
 ### Added
 - **Echtzeit als Rückfallebene ohne Kalender.** Findet FANG weder ein bekanntes Kalendermodul noch einen Kalender in der Welt, trägt ein Eintrag jetzt das echte Datum samt Uhrzeit statt „Ohne Spieltag" — in der Sprache der Oberfläche, mit Sortierschlüssel in derselben Form wie ein Spieldatum. Die Chronik ordnet sich damit auch in einer Welt ganz ohne Kalender.
@@ -69,6 +69,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - **Der eingebaute Kalender lieferte einen Maschinen-Zeitstempel als Tagesüberschrift.** Gesucht wurde ein Formatierer namens `date`. Den gibt es nicht: Foundry kennt nur `timestamp`, `duration` und `ago`. Also fiel die Erkennung auf `timestamp` zurück und schrieb `0000-04-11 00:00:00` über den Tag — samt Uhrzeit, denn dieser Formatierer ignoriert `includeTime`. Systeme bringen lesbare Formatierer mit; dnd5e etwa `formatMonthDayYear`. Die werden jetzt zuerst probiert (Ergebnis: „April 11., 0"), danach wird die Beschriftung aus den Komponenten samt übersetztem Monatsnamen gebaut, und erst zuletzt bleibt der Zeitstempel — dann wenigstens ohne die immer gleiche Uhrzeit.
 
+### Changed
+- **Beschreibung des Moduls, README und TODO auf Stand gebracht.** Die Katalogbeschreibung nannte nur den Beziehungsgraphen; Fraktionen, Orte, Aufträge und die kalenderfähige Chronik fehlten. Im README erklären die Anleitungen für Spielleitung und Spieler jetzt auch die Chronik und das Nachtragen von Ereignissen. Die `TODO.md` stand noch auf `v14.2605.3` und kannte die Chronikarbeit nicht.
+
+- **Die Kopfzeile der Chronik bleibt stehen.** Titel und „Ereignis hinzufügen" scrollten bisher weg; wer weit unten in einer langen Chronik war, musste erst wieder hochblättern, um etwas einzutragen. Kopfzeile und Zeitachse hängen jetzt gemeinsam oben.
+
+- **Rückblick ist eine Spielerkategorie.** Sie ist für die Sitzungsrückblicke gedacht, die der Tisch selbst schreibt, und steht deshalb nur Spielern zur Wahl; die Spielleitung hat Begegnung, Erkenntnis und Notiz. Wer als Spielleitung einen fremden Rückblick bearbeitet, sieht die Kategorie weiterhin in der Liste — sonst würde ein Speichern sie stillschweigend umschreiben. Der Schalter „Davon erst heute erfahren" stellt die Kategorie nicht mehr um; er hält nur noch fest, wann die Gruppe es erfahren hat.
+
+- **Der Zeitpunkt-Schalter ist schlanker.** Symbol und Beschriftung in einer Zeile, der Spieltag als leisere Unterzeile darunter, und der aktive Zustand trägt die goldene Haarlinie der übrigen FANG-Bedienelemente statt eines flächigen roten Blocks.
+
 ### Removed
 - **Die Ersetzung der Akteursauswahl von „Sheet Only" ist ausgezogen.** Sie ist nach *Ninjo's In-Person Tools* gewandert und steht dort unter „Akteursauswahl von Sheet Only ersetzen". FANG ist ein Werkzeug für Beziehungsgeflechte; eine Funktion, die die Oberfläche eines fremden Moduls umräumt, damit man bequemer am Tisch spielt, gehört zu den Tischwerkzeugen. Mitgegangen sind die Einstellung `replaceOnlySheetActor`, die Verwaltung des Popouts samt der Abwehr gegen Foundrys leere Fensterhüllen und die zugehörigen Regeln in der Stilvorlage — rund 330 Zeilen.
 
@@ -94,12 +103,6 @@ Großes Oberflächen- und Stabilitäts-Release. Die Seitenleiste ist nach Aufgab
 - **Player Chronicle Edits:** Players can create and update the visible title/text of player-facing chronicle entries without taking the graph edit lock; GMs can still fully edit or delete entries.
 
 ### Changed
-- **Die Kopfzeile der Chronik bleibt stehen.** Titel und „Ereignis hinzufügen" scrollten bisher weg; wer weit unten in einer langen Chronik war, musste erst wieder hochblättern, um etwas einzutragen. Kopfzeile und Zeitachse hängen jetzt gemeinsam oben.
-
-- **Rückblick ist eine Spielerkategorie.** Sie ist für die Sitzungsrückblicke gedacht, die der Tisch selbst schreibt, und steht deshalb nur Spielern zur Wahl; die Spielleitung hat Begegnung, Erkenntnis und Notiz. Wer als Spielleitung einen fremden Rückblick bearbeitet, sieht die Kategorie weiterhin in der Liste — sonst würde ein Speichern sie stillschweigend umschreiben. Der Schalter „Davon erst heute erfahren" stellt die Kategorie nicht mehr um; er hält nur noch fest, wann die Gruppe es erfahren hat.
-
-- **Der Zeitpunkt-Schalter ist schlanker.** Symbol und Beschriftung in einer Zeile, der Spieltag als leisere Unterzeile darunter, und der aktive Zustand trägt die goldene Haarlinie der übrigen FANG-Bedienelemente statt eines flächigen roten Blocks.
-
 - **Seitenleiste nach Aufgaben gegliedert.** Fraktion und Ort sind Geschwister und liegen jetzt zusammen im Bereich **Zugehörigkeit**. Vorher war das über drei Orte verstreut: Fraktionen als Dialog direkt aus der Leiste, „Orte verwalten" unter *Erweitert*, die Gruppieren-Knöpfe unter *Ansicht*. Die übrigen Bereiche: **Präsentation** (Gruppierung, Spieler/Monitor, Zentrieren, Zuschauer-Kamera) und **Einstellungen** (Berechtigungen, Physik, Hintergrund, Im-/Export). „Spieler dürfen bearbeiten" stand unter Präsentation — das ist eine Berechtigung.
 - **Gruppierung ist ein Schalter statt zweier Knöpfe.** Es ist ein Modus, von dem immer genau einer gilt; zwei Knöpfe sagten weder das noch welcher gerade an war. Sie mussten zusätzlich als ihr eigener Aus-Schalter dienen und dafür ihre Beschriftung umbauen. Mit einem eigenen Segment *Normal* entfällt der Trick. Der Schalter sitzt bei den übrigen Ansichts-Einstellungen, nicht bei der Verwaltung.
 - **Bearbeiten setzt die Gruppierung zurück.** Wer in den Bearbeitungsmodus geht, arbeitet immer auf dem echten Layout — die gruppierten Positionen sind gesperrt und nicht die wahren.

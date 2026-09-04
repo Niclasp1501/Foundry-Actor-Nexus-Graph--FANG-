@@ -1,6 +1,6 @@
 # FANG (Foundry Actor Nexus Graph) - TODO / Feature Requests
 
-Status synced to `v14.2605.3` / Stand synchronisiert auf `v14.2605.3`.
+Status synced to `v14.2609.1` (beta) / Stand synchronisiert auf `v14.2609.1` (Beta).
 
 ## 1. Features and Improvements / Features und Verbesserungen
 
@@ -35,6 +35,9 @@ Status synced to `v14.2605.3` / Stand synchronisiert auf `v14.2605.3`.
 - [x] **3.3 Timeline first beta scope / Chronik erster Beta-Umfang:** In-canvas chronicle with manual events, player-safe visibility, token-level views, and editable player-facing text / In-Canvas-Chronik mit manuellen Ereignissen, spielersicherer Sichtbarkeit, Token-Ansichten und bearbeitbarem Spielertext.
 - [x] **3.4 Chronicle automation / Chronik-Automatik:** Graph actions create narrative default entries for appearing tokens, revealed identities, and new relationships while preserving hidden-token facades / Graph-Aktionen erzeugen erzaehlerische Standardeintraege fuer auftauchende Tokens, enthuellte Identitaeten und neue Beziehungen, ohne verdeckte Token aufzudecken.
 - [ ] **3.5 Proper editor for flashbacks / Richtiger Editor fuer Rueckblicke:** Session recaps are written by the table itself and run to real prose, but the form offers a bare textarea. Look at Foundry's rich text editor instead, so a recap can carry formatting, links, and @UUID references to actors, scenes, and journals / Sitzungsrueckblicke schreibt der Tisch selbst und sie werden echter Fliesstext, das Formular bietet aber nur ein einfaches Textfeld. Foundrys Rich-Text-Editor anschauen, damit ein Rueckblick Formatierung, Links und @UUID-Verweise auf Akteure, Szenen und Journale tragen kann.
+- [x] **3.6 Chronicle calendar support / Chronik-Kalenderanbindung:** Entries carry the game day and the time of day from a calendar module (Calendaria, Seasons & Stars, Simple Calendar) or from Foundry's own calendar, with the real date as a fallback when a world has neither / Eintraege tragen Spieltag und Uhrzeit aus einem Kalendermodul (Calendaria, Seasons & Stars, Simple Calendar) oder aus Foundrys eigenem Kalender; ohne beides faellt FANG auf das echte Datum zurueck.
+- [x] **3.7 Chronicle time axis / Zeitachse der Chronik:** One tick per game day above the log, oldest left, dragged or wheeled sideways instead of carrying a scrollbar / Ein Punkt je Spieltag ueber dem Logbuch, aeltester links, per Ziehen oder Mausrad verschiebbar statt mit Scrollbalken.
+- [x] **3.8 Chronological ordering / Chronologische Ordnung:** Days and entries sort by game day and time of day rather than by the moment they were typed / Tage und Eintraege ordnen sich nach Spieltag und Uhrzeit statt nach dem Zeitpunkt der Eingabe.
 
 ## 4. Internationalization and Misc / Internationalisierung und Sonstiges
 
@@ -46,6 +49,8 @@ Status synced to `v14.2605.3` / Stand synchronisiert auf `v14.2605.3`.
 
 - [ ] **5.1 Full in-Foundry player leak audit / Vollstaendiger In-Foundry-Spieler-Leak-Audit:** Run through every player and GM menu in v13/v14 with hidden, GM-only, quest, faction, zone, and history data / Jeden Spieler- und GM-Pfad in v13/v14 mit verdeckten, GM-only-, Quest-, Fraktions-, Zonen- und Chronikdaten testen.
 - [ ] **5.2 Zone manager polish / Zonenmanager-Feinschliff:** Improve visual design once the first beta feedback confirms the model / Design verbessern, sobald erstes Beta-Feedback das Modell bestaetigt.
+- [ ] **5.3 Unused localization keys / Ungenutzte Lokalisierungs-Schluessel:** 85 keys are defined but never referenced in code, left over from removed dialogs; check which are built dynamically before deleting any / 85 Schluessel sind definiert, werden aber nirgends im Code referenziert - Reste entfernter Dialoge. Vor dem Loeschen pruefen, welche dynamisch zusammengesetzt werden.
+- [ ] **5.4 Calendar module coverage / Abdeckung von Kalendermodulen:** Only Calendaria, Seasons & Stars and Simple Calendar are recognised by name; any other module falls back to Foundry's calendar and loses the campaign epoch / Erkannt werden nur Calendaria, Seasons & Stars und Simple Calendar. Jedes andere Modul faellt auf Foundrys Kalender zurueck und verliert dabei die Kampagnen-Epoche.
 
 ## Removed from Roadmap / Aus der Planung entfernt
 

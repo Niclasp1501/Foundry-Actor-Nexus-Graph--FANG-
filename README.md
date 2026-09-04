@@ -60,11 +60,14 @@ An interactive, self-arranging Actor Graph module for visualizing Character & NP
    - Click **"Show Players"** to open a read-only window for all players.
    - Use **"Show Monitor"** (available in In-Person mode) to send a specialized fullscreen view to your dedicated monitor user.
 4. **Closing the Graph:** Use **"Close for Players"** or **"Close Monitor"** to instantly manage remote views.
+5. **Keeping the Chronicle:** Open it from the FANG rail, or from a token's context menu for that character alone. Every entry has a title, a player-safe text and a private GM text; the game day and the time of day come from the world's calendar. Graph actions write entries on their own when a token appears, an identity is revealed, a relationship becomes visible or a quest is released.
+6. **Back-dating an Entry:** Switch from *Today* to *On an earlier day* and pick the day - either one the chronicle already knows or a fresh one from the calendar. Tick *We only found out about this today* when the group learns of something older: the entry stays on the day it happened and notes when you found out.
 
 #### For the Players
 - **Initial Setup:** The GM must open the graph at least once to initialize the background data.
 - **Viewing the Graph:** Once shared by the GM, the window will pop up automatically.
 - **Manual Access:** If a player accidentally closes the window, they can re-open it via the **"FANG Graph" Journal Entry** (a link inside the journal text opens the tool) or simply by pressing `Shift + G`.
+- **The Chronicle:** Players see the chronicle entries the GM released, and can write their own session recaps under the *Flashback* category without taking the graph's edit lock.
 
 ### Future Plans & Roadmap
 For the current development status and planned features, please refer to the [TODO.md](TODO.md) file.
@@ -123,11 +126,14 @@ For the current development status and planned features, please refer to the [TO
    - Klicke auf **"Spielern zeigen"**, um ein Lese-Fenster für alle Spieler zu öffnen.
    - Nutze **"Monitor zeigen"** (im In-Person Modus verfügbar), um ein spezielles Vollbild an deine Player-Display zu senden.
 4. **Graphen Schließen:** Mit **"Bei Spielern schließen"** oder **"Monitor schließen"** verwaltest du die Remote-Fenster deiner Runde.
+5. **Chronik führen:** Öffne sie über die FANG-Leiste oder über das Kontextmenü eines Tokens, dann nur für diesen Charakter. Jeder Eintrag hat einen Titel, einen spielersicheren Text und einen privaten GM-Text; Spieltag und Uhrzeit kommen aus dem Kalender der Welt. Aktionen im Graphen schreiben von selbst Einträge, wenn ein Token auftaucht, eine Identität gelüftet wird, eine Beziehung sichtbar wird oder ein Auftrag freigegeben wird.
+6. **Ereignisse nachtragen:** Schalte von *Heute* auf *An einem früheren Tag* und wähle den Tag – entweder einen, den die Chronik schon kennt, oder einen neuen aus dem Kalender. Setze den Haken *Davon erst heute erfahren*, wenn die Gruppe von etwas Älterem erfährt: der Eintrag bleibt beim Tag des Geschehens und hält fest, wann ihr davon wusstet.
 
 #### Für die Spieler
 - **Einrichtung:** Der GM muss das Tool einmalig öffnen, damit das Journal im Hintergrund erstellt wird.
 - **Graphen Betrachten:** Sobald der GM den Graphen teilt, öffnet sich dieser automatisch.
 - **Manuell Öffnen:** Falls du das Fenster versehentlich schließt, kannst du es über das **Journal "FANG Graph"** wieder öffnen (Klick auf den Link im Text) oder einfach `Shift + G` drücken.
+- **Die Chronik:** Spieler sehen die Chronikeinträge, die der GM freigegeben hat, und können unter der Kategorie *Rückblick* eigene Sitzungsrückblicke schreiben, ohne die Bearbeitungssperre des Graphen zu ziehen.
 
 ### Zukünftige Pläne & Roadmap
 Den aktuellen Stand der Entwicklung und geplante Features findest du in der Datei [TODO.md](TODO.md).
