@@ -4119,15 +4119,34 @@ body.fang-theme-cyberpunk .background-config-container .premium-notice p {
 
 .fang-app-container .fang-history-when .fang-segment {
     flex-direction: column;
-    gap: 1px;
-    padding: 8px 6px;
-    line-height: 1.25;
+    gap: 2px;
+    padding: 7px 8px;
+    line-height: 1.2;
 }
 
+.fang-app-container .fang-history-when-main {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.fang-app-container .fang-history-when-main i {
+    font-size: 0.95em;
+    opacity: 0.85;
+}
+
+/* The date is context for the label above it, not a heading of its own. */
 .fang-app-container .fang-history-when .fang-history-when-date {
-    font-size: 0.86em;
+    font-size: 0.8em;
     font-weight: 500;
-    opacity: 0.8;
+    opacity: 0.72;
+}
+
+/* The plain red block read as a warning. A gold hairline and a little depth put it
+   back in line with the rest of FANG's controls. */
+.fang-app-container .fang-history-when .fang-segment.active {
+    background: linear-gradient(180deg, rgba(var(--fang-primary-red-rgb), 0.94), var(--fang-primary-red));
+    box-shadow: inset 0 0 0 1px rgba(var(--fang-accent-gold-rgb), 0.55), 0 1px 3px rgba(0, 0, 0, 0.22);
 }
 
 .fang-history-when-earlier {

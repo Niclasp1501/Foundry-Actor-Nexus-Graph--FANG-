@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [14.2609.1] - 2026-09-01
 
 ### Added
+- **Löschen fragt jetzt nach.** Der Papierkorb an einem Chronikeintrag löschte sofort und endgültig — direkt neben dem Stift zum Bearbeiten. Es kommt jetzt eine Rückfrage, die den Titel des Eintrags nennt.
+
 - **„Eigenes Datum …“ steht jetzt oben.** In der Spieltagsauswahl war es die letzte Möglichkeit unter allen bereits bekannten Tagen und damit kaum zu finden — dabei ist ein frisches Datum genau das, was man bei einem nachgetragenen Ereignis meistens braucht. Es ist jetzt der erste Eintrag und vorausgewählt; die bekannten Tage stehen darunter in einer eigenen Gruppe. Das gewählte Datum steht als Zeile darunter, damit niemand die drei Felder im Kopf zusammensetzen muss.
 
 - **Kalender-Auswahl statt Tippen.** Für einen Tag, den die Chronik noch nicht kennt, stehen jetzt drei Felder bereit — Tag, Monat, Jahr —, gefüllt aus dem Kalender der Welt: echte Monatsnamen, echte Monatslängen, und die Ein-Tages-Feiertage von Harptos als eigene Monate. Darunter steht sofort, wie der Tag heißen wird. Ohne Kalender in der Welt bleibt es beim Textfeld.
@@ -72,6 +74,10 @@ Großes Oberflächen- und Stabilitäts-Release. Die Seitenleiste ist nach Aufgab
 - **Player Chronicle Edits:** Players can create and update the visible title/text of player-facing chronicle entries without taking the graph edit lock; GMs can still fully edit or delete entries.
 
 ### Changed
+- **Rückblick ist eine Spielerkategorie.** Sie ist für die Sitzungsrückblicke gedacht, die der Tisch selbst schreibt, und steht deshalb nur Spielern zur Wahl; die Spielleitung hat Begegnung, Erkenntnis und Notiz. Wer als Spielleitung einen fremden Rückblick bearbeitet, sieht die Kategorie weiterhin in der Liste — sonst würde ein Speichern sie stillschweigend umschreiben. Der Schalter „Davon erst heute erfahren" stellt die Kategorie nicht mehr um; er hält nur noch fest, wann die Gruppe es erfahren hat.
+
+- **Der Zeitpunkt-Schalter ist schlanker.** Symbol und Beschriftung in einer Zeile, der Spieltag als leisere Unterzeile darunter, und der aktive Zustand trägt die goldene Haarlinie der übrigen FANG-Bedienelemente statt eines flächigen roten Blocks.
+
 - **Seitenleiste nach Aufgaben gegliedert.** Fraktion und Ort sind Geschwister und liegen jetzt zusammen im Bereich **Zugehörigkeit**. Vorher war das über drei Orte verstreut: Fraktionen als Dialog direkt aus der Leiste, „Orte verwalten" unter *Erweitert*, die Gruppieren-Knöpfe unter *Ansicht*. Die übrigen Bereiche: **Präsentation** (Gruppierung, Spieler/Monitor, Zentrieren, Zuschauer-Kamera) und **Einstellungen** (Berechtigungen, Physik, Hintergrund, Im-/Export). „Spieler dürfen bearbeiten" stand unter Präsentation — das ist eine Berechtigung.
 - **Gruppierung ist ein Schalter statt zweier Knöpfe.** Es ist ein Modus, von dem immer genau einer gilt; zwei Knöpfe sagten weder das noch welcher gerade an war. Sie mussten zusätzlich als ihr eigener Aus-Schalter dienen und dafür ihre Beschriftung umbauen. Mit einem eigenen Segment *Normal* entfällt der Trick. Der Schalter sitzt bei den übrigen Ansichts-Einstellungen, nicht bei der Verwaltung.
 - **Bearbeiten setzt die Gruppierung zurück.** Wer in den Bearbeitungsmodus geht, arbeitet immer auf dem echten Layout — die gruppierten Positionen sind gesperrt und nicht die wahren.

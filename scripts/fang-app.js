@@ -668,8 +668,16 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         return this._getHistoryCategories().find(category => category.kind === kind) || this._getHistoryCategories().find(category => category.kind === "insight");
     }
 
-    _getManualHistoryCategories() {
-        return this._getHistoryCategories().filter(category => ["encounter", "insight", "flashback", "note"].includes(category.kind));
+    /**
+     * What may be chosen by hand when writing an entry.
+     *
+     * "flashback" is the players' own kind -- it is what a session recap written by the table is
+     * filed under. A GM writing an entry has encounter/insight/note; offering them flashback as
+     * well would blur what the category means the moment anyone filters by it.
+     */
+    _getManualHistoryCategories({ user = game.user } = {}) {
+        const kinds = user?.isGM ? ["encounter", "insight", "note"] : ["encounter", "insight", "flashback", "note"];
+        return this._getHistoryCategories().filter(category => kinds.includes(category.kind));
     }
 
     _getHistoryType(type) {
@@ -1510,7 +1518,18 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const editingEntry = entry ? this._normalizeHistoryEntry(entry) : null;
         const safeNodeName = node ? this._getSafeNodeName(node, game.user) : "";
         const detectedGameDate = this.detectCurrentGameDate();
-        const categorySource = editingEntry?.origin === "auto" ? this._getHistoryCategories() : this._getManualHistoryCategories();
+        const categorySource = editingEntry?.origin === "auto"
+            ? this._getHistoryCategories()
+            : (() => {
+                const list = this._getManualHistoryCategories();
+                // A GM editing a player's recap must keep seeing "flashback" in the list, or
+                // saving would quietly refile it as something else.
+                if (editingEntry && !list.some(category => category.kind === editingEntry.kind)) {
+                    const own = this._getHistoryCategory(editingEntry.kind);
+                    if (own) return [own, ...list];
+                }
+                return list;
+            })();
         const categoryOptions = categorySource
             .map(category => `<option value="${this._escapeHtml(category.kind)}" ${category.kind === (editingEntry?.kind || "insight") ? "selected" : ""}>${this._escapeHtml(category.label)}</option>`)
             .join("");
@@ -1555,8 +1574,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     <input type="text" id="fang-history-date" value="${this._escapeHtml(formGameDate.label)}" readonly>`
             : `<label>${this._escapeHtml(this._localize("FANG.History.When", "When did it happen?"))}</label>
                     <div class="fang-segmented fang-history-when">
-                        <button type="button" class="fang-segment${isEarlier ? "" : " active"}" data-when="today">${this._escapeHtml(this._localize("FANG.History.WhenToday", "Today"))} <span class="fang-history-when-date">${this._escapeHtml(detectedGameDate.label)}</span></button>
-                        <button type="button" class="fang-segment${isEarlier ? " active" : ""}" data-when="earlier">${this._escapeHtml(this._localize("FANG.History.WhenEarlier", "On an earlier day"))}</button>
+                        <button type="button" class="fang-segment${isEarlier ? "" : " active"}" data-when="today"><span class="fang-history-when-main"><i class="fas fa-calendar-day" aria-hidden="true"></i>${this._escapeHtml(this._localize("FANG.History.WhenToday", "Today"))}</span><span class="fang-history-when-date">${this._escapeHtml(detectedGameDate.label)}</span></button>
+                        <button type="button" class="fang-segment${isEarlier ? " active" : ""}" data-when="earlier"><span class="fang-history-when-main"><i class="fas fa-clock-rotate-left" aria-hidden="true"></i>${this._escapeHtml(this._localize("FANG.History.WhenEarlier", "On an earlier day"))}</span></button>
                     </div>
                     <div class="fang-history-when-earlier" ${isEarlier ? "" : "hidden"}>
                         <label>${this._escapeHtml(this._localize("FANG.History.PickDay", "Game day"))}</label>
@@ -1598,7 +1617,6 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const earlierBlock = panel.querySelector(".fang-history-when-earlier");
         const daySelect = panel.querySelector("#fang-history-day");
         const customDate = panel.querySelector("#fang-history-date");
-        const learnedToday = panel.querySelector("#fang-history-learned-today");
         for (const button of whenButtons) {
             button.addEventListener("click", () => {
                 for (const other of whenButtons) other.classList.toggle("active", other === button);
@@ -1643,12 +1661,6 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 if (picker) showPicked();
                 else customDate?.focus();
             }
-        });
-        learnedToday?.addEventListener("change", () => {
-            // A revelation about the past is exactly what the flashback category is for. Only a
-            // nudge -- the category stays freely selectable afterwards.
-            const kindSelect = panel.querySelector("#fang-history-kind");
-            if (learnedToday.checked && kindSelect && !kindSelect.disabled) kindSelect.value = "flashback";
         });
 
         panel.querySelector(".fang-history-canvas-close")?.addEventListener("click", () => this._closeHistoryPanel());
@@ -1838,7 +1850,32 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         panel.querySelectorAll(".fang-history-delete").forEach(button => {
             button.addEventListener("click", async (event) => {
                 const entryId = event.currentTarget.closest(".fang-history-entry")?.dataset?.entryId;
-                if (await this._deleteHistoryEntry(entryId)) refresh();
+                if (!entryId) return;
+                // Deleting a chronicle entry cannot be undone and the button sits right next to
+                // "edit", so ask first. The entry's own title makes clear which one is meant.
+                const entry = this._getHistoryStore().entries.find(item => item.id === entryId);
+                const title = entry?.title || this._localize("FANG.History.Untitled", "Untitled insight");
+                const confirmed = await this._openCanvasPrompt({
+                    title: this._localize("FANG.Dialogs.DeleteConfirmTitle", "Confirm Deletion"),
+                    icon: "fa-trash",
+                    body: this._localize("FANG.History.DeleteConfirmBody", "\"{title}\" will be removed from the chronicle for good.").replace("{title}", title),
+                    actions: [
+                        {
+                            id: "delete",
+                            label: this._localize("FANG.UI.Delete", "Delete"),
+                            icon: "fa-trash",
+                            className: "danger",
+                            resolve: () => true
+                        },
+                        {
+                            id: "cancel",
+                            label: this._localize("FANG.Dialogs.BtnCancel", "Cancel"),
+                            icon: "fa-arrow-left",
+                            resolve: () => false
+                        }
+                    ]
+                });
+                if (confirmed && await this._deleteHistoryEntry(entryId)) refresh();
             });
         });
         this._wireHistoryTimeline(panel);
