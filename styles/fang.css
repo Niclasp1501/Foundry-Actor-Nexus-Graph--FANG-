@@ -4032,7 +4032,7 @@ body.fang-theme-cyberpunk .background-config-container .premium-notice p {
     min-width: 170px;
 }
 
-/* The day rail sticks to the top of the scrolling log so it stays reachable in a long
+/* The time axis sticks to the top of the scrolling log so it stays reachable in a long
    chronicle. Its background has to match the card behind it, hence the own property. */
 .fang-history-timeline {
     --fang-history-rail-bg: #fdfbf7;
@@ -4040,181 +4040,127 @@ body.fang-theme-cyberpunk .background-config-container .premium-notice p {
     top: -20px;
     z-index: 3;
     margin: 0 -24px 16px;
-    padding: 20px 24px 10px;
+    padding: 20px 24px 8px;
     background: var(--fang-history-rail-bg);
     border-bottom: 1px solid rgba(var(--fang-accent-gold-rgb), 0.4);
 }
 
-.fang-history-timeline ol {
-    display: flex;
-    gap: 8px;
-    margin: 0;
-    padding: 0 0 4px;
-    list-style: none;
+/* No scrollbar on purpose: the axis is wheeled or dragged. A visible bar turns it back
+   into a list that spilled over, which is exactly what it should not look like. */
+.fang-history-axis-scroll {
     overflow-x: auto;
-    scrollbar-width: thin;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    cursor: grab;
+    /* Room for the dots to grow into on hover without clipping. */
+    padding: 6px 0;
+    /* The edges hint that there is more when it does not all fit. */
+    -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 14px, #000 calc(100% - 14px), transparent 100%);
+    mask-image: linear-gradient(90deg, transparent 0, #000 14px, #000 calc(100% - 14px), transparent 100%);
 }
 
-.fang-history-timeline li {
-    flex: 0 0 auto;
+.fang-history-axis-scroll::-webkit-scrollbar {
+    display: none;
 }
 
-.fang-history-jump {
+.fang-history-axis-scroll.dragging {
+    cursor: grabbing;
+}
+
+.fang-history-axis {
+    position: relative;
     display: flex;
     align-items: center;
-    gap: 7px;
-    max-width: 190px;
-    padding: 5px 10px;
-    border: 1px solid rgba(var(--fang-accent-gold-rgb), 0.55);
-    border-radius: 999px;
-    background: rgba(var(--fang-accent-gold-rgb), 0.08);
-    color: var(--fang-text-color);
-    font-family: var(--fang-font-main);
-    font-size: 0.82rem;
-    line-height: 1.2;
-    cursor: pointer;
-    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    justify-content: space-between;
+    min-width: 100%;
+    /* Minimum spacing per day. Below this the ticks would touch, so the axis grows instead
+       and is panned. */
+    gap: 4px;
+    /* Keeps the outermost ticks clear of the fade at the edges. */
+    padding: 0 10px;
 }
 
-.fang-history-jump:hover {
-    background: rgba(var(--fang-accent-gold-rgb), 0.22);
-    border-color: var(--fang-accent-gold);
+/* The line the ticks sit on. */
+.fang-history-axis::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 2px;
+    transform: translateY(-50%);
+    background: linear-gradient(90deg,
+        rgba(var(--fang-accent-gold-rgb), 0.45),
+        rgba(var(--fang-accent-gold-rgb), 0.9));
+    border-radius: 2px;
 }
 
-.fang-history-jump.active {
-    background: var(--fang-primary-red);
-    border-color: var(--fang-accent-gold);
-    color: var(--fang-header-text);
-}
-
-.fang-history-jump-date {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.fang-history-jump-count {
+.fang-history-tick {
+    position: relative;
     flex: 0 0 auto;
-    min-width: 18px;
-    padding: 1px 5px;
+    width: 20px;
+    height: 22px;
+    padding: 0;
+    border: none;
+    background: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* The dot itself. Its size carries how much happened that day. */
+.fang-history-tick > span {
+    width: var(--fang-tick-size, 8px);
+    height: var(--fang-tick-size, 8px);
+    border-radius: 50%;
+    background: var(--fang-history-rail-bg);
+    box-shadow: 0 0 0 2px var(--fang-accent-gold);
+    transition: transform 0.12s ease, background 0.12s ease, box-shadow 0.12s ease;
+}
+
+.fang-history-tick:hover > span {
+    transform: scale(1.35);
+    background: var(--fang-accent-gold);
+}
+
+.fang-history-tick.active > span {
+    background: var(--fang-primary-red);
+    box-shadow: 0 0 0 2px var(--fang-accent-gold), 0 0 0 5px rgba(var(--fang-primary-red-rgb), 0.18);
+    transform: scale(1.25);
+}
+
+/* Names whatever the pointer is on, or where the reading position is. */
+.fang-history-axis-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: flex-end;
+    min-height: 1.4em;
+    margin: 2px 0 0;
+    color: var(--fang-primary-red);
+    font-size: 0.86rem;
+    font-weight: 600;
+}
+
+.fang-history-axis-count {
+    min-width: 20px;
+    padding: 1px 6px;
     border-radius: 999px;
-    background: rgba(var(--fang-primary-red-rgb), 0.14);
-    font-size: 0.74rem;
+    background: rgba(var(--fang-primary-red-rgb), 0.12);
+    font-size: 0.78rem;
     font-variant-numeric: tabular-nums;
     text-align: center;
 }
 
-.fang-history-jump.active .fang-history-jump-count {
-    background: rgba(0, 0, 0, 0.28);
+.fang-history-axis-count:empty {
+    display: none;
 }
 
 .fang-app-container.fang-theme-cyberpunk .fang-history-timeline {
     --fang-history-rail-bg: rgba(3, 15, 26, 0.95);
     border-bottom-color: rgba(51, 217, 255, 0.45);
-}
-
-.fang-app-container .fang-history-when {
-    margin-bottom: 10px;
-}
-
-.fang-app-container .fang-history-when .fang-segment {
-    flex-direction: column;
-    gap: 2px;
-    padding: 7px 8px;
-    line-height: 1.2;
-}
-
-.fang-app-container .fang-history-when-main {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.fang-app-container .fang-history-when-main i {
-    font-size: 0.95em;
-    opacity: 0.85;
-}
-
-/* The date is context for the label above it, not a heading of its own. */
-.fang-app-container .fang-history-when .fang-history-when-date {
-    font-size: 0.8em;
-    font-weight: 500;
-    opacity: 0.72;
-}
-
-/* The plain red block read as a warning. A gold hairline and a little depth put it
-   back in line with the rest of FANG's controls. */
-.fang-app-container .fang-history-when .fang-segment.active {
-    background: linear-gradient(180deg, rgba(var(--fang-primary-red-rgb), 0.94), var(--fang-primary-red));
-    box-shadow: inset 0 0 0 1px rgba(var(--fang-accent-gold-rgb), 0.55), 0 1px 3px rgba(0, 0, 0, 0.22);
-}
-
-.fang-history-when-earlier {
-    margin: 0 0 6px;
-    padding: 10px 12px 4px;
-    border: 1px solid rgba(var(--fang-accent-gold-rgb), 0.45);
-    border-radius: 8px;
-    background: rgba(var(--fang-accent-gold-rgb), 0.07);
-}
-
-.fang-history-when-earlier > label:first-child {
-    margin-top: 0;
-}
-
-/* Day, month, year. The month carries the name, so it gets the room. */
-.fang-app-container .fang-history-picker {
-    display: grid;
-    grid-template-columns: 5rem 1fr 6.5rem;
-    gap: 8px;
-    margin: 0 0 8px;
-}
-
-.fang-app-container .fang-history-picker select,
-.fang-app-container .fang-history-picker input {
-    width: 100%;
-    min-width: 0;
-    height: 42px;
-    padding: 8px 10px;
-    border-radius: 6px;
-    /* Foundry gives number inputs a 32px line-height, which made the year field taller
-       than the two selects beside it. */
-    line-height: 1.2;
-    font-size: 0.92rem;
-}
-
-.fang-app-container .fang-history-picker input[type="number"] {
-    text-align: center;
-    font-variant-numeric: tabular-nums;
-}
-
-/* The resolved date, so nobody has to add the three fields up in their head. */
-.fang-app-container .fang-history-picked {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    margin: 0 0 10px;
-    padding: 7px 10px;
-    border-radius: 6px;
-    background: rgba(var(--fang-accent-gold-rgb), 0.16);
-    color: var(--fang-primary-red);
-    font-size: 0.92rem;
-    font-weight: 600;
-}
-
-.fang-app-container .fang-history-picked i {
-    opacity: 0.75;
-}
-
-/* Marks an entry that sits on the day it happened but was only learned of later. */
-.fang-history-learned {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    margin: 2px 0 6px;
-    color: var(--fang-primary-red);
-    font-size: 0.84rem;
-    font-style: italic;
-    opacity: 0.9;
 }
 
 /* Time and category sit together at the head of an entry, right-aligned. */

@@ -24,9 +24,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - **„Davon erst heute erfahren".** Ein Schalter trennt zwei Dinge, die vorher gleich aussahen: das Nachtragen von Notizen der letzten Sitzung, die die Gruppe damals schon wusste, und eine Enthüllung über die Vergangenheit, von der sie erst jetzt erfährt. Der Eintrag bleibt in beiden Fällen beim Tag des Geschehens — die Chronik ist eine Chronologie. Im zweiten Fall steht darunter „Erfahren am …", und die Kategorie springt auf Rückblick.
 
-- **Zeitleiste in der Chronik.** Über dem Logbuch steht jetzt eine Leiste mit einem Knopf je Spieltag samt Anzahl der Einträge. Ein Klick springt zu diesem Tag, und beim Blättern hebt sich der Tag hervor, bei dem man gerade ist. Die Leiste bleibt beim Scrollen oben stehen — bei einer Chronik über viele Sitzungen war der Weg zu einem bestimmten Tag vorher reines Scrollen.
+- **Zeitachse in der Chronik.** Über dem Logbuch liegt eine Achse: ein Punkt je Spieltag, der älteste links, der aktuellste rechts — so, wie man eine Zeitleiste liest. Die Punktgröße zeigt, wie viel an dem Tag passiert ist; darunter steht der Tag, auf dem du gerade bist oder über dem du schwebst. Ein Klick springt hin, und beim Blättern wandert die Markierung mit.
+
+  Die Punkte behalten einen Mindestabstand, statt bei vielen Tagen zusammenzurücken. Passt die Achse nicht mehr, wird sie **gezogen oder mit dem Mausrad geschoben** — bewusst ohne Scrollbalken, sonst sähe sie wieder aus wie eine übergelaufene Liste. Die Ränder blenden weich aus, damit man sieht, dass es weitergeht.
 
 ### Fixed
+- **Weite Sprünge in der Chronik taten nichts.** Der Sprung zu einem Tag lief immer als weiches Scrollen. Über sehr große Strecken verweigert Chrome das stillschweigend — bei rund 29 000 Pixeln gemessen: die Bewegung beginnt gar nicht erst, und der Klick sieht kaputt aus. Bei mehr als 2 000 Pixeln wird jetzt direkt gesprungen; folgen könnte man einer solchen Animation ohnehin nicht.
+
 - **Die Stilvorlage brach in der Mitte ab.** Beim Ergänzen von Selektoren wurde eine Zeile, die auf `{` endet, verdoppelt — damit bekam ein Block zwei öffnende Klammern. Fünf solcher Stellen ließen alle folgenden Regeln wirkungslos: sie standen weiter in der Datei, wurden weiter ausgeliefert und griffen einfach nicht mehr. Betroffen war der gesamte hintere Teil, weshalb die Bearbeitungsfenster zuletzt unfertig aussahen. `tools/fang-validate.mjs` prüft die Klammerbilanz jeder Datei unter `styles/` jetzt mit.
 
 - **Zahlenfelder trugen Foundrys dunkles Standardaussehen.** Gestaltet waren nur `input[type="text"]` und `select`; das Jahresfeld der Datumsauswahl fiel dadurch als dunkler Kasten zwischen zwei hellen Feldern auf und war zehn Pixel höher. `input[type="number"]` gehört jetzt überall dazu, wo auch Textfelder stehen.

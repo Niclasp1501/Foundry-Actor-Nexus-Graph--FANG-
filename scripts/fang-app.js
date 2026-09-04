@@ -1357,40 +1357,105 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     /**
-     * Wire the day rail: clicking a chip scrolls its section into view, and scrolling the log marks
-     * the chip of the day currently at the top. The scroll container is .fang-history-log itself.
+     * Wire the time axis: a tick per game day, oldest left. Clicking one scrolls the log to that
+     * day; scrolling the log moves the marker. When there are more days than fit, the axis is
+     * dragged or wheeled sideways -- deliberately without a scrollbar, so it still reads as an
+     * axis rather than a list that spilled over.
      */
     _wireHistoryTimeline(panel) {
         const log = panel.querySelector(".fang-history-log");
-        const chips = [...panel.querySelectorAll(".fang-history-jump")];
+        const track = panel.querySelector(".fang-history-axis-scroll");
+        const ticks = [...panel.querySelectorAll(".fang-history-tick")];
         const sections = [...panel.querySelectorAll(".fang-history-day")];
-        if (!log || !chips.length || !sections.length) return;
+        const labelDate = panel.querySelector(".fang-history-axis-date");
+        const labelCount = panel.querySelector(".fang-history-axis-count");
+        if (!log || !track || !ticks.length || !sections.length) return;
 
-        const markActive = (dayIndex) => {
-            for (const chip of chips) chip.classList.toggle("active", Number(chip.dataset.dayIndex) === dayIndex);
+        let activeIndex = 0;
+
+        const showLabel = (tick) => {
+            if (!labelDate) return;
+            labelDate.textContent = tick?.dataset?.date ?? "";
+            if (labelCount) labelCount.textContent = tick?.dataset?.count ?? "";
         };
 
-        for (const chip of chips) {
-            chip.addEventListener("click", () => {
-                const dayIndex = Number(chip.dataset.dayIndex);
+        const keepTickInView = (tick) => {
+            if (!tick) return;
+            const left = tick.offsetLeft - track.scrollLeft;
+            const right = left + tick.offsetWidth;
+            if (left < 12) track.scrollLeft = tick.offsetLeft - 12;
+            else if (right > track.clientWidth - 12) track.scrollLeft = tick.offsetLeft + tick.offsetWidth - track.clientWidth + 12;
+        };
+
+        const markActive = (dayIndex, { follow = true } = {}) => {
+            activeIndex = dayIndex;
+            let activeTick = null;
+            for (const tick of ticks) {
+                const isActive = Number(tick.dataset.dayIndex) === dayIndex;
+                tick.classList.toggle("active", isActive);
+                if (isActive) activeTick = tick;
+            }
+            showLabel(activeTick);
+            if (follow) keepTickInView(activeTick);
+        };
+
+        // Hovering previews a day without losing where you are.
+        for (const tick of ticks) {
+            tick.addEventListener("pointerenter", () => showLabel(tick));
+            tick.addEventListener("click", () => {
+                if (track.dataset.dragged === "1") return;   // that was a drag, not a click
+                const dayIndex = Number(tick.dataset.dayIndex);
                 const section = sections.find(item => Number(item.dataset.dayIndex) === dayIndex);
                 if (!section) return;
-                // scrollIntoView would also scroll the rail itself out of sight, so move the log by hand.
-                const offset = section.offsetTop - log.offsetTop - 8;
-                log.scrollTo({ top: Math.max(0, offset), behavior: "smooth" });
+                const target = Math.max(0, section.offsetTop - log.offsetTop - 8);
+                // Chrome quietly refuses a smooth scroll over a very large distance -- measured at
+                // ~29000px it simply never starts, and the click looks broken. Nobody can follow an
+                // animation that long anyway, so past a point just be there.
+                const far = Math.abs(target - log.scrollTop) > 2000;
+                log.scrollTo({ top: target, behavior: far ? "auto" : "smooth" });
                 markActive(dayIndex);
-                // Keep the chip in view by moving the rail's own track. scrollIntoView would walk
-                // every scrollable ancestor -- including the log -- and cancel the smooth scroll
-                // that was just started, leaving the log sitting at the top.
-                const track = chip.closest("ol");
-                if (track) {
-                    const left = chip.offsetLeft - track.offsetLeft;
-                    const right = left + chip.offsetWidth;
-                    if (left < track.scrollLeft) track.scrollLeft = left - 8;
-                    else if (right > track.scrollLeft + track.clientWidth) track.scrollLeft = right - track.clientWidth + 8;
-                }
             });
         }
+        track.addEventListener("pointerleave", () => {
+            const activeTick = ticks.find(tick => Number(tick.dataset.dayIndex) === activeIndex);
+            showLabel(activeTick);
+        });
+
+        // Wheel over the axis moves it sideways; the log keeps its own wheel.
+        track.addEventListener("wheel", (event) => {
+            const delta = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
+            if (!delta || track.scrollWidth <= track.clientWidth) return;
+            track.scrollLeft += delta;
+            event.preventDefault();
+        }, { passive: false });
+
+        // Drag to pan. The threshold is what tells a drag from a click on a tick.
+        let dragFrom = null;
+        track.addEventListener("pointerdown", (event) => {
+            if (track.scrollWidth <= track.clientWidth) return;
+            dragFrom = { x: event.clientX, scrollLeft: track.scrollLeft, moved: false };
+            track.dataset.dragged = "0";
+            track.setPointerCapture?.(event.pointerId);
+        });
+        track.addEventListener("pointermove", (event) => {
+            if (!dragFrom) return;
+            const dx = event.clientX - dragFrom.x;
+            if (!dragFrom.moved && Math.abs(dx) < 4) return;
+            dragFrom.moved = true;
+            track.classList.add("dragging");
+            track.scrollLeft = dragFrom.scrollLeft - dx;
+        });
+        const endDrag = (event) => {
+            if (!dragFrom) return;
+            track.dataset.dragged = dragFrom.moved ? "1" : "0";
+            track.classList.remove("dragging");
+            track.releasePointerCapture?.(event.pointerId);
+            dragFrom = null;
+            // Let the click that follows a real drag be swallowed, then allow clicks again.
+            if (track.dataset.dragged === "1") setTimeout(() => { track.dataset.dragged = "0"; }, 0);
+        };
+        track.addEventListener("pointerup", endDrag);
+        track.addEventListener("pointercancel", endDrag);
 
         let scheduled = false;
         const syncActive = () => {
@@ -1414,7 +1479,10 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             scheduled = true;
             requestAnimationFrame(syncActive);
         });
-        markActive(0);
+
+        // Start at the right-hand end: that is the present, and the top of the log.
+        track.scrollLeft = track.scrollWidth;
+        markActive(0, { follow: false });
     }
 
     _closeHistoryPanel() {
@@ -1810,20 +1878,25 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 </ol>
             </section>`).join("");
 
-        // A day rail above the log. Same order as the sections below (newest day first) so that the
-        // leftmost chip is always the topmost section -- a true oldest-to-newest axis would read the
-        // opposite way from the list and make every click a surprise.
+        // A time axis above the log: oldest day at the left, most recent at the right, the way a
+        // timeline is read. Every day is a tick on one line, so a whole campaign fits where a row
+        // of labelled chips would have overflowed. Ticks keep a minimum spacing rather than
+        // squeezing together; past that the axis is dragged or wheeled sideways, without a
+        // scrollbar. The label underneath names whatever the pointer or the reading position is on.
+        const axisDays = [...dayGroups].reverse();   // oldest first
+        const maxCount = Math.max(1, ...axisDays.map(([, entries]) => entries.length));
         const timelineHtml = dayGroups.length > 1 ? `
             <nav class="fang-history-timeline" aria-label="${this._escapeHtml(this._localize("FANG.History.JumpToDay", "Jump to game day"))}">
-                <ol>
-                    ${dayGroups.map(([date, dayEntries], dayIndex) => `
-                        <li>
-                            <button type="button" class="fang-history-jump" data-day-index="${dayIndex}" title="${this._escapeHtml(date)}">
-                                <span class="fang-history-jump-date">${this._escapeHtml(date)}</span>
-                                <span class="fang-history-jump-count">${dayEntries.length}</span>
-                            </button>
-                        </li>`).join("")}
-                </ol>
+                <div class="fang-history-axis-scroll">
+                    <div class="fang-history-axis">
+                        ${axisDays.map(([date, dayEntries]) => {
+                            const dayIndex = dayGroups.findIndex(([label]) => label === date);
+                            const weight = 6 + Math.round((dayEntries.length / maxCount) * 6);
+                            return `<button type="button" class="fang-history-tick" data-day-index="${dayIndex}" data-date="${this._escapeHtml(date)}" data-count="${dayEntries.length}" style="--fang-tick-size: ${weight}px" title="${this._escapeHtml(date)}"><span></span></button>`;
+                        }).join("")}
+                    </div>
+                </div>
+                <p class="fang-history-axis-label"><span class="fang-history-axis-date"></span><span class="fang-history-axis-count"></span></p>
             </nav>` : "";
 
         return `
