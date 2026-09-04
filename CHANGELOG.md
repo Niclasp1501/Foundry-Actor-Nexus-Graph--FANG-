@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [14.2609.1] - 2026-09-01
 
 ### Added
+- **Echtzeit als Rückfallebene ohne Kalender.** Findet FANG weder ein bekanntes Kalendermodul noch einen Kalender in der Welt, trägt ein Eintrag jetzt das echte Datum samt Uhrzeit statt „Ohne Spieltag" — in der Sprache der Oberfläche, mit Sortierschlüssel in derselben Form wie ein Spieldatum. Die Chronik ordnet sich damit auch in einer Welt ganz ohne Kalender.
+
+  Zum Nachtragen gibt es in diesem Fall ein echtes Datumsfeld statt eines Textfelds, das jemand jedes Mal gleich schreiben müsste.
+
 - **Uhrzeit in der Chronik.** Ein Eintrag hält jetzt auch die Tageszeit fest, zu der er entstanden ist, und zeigt sie am Kopf des Eintrags neben der Kategorie. Innerhalb eines Spieltags wird danach geordnet — die spätere Stunde zuerst; Einträge ohne Uhrzeit stehen dahinter. Am Schalter „Heute" steht sie hinter dem Datum.
 
   Ein von Hand gewählter Tag bekommt bewusst **keine** Uhrzeit: der Picker fragt nach einem Tag, und Mitternacht wäre eine Behauptung, die niemand aufgestellt hat.

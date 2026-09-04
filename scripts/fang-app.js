@@ -997,10 +997,38 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             return { ...lastDate, source: "last-used" };
         }
 
+        // Nothing calendrical anywhere: fall back to the real date. A world without a calendar
+        // still deserves entries that order themselves and carry something a reader can place --
+        // "Unscheduled" on every single one tells nobody anything.
+        return this._describeRealWorldDate(new Date());
+    }
+
+    /**
+     * Describe a real-world date the way a game date is described, so both kinds travel through
+     * the same store, sort with the same comparison and render in the same places.
+     */
+    /** "YYYY-MM-DD" for an <input type="date">, in local time rather than UTC. */
+    _toDateInputValue(date) {
+        const when = date instanceof Date && !Number.isNaN(date.valueOf()) ? date : new Date();
+        const pad = (value) => String(value).padStart(2, "0");
+        return `${when.getFullYear()}-${pad(when.getMonth() + 1)}-${pad(when.getDate())}`;
+    }
+
+    _describeRealWorldDate(date) {
+        const when = date instanceof Date && !Number.isNaN(date.valueOf()) ? date : new Date();
+        const pad = (value, width) => String(value).padStart(width, "0");
+        let label = "";
+        try {
+            label = new Intl.DateTimeFormat(game.i18n?.lang || undefined, { dateStyle: "long" }).format(when);
+        } catch (_err) {
+            label = `${when.getFullYear()}-${pad(when.getMonth() + 1, 2)}-${pad(when.getDate(), 2)}`;
+        }
         return {
-            label: this._localize("FANG.History.UnknownDate", "Unscheduled"),
-            sort: "",
-            source: "unknown"
+            label,
+            // Same 6-3-3 shape as a game date, so the chronicle's ordering needs no special case.
+            sort: `${pad(when.getFullYear(), 6)}-${pad(when.getMonth() + 1, 3)}-${pad(when.getDate(), 3)}`,
+            time: `${pad(when.getHours(), 2)}:${pad(when.getMinutes(), 2)}`,
+            source: "real-time"
         };
     }
 
@@ -1650,6 +1678,10 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         // lengths (Harptos festivals are one-day months), the year as a spinner. Falls back to a
         // text field when there is no calendar to ask.
         const picker = this._getCalendarPickerModel();
+        // With no calendar at all the world runs on real dates, so back-dating gets a real date
+        // field rather than a text box someone has to spell consistently.
+        const useRealDate = !picker && detectedGameDate.source === "real-time";
+        const realDateValue = useRealDate ? this._toDateInputValue(editingEntry ? null : new Date()) : "";
         const customControl = picker
             ? `<div class="fang-history-picker" ${useCustom ? "" : "hidden"}>
                             <select id="fang-history-pick-day"></select>
@@ -1657,7 +1689,10 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                             <input type="number" id="fang-history-pick-year" value="${picker.displayYear}" data-year-offset="${picker.yearOffset}" step="1">
                         </div>
                         <p class="fang-history-picked" ${useCustom ? "" : "hidden"}><i class="fas fa-calendar-day" aria-hidden="true"></i><span></span></p>`
-            : `<input type="text" id="fang-history-date" value="${this._escapeHtml(useCustom ? formGameDate.label : "")}" placeholder="${this._escapeHtml(this._localize("FANG.History.GameDatePlaceholder", "e.g. 12th of Praios"))}" ${useCustom ? "" : "hidden"}>`;
+            : useRealDate
+                ? `<input type="date" id="fang-history-pick-date" value="${this._escapeHtml(realDateValue)}" ${useCustom ? "" : "hidden"}>
+                        <p class="fang-history-picked" ${useCustom ? "" : "hidden"}><i class="fas fa-calendar-day" aria-hidden="true"></i><span></span></p>`
+                : `<input type="text" id="fang-history-date" value="${this._escapeHtml(useCustom ? formGameDate.label : "")}" placeholder="${this._escapeHtml(this._localize("FANG.History.GameDatePlaceholder", "e.g. 12th of Praios"))}" ${useCustom ? "" : "hidden"}>`;
         const dateReadonly = !isGM && editingEntry;
         const dateControl = dateReadonly
             ? `<label>${this._escapeHtml(this._localize("FANG.History.GameDate", "Game Date"))}</label>
@@ -1713,6 +1748,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 if (earlierBlock) earlierBlock.hidden = button.dataset.when !== "earlier";
             });
         }
+        const realDateInput = panel.querySelector("#fang-history-pick-date");
         const pickerBox = panel.querySelector(".fang-history-picker");
         const pickedHint = panel.querySelector(".fang-history-picked");
         const pickDay = panel.querySelector("#fang-history-pick-day");
@@ -1733,6 +1769,18 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             const ziel = pickedHint.querySelector("span") ?? pickedHint;
             ziel.textContent = described?.label || "";
         };
+        const showPickedReal = () => {
+            if (!realDateInput || !pickedHint) return;
+            const [year, month, day] = String(realDateInput.value || "").split("-").map(Number);
+            const described = Number.isFinite(year) ? this._describeRealWorldDate(new Date(year, month - 1, day)) : null;
+            const ziel = pickedHint.querySelector("span") ?? pickedHint;
+            ziel.textContent = described?.label || "";
+        };
+        if (realDateInput) {
+            showPickedReal();
+            realDateInput.addEventListener("change", showPickedReal);
+            realDateInput.addEventListener("input", showPickedReal);
+        }
         if (picker) {
             refillDays(picker.dayIndex + 1);
             showPicked();
@@ -1745,10 +1793,12 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         daySelect?.addEventListener("change", () => {
             const custom = daySelect.value === "custom";
             if (customDate) customDate.hidden = !custom;
+            if (realDateInput) realDateInput.hidden = !custom;
             if (pickerBox) pickerBox.hidden = !custom;
             if (pickedHint) pickedHint.hidden = !custom;
             if (custom) {
                 if (picker) showPicked();
+                else if (realDateInput) showPickedReal();
                 else customDate?.focus();
             }
         });
@@ -1802,6 +1852,13 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         if (option && option.value !== "custom") {
             gameDate = { label: option.dataset.label || "", sort: option.dataset.sort || "", source: "chronicle" };
         } else {
+            const realDate = panel.querySelector("#fang-history-pick-date");
+            if (realDate) {
+                const [year, month, day] = String(realDate.value || "").split("-").map(Number);
+                if (Number.isFinite(year)) gameDate = this._describeRealWorldDate(new Date(year, month - 1, day));
+                // A day chosen by hand carries no time -- same reasoning as the calendar picker.
+                if (gameDate) gameDate = { ...gameDate, time: "" };
+            }
             const pickMonth = panel.querySelector("#fang-history-pick-month");
             const pickDay = panel.querySelector("#fang-history-pick-day");
             const pickYear = panel.querySelector("#fang-history-pick-year");
@@ -1812,6 +1869,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     Number(pickDay.value))
                 : null;
             if (picked?.label) gameDate = picked;
+            else if (gameDate?.label) { /* already taken from the real-date field */ }
             else {
                 const label = panel.querySelector("#fang-history-date")?.value?.trim() || "";
                 gameDate = { label, sort: "", source: "manual" };

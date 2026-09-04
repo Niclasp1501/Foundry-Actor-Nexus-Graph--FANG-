@@ -127,6 +127,7 @@ body.fang-theme-cyberpunk {
 
 .fang-app-container.fang-theme-cyberpunk input[type="text"],
 .fang-app-container.fang-theme-cyberpunk input[type="number"],
+.fang-app-container.fang-theme-cyberpunk input[type="date"],
 .fang-app-container.fang-theme-cyberpunk select {
     background: #0c1b2a;
     border-color: #27506f;
@@ -135,6 +136,7 @@ body.fang-theme-cyberpunk {
 
 .fang-app-container.fang-theme-cyberpunk input[type="text"]:focus,
 .fang-app-container.fang-theme-cyberpunk input[type="number"]:focus,
+.fang-app-container.fang-theme-cyberpunk input[type="date"]:focus,
 .fang-app-container.fang-theme-cyberpunk select:focus {
     border-color: #33d9ff;
     box-shadow: 0 0 0 2px rgba(51, 217, 255, 0.24);
@@ -1158,6 +1160,7 @@ body.role-gm .fang-app-container .tab-content.gm-only:not(.active) {
 /* Inputs & Selects */
 .fang-app-container input[type="text"],
 .fang-app-container input[type="number"],
+.fang-app-container input[type="date"],
 .fang-app-container select {
     width: 100%;
     padding: 10px 12px;
@@ -1174,6 +1177,7 @@ body.role-gm .fang-app-container .tab-content.gm-only:not(.active) {
 
 .fang-app-container input[type="text"]:focus,
 .fang-app-container input[type="number"]:focus,
+.fang-app-container input[type="date"]:focus,
 .fang-app-container select:focus {
     border-color: var(--fang-accent-gold);
     box-shadow: 0 0 0 2px rgba(var(--fang-accent-gold-rgb), 0.2);
@@ -1718,6 +1722,7 @@ body.fang-monitor .fang-app-container .narrative-close {
    inputs. All three now share the same light, rounded, app-font styling. */
 .fang-dialog input[type="text"],
 .fang-dialog input[type="number"],
+.fang-dialog input[type="date"],
 .fang-dialog select,
 .fang-dialog textarea {
     width: 100%;
@@ -1742,12 +1747,14 @@ body.fang-monitor .fang-app-container .narrative-close {
 
 .fang-dialog input[type="text"]::placeholder,
 .fang-dialog input[type="number"]::placeholder,
+.fang-dialog input[type="date"]::placeholder,
 .fang-dialog textarea::placeholder {
     color: rgba(43, 34, 26, 0.4);
 }
 
 .fang-dialog input[type="text"]:focus,
 .fang-dialog input[type="number"]:focus,
+.fang-dialog input[type="date"]:focus,
 .fang-dialog select:focus,
 .fang-dialog textarea:focus {
     border-color: var(--fang-accent-gold);
@@ -2220,10 +2227,12 @@ body.fang-monitor .fang-app-container .narrative-close {
 
 :root.fang-theme-cyberpunk .fang-dialog input[type="text"],
 :root.fang-theme-cyberpunk .fang-dialog input[type="number"],
+:root.fang-theme-cyberpunk .fang-dialog input[type="date"],
 :root.fang-theme-cyberpunk .fang-dialog select,
 :root.fang-theme-cyberpunk .fang-dialog textarea,
 body.fang-theme-cyberpunk .fang-dialog input[type="text"],
 body.fang-theme-cyberpunk .fang-dialog input[type="number"],
+body.fang-theme-cyberpunk .fang-dialog input[type="date"],
 body.fang-theme-cyberpunk .fang-dialog select,
 body.fang-theme-cyberpunk .fang-dialog textarea {
     background: #0c1b2a;
@@ -2235,9 +2244,11 @@ body.fang-theme-cyberpunk .fang-dialog textarea {
    invisible there. */
 :root.fang-theme-cyberpunk .fang-dialog input[type="text"]::placeholder,
 :root.fang-theme-cyberpunk .fang-dialog input[type="number"]::placeholder,
+:root.fang-theme-cyberpunk .fang-dialog input[type="date"]::placeholder,
 :root.fang-theme-cyberpunk .fang-dialog textarea::placeholder,
 body.fang-theme-cyberpunk .fang-dialog input[type="text"]::placeholder,
 body.fang-theme-cyberpunk .fang-dialog input[type="number"]::placeholder,
+body.fang-theme-cyberpunk .fang-dialog input[type="date"]::placeholder,
 body.fang-theme-cyberpunk .fang-dialog textarea::placeholder {
     color: rgba(217, 236, 255, 0.4);
 }
@@ -2431,6 +2442,7 @@ body.fang-theme-cyberpunk .fang-dialog .faction-icon-preview {
 
 .fang-actor-editor input[type="text"],
 .fang-actor-editor input[type="number"],
+.fang-actor-editor input[type="date"],
 .fang-actor-editor select,
 .fang-actor-editor textarea {
     width: 100%;
@@ -3190,6 +3202,7 @@ body.fang-theme-cyberpunk .fang-dialog .faction-icon-preview {
 
 .background-config-container select,
 .background-config-container input[type="number"],
+.background-config-container input[type="date"],
 .background-config-container input[type="text"] {
     height: 34px;
     background: #fff;
@@ -3395,6 +3408,7 @@ body.fang-theme-cyberpunk .fang-dialog .faction-icon-preview {
 
 .background-config-container select:focus,
 .background-config-container input[type="number"]:focus,
+.background-config-container input[type="date"]:focus,
 .background-config-container input[type="text"]:focus {
     border-color: var(--fang-accent-gold);
     box-shadow: 0 0 5px var(--fang-accent-gold);
@@ -3447,8 +3461,10 @@ body.fang-theme-cyberpunk .background-config-container .bg-config-section label 
 :root.fang-theme-cyberpunk .background-config-container select,
 :root.fang-theme-cyberpunk .background-config-container input[type="text"],
 :root.fang-theme-cyberpunk .background-config-container input[type="number"],
+:root.fang-theme-cyberpunk .background-config-container input[type="date"],
 body.fang-theme-cyberpunk .background-config-container select,
 body.fang-theme-cyberpunk .background-config-container input[type="number"],
+body.fang-theme-cyberpunk .background-config-container input[type="date"],
 body.fang-theme-cyberpunk .background-config-container input[type="text"] {
     background: #0c1b2a;
     color: #d9ecff;
@@ -4402,6 +4418,7 @@ body.fang-theme-cyberpunk .background-config-container .premium-notice p {
 
 .fang-history-editor input[type="text"],
 .fang-history-editor input[type="number"],
+.fang-history-editor input[type="date"],
 .fang-history-editor textarea,
 .fang-history-editor select {
     width: 100%;
@@ -4416,6 +4433,7 @@ body.fang-theme-cyberpunk .background-config-container .premium-notice p {
 
 .fang-history-editor input[type="text"],
 .fang-history-editor input[type="number"],
+.fang-history-editor input[type="date"],
 .fang-history-editor select {
     min-height: 44px;
     padding: 8px 12px;
@@ -4429,6 +4447,7 @@ body.fang-theme-cyberpunk .background-config-container .premium-notice p {
 
 .fang-history-editor input[type="text"]:focus,
 .fang-history-editor input[type="number"]:focus,
+.fang-history-editor input[type="date"]:focus,
 .fang-history-editor textarea:focus,
 .fang-history-editor select:focus {
     border-color: var(--fang-accent-gold);
@@ -4501,6 +4520,7 @@ body.fang-theme-cyberpunk .background-config-container .premium-notice p {
 
 .fang-app-container.fang-theme-cyberpunk .fang-history-editor input[type="text"],
 .fang-app-container.fang-theme-cyberpunk .fang-history-editor input[type="number"],
+.fang-app-container.fang-theme-cyberpunk .fang-history-editor input[type="date"],
 .fang-app-container.fang-theme-cyberpunk .fang-history-editor textarea,
 .fang-app-container.fang-theme-cyberpunk .fang-history-editor select {
     background: rgba(8, 18, 31, 0.82);
@@ -4604,6 +4624,7 @@ body.fang-theme-cyberpunk .background-config-container .premium-notice p {
 }
 
 .fang-app-container .fang-canvas-prompt-fields input[type="number"],
+.fang-app-container .fang-canvas-prompt-fields input[type="date"],
 .fang-app-container .fang-canvas-prompt-fields input[type="text"] {
     width: 100%;
     min-height: 42px;
@@ -4663,6 +4684,7 @@ body.fang-theme-cyberpunk .background-config-container .premium-notice p {
 }
 
 .fang-app-container.fang-theme-cyberpunk .fang-canvas-prompt-fields input[type="number"],
+.fang-app-container.fang-theme-cyberpunk .fang-canvas-prompt-fields input[type="date"],
 .fang-app-container.fang-theme-cyberpunk .fang-canvas-prompt-fields input[type="text"] {
     background: rgba(8, 18, 31, 0.82);
     border-color: rgba(51, 217, 255, 0.42);
