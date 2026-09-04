@@ -293,7 +293,9 @@ Hooks.once("init", () => {
       // An open chronicle showed whatever was in the store when it was opened. Entries arrive
       // from elsewhere all the time -- a player submitting one, the graph recording an automatic
       // one, a second GM editing -- and none of that reached the panel until it was reopened.
-      if (fangApp?.rendered) fangApp._onHistoryStoreChanged();
+      // Optional call: a client can hold a cached older fang-app.js while main.js is new.
+      // A hard TypeError inside a setting hook would take the whole hook chain down with it.
+      if (fangApp?.rendered) fangApp._onHistoryStoreChanged?.();
     }
   });
 
@@ -644,32 +646,58 @@ Hooks.once("ready", async () => {
     btn.style.cursor = "pointer";
   }
 
-  // Inject the FANG button into the "only-sheet" module's button bar.
+  // Put the FANG button into Sheet Only's button bar.
   //
-  // Replacing that module's actor selector with a docked directory used to live
-  // here as well. It moved to Ninjo's In-Person Tools in 14.2609.1: it rearranges
-  // another module's interface for the sake of playing at a table, which is that
-  // module's subject, not ours. FANG keeps its own button and nothing else.
-  const observer = new MutationObserver((mutations) => {
-    for (let mutation of mutations) {
-      if (mutation.addedNodes.length) {
-        const container = document.getElementById("so-main-buttons");
-        if (container && !document.getElementById("fang-so-btn")) {
-          const fangBtn = document.createElement("button");
-          fangBtn.id = "fang-so-btn";
-          fangBtn.title = game.i18n.localize("FANG.ButtonOpen") || "Open FANG Graph";
-          _applyOnlySheetStyle(fangBtn);
-          fangBtn.innerHTML = '<i class="fas fa-project-diagram"></i>';
-          fangBtn.addEventListener("click", (e) => {
-            e.preventDefault();
-            game.modules.get("fang")?.api?.toggleGraph();
-          });
-          container.appendChild(fangBtn);
-        }
-      }
-    }
-  });
-  observer.observe(document.body, { childList: true, subtree: true });
+  // Replacing that module's actor selector with a docked directory used to live here as
+  // well. It moved to Ninjo's In-Person Tools in 14.2609.1: it rearranges another module's
+  // interface for the sake of playing at a table, which is that module's subject, not ours.
+  // FANG keeps its own button and nothing else.
+  //
+  // This used to happen ONLY from inside a MutationObserver, which made it a race: Sheet Only
+  // builds its bar in its own async ready hook, and if that finished before we started
+  // watching, no mutation ever followed and the button simply never appeared. It also swaps
+  // the whole bar for a narrow-screen variant, which drops the button again. So: one
+  // idempotent function, called from everywhere the bar can plausibly have changed.
+  function _fangEnsureOnlySheetButton() {
+    const container = document.getElementById("so-main-buttons");
+    if (!container || document.getElementById("fang-so-btn")) return !!container;
+    const fangBtn = document.createElement("button");
+    fangBtn.id = "fang-so-btn";
+    fangBtn.title = game.i18n.localize("FANG.ButtonOpen") || "Open FANG Graph";
+    _applyOnlySheetStyle(fangBtn);
+    fangBtn.innerHTML = '<i class="fas fa-project-diagram"></i>';
+    fangBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      game.modules.get("fang")?.api?.toggleGraph();
+    });
+    container.appendChild(fangBtn);
+    return true;
+  }
+
+  {
+    // Deliberately not gated on the module being active: forks and renames exist, and the
+    // only thing that actually matters is whether a bar with that id shows up. Everything
+    // below is a cheap id lookup that does nothing when it does not.
+
+    // 1. Right now, in case the bar is already standing.
+    _fangEnsureOnlySheetButton();
+
+    // 2. Whenever the DOM grows a bar -- including the narrow-screen swap.
+    const observer = new MutationObserver(() => _fangEnsureOnlySheetButton());
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    // 3. Sheet Only rebuilds around the sheet, so re-check when one renders.
+    Hooks.on("renderActorSheetV2", () => _fangEnsureOnlySheetButton());
+    Hooks.on("renderActorSheet", () => _fangEnsureOnlySheetButton());
+
+    // 4. A few late attempts, for the case where its ready hook is still awaiting something
+    //    and the observer has nothing to see yet. Stops as soon as the button is in place.
+    let versuche = 0;
+    const nachfassen = setInterval(() => {
+      if (document.getElementById("fang-so-btn") || ++versuche > 20) clearInterval(nachfassen);
+      else _fangEnsureOnlySheetButton();
+    }, 500);
+  }
 
   // Optional one-way background sync: DiploGlass factions -> FANG factions.
   Hooks.on("updateSetting", async (setting) => {
