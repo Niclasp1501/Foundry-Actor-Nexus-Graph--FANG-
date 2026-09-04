@@ -516,7 +516,11 @@ Hooks.once("ready", async () => {
           fangApp.simulation.alpha(0.05).restart();
           fangApp._populateActors();
         }
-        await fangApp.saveData(false);
+        // Broadcast the result. Without it the graph landed in the journal but nobody else
+        // was told, so everyone kept the state they had until they reopened the window --
+        // including the player who just made the change. refreshFromServer keeps unsaved
+        // local work, so telling everyone is safe.
+        await fangApp.saveData(true);
       }, 100);
     }
 

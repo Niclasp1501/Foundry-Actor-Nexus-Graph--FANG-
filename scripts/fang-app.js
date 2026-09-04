@@ -2857,6 +2857,16 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
      *
      * @param {object} payload  { newGraphData, baseline, draggedNodeIds, authorName }
      */
+    /**
+     * Take over an edit a player relayed to us, because they cannot write the flag themselves.
+     *
+     * Our own baseline deliberately stays where it is. It describes what the SERVER holds, and
+     * the save that follows this call needs it that way: it merges baseline / ours / server, and
+     * the player's addition only counts as OUR pending change while the baseline still lacks it.
+     * Moving the baseline forward to the merged result made the very next merge read that node
+     * as "the server deleted it" -- so a placeholder a player added in edit mode was neither
+     * broadcast nor written, it just quietly vanished. See scenario 14 in the merge tests.
+     */
     async applyRemoteGraphEdit(payload = {}) {
         const theirState = payload.newGraphData;
         if (!theirState) return;
@@ -2868,7 +2878,6 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             console.warn("FANG | Player edit without a mergeable baseline, applying as-is.");
             this.graphData = theirState;
             this._repairGraphData();
-            this._setBaseline(this._buildExportData());
             return;
         }
 
@@ -2880,7 +2889,6 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             });
             this.graphData = merged;
             this._repairGraphData();
-            this._setBaseline(this._buildExportData());
             if (conflicts.length) {
                 console.log(`FANG | Merged edit from ${payload.authorName ?? "player"} with ${conflicts.length} conflict(s).`, conflicts);
             }
@@ -2888,7 +2896,6 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             console.error("FANG | Could not merge player edit, applying as-is.", err);
             this.graphData = theirState;
             this._repairGraphData();
-            this._setBaseline(this._buildExportData());
         }
     }
 

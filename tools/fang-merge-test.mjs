@@ -243,5 +243,44 @@ section("13. structurallyEqual ignoriert Positionen");
     ok(structurallyEqual(merged, merged), "reflexiv");
 }
 
+// 14 — the player relay, both steps
+// A player adds a node and their client relays it to the GM. The GM applies it and then
+// saves. Both merges have to be fed the right baseline: the GM's baseline must keep
+// describing what the SERVER holds, not the freshly merged result. Move it forward and
+// the second merge reads the player's new node as "the server deleted it" and drops it.
+section("14. Spieler-Relay: Grundlage darf nicht mitwandern");
+{
+    const server0 = baseGraph();                       // was der Server hat
+    const playerBase = clone(server0);                 // Grundlage des Spielers
+    const playerState = clone(server0);
+    playerState.nodes.push(node("ph-neu", { name: "Unbekannter Kontakt", isPlaceholder: true }));
+
+    const gmLive = clone(server0);
+    const gmBaseline = clone(server0);
+
+    // Schritt 1: applyRemoteGraphEdit
+    const { merged: nachRelay } = mergeGraphData(playerBase, playerState, gmLive);
+    ok(!!nachRelay.nodes.find(n => n.id === "ph-neu"), "Schritt 1 uebernimmt den neuen Knoten");
+
+    // Schritt 2a: so war es — Grundlage auf das Ergebnis gesetzt
+    const { merged: mitFalscherBasis } = mergeGraphData(clone(nachRelay), clone(nachRelay), clone(server0));
+    ok(!mitFalscherBasis.nodes.find(n => n.id === "ph-neu"),
+        "BELEG: mitgewanderte Grundlage laesst den Knoten beim Speichern verschwinden");
+
+    // Schritt 2b: so ist es jetzt — Grundlage bleibt der Serverstand
+    const { merged: mitRichtigerBasis } = mergeGraphData(gmBaseline, clone(nachRelay), clone(server0));
+    ok(!!mitRichtigerBasis.nodes.find(n => n.id === "ph-neu"),
+        "unveraenderte Grundlage rettet den Knoten in den Speichervorgang");
+}
+{
+    // Same trap for a relayed deletion: it must not come back.
+    const server0 = baseGraph();
+    const playerState = clone(server0);
+    playerState.nodes = playerState.nodes.filter(n => n.id !== "garrek");
+    const { merged: nachRelay } = mergeGraphData(clone(server0), playerState, clone(server0));
+    const { merged: gespeichert } = mergeGraphData(clone(server0), clone(nachRelay), clone(server0));
+    ok(!gespeichert.nodes.find(n => n.id === "garrek"), "geloeschter Knoten kehrt nicht zurueck");
+}
+
 console.log(`\n${failed === 0 ? "=== ALLE TESTS BESTANDEN ===" : `=== ${failed} FEHLER ===`}  (${passed} ok, ${failed} fail)\n`);
 process.exit(failed ? 1 : 0);
