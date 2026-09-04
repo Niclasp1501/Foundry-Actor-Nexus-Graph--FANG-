@@ -347,6 +347,7 @@
             "WhenEarlier": "En un día anterior",
             "PickDay": "Día de juego",
             "CustomDate": "Fecha propia…",
+            "KnownDays": "Días de la crónica",
             "LearnedToday": "Nos enteramos de esto hoy",
             "LearnedTodayHint": "La entrada permanece en el día en que ocurrió y se marca como retrospectiva.",
             "LearnedOn": "Descubierto el {date}",

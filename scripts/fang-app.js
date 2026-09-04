@@ -1529,11 +1529,14 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const isEarlier = !!editingEntry && formGameDate.label !== detectedGameDate.label;
         const knownDays = this._getKnownGameDays().filter(day => day.label !== detectedGameDate.label);
         const matchedDayIndex = knownDays.findIndex(day => day.label === formGameDate.label);
-        const useCustom = isEarlier && matchedDayIndex === -1;
-        const dayOptions = knownDays
+        // Picking a fresh date is the common case for a back-dated entry, so it goes first;
+        // burying it under every day the chronicle already knows is what made it hard to find.
+        const useCustom = matchedDayIndex === -1;
+        const knownOptions = knownDays
             .map((day, index) => `<option value="${index}" data-label="${this._escapeHtml(day.label)}" data-sort="${this._escapeHtml(day.sort)}" ${index === matchedDayIndex ? "selected" : ""}>${this._escapeHtml(day.label)}</option>`)
-            .join("")
-            + `<option value="custom" ${useCustom ? "selected" : ""}>${this._escapeHtml(this._localize("FANG.History.CustomDate", "Own date..."))}</option>`;
+            .join("");
+        const dayOptions = `<option value="custom" ${useCustom ? "selected" : ""}>${this._escapeHtml(this._localize("FANG.History.CustomDate", "Own date..."))}</option>`
+            + (knownOptions ? `<optgroup label="${this._escapeHtml(this._localize("FANG.History.KnownDays", "Days in the chronicle"))}">${knownOptions}</optgroup>` : "");
         // A real date picker whenever the world has a calendar: month names with their true
         // lengths (Harptos festivals are one-day months), the year as a spinner. Falls back to a
         // text field when there is no calendar to ask.
@@ -1544,7 +1547,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                             <select id="fang-history-pick-month">${picker.months.map(month => `<option value="${month.index}" ${month.index === picker.monthIndex ? "selected" : ""}>${this._escapeHtml(month.name)}</option>`).join("")}</select>
                             <input type="number" id="fang-history-pick-year" value="${picker.displayYear}" data-year-offset="${picker.yearOffset}" step="1">
                         </div>
-                        <p class="fang-hint fang-history-picked" ${useCustom ? "" : "hidden"}></p>`
+                        <p class="fang-history-picked" ${useCustom ? "" : "hidden"}><i class="fas fa-calendar-day" aria-hidden="true"></i><span></span></p>`
             : `<input type="text" id="fang-history-date" value="${this._escapeHtml(useCustom ? formGameDate.label : "")}" placeholder="${this._escapeHtml(this._localize("FANG.History.GameDatePlaceholder", "e.g. 12th of Praios"))}" ${useCustom ? "" : "hidden"}>`;
         const dateReadonly = !isGM && editingEntry;
         const dateControl = dateReadonly
@@ -1619,7 +1622,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const showPicked = () => {
             if (!picker || !pickedHint) return;
             const described = this._describePickedGameDate(kernJahr(), Number(pickMonth.value), Number(pickDay.value));
-            pickedHint.textContent = described?.label || "";
+            const ziel = pickedHint.querySelector("span") ?? pickedHint;
+            ziel.textContent = described?.label || "";
         };
         if (picker) {
             refillDays(picker.dayIndex + 1);

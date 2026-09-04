@@ -347,6 +347,7 @@
             "WhenEarlier": "V dřívější den",
             "PickDay": "Herní den",
             "CustomDate": "Vlastní datum…",
+            "KnownDays": "Dny v kronice",
             "LearnedToday": "Dozvěděli jsme se o tom až dnes",
             "LearnedTodayHint": "Záznam zůstává u dne, kdy se to stalo, a je označen jako retrospektiva.",
             "LearnedOn": "Zjištěno {date}",

@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [14.2609.1] - 2026-09-01
 
 ### Added
+- **„Eigenes Datum …“ steht jetzt oben.** In der Spieltagsauswahl war es die letzte Möglichkeit unter allen bereits bekannten Tagen und damit kaum zu finden — dabei ist ein frisches Datum genau das, was man bei einem nachgetragenen Ereignis meistens braucht. Es ist jetzt der erste Eintrag und vorausgewählt; die bekannten Tage stehen darunter in einer eigenen Gruppe. Das gewählte Datum steht als Zeile darunter, damit niemand die drei Felder im Kopf zusammensetzen muss.
+
 - **Kalender-Auswahl statt Tippen.** Für einen Tag, den die Chronik noch nicht kennt, stehen jetzt drei Felder bereit — Tag, Monat, Jahr —, gefüllt aus dem Kalender der Welt: echte Monatsnamen, echte Monatslängen, und die Ein-Tages-Feiertage von Harptos als eigene Monate. Darunter steht sofort, wie der Tag heißen wird. Ohne Kalender in der Welt bleibt es beim Textfeld.
 
   Die Umrechnung zwischen Foundrys Kernkalender und einem Kalendermodul wird dabei nicht geraten, sondern an „heute" gemessen: Calendarias Harptos zählt Jahre ab 1501 sowie Monate und Tage ab eins, Foundrys Kern ab null. Diese Differenz wird einmal bestimmt und auf den gewählten Tag angewandt — dadurch trägt ein von Hand gewählter Tag dieselbe Beschriftung und denselben Sortierschlüssel wie ein automatisch erkannter.
@@ -19,6 +21,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **Zeitleiste in der Chronik.** Über dem Logbuch steht jetzt eine Leiste mit einem Knopf je Spieltag samt Anzahl der Einträge. Ein Klick springt zu diesem Tag, und beim Blättern hebt sich der Tag hervor, bei dem man gerade ist. Die Leiste bleibt beim Scrollen oben stehen — bei einer Chronik über viele Sitzungen war der Weg zu einem bestimmten Tag vorher reines Scrollen.
 
 ### Fixed
+- **Die Stilvorlage brach in der Mitte ab.** Beim Ergänzen von Selektoren wurde eine Zeile, die auf `{` endet, verdoppelt — damit bekam ein Block zwei öffnende Klammern. Fünf solcher Stellen ließen alle folgenden Regeln wirkungslos: sie standen weiter in der Datei, wurden weiter ausgeliefert und griffen einfach nicht mehr. Betroffen war der gesamte hintere Teil, weshalb die Bearbeitungsfenster zuletzt unfertig aussahen. `tools/fang-validate.mjs` prüft die Klammerbilanz jeder Datei unter `styles/` jetzt mit.
+
+- **Zahlenfelder trugen Foundrys dunkles Standardaussehen.** Gestaltet waren nur `input[type="text"]` und `select`; das Jahresfeld der Datumsauswahl fiel dadurch als dunkler Kasten zwischen zwei hellen Feldern auf und war zehn Pixel höher. `input[type="number"]` gehört jetzt überall dazu, wo auch Textfelder stehen.
+
 - **FANG ließ sich gar nicht mehr laden.** In der Datumsauswahl stand ein Ausdruck, der `??` ohne Klammern mit `||` mischt — das ist ein Syntaxfehler. Damit ließ sich `fang-app.js` nicht mehr auswerten, `main.js` lief nie an, und es gab weder Hooks noch Knopf noch Graphen; für alle. Der Browser meldete dabei irreführend ein Problem mit einer privaten Methode dreißig Zeilen weiter oben, in einer anderen Klasse.
 
   Warum es durchging: geprüft wurde mit `node --check` auf einer `.js`-Datei, und das behandelt sie als CommonJS-Skript, dessen Grammatik den Ausdruck durchwinkt. Foundry lädt sie als ES-Modul, und dort ist er ungültig. `tools/fang-validate.mjs` prüft jede Datei unter `scripts/` jetzt als ES-Modul und schlägt bei genau diesem Fall fehl — gegen den kaputten Stand nachgestellt.

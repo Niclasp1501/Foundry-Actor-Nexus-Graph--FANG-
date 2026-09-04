@@ -347,6 +347,7 @@
             "WhenEarlier": "Op een eerdere dag",
             "PickDay": "Speeldag",
             "CustomDate": "Eigen datum…",
+            "KnownDays": "Dagen in de kroniek",
             "LearnedToday": "We kwamen er pas vandaag achter",
             "LearnedTodayHint": "De vermelding blijft op de dag van gebeuren staan en wordt als terugblik gemarkeerd.",
             "LearnedOn": "Ontdekt op {date}",

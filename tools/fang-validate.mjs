@@ -67,6 +67,35 @@ for (const file of [...localeFiles, "README.md", "TODO.md", "DEVELOPER_GUIDE.md"
   }
 }
 
+// Braces in the stylesheets have to balance.
+//
+// One unclosed block swallows everything after it: the rules are still in the file, still served,
+// and simply never match. A selector list edited by script is how it happened -- a line ending in
+// "{" was duplicated, so one block got two opening braces, and five of those left the last four
+// hundred rules inert with nothing anywhere reporting a problem.
+{
+  const styleDir = path.join(root, "styles");
+  const sheets = fs.existsSync(styleDir)
+    ? fs.readdirSync(styleDir).filter((file) => file.endsWith(".css")).sort()
+    : [];
+  for (const file of sheets) {
+    const text = fs.readFileSync(path.join(styleDir, file), "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
+    let depth = 0;
+    let line = 1;
+    let firstExtraClose = 0;
+    for (const char of text) {
+      if (char === "\n") line++;
+      else if (char === "{") depth++;
+      else if (char === "}") {
+        depth--;
+        if (depth < 0 && !firstExtraClose) firstExtraClose = line;
+      }
+    }
+    if (depth > 0) errors.push(`styles/${file}: unbalanced braces, ${depth} block(s) never closed`);
+    else if (depth < 0 || firstExtraClose) errors.push(`styles/${file}: unbalanced braces, extra "}" around line ${firstExtraClose}`);
+  }
+}
+
 // Parse every script the way Foundry actually loads it: as an ES module.
 //
 // "node --check foo.js" treats the file as a CommonJS script and waves through things a module
@@ -104,4 +133,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log(`FANG validation passed (${localeFiles.length} locales, scripts parse as ES modules).`);
+console.log(`FANG validation passed (${localeFiles.length} locales, scripts parse as ES modules, stylesheets balanced).`);

@@ -347,6 +347,7 @@
             "WhenEarlier": "On an earlier day",
             "PickDay": "Game day",
             "CustomDate": "Own date...",
+            "KnownDays": "Days in the chronicle",
             "LearnedToday": "We only found out about this today",
             "LearnedTodayHint": "The entry stays on the day it happened and is marked as a flashback.",
             "LearnedOn": "Found out on {date}",
