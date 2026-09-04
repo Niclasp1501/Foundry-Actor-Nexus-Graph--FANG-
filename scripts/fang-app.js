@@ -743,6 +743,31 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         return candidates.filter(candidate => candidate.api && typeof candidate.api === "object");
     }
 
+    /**
+     * Ask a calendar module to render a date. Each module wants its own arguments -- Calendaria's
+     * formatDate takes a token string and turns an options object into "n.replace is not a
+     * function", while others expect exactly that object. A module that refuses one call must not
+     * cost us the date entirely, so every attempt stands on its own and the no-argument form (the
+     * module's own default rendering) is tried first.
+     */
+    _formatWithCalendarModule(api, dateLike) {
+        if (!api || !dateLike) return "";
+        const attempts = [
+            () => api.formatDate(dateLike),
+            () => api.formatDate(dateLike, { includeTime: false, format: "long" }),
+            () => api.formatDateTime(dateLike)
+        ];
+        for (const attempt of attempts) {
+            try {
+                const value = attempt();
+                if (typeof value === "string" && value.trim()) return value.trim();
+            } catch (_err) {
+                // Next shape.
+            }
+        }
+        return "";
+    }
+
     _detectCalendarApiGameDate() {
         const timestamp = Number.isFinite(game.time?.worldTime) ? game.time.worldTime : 0;
         for (const candidate of this._getCalendarApiCandidates()) {
@@ -755,10 +780,14 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     || api.getCurrentDateTime?.()
                     || (typeof api.worldTimeToDate === "function" ? api.worldTimeToDate(timestamp) : null)
                     || (typeof api.timestampToDate === "function" && Number.isFinite(apiTimestamp) ? api.timestampToDate(apiTimestamp) : null);
-                const formatted = typeof api.formatDate === "function" && dateLike
-                    ? api.formatDate(dateLike, { includeTime: false, format: "long" })
-                    : (typeof api.formatDateTime === "function" && dateLike ? api.formatDateTime(dateLike) : "");
-                const label = this._formatCalendarDateObject(dateLike, api, formatted) || (typeof formatted === "string" ? this._sanitizeCalendarLabel(formatted) : "");
+                const formatted = this._formatWithCalendarModule(api, dateLike);
+                const built = this._formatCalendarDateObject(dateLike, api, formatted);
+                // Three sources, in order of trust. A label we assembled ourselves is best -- but
+                // only when it carries a month NAME; without one it degrades to "1.1.1501", and the
+                // module's own rendering ("1 Hammer, 1501") is plainly better than that.
+                const label = built && /\p{L}/u.test(built)
+                    ? built
+                    : (this._calendarLabelLooksUsable(formatted) ? this._sanitizeCalendarLabel(formatted) : built);
                 if (!this._calendarLabelLooksUsable(label)) continue;
                 return {
                     label,
@@ -1187,13 +1216,28 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 const offset = section.offsetTop - log.offsetTop - 8;
                 log.scrollTo({ top: Math.max(0, offset), behavior: "smooth" });
                 markActive(dayIndex);
-                chip.scrollIntoView({ block: "nearest", inline: "nearest" });
+                // Keep the chip in view by moving the rail's own track. scrollIntoView would walk
+                // every scrollable ancestor -- including the log -- and cancel the smooth scroll
+                // that was just started, leaving the log sitting at the top.
+                const track = chip.closest("ol");
+                if (track) {
+                    const left = chip.offsetLeft - track.offsetLeft;
+                    const right = left + chip.offsetWidth;
+                    if (left < track.scrollLeft) track.scrollLeft = left - 8;
+                    else if (right > track.scrollLeft + track.clientWidth) track.scrollLeft = right - track.clientWidth + 8;
+                }
             });
         }
 
         let scheduled = false;
         const syncActive = () => {
             scheduled = false;
+            // At the bottom the last day may still begin below the cutoff -- there is no content
+            // left to scroll it up. Mark it anyway, or the final day could never become active.
+            if (log.scrollTop + log.clientHeight >= log.scrollHeight - 2) {
+                markActive(Number(sections[sections.length - 1]?.dataset?.dayIndex ?? 0));
+                return;
+            }
             const cutoff = log.scrollTop + 24;
             let current = sections[0];
             for (const section of sections) {
