@@ -282,5 +282,38 @@ section("14. Spieler-Relay: Grundlage darf nicht mitwandern");
     ok(!gespeichert.nodes.find(n => n.id === "garrek"), "geloeschter Knoten kehrt nicht zurueck");
 }
 
+// 15 — chronicle sort keys have to order as plain strings, negative years included
+//
+// Not part of the merge, but the same class of trap and no better home: the chronicle sorts
+// days by comparing these keys as text. A world whose calendar module FANG does not know
+// falls back to Foundry's own reckoning, where the present can sit before year zero.
+section("15. Sortierschluessel der Chronik");
+{
+    // Mirrors _getCalendarSort's year handling in fang-app.js.
+    const yearKey = (year) => year < 0
+        ? `-${String(999999 + year).padStart(6, "0")}`
+        : String(year).padStart(6, "0");
+    const key = (year, month, day) =>
+        `${yearKey(year)}-${String(month).padStart(3, "0")}-${String(day).padStart(3, "0")}`;
+
+    const chronologisch = [
+        [-66, 1, 1], [-9, 1, 1], [-1, 12, 30], [0, 1, 1], [5, 6, 15], [1435, 11, 13], [1492, 11, 1]
+    ];
+    const sortiert = [...chronologisch]
+        .map(d => ({ d, k: key(...d) }))
+        .sort((a, b) => a.k.localeCompare(b.k))
+        .map(x => x.d);
+    ok(JSON.stringify(sortiert) === JSON.stringify(chronologisch),
+        "Jahre sortieren chronologisch, auch negative");
+
+    ok(key(1435, 1, 12) === "001435-001-012", "positive Jahre behalten ihr altes Format");
+    ok(key(-1, 1, 1).localeCompare(key(0, 1, 1)) < 0, "negatives Jahr vor Jahr null");
+    ok(key(1435, 11, 13).localeCompare(key(1435, 11, 3)) > 0, "Tage innerhalb eines Monats");
+    ok(key(1435, 2, 30).localeCompare(key(1435, 11, 1)) < 0, "Monate innerhalb eines Jahres");
+    ok(key(1435, 17, 30).localeCompare(key(1436, 1, 1)) < 0, "ueber den Jahreswechsel");
+    // Ein Tag des Jahres statt eines Tags im Monat: dreistellig, damit 100 nach 99 kommt.
+    ok(key(0, 3, 100).localeCompare(key(0, 3, 99)) > 0, "dreistelliger Tag vergleicht numerisch");
+}
+
 console.log(`\n${failed === 0 ? "=== ALLE TESTS BESTANDEN ===" : `=== ${failed} FEHLER ===`}  (${passed} ok, ${failed} fail)\n`);
 process.exit(failed ? 1 : 0);

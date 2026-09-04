@@ -865,7 +865,14 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         if (year === null || monthValue === null || day === null) return "";
         const month = Number(monthValue) + (dateLike.month?.index !== undefined ? 1 : 0);
         // Three digits for the day so that a day-of-year value still compares numerically.
-        const yearKey = year < 0 ? `-${String(Math.abs(year)).padStart(6, "0")}` : String(year).padStart(6, "0");
+        //
+        // Negative years happen: a calendar module carries the campaign epoch, so a world whose
+        // module FANG does not know falls back to Foundry's own reckoning, where the present can
+        // sit before year zero. Padding the absolute value reverses them -- "-000009" sorts before
+        // "-000066", making year -9 look older than -66. The complement restores the order, and
+        // leaves every non-negative key byte-for-byte what it was, so existing entries still
+        // interleave correctly.
+        const yearKey = year < 0 ? `-${String(999999 + year).padStart(6, "0")}` : String(year).padStart(6, "0");
         return `${yearKey}-${String(month).padStart(3, "0")}-${String(day).padStart(3, "0")}`;
     }
 
