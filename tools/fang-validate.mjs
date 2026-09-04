@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
+import { execFileSync } from "node:child_process";
 
 const root = process.cwd();
 const langDir = path.join(root, "lang");
@@ -65,6 +67,32 @@ for (const file of [...localeFiles, "README.md", "TODO.md", "DEVELOPER_GUIDE.md"
   }
 }
 
+// Parse every script the way Foundry actually loads it: as an ES module.
+//
+// "node --check foo.js" treats the file as a CommonJS script and waves through things a module
+// parser rejects. "a ?? b || c" is one of them. It shipped, and the browser answered with a
+// SyntaxError pointing at an unrelated private method thirty lines into a different class --
+// which meant main.js never evaluated, so there were no hooks, no button, no FANG at all, for
+// everyone. Copying to .mjs before checking is what makes this honest.
+{
+  const scriptDir = path.join(root, "scripts");
+  const scripts = fs.existsSync(scriptDir)
+    ? fs.readdirSync(scriptDir).filter((file) => /\.(js|mjs)$/.test(file)).sort()
+    : [];
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "fang-check-"));
+  for (const file of scripts) {
+    const asModule = path.join(tmpDir, file.replace(/\.js$/, ".mjs"));
+    fs.copyFileSync(path.join(scriptDir, file), asModule);
+    try {
+      execFileSync(process.execPath, ["--check", asModule], { stdio: "pipe" });
+    } catch (err) {
+      const message = String(err.stderr || err.message).match(/SyntaxError: .*/)?.[0] ?? "parse failed";
+      errors.push(`scripts/${file}: ${message}`);
+    }
+  }
+  fs.rmSync(tmpDir, { recursive: true, force: true });
+}
+
 if (warnings.length) {
   console.warn("Warnings:");
   for (const warning of warnings) console.warn(`- ${warning}`);
@@ -76,4 +104,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log(`FANG validation passed (${localeFiles.length} locales).`);
+console.log(`FANG validation passed (${localeFiles.length} locales, scripts parse as ES modules).`);

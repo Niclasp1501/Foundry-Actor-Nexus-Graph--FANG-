@@ -538,8 +538,18 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const now = calendar.timeToComponents(Number.isFinite(game.time?.worldTime) ? game.time.worldTime : 0);
         const year = this._calendarNumber(now?.year) ?? 0;
         const leap = typeof calendar.isLeapYear === "function";
+        // Foundry's own year is not the one anybody reads. In this world the core calendar says
+        // -66 where Calendaria says 1435, and putting -66 in the year field would be nonsense to
+        // everyone but the parser. Show their reckoning, convert back when reading.
+        let yearOffset = 0;
+        for (const candidate of this._getCalendarApiCandidates()) {
+            const offsets = this._getCalendarModuleOffsets(candidate.api);
+            if (offsets) { yearOffset = offsets.year; break; }
+        }
         return {
             year,
+            yearOffset,
+            displayYear: year + yearOffset,
             monthIndex: this._calendarNumber(now?.month) ?? 0,
             dayIndex: this._calendarNumber(now?.dayOfMonth ?? now?.day) ?? 0,
             months: months.map((month, index) => ({
@@ -1532,7 +1542,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             ? `<div class="fang-history-picker" ${useCustom ? "" : "hidden"}>
                             <select id="fang-history-pick-day"></select>
                             <select id="fang-history-pick-month">${picker.months.map(month => `<option value="${month.index}" ${month.index === picker.monthIndex ? "selected" : ""}>${this._escapeHtml(month.name)}</option>`).join("")}</select>
-                            <input type="number" id="fang-history-pick-year" value="${picker.year}" step="1">
+                            <input type="number" id="fang-history-pick-year" value="${picker.displayYear}" data-year-offset="${picker.yearOffset}" step="1">
                         </div>
                         <p class="fang-hint fang-history-picked" ${useCustom ? "" : "hidden"}></p>`
             : `<input type="text" id="fang-history-date" value="${this._escapeHtml(useCustom ? formGameDate.label : "")}" placeholder="${this._escapeHtml(this._localize("FANG.History.GameDatePlaceholder", "e.g. 12th of Praios"))}" ${useCustom ? "" : "hidden"}>`;
@@ -1601,13 +1611,14 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const refillDays = (keep = null) => {
             if (!picker || !pickDay || !pickMonth) return;
             const month = picker.months[Number(pickMonth.value)] ?? picker.months[0];
-            const wanted = keep ?? Number(pickDay.value) || 1;
+            const wanted = keep ?? (Number(pickDay.value) || 1);
             pickDay.innerHTML = Array.from({ length: month.days }, (_, i) =>
                 `<option value="${i}" ${i === Math.min(wanted, month.days) - 1 ? "selected" : ""}>${i + 1}</option>`).join("");
         };
+        const kernJahr = () => Number(pickYear.value) - Number(pickYear.dataset.yearOffset || 0);
         const showPicked = () => {
             if (!picker || !pickedHint) return;
-            const described = this._describePickedGameDate(Number(pickYear.value), Number(pickMonth.value), Number(pickDay.value));
+            const described = this._describePickedGameDate(kernJahr(), Number(pickMonth.value), Number(pickDay.value));
             pickedHint.textContent = described?.label || "";
         };
         if (picker) {
@@ -1689,7 +1700,10 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             const pickDay = panel.querySelector("#fang-history-pick-day");
             const pickYear = panel.querySelector("#fang-history-pick-year");
             const picked = pickMonth && pickDay && pickYear
-                ? this._describePickedGameDate(Number(pickYear.value), Number(pickMonth.value), Number(pickDay.value))
+                ? this._describePickedGameDate(
+                    Number(pickYear.value) - Number(pickYear.dataset.yearOffset || 0),
+                    Number(pickMonth.value),
+                    Number(pickDay.value))
                 : null;
             if (picked?.label) gameDate = picked;
             else {
