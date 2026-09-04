@@ -518,10 +518,28 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         return escapeHtml(String(value ?? ""));
     }
 
+    /**
+     * The game days the chronicle already knows, newest first. Offering these as a list is what
+     * makes back-dating reliable: typing "12. Hammer" a second time with a different spelling
+     * used to create a second day group that looks identical and sorts somewhere else entirely.
+     */
+    _getKnownGameDays({ user = game.user } = {}) {
+        const days = [];
+        const seen = new Set();
+        for (const entry of this._getHistoryEntriesForUser({ user })) {
+            const label = entry.gameDate?.label;
+            if (!label || seen.has(label)) continue;
+            seen.add(label);
+            days.push({ label, sort: String(entry.gameDate?.sort || ""), source: String(entry.gameDate?.source || "manual") });
+        }
+        return days;
+    }
+
     _getHistoryCategories() {
         return [
             { kind: "encounter", icon: "fa-handshake", label: this._localize("FANG.History.Categories.Encounter", "Encounter") },
             { kind: "insight", icon: "fa-lightbulb", label: this._localize("FANG.History.Categories.Insight", "Insight") },
+            { kind: "flashback", icon: "fa-clock-rotate-left", label: this._localize("FANG.History.Categories.Flashback", "Flashback") },
             { kind: "quest", icon: "fa-scroll", label: this._localize("FANG.History.Categories.Quest", "Quest") },
             { kind: "relationship", icon: "fa-link", label: this._localize("FANG.History.Categories.Relationship", "Relationship") },
             { kind: "faction", icon: "fa-users", label: this._localize("FANG.History.Categories.Faction", "Faction") },
@@ -534,7 +552,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     _getManualHistoryCategories() {
-        return this._getHistoryCategories().filter(category => ["encounter", "insight", "note"].includes(category.kind));
+        return this._getHistoryCategories().filter(category => ["encounter", "insight", "flashback", "note"].includes(category.kind));
     }
 
     _getHistoryType(type) {
@@ -883,6 +901,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             playerText: String(entry.playerText || entry.text || ""),
             gmText: String(entry.gmText || ""),
             editableByPlayers: entry.editableByPlayers !== false,
+            // When the group learned of it, if that is not the day it happened. The entry still
+            // belongs to the day of the event -- this only records that it was a revelation.
+            knownSince: entry.knownSince?.label ? this._normalizeGameDate(entry.knownSince) : null,
             refs,
             payload: entry.payload && typeof entry.payload === "object" ? foundry.utils.duplicate(entry.payload) : {}
         };
@@ -975,7 +996,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         return true;
     }
 
-    async _createHistoryEntry({ node = null, refs = null, title, playerText, gmText, gameDate, kind, visibility, origin = "manual", type = "manual", editableByPlayers = true, authorUserId = null, authorName = "" }) {
+    async _createHistoryEntry({ node = null, refs = null, title, playerText, gmText, gameDate, knownSince = null, kind, visibility, origin = "manual", type = "manual", editableByPlayers = true, authorUserId = null, authorName = "" }) {
         if (!game.user?.isGM) {
             if (!this._canCreateHistoryEntry(false)) return false;
             game.socket.emit("module.fang", {
@@ -986,6 +1007,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     title,
                     playerText,
                     gameDate,
+                    knownSince,
                     kind,
                     origin,
                     type,
@@ -1021,6 +1043,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             authorUserId: authorUserId || game.user.id,
             authorName: authorName || game.user.name,
             gameDate: normalizedGameDate,
+            knownSince,
             visibility: visibility === "players" ? "players" : "gm",
             title,
             playerText,
@@ -1256,6 +1279,24 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
     _closeHistoryPanel() {
         this._getHistoryPanelHost()?.querySelector(".fang-history-canvas-panel")?.remove();
+        this._historyPanelContext = null;
+    }
+
+    /**
+     * The chronicle store changed. Redraw an open log in place, keeping the reading position --
+     * but never while someone is filling in the entry form, which would throw away their text.
+     */
+    _onHistoryStoreChanged() {
+        const context = this._historyPanelContext;
+        if (context?.mode !== "log") return;
+        const panel = this._getHistoryPanelHost()?.querySelector(".fang-history-canvas-panel");
+        if (!panel) { this._historyPanelContext = null; return; }
+        const node = context.nodeId ? this.graphData.nodes.find(n => n.id === context.nodeId) : null;
+        if (context.nodeId && !node) { this._closeHistoryPanel(); return; }
+        const scrollTop = panel.querySelector(".fang-history-log")?.scrollTop ?? 0;
+        this._openHistoryDialog({ node });
+        const log = this._getHistoryPanelHost()?.querySelector(".fang-history-log");
+        if (log && scrollTop) log.scrollTop = scrollTop;
     }
 
     _closeCanvasPrompt() {
@@ -1365,8 +1406,36 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     <textarea id="fang-history-gm-text" placeholder="${this._escapeHtml(this._localize("FANG.History.GMTextHint", "Private GM context."))}">${this._escapeHtml(editingEntry?.gmText || "")}</textarea>
                     <label class="fang-editor-check"><input type="checkbox" id="fang-history-visible" ${editingEntry?.visibility === "players" ? "checked" : ""}> ${this._escapeHtml(this._localize("FANG.History.VisibleToPlayers", "Visible to players"))}</label>` : "";
         const formGameDate = editingEntry?.gameDate || detectedGameDate;
+        // Two questions, kept apart: WHEN did it happen, and did we only find out about it now.
+        // Backfilling last session's notes is not the same thing as a revelation about the past,
+        // and lumping them together was what made the free-text field so easy to get wrong.
+        const isEarlier = !!editingEntry && formGameDate.label !== detectedGameDate.label;
+        const knownDays = this._getKnownGameDays().filter(day => day.label !== detectedGameDate.label);
+        const matchedDayIndex = knownDays.findIndex(day => day.label === formGameDate.label);
+        const useCustom = isEarlier && matchedDayIndex === -1;
+        const dayOptions = knownDays
+            .map((day, index) => `<option value="${index}" data-label="${this._escapeHtml(day.label)}" data-sort="${this._escapeHtml(day.sort)}" ${index === matchedDayIndex ? "selected" : ""}>${this._escapeHtml(day.label)}</option>`)
+            .join("")
+            + `<option value="custom" ${useCustom ? "selected" : ""}>${this._escapeHtml(this._localize("FANG.History.CustomDate", "Own date..."))}</option>`;
+        const dateReadonly = !isGM && editingEntry;
+        const dateControl = dateReadonly
+            ? `<label>${this._escapeHtml(this._localize("FANG.History.GameDate", "Game Date"))}</label>
+                    <input type="text" id="fang-history-date" value="${this._escapeHtml(formGameDate.label)}" readonly>`
+            : `<label>${this._escapeHtml(this._localize("FANG.History.When", "When did it happen?"))}</label>
+                    <div class="fang-segmented fang-history-when">
+                        <button type="button" class="fang-segment${isEarlier ? "" : " active"}" data-when="today">${this._escapeHtml(this._localize("FANG.History.WhenToday", "Today"))} <span class="fang-history-when-date">${this._escapeHtml(detectedGameDate.label)}</span></button>
+                        <button type="button" class="fang-segment${isEarlier ? " active" : ""}" data-when="earlier">${this._escapeHtml(this._localize("FANG.History.WhenEarlier", "On an earlier day"))}</button>
+                    </div>
+                    <div class="fang-history-when-earlier" ${isEarlier ? "" : "hidden"}>
+                        <label>${this._escapeHtml(this._localize("FANG.History.PickDay", "Game day"))}</label>
+                        <select id="fang-history-day">${dayOptions}</select>
+                        <input type="text" id="fang-history-date" value="${this._escapeHtml(useCustom ? formGameDate.label : "")}" placeholder="${this._escapeHtml(this._localize("FANG.History.GameDatePlaceholder", "e.g. 12th of Praios"))}" ${useCustom ? "" : "hidden"}>
+                        <label class="fang-editor-check"><input type="checkbox" id="fang-history-learned-today" ${editingEntry?.knownSince?.label ? "checked" : ""}> ${this._escapeHtml(this._localize("FANG.History.LearnedToday", "We only found out about this today"))}</label>
+                        <p class="fang-hint">${this._escapeHtml(this._localize("FANG.History.LearnedTodayHint", "The entry stays on the day it happened and is marked as a flashback."))}</p>
+                    </div>`;
         const panelHost = this._getHistoryPanelHost();
         this._closeHistoryPanel();
+        this._historyPanelContext = { mode: "editor", nodeId: node?.id || null };
         const panel = document.createElement("div");
         panel.className = "fang-history-canvas-panel";
         panel.innerHTML = `
@@ -1377,8 +1446,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 </header>
                 <div class="fang-history-editor">
                     ${node ? `<p class="hint">${this._escapeHtml(this._localize("FANG.History.LinkedTo", "Linked to"))}: <strong>${this._escapeHtml(safeNodeName)}</strong></p>` : ""}
-                    <label>${this._escapeHtml(this._localize("FANG.History.GameDate", "Game Date"))}</label>
-                    <input type="text" id="fang-history-date" value="${this._escapeHtml(formGameDate.label)}" data-source="${this._escapeHtml(formGameDate.source)}" data-sort="${this._escapeHtml(formGameDate.sort)}" placeholder="${this._escapeHtml(this._localize("FANG.History.GameDatePlaceholder", "e.g. 12th of Praios"))}" ${!isGM && editingEntry ? "readonly" : ""}>
+                    ${dateControl}
                     <label>${this._escapeHtml(this._localize("FANG.History.Category", "Category"))}</label>
                     <select id="fang-history-kind" ${canEditCategory ? "" : "disabled"}>${categoryOptions}</select>
                     <label>${this._escapeHtml(this._localize("FANG.History.Title", "Title"))}</label>
@@ -1394,6 +1462,28 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             </div>`;
         panelHost?.appendChild(panel);
 
+        const whenButtons = [...panel.querySelectorAll(".fang-history-when button")];
+        const earlierBlock = panel.querySelector(".fang-history-when-earlier");
+        const daySelect = panel.querySelector("#fang-history-day");
+        const customDate = panel.querySelector("#fang-history-date");
+        const learnedToday = panel.querySelector("#fang-history-learned-today");
+        for (const button of whenButtons) {
+            button.addEventListener("click", () => {
+                for (const other of whenButtons) other.classList.toggle("active", other === button);
+                if (earlierBlock) earlierBlock.hidden = button.dataset.when !== "earlier";
+            });
+        }
+        daySelect?.addEventListener("change", () => {
+            if (customDate) customDate.hidden = daySelect.value !== "custom";
+            if (daySelect.value === "custom") customDate?.focus();
+        });
+        learnedToday?.addEventListener("change", () => {
+            // A revelation about the past is exactly what the flashback category is for. Only a
+            // nudge -- the category stays freely selectable afterwards.
+            const kindSelect = panel.querySelector("#fang-history-kind");
+            if (learnedToday.checked && kindSelect && !kindSelect.disabled) kindSelect.value = "flashback";
+        });
+
         panel.querySelector(".fang-history-canvas-close")?.addEventListener("click", () => this._closeHistoryPanel());
         panel.querySelector(".fang-history-cancel")?.addEventListener("click", () => {
             if (typeof refresh === "function") refresh();
@@ -1404,25 +1494,21 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             const playerText = panel.querySelector("#fang-history-player-text")?.value?.trim() || "";
             const gmText = isGM ? (panel.querySelector("#fang-history-gm-text")?.value?.trim() || "") : "";
             if (!entryTitle && !playerText && !gmText) return;
-            const dateInput = panel.querySelector("#fang-history-date");
-            const dateLabel = dateInput?.value?.trim() || "";
-            const dateIsDetected = !editingEntry && dateLabel === detectedGameDate.label;
+            const gameDate = this._readHistoryFormGameDate(panel, detectedGameDate, formGameDate, dateReadonly);
             const patch = {
                 title: entryTitle || this._localize("FANG.History.Untitled", "Untitled insight"),
                 playerText,
                 gmText,
                 kind: canEditCategory ? (panel.querySelector("#fang-history-kind")?.value || "insight") : (editingEntry?.kind || "insight"),
-                gameDate: {
-                    label: dateLabel,
-                    sort: dateIsDetected ? detectedGameDate.sort : "",
-                    source: dateIsDetected ? detectedGameDate.source : "manual"
-                },
+                gameDate: gameDate.gameDate,
+                knownSince: gameDate.knownSince,
                 visibility: isGM && panel.querySelector("#fang-history-visible")?.checked ? "players" : (isGM ? "gm" : "players")
             };
             if (!isGM && editingEntry) {
                 delete patch.kind;
                 delete patch.gmText;
                 delete patch.gameDate;
+                delete patch.knownSince;
                 delete patch.visibility;
             }
             if (editingEntry) await this._updateHistoryEntry(editingEntry.id, patch);
@@ -1430,6 +1516,29 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             if (typeof refresh === "function") refresh();
             else this._openHistoryDialog({ node });
         });
+    }
+
+    /**
+     * Read the game date out of the entry form. Picking an existing day carries that day's own
+     * sort key over verbatim, which is the point: a hand-typed label sorts nowhere.
+     */
+    _readHistoryFormGameDate(panel, detectedGameDate, formGameDate, readonly = false) {
+        if (readonly) return { gameDate: formGameDate, knownSince: null };
+        const earlier = panel.querySelector('.fang-history-when button[data-when="earlier"]')?.classList.contains("active");
+        if (!earlier) return { gameDate: { ...detectedGameDate }, knownSince: null };
+
+        const daySelect = panel.querySelector("#fang-history-day");
+        const option = daySelect?.selectedOptions?.[0];
+        let gameDate;
+        if (option && option.value !== "custom") {
+            gameDate = { label: option.dataset.label || "", sort: option.dataset.sort || "", source: "chronicle" };
+        } else {
+            const label = panel.querySelector("#fang-history-date")?.value?.trim() || "";
+            gameDate = { label, sort: "", source: "manual" };
+        }
+        if (!gameDate.label) gameDate = { ...detectedGameDate };
+        const knownSince = panel.querySelector("#fang-history-learned-today")?.checked ? { ...detectedGameDate } : null;
+        return { gameDate, knownSince };
     }
 
     _renderHistoryDialogContent({ node = null } = {}) {
@@ -1476,6 +1585,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                                             </div>
                                             <div class="fang-history-category">${this._escapeHtml(category.label)}</div>
                                         </div>
+                                        ${entry.knownSince?.label ? `<div class="fang-history-learned"><i class="fas fa-clock-rotate-left" aria-hidden="true"></i> ${this._escapeHtml(this._localize("FANG.History.LearnedOn", "Found out on {date}").replace("{date}", entry.knownSince.label))}</div>` : ""}
                                         ${entry.displayText ? `<p class="fang-history-player-text">${this._escapeHtml(entry.displayText)}</p>` : ""}
                                         ${entry.displayGmText ? `<p class="fang-history-gm-text"><i class="fas fa-user-shield" aria-hidden="true"></i> <span>${this._escapeHtml(entry.displayGmText)}</span></p>` : ""}
                                         ${refs}
@@ -1524,6 +1634,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
     _openHistoryDialog({ node = null } = {}) {
         const panelHost = this._getHistoryPanelHost();
         this._closeHistoryPanel();
+        // Remember what is on screen so a store change can redraw exactly this view -- and so it
+        // knows to leave a half-written entry alone.
+        this._historyPanelContext = { mode: "log", nodeId: node?.id || null };
         const panel = document.createElement("div");
         panel.className = "fang-history-canvas-panel";
         panel.innerHTML = `

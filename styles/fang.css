@@ -4073,6 +4073,47 @@ body.fang-theme-cyberpunk .background-config-container .premium-notice p {
     border-bottom-color: rgba(51, 217, 255, 0.45);
 }
 
+.fang-app-container .fang-history-when {
+    margin-bottom: 10px;
+}
+
+.fang-app-container .fang-history-when .fang-segment {
+    flex-direction: column;
+    gap: 1px;
+    padding: 8px 6px;
+    line-height: 1.25;
+}
+
+.fang-app-container .fang-history-when .fang-history-when-date {
+    font-size: 0.86em;
+    font-weight: 500;
+    opacity: 0.8;
+}
+
+.fang-history-when-earlier {
+    margin: 0 0 6px;
+    padding: 10px 12px 4px;
+    border: 1px solid rgba(var(--fang-accent-gold-rgb), 0.45);
+    border-radius: 8px;
+    background: rgba(var(--fang-accent-gold-rgb), 0.07);
+}
+
+.fang-history-when-earlier > label:first-child {
+    margin-top: 0;
+}
+
+/* Marks an entry that sits on the day it happened but was only learned of later. */
+.fang-history-learned {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 2px 0 6px;
+    color: var(--fang-primary-red);
+    font-size: 0.84rem;
+    font-style: italic;
+    opacity: 0.9;
+}
+
 .fang-history-day {
     margin: 0 0 16px;
 }

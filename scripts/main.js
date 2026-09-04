@@ -288,6 +288,12 @@ Hooks.once("init", () => {
     default: {
       schemaVersion: 1,
       entries: []
+    },
+    onChange: () => {
+      // An open chronicle showed whatever was in the store when it was opened. Entries arrive
+      // from elsewhere all the time -- a player submitting one, the graph recording an automatic
+      // one, a second GM editing -- and none of that reached the panel until it was reopened.
+      if (fangApp?.rendered) fangApp._onHistoryStoreChanged();
     }
   });
 
@@ -526,6 +532,7 @@ Hooks.once("ready", async () => {
         playerText: payload.playerText,
         gmText: "",
         gameDate: payload.gameDate,
+        knownSince: payload.knownSince || null,
         kind: payload.kind,
         visibility: "players",
         origin: payload.origin,
