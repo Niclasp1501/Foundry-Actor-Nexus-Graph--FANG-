@@ -671,6 +671,9 @@ Hooks.once("ready", async () => {
       game.modules.get("fang")?.api?.toggleGraph();
     });
     container.appendChild(fangBtn);
+    // One line, once, so "the button is missing" can be answered from the log instead of
+    // guessed at: either it says this, or the bar never turned up.
+    console.log("FANG | Button mounted in Sheet Only's bar.");
     return true;
   }
 
@@ -694,8 +697,19 @@ Hooks.once("ready", async () => {
     //    and the observer has nothing to see yet. Stops as soon as the button is in place.
     let versuche = 0;
     const nachfassen = setInterval(() => {
-      if (document.getElementById("fang-so-btn") || ++versuche > 20) clearInterval(nachfassen);
-      else _fangEnsureOnlySheetButton();
+      if (document.getElementById("fang-so-btn")) { clearInterval(nachfassen); return; }
+      if (++versuche > 20) {
+        clearInterval(nachfassen);
+        // The observer stays on, so a bar appearing later is still served. This only says
+        // that ten seconds after ready there was nothing to attach to.
+        if (!document.getElementById("so-main-buttons")) {
+          console.log("FANG | No Sheet Only button bar after 10s - not in that mode, or it never loaded.");
+        } else {
+          console.warn("FANG | Sheet Only bar is present but the button would not attach.");
+        }
+        return;
+      }
+      _fangEnsureOnlySheetButton();
     }, 500);
   }
 
