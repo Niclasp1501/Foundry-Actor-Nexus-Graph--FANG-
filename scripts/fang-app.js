@@ -620,12 +620,13 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             };
             const label = this._sanitizeCalendarLabel(this._formatWithCalendarModule(candidate.api, theirDate));
             if (!this._calendarLabelLooksUsable(label)) continue;
-            return { label, sort: this._getCalendarSort(theirDate), source: candidate.source };
+            // No time: the picker asks for a day, and midnight would be a claim nobody made.
+            return { label, sort: this._getCalendarSort(theirDate), time: "", source: candidate.source };
         }
 
         const label = this._buildCalendarLabelFromComponents(components, calendar);
         if (!this._calendarLabelLooksUsable(label)) return null;
-        return { label, sort: this._getCalendarSort(components), source: "foundry-calendar" };
+        return { label, sort: this._getCalendarSort(components), time: "", source: "foundry-calendar" };
     }
 
     /** Turn a picked year/month/day into a game date, via the calendar so festivals land right. */
@@ -731,6 +732,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         return {
             label,
             sort: String(gameDate?.sort || ""),
+            // Time of day, "HH:MM", empty when the calendar could not say or nobody chose one.
+            // Entries keep the hour they were written at, which is what orders a busy day.
+            time: /^\d{1,2}:\d{2}$/.test(String(gameDate?.time || "")) ? String(gameDate.time) : "",
             source: String(gameDate?.source || "manual")
         };
     }
@@ -935,6 +939,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 return {
                     label,
                     sort: this._getCalendarSort(dateLike),
+                    time: this._formatCalendarTime(dateLike),
                     source: candidate.source
                 };
             } catch (err) {
@@ -964,6 +969,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             return {
                 label,
                 sort: this._getCalendarSort(components),
+                time: this._formatCalendarTime(components),
                 source: "foundry-calendar"
             };
         } catch (err) {
@@ -1059,6 +1065,15 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     // Without a sortable date, at least keep entries of the same label together.
                     const labelCompare = String(a.gameDate?.label || "").localeCompare(String(b.gameDate?.label || ""));
                     if (labelCompare) return labelCompare;
+                }
+                // Same game day: the later hour comes first. Entries without a time fall back to
+                // the order they were written in, and sort after the ones that have one.
+                const aTime = String(a.gameDate?.time || "");
+                const bTime = String(b.gameDate?.time || "");
+                if (aTime !== bTime) {
+                    if (!aTime) return 1;
+                    if (!bTime) return -1;
+                    return bTime.padStart(5, "0").localeCompare(aTime.padStart(5, "0"));
                 }
                 const orderCompare = String(b.orderKey || b.createdAt).localeCompare(String(a.orderKey || a.createdAt));
                 if (orderCompare) return orderCompare;
@@ -1574,7 +1589,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     <input type="text" id="fang-history-date" value="${this._escapeHtml(formGameDate.label)}" readonly>`
             : `<label>${this._escapeHtml(this._localize("FANG.History.When", "When did it happen?"))}</label>
                     <div class="fang-segmented fang-history-when">
-                        <button type="button" class="fang-segment${isEarlier ? "" : " active"}" data-when="today"><span class="fang-history-when-main"><i class="fas fa-calendar-day" aria-hidden="true"></i>${this._escapeHtml(this._localize("FANG.History.WhenToday", "Today"))}</span><span class="fang-history-when-date">${this._escapeHtml(detectedGameDate.label)}</span></button>
+                        <button type="button" class="fang-segment${isEarlier ? "" : " active"}" data-when="today"><span class="fang-history-when-main"><i class="fas fa-calendar-day" aria-hidden="true"></i>${this._escapeHtml(this._localize("FANG.History.WhenToday", "Today"))}</span><span class="fang-history-when-date">${this._escapeHtml(detectedGameDate.label)}${detectedGameDate.time ? " · " + this._escapeHtml(detectedGameDate.time) : ""}</span></button>
                         <button type="button" class="fang-segment${isEarlier ? " active" : ""}" data-when="earlier"><span class="fang-history-when-main"><i class="fas fa-clock-rotate-left" aria-hidden="true"></i>${this._escapeHtml(this._localize("FANG.History.WhenEarlier", "On an earlier day"))}</span></button>
                     </div>
                     <div class="fang-history-when-earlier" ${isEarlier ? "" : "hidden"}>
@@ -1774,7 +1789,10 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                                                 ${primaryRef ? `<span class="fang-history-token-label">${this._escapeHtml(primaryRef.label)}</span>` : ""}
                                                 <strong><i class="fas ${this._escapeHtml(category.icon)}"></i> ${this._escapeHtml(entry.title || this._localize("FANG.History.Untitled", "Untitled insight"))}</strong>
                                             </div>
-                                            <div class="fang-history-category">${this._escapeHtml(category.label)}</div>
+                                            <div class="fang-history-meta">
+                                                ${entry.gameDate?.time ? `<span class="fang-history-time"><i class="fas fa-clock" aria-hidden="true"></i>${this._escapeHtml(entry.gameDate.time)}</span>` : ""}
+                                                <span class="fang-history-category">${this._escapeHtml(category.label)}</span>
+                                            </div>
                                         </div>
                                         ${entry.knownSince?.label ? `<div class="fang-history-learned"><i class="fas fa-clock-rotate-left" aria-hidden="true"></i> ${this._escapeHtml(this._localize("FANG.History.LearnedOn", "Found out on {date}").replace("{date}", entry.knownSince.label))}</div>` : ""}
                                         ${entry.displayText ? `<p class="fang-history-player-text">${this._escapeHtml(entry.displayText)}</p>` : ""}

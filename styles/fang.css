@@ -4217,6 +4217,29 @@ body.fang-theme-cyberpunk .background-config-container .premium-notice p {
     opacity: 0.9;
 }
 
+/* Time and category sit together at the head of an entry, right-aligned. */
+.fang-history-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 0 0 auto;
+}
+
+.fang-history-time {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--fang-text-color);
+    font-size: 0.8rem;
+    font-variant-numeric: tabular-nums;
+    opacity: 0.68;
+    white-space: nowrap;
+}
+
+.fang-history-time i {
+    font-size: 0.9em;
+}
+
 .fang-history-day {
     margin: 0 0 16px;
 }

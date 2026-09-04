@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [14.2609.1] - 2026-09-01
 
 ### Added
+- **Uhrzeit in der Chronik.** Ein Eintrag hält jetzt auch die Tageszeit fest, zu der er entstanden ist, und zeigt sie am Kopf des Eintrags neben der Kategorie. Innerhalb eines Spieltags wird danach geordnet — die spätere Stunde zuerst; Einträge ohne Uhrzeit stehen dahinter. Am Schalter „Heute" steht sie hinter dem Datum.
+
+  Ein von Hand gewählter Tag bekommt bewusst **keine** Uhrzeit: der Picker fragt nach einem Tag, und Mitternacht wäre eine Behauptung, die niemand aufgestellt hat.
+
 - **Löschen fragt jetzt nach.** Der Papierkorb an einem Chronikeintrag löschte sofort und endgültig — direkt neben dem Stift zum Bearbeiten. Es kommt jetzt eine Rückfrage, die den Titel des Eintrags nennt.
 
 - **„Eigenes Datum …“ steht jetzt oben.** In der Spieltagsauswahl war es die letzte Möglichkeit unter allen bereits bekannten Tagen und damit kaum zu finden — dabei ist ein frisches Datum genau das, was man bei einem nachgetragenen Ereignis meistens braucht. Es ist jetzt der erste Eintrag und vorausgewählt; die bekannten Tage stehen darunter in einer eigenen Gruppe. Das gewählte Datum steht als Zeile darunter, damit niemand die drei Felder im Kopf zusammensetzen muss.
