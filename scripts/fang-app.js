@@ -523,6 +523,113 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
      * makes back-dating reliable: typing "12. Hammer" a second time with a different spelling
      * used to create a second day group that looks identical and sorts somewhere else entirely.
      */
+    /**
+     * What the active calendar offers a date picker: month names with their real lengths, and
+     * where "now" sits. Built from Foundry's own calendar, because that is the one that can
+     * convert components back into a timestamp. Returns null when there is no usable calendar --
+     * then the form falls back to a plain text field.
+     */
+    _getCalendarPickerModel() {
+        const calendar = game.time?.calendar;
+        if (!calendar || typeof calendar.componentsToTime !== "function" || typeof calendar.timeToComponents !== "function") return null;
+        const months = calendar.months?.values;
+        if (!Array.isArray(months) || !months.length) return null;
+
+        const now = calendar.timeToComponents(Number.isFinite(game.time?.worldTime) ? game.time.worldTime : 0);
+        const year = this._calendarNumber(now?.year) ?? 0;
+        const leap = typeof calendar.isLeapYear === "function";
+        return {
+            year,
+            monthIndex: this._calendarNumber(now?.month) ?? 0,
+            dayIndex: this._calendarNumber(now?.dayOfMonth ?? now?.day) ?? 0,
+            months: months.map((month, index) => ({
+                index,
+                // Month names are i18n keys in every shipped calendar.
+                name: month?.name ? this._localize(month.name, month.name) : `${index + 1}`,
+                days: this._getCalendarMonthLength(month, year, leap ? calendar : null)
+            }))
+        };
+    }
+
+    _getCalendarMonthLength(month, year, calendarForLeap = null) {
+        const normal = this._calendarNumber(month?.days);
+        const leapDays = this._calendarNumber(month?.leapDays);
+        let days = normal;
+        if (leapDays !== null && calendarForLeap) {
+            try {
+                if (calendarForLeap.isLeapYear(year)) days = leapDays;
+            } catch (_err) {
+                // Calendar does not want to answer for this year -- the ordinary length will do.
+            }
+        }
+        return Math.max(1, days ?? 1);
+    }
+
+    /**
+     * How far a calendar module's reckoning is from Foundry's own. Harptos as shipped by
+     * Calendaria has yearZero 1501, so the module says 1501 where the core calendar says 0, and
+     * it counts months and days from one where the core counts from zero. Rather than hard-code
+     * any of that, the offset is measured against "now", which both sides can describe.
+     */
+    _getCalendarModuleOffsets(api) {
+        const calendar = game.time?.calendar;
+        if (!api || typeof calendar?.timeToComponents !== "function") return null;
+        let theirs = null;
+        try {
+            theirs = api.getCurrentDate?.() ?? api.currentDateTime?.() ?? api.currentDate?.() ?? api.getCurrentDateTime?.();
+        } catch (_err) {
+            return null;
+        }
+        const ours = calendar.timeToComponents(Number.isFinite(game.time?.worldTime) ? game.time.worldTime : 0);
+        const theirYear = this._calendarNumber(theirs?.year);
+        const theirMonth = this._calendarNumber(theirs?.month?.number ?? theirs?.month?.ordinal ?? theirs?.month);
+        const theirDay = this._calendarNumber(theirs?.day ?? theirs?.dayOfMonth);
+        const ourYear = this._calendarNumber(ours?.year);
+        const ourMonth = this._calendarNumber(ours?.month);
+        const ourDay = this._calendarNumber(ours?.dayOfMonth ?? ours?.day);
+        if ([theirYear, theirMonth, theirDay, ourYear, ourMonth, ourDay].some(v => v === null)) return null;
+        return { year: theirYear - ourYear, month: theirMonth - ourMonth, day: theirDay - ourDay };
+    }
+
+    /**
+     * Describe an arbitrary game day the same way detectCurrentGameDate describes today, so a
+     * hand-picked date carries a label and a sort key of exactly the same shape as an automatic
+     * one. Takes Foundry's own components; asks the calendar module first.
+     */
+    _describeGameDateForComponents(components) {
+        const calendar = game.time?.calendar;
+        if (!components || !calendar) return null;
+
+        for (const candidate of this._getCalendarApiCandidates()) {
+            const offsets = this._getCalendarModuleOffsets(candidate.api);
+            if (!offsets) continue;
+            const theirDate = {
+                year: this._calendarNumber(components.year) + offsets.year,
+                month: this._calendarNumber(components.month) + offsets.month,
+                day: this._calendarNumber(components.dayOfMonth ?? components.day) + offsets.day
+            };
+            const label = this._sanitizeCalendarLabel(this._formatWithCalendarModule(candidate.api, theirDate));
+            if (!this._calendarLabelLooksUsable(label)) continue;
+            return { label, sort: this._getCalendarSort(theirDate), source: candidate.source };
+        }
+
+        const label = this._buildCalendarLabelFromComponents(components, calendar);
+        if (!this._calendarLabelLooksUsable(label)) return null;
+        return { label, sort: this._getCalendarSort(components), source: "foundry-calendar" };
+    }
+
+    /** Turn a picked year/month/day into a game date, via the calendar so festivals land right. */
+    _describePickedGameDate(year, monthIndex, dayIndex) {
+        const calendar = game.time?.calendar;
+        if (!calendar) return null;
+        try {
+            const timestamp = calendar.componentsToTime({ year, month: monthIndex, dayOfMonth: dayIndex });
+            return this._describeGameDateForComponents(calendar.timeToComponents(timestamp));
+        } catch (_err) {
+            return this._describeGameDateForComponents({ year, month: monthIndex, dayOfMonth: dayIndex });
+        }
+    }
+
     _getKnownGameDays({ user = game.user } = {}) {
         const days = [];
         const seen = new Set();
@@ -1417,6 +1524,18 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             .map((day, index) => `<option value="${index}" data-label="${this._escapeHtml(day.label)}" data-sort="${this._escapeHtml(day.sort)}" ${index === matchedDayIndex ? "selected" : ""}>${this._escapeHtml(day.label)}</option>`)
             .join("")
             + `<option value="custom" ${useCustom ? "selected" : ""}>${this._escapeHtml(this._localize("FANG.History.CustomDate", "Own date..."))}</option>`;
+        // A real date picker whenever the world has a calendar: month names with their true
+        // lengths (Harptos festivals are one-day months), the year as a spinner. Falls back to a
+        // text field when there is no calendar to ask.
+        const picker = this._getCalendarPickerModel();
+        const customControl = picker
+            ? `<div class="fang-history-picker" ${useCustom ? "" : "hidden"}>
+                            <select id="fang-history-pick-day"></select>
+                            <select id="fang-history-pick-month">${picker.months.map(month => `<option value="${month.index}" ${month.index === picker.monthIndex ? "selected" : ""}>${this._escapeHtml(month.name)}</option>`).join("")}</select>
+                            <input type="number" id="fang-history-pick-year" value="${picker.year}" step="1">
+                        </div>
+                        <p class="fang-hint fang-history-picked" ${useCustom ? "" : "hidden"}></p>`
+            : `<input type="text" id="fang-history-date" value="${this._escapeHtml(useCustom ? formGameDate.label : "")}" placeholder="${this._escapeHtml(this._localize("FANG.History.GameDatePlaceholder", "e.g. 12th of Praios"))}" ${useCustom ? "" : "hidden"}>`;
         const dateReadonly = !isGM && editingEntry;
         const dateControl = dateReadonly
             ? `<label>${this._escapeHtml(this._localize("FANG.History.GameDate", "Game Date"))}</label>
@@ -1429,7 +1548,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     <div class="fang-history-when-earlier" ${isEarlier ? "" : "hidden"}>
                         <label>${this._escapeHtml(this._localize("FANG.History.PickDay", "Game day"))}</label>
                         <select id="fang-history-day">${dayOptions}</select>
-                        <input type="text" id="fang-history-date" value="${this._escapeHtml(useCustom ? formGameDate.label : "")}" placeholder="${this._escapeHtml(this._localize("FANG.History.GameDatePlaceholder", "e.g. 12th of Praios"))}" ${useCustom ? "" : "hidden"}>
+                        ${customControl}
                         <label class="fang-editor-check"><input type="checkbox" id="fang-history-learned-today" ${editingEntry?.knownSince?.label ? "checked" : ""}> ${this._escapeHtml(this._localize("FANG.History.LearnedToday", "We only found out about this today"))}</label>
                         <p class="fang-hint">${this._escapeHtml(this._localize("FANG.History.LearnedTodayHint", "The entry stays on the day it happened and is marked as a flashback."))}</p>
                     </div>`;
@@ -1473,9 +1592,42 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 if (earlierBlock) earlierBlock.hidden = button.dataset.when !== "earlier";
             });
         }
+        const pickerBox = panel.querySelector(".fang-history-picker");
+        const pickedHint = panel.querySelector(".fang-history-picked");
+        const pickDay = panel.querySelector("#fang-history-pick-day");
+        const pickMonth = panel.querySelector("#fang-history-pick-month");
+        const pickYear = panel.querySelector("#fang-history-pick-year");
+
+        const refillDays = (keep = null) => {
+            if (!picker || !pickDay || !pickMonth) return;
+            const month = picker.months[Number(pickMonth.value)] ?? picker.months[0];
+            const wanted = keep ?? Number(pickDay.value) || 1;
+            pickDay.innerHTML = Array.from({ length: month.days }, (_, i) =>
+                `<option value="${i}" ${i === Math.min(wanted, month.days) - 1 ? "selected" : ""}>${i + 1}</option>`).join("");
+        };
+        const showPicked = () => {
+            if (!picker || !pickedHint) return;
+            const described = this._describePickedGameDate(Number(pickYear.value), Number(pickMonth.value), Number(pickDay.value));
+            pickedHint.textContent = described?.label || "";
+        };
+        if (picker) {
+            refillDays(picker.dayIndex + 1);
+            showPicked();
+            pickMonth?.addEventListener("change", () => { refillDays(); showPicked(); });
+            pickDay?.addEventListener("change", showPicked);
+            pickYear?.addEventListener("change", showPicked);
+            pickYear?.addEventListener("input", showPicked);
+        }
+
         daySelect?.addEventListener("change", () => {
-            if (customDate) customDate.hidden = daySelect.value !== "custom";
-            if (daySelect.value === "custom") customDate?.focus();
+            const custom = daySelect.value === "custom";
+            if (customDate) customDate.hidden = !custom;
+            if (pickerBox) pickerBox.hidden = !custom;
+            if (pickedHint) pickedHint.hidden = !custom;
+            if (custom) {
+                if (picker) showPicked();
+                else customDate?.focus();
+            }
         });
         learnedToday?.addEventListener("change", () => {
             // A revelation about the past is exactly what the flashback category is for. Only a
@@ -1533,8 +1685,17 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         if (option && option.value !== "custom") {
             gameDate = { label: option.dataset.label || "", sort: option.dataset.sort || "", source: "chronicle" };
         } else {
-            const label = panel.querySelector("#fang-history-date")?.value?.trim() || "";
-            gameDate = { label, sort: "", source: "manual" };
+            const pickMonth = panel.querySelector("#fang-history-pick-month");
+            const pickDay = panel.querySelector("#fang-history-pick-day");
+            const pickYear = panel.querySelector("#fang-history-pick-year");
+            const picked = pickMonth && pickDay && pickYear
+                ? this._describePickedGameDate(Number(pickYear.value), Number(pickMonth.value), Number(pickDay.value))
+                : null;
+            if (picked?.label) gameDate = picked;
+            else {
+                const label = panel.querySelector("#fang-history-date")?.value?.trim() || "";
+                gameDate = { label, sort: "", source: "manual" };
+            }
         }
         if (!gameDate.label) gameDate = { ...detectedGameDate };
         const knownSince = panel.querySelector("#fang-history-learned-today")?.checked ? { ...detectedGameDate } : null;

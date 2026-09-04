@@ -4126,6 +4126,29 @@ body.fang-theme-cyberpunk .background-config-container .premium-notice p {
     margin-top: 0;
 }
 
+/* Day, month, year. The month carries the name, so it gets the room. */
+.fang-history-picker {
+    display: grid;
+    grid-template-columns: 4.5rem 1fr 5.5rem;
+    gap: 6px;
+    margin-bottom: 4px;
+}
+
+.fang-history-picker select,
+.fang-history-picker input {
+    width: 100%;
+    min-width: 0;
+}
+
+.fang-history-picked {
+    margin: 0 0 4px;
+    font-style: italic;
+}
+
+.fang-history-picked:empty {
+    display: none;
+}
+
 /* Marks an entry that sits on the day it happened but was only learned of later. */
 .fang-history-learned {
     display: flex;

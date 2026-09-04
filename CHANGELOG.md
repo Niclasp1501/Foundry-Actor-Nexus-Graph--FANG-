@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [14.2609.1] - 2026-09-01
 
 ### Added
+- **Kalender-Auswahl statt Tippen.** Für einen Tag, den die Chronik noch nicht kennt, stehen jetzt drei Felder bereit — Tag, Monat, Jahr —, gefüllt aus dem Kalender der Welt: echte Monatsnamen, echte Monatslängen, und die Ein-Tages-Feiertage von Harptos als eigene Monate. Darunter steht sofort, wie der Tag heißen wird. Ohne Kalender in der Welt bleibt es beim Textfeld.
+
+  Die Umrechnung zwischen Foundrys Kernkalender und einem Kalendermodul wird dabei nicht geraten, sondern an „heute" gemessen: Calendarias Harptos zählt Jahre ab 1501 sowie Monate und Tage ab eins, Foundrys Kern ab null. Diese Differenz wird einmal bestimmt und auf den gewählten Tag angewandt — dadurch trägt ein von Hand gewählter Tag dieselbe Beschriftung und denselben Sortierschlüssel wie ein automatisch erkannter.
+
 - **Kategorie „Rückblick".** Eine sechste Kategorie für Ereignisse, von denen die Gruppe erst später erfährt.
 
 - **Datumsauswahl statt Freitextfeld.** Das Formular fragt jetzt zuerst, *wann* etwas geschehen ist: heute — mit dem aktuellen Spieltag daneben — oder an einem früheren Tag. Bei „früher" steht eine Liste der Spieltage bereit, die in der Chronik schon vorkommen, und ein daraus gewählter Tag übernimmt dessen Sortierschlüssel unverändert. Ein Tag, den es noch nicht gibt, geht weiterhin als Freitext. Vorher war jedes Datum Freitext: ein Tippfehler erzeugte eine zweite, gleich aussehende Tagesgruppe, die an ganz anderer Stelle einsortiert wurde.
