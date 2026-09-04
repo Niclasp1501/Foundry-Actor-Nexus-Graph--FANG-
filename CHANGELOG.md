@@ -29,6 +29,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   Die Punkte behalten einen Mindestabstand, statt bei vielen Tagen zusammenzurücken. Passt die Achse nicht mehr, wird sie **gezogen oder mit dem Mausrad geschoben** — bewusst ohne Scrollbalken, sonst sähe sie wieder aus wie eine übergelaufene Liste. Die Ränder blenden weich aus, damit man sieht, dass es weitergeht.
 
 ### Fixed
+- **Ein Rechteck um den Punkt der Zeitachse.** Ein Punkt ist ein Knopf, und allgemeine Knopfregeln von außerhalb dieser Stilvorlage zeichneten darauf ein abgerundetes Rechteck: nach einem Klick der Fokusumriss, dauerhaft am aktuellen Tag zusätzlich ein orangefarbener Schimmer mit Haarlinie. Um einen runden Punkt sah das nach einem Fehler aus. Der Knopf ist jetzt nur noch Trefferfläche; alles Sichtbare liegt auf dem runden Element darin. Tastaturfokus wird weiterhin angezeigt — als runder Ring in der Form des Punktes.
+
 - **Weite Sprünge in der Chronik taten nichts.** Der Sprung zu einem Tag lief immer als weiches Scrollen. Über sehr große Strecken verweigert Chrome das stillschweigend — bei rund 29 000 Pixeln gemessen: die Bewegung beginnt gar nicht erst, und der Klick sieht kaputt aus. Bei mehr als 2 000 Pixeln wird jetzt direkt gesprungen; folgen könnte man einer solchen Animation ohnehin nicht.
 
 - **Die Stilvorlage brach in der Mitte ab.** Beim Ergänzen von Selektoren wurde eine Zeile, die auf `{` endet, verdoppelt — damit bekam ein Block zwei öffnende Klammern. Fünf solcher Stellen ließen alle folgenden Regeln wirkungslos: sie standen weiter in der Datei, wurden weiter ausgeliefert und griffen einfach nicht mehr. Betroffen war der gesamte hintere Teil, weshalb die Bearbeitungsfenster zuletzt unfertig aussahen. `tools/fang-validate.mjs` prüft die Klammerbilanz jeder Datei unter `styles/` jetzt mit.
@@ -82,6 +84,8 @@ Großes Oberflächen- und Stabilitäts-Release. Die Seitenleiste ist nach Aufgab
 - **Player Chronicle Edits:** Players can create and update the visible title/text of player-facing chronicle entries without taking the graph edit lock; GMs can still fully edit or delete entries.
 
 ### Changed
+- **Die Kopfzeile der Chronik bleibt stehen.** Titel und „Ereignis hinzufügen" scrollten bisher weg; wer weit unten in einer langen Chronik war, musste erst wieder hochblättern, um etwas einzutragen. Kopfzeile und Zeitachse hängen jetzt gemeinsam oben.
+
 - **Rückblick ist eine Spielerkategorie.** Sie ist für die Sitzungsrückblicke gedacht, die der Tisch selbst schreibt, und steht deshalb nur Spielern zur Wahl; die Spielleitung hat Begegnung, Erkenntnis und Notiz. Wer als Spielleitung einen fremden Rückblick bearbeitet, sieht die Kategorie weiterhin in der Liste — sonst würde ein Speichern sie stillschweigend umschreiben. Der Schalter „Davon erst heute erfahren" stellt die Kategorie nicht mehr um; er hält nur noch fest, wann die Gruppe es erfahren hat.
 
 - **Der Zeitpunkt-Schalter ist schlanker.** Symbol und Beschriftung in einer Zeile, der Spieltag als leisere Unterzeile darunter, und der aktive Zustand trägt die goldene Haarlinie der übrigen FANG-Bedienelemente statt eines flächigen roten Blocks.

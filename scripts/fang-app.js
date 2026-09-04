@@ -1901,14 +1901,16 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
         return `
             <div class="fang-history-log">
-                <header class="fang-history-log-header">
-                    <div>
-                        <h2>${this._escapeHtml(node ? this._localize("FANG.History.NodeChronicle", "Token Chronicle") : this._localize("FANG.History.Timeline", "Chronicle"))}</h2>
-                        ${node ? `<p>${this._escapeHtml(this._getSafeNodeName(node))}</p>` : ""}
-                    </div>
-                    ${addButton}
-                </header>
-                ${entries.length ? timelineHtml : ""}
+                <div class="fang-history-sticky">
+                    <header class="fang-history-log-header">
+                        <div>
+                            <h2>${this._escapeHtml(node ? this._localize("FANG.History.NodeChronicle", "Token Chronicle") : this._localize("FANG.History.Timeline", "Chronicle"))}</h2>
+                            ${node ? `<p>${this._escapeHtml(this._getSafeNodeName(node))}</p>` : ""}
+                        </div>
+                        ${addButton}
+                    </header>
+                    ${entries.length ? timelineHtml : ""}
+                </div>
                 ${entries.length ? groupsHtml : empty}
             </div>`;
     }

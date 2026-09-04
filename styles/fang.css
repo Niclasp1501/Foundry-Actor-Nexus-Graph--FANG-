@@ -4032,9 +4032,11 @@ body.fang-theme-cyberpunk .background-config-container .premium-notice p {
     min-width: 170px;
 }
 
-/* The time axis sticks to the top of the scrolling log so it stays reachable in a long
-   chronicle. Its background has to match the card behind it, hence the own property. */
-.fang-history-timeline {
+/* Title, "add event" and the time axis stay put while the log scrolls -- all three are
+   things you reach for at any point in a long chronicle, not just at its top. They share
+   one sticky block so the axis does not have to know how tall the header is. The
+   background has to match the card behind it, hence the own property. */
+.fang-history-sticky {
     --fang-history-rail-bg: #fdfbf7;
     position: sticky;
     top: -20px;
@@ -4043,6 +4045,15 @@ body.fang-theme-cyberpunk .background-config-container .premium-notice p {
     padding: 20px 24px 8px;
     background: var(--fang-history-rail-bg);
     border-bottom: 1px solid rgba(var(--fang-accent-gold-rgb), 0.4);
+}
+
+.fang-history-sticky .fang-history-log-header {
+    margin-bottom: 10px;
+}
+
+.fang-history-timeline {
+    margin: 0;
+    padding: 0;
 }
 
 /* No scrollbar on purpose: the axis is wheeled or dragged. A visible bar turns it back
@@ -4120,6 +4131,28 @@ body.fang-theme-cyberpunk .background-config-container .premium-notice p {
     transition: transform 0.12s ease, background 0.12s ease, box-shadow 0.12s ease;
 }
 
+/* Foundry outlines every focused button with a 2.7px rounded rectangle. On a round tick
+   that reads as damage, and it lingers after a click. Gone for the pointer; keyboard users
+   get a round ring instead, so tabbing through the axis is still visible. */
+/* The tick is a bare hit area; everything visible lives on the round span inside it.
+   Generic button styling from outside this stylesheet drew a rounded rectangle on it --
+   a focus outline after a click, and an orange glow plus hairline on .active. Both looked
+   like damage around a dot. Keyboard focus is shown on the span instead, in its own shape. */
+.fang-app-container .fang-history-tick,
+.fang-app-container .fang-history-tick.active,
+.fang-app-container .fang-history-tick:hover,
+.fang-app-container .fang-history-tick:focus,
+.fang-app-container .fang-history-tick:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+    border: none;
+    background: none;
+}
+
+.fang-app-container .fang-history-tick:focus-visible > span {
+    box-shadow: 0 0 0 2px var(--fang-accent-gold), 0 0 0 5px rgba(var(--fang-accent-gold-rgb), 0.45);
+}
+
 .fang-history-tick:hover > span {
     transform: scale(1.35);
     background: var(--fang-accent-gold);
@@ -4158,7 +4191,7 @@ body.fang-theme-cyberpunk .background-config-container .premium-notice p {
     display: none;
 }
 
-.fang-app-container.fang-theme-cyberpunk .fang-history-timeline {
+.fang-app-container.fang-theme-cyberpunk .fang-history-sticky {
     --fang-history-rail-bg: rgba(3, 15, 26, 0.95);
     border-bottom-color: rgba(51, 217, 255, 0.45);
 }
