@@ -641,6 +641,85 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         }
     }
 
+    /**
+     * The journal that holds the long-form recaps, next to the graph's own journal in the same
+     * FANG folder. A separate entry rather than pages inside "FANG Graph": that one carries the
+     * graph in a flag and warns against touching it, which is no place for what the table writes.
+     */
+    async _getChronicleJournal({ createIfMissing = false } = {}) {
+        const name = this._localize("FANG.Journal.ChronicleName", "FANG Chronicle");
+        let journal = game.journal.getName(name);
+        if (journal || !createIfMissing || !game.user?.isGM) return journal ?? null;
+
+        const folderName = this._localize("FANG.Journal.FolderName", "FANG - Do Not Delete");
+        let folder = game.folders.find(f => f.name === folderName && f.type === "JournalEntry");
+        if (!folder) folder = await Folder.create({ name: folderName, type: "JournalEntry", color: "#8b0000" });
+
+        return JournalEntry.create({
+            name,
+            folder: folder?.id ?? null,
+            ownership: { default: CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER }
+        });
+    }
+
+    /**
+     * Open the recap page of an entry, creating it on first use.
+     *
+     * Players cannot create documents, so theirs is relayed to the GM, who creates the page,
+     * hands its author ownership of it and sends the id back. From then on the player edits their
+     * own recap in Foundry's journal editor without the graph's edit lock coming into it.
+     */
+    async _openRecapPage(entryId, { createIfMissing = true } = {}) {
+        const entry = this._getHistoryStore().entries.find(item => item.id === entryId);
+        if (!entry) return false;
+
+        if (entry.recapPageId) {
+            const journal = await this._getChronicleJournal();
+            const page = journal?.pages?.get(entry.recapPageId);
+            if (page) { journal.sheet.render(true, { pageId: page.id }); return true; }
+            // The page was deleted outside FANG. Forget it rather than pointing at nothing.
+            if (game.user?.isGM) await this._updateHistoryEntry(entryId, { recapPageId: null });
+        }
+        if (!createIfMissing) return false;
+
+        if (!game.user?.isGM) {
+            game.socket.emit("module.fang", { action: "playerRequestRecapPage", payload: { entryId, userId: game.user.id } });
+            ui.notifications.info(this._localize("FANG.History.RecapRequested", "Asking the GM to create the page..."));
+            return true;
+        }
+
+        const pageId = await this._createRecapPage(entry, entry.authorUserId || game.user.id);
+        if (!pageId) return false;
+        const journal = await this._getChronicleJournal();
+        journal?.sheet?.render(true, { pageId });
+        return true;
+    }
+
+    /** Create the page for an entry and remember its id. Returns the page id. */
+    async _createRecapPage(entry, ownerUserId = null) {
+        if (!game.user?.isGM || !entry) return null;
+        const journal = await this._getChronicleJournal({ createIfMissing: true });
+        if (!journal) return null;
+
+        const title = entry.title || this._localize("FANG.History.Untitled", "Untitled insight");
+        const day = entry.gameDate?.label ? ` (${entry.gameDate.label})` : "";
+        // The author owns their own recap; everyone else may read it. The entry's own
+        // visibility still decides whether the entry shows up in a player's chronicle at all.
+        const ownership = { default: CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER };
+        if (ownerUserId && game.users.get(ownerUserId) && !game.users.get(ownerUserId).isGM) {
+            ownership[ownerUserId] = CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER;
+        }
+        const page = await JournalEntryPage.create({
+            name: `${title}${day}`,
+            type: "text",
+            ownership,
+            text: { content: entry.playerText ? `<p>${this._escapeHtml(entry.playerText)}</p>` : "" }
+        }, { parent: journal });
+        if (!page) return null;
+        await this._updateHistoryEntry(entry.id, { recapPageId: page.id });
+        return page.id;
+    }
+
     _getKnownGameDays({ user = game.user } = {}) {
         const days = [];
         const seen = new Set();
@@ -1070,6 +1149,10 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             // When the group learned of it, if that is not the day it happened. The entry still
             // belongs to the day of the event -- this only records that it was a revelation.
             knownSince: entry.knownSince?.label ? this._normalizeGameDate(entry.knownSince) : null,
+            // Id of the journal page holding the long form of this entry, if it has one.
+            // A recap is prose, and prose does not belong in a world setting that is rewritten
+            // and broadcast in full every time a token appears.
+            recapPageId: entry.recapPageId ? String(entry.recapPageId) : null,
             refs,
             payload: entry.payload && typeof entry.payload === "object" ? foundry.utils.duplicate(entry.payload) : {}
         };
@@ -1171,7 +1254,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         return true;
     }
 
-    async _createHistoryEntry({ node = null, refs = null, title, playerText, gmText, gameDate, knownSince = null, kind, visibility, origin = "manual", type = "manual", editableByPlayers = true, authorUserId = null, authorName = "" }) {
+    async _createHistoryEntry({ node = null, refs = null, title, playerText, gmText, gameDate, knownSince = null, kind, visibility, origin = "manual", type = "manual", editableByPlayers = true, authorUserId = null, authorName = "", recapPageId = null }) {
         if (!game.user?.isGM) {
             if (!this._canCreateHistoryEntry(false)) return false;
             game.socket.emit("module.fang", {
@@ -1219,6 +1302,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             authorName: authorName || game.user.name,
             gameDate: normalizedGameDate,
             knownSince,
+            recapPageId,
             visibility: visibility === "players" ? "players" : "gm",
             title,
             playerText,
@@ -1730,6 +1814,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     <label>${this._escapeHtml(this._localize("FANG.History.PlayerText", "Player Text"))}</label>
                     <textarea id="fang-history-player-text" placeholder="${this._escapeHtml(this._localize("FANG.History.PlayerTextHint", "Safe text players may see if published."))}">${this._escapeHtml(editingEntry?.playerText || "")}</textarea>
                     ${gmFields}
+                    ${editingEntry ? `<button type="button" class="btn secondary-btn fang-history-recap-open"><i class="fas fa-book-open"></i> ${this._escapeHtml(editingEntry.recapPageId ? this._localize("FANG.History.RecapOpen", "Open recap") : this._localize("FANG.History.RecapCreate", "Write recap"))}</button>` : ""}
                     <div class="fang-history-editor-actions">
                         <button type="button" class="btn action-btn fang-history-save"><i class="fas fa-save"></i> ${this._escapeHtml(this._localize("FANG.Dialogs.BtnSave", "Save"))}</button>
                         <button type="button" class="btn secondary-btn fang-history-cancel"><i class="fas fa-arrow-left"></i> ${this._escapeHtml(this._localize("FANG.Dialogs.BtnCancel", "Cancel"))}</button>
@@ -1803,6 +1888,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             }
         });
 
+        panel.querySelector(".fang-history-recap-open")?.addEventListener("click", async () => {
+            if (editingEntry) await this._openRecapPage(editingEntry.id);
+        });
         panel.querySelector(".fang-history-canvas-close")?.addEventListener("click", () => this._closeHistoryPanel());
         panel.querySelector(".fang-history-cancel")?.addEventListener("click", () => {
             if (typeof refresh === "function") refresh();
@@ -1934,6 +2022,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                                     </div>
                                 </div>
                                 <div class="fang-history-actions">
+                                    ${entry.recapPageId || (canEdit && entry.kind === "flashback") ? `<button type="button" class="fang-icon-btn fang-history-recap" title="${this._escapeHtml(entry.recapPageId ? this._localize("FANG.History.RecapOpen", "Open recap") : this._localize("FANG.History.RecapCreate", "Write recap"))}"><i class="fas fa-book-open"></i></button>` : ""}
                                     ${focusRef ? `<button type="button" class="fang-icon-btn fang-history-focus" data-node-id="${this._escapeHtml(focusRef.id)}" title="${this._escapeHtml(this._localize("FANG.History.Focus", "Focus"))}"><i class="fas fa-crosshairs"></i></button>` : ""}
                                     ${canEdit ? `<button type="button" class="fang-icon-btn fang-history-edit" title="${this._escapeHtml(this._localize("FANG.ContextMenu.Edit", "Edit"))}"><i class="fas fa-pen-to-square"></i></button>` : ""}
                                     ${canDelete ? `<button type="button" class="fang-icon-btn danger fang-history-delete" title="${this._escapeHtml(this._localize("FANG.UI.Delete", "Delete"))}"><i class="fas fa-trash"></i></button>` : ""}
@@ -2033,7 +2122,32 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                         }
                     ]
                 });
-                if (confirmed && await this._deleteHistoryEntry(entryId)) refresh();
+                if (!confirmed) return;
+                // The page holds someone's prose. Deleting it silently along with a one-line
+                // entry would be the kind of loss nobody notices until they look for it.
+                if (entry?.recapPageId && game.user?.isGM) {
+                    const journal = await this._getChronicleJournal();
+                    const page = journal?.pages?.get(entry.recapPageId);
+                    if (page) {
+                        const auch = await this._openCanvasPrompt({
+                            title: this._localize("FANG.History.RecapDeleteTitle", "Delete the recap too?"),
+                            icon: "fa-book-open",
+                            body: this._localize("FANG.History.RecapDeleteBody", "This entry has a recap page. Keep it, or delete it with the entry?"),
+                            actions: [
+                                { id: "keep", label: this._localize("FANG.History.RecapKeep", "Keep the page"), icon: "fa-book", resolve: () => false },
+                                { id: "both", label: this._localize("FANG.History.RecapDeleteBoth", "Delete both"), icon: "fa-trash", className: "danger", resolve: () => true }
+                            ]
+                        });
+                        if (auch) await page.delete();
+                    }
+                }
+                if (await this._deleteHistoryEntry(entryId)) refresh();
+            });
+        });
+        panel.querySelectorAll(".fang-history-recap").forEach(button => {
+            button.addEventListener("click", async (event) => {
+                const entryId = event.currentTarget.closest(".fang-history-entry")?.dataset?.entryId;
+                if (entryId) await this._openRecapPage(entryId);
             });
         });
         this._wireHistoryTimeline(panel);

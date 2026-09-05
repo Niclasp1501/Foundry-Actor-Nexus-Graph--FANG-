@@ -5,6 +5,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [14.2609.2] - 2026-09-05
 
+### Added
+- **Rückblicke bekommen eine Journalseite — angelegt und geöffnet aus FANG heraus.** Ein Sitzungsrückblick ist Fließtext und gehört nicht in eine Welt-Einstellung, die bei jeder Änderung komplett neu geschrieben und verteilt wird — auch dann, wenn nur automatisch „Token aufgetaucht“ dazukommt. Ein Eintrag der Kategorie *Rückblick* trägt deshalb nur noch die Kurzfassung; der lange Text steht auf einer eigenen Seite im Journal **FANG Chronik**, das im selben Ordner wie das Graph-Journal liegt.
+
+  Angelegt und geöffnet wird sie über einen Knopf am Eintrag und im Bearbeitungsformular — Foundrys eigener Editor mit Formatierung, Bildern und `@UUID`-Verweisen auf Akteure, Szenen und Journale, ohne dass FANG davon etwas nachbauen muss.
+
+  Die Seite gehört ihrem Verfasser: ein Spieler bearbeitet seinen eigenen Rückblick direkt, ohne die Bearbeitungssperre des Graphen. Da Spieler keine Dokumente anlegen dürfen, geht die erste Anfrage über die Spielleitung, die die Seite erzeugt und die Kennung zurückmeldet.
+
+  Beim Löschen eines Eintrags mit Seite wird gefragt, ob die Seite mitgehen soll. Fremde Prosa still zu löschen wäre ein Verlust, den niemand bemerkt, bis er sie sucht.
+
+
 ### Changed
 - **Knopf in der Blattansicht von Ninjo's In-Person Tools.** FANG meldet seinen Knopf jetzt über deren Schnittstelle (`api.sheetView.registerButton`) an, statt nur nach Sheet Onlys Leiste zu suchen. Beide Wege bleiben: Wer Sheet Only nutzt, sieht den Knopf dort wie bisher.
 

@@ -542,6 +542,26 @@ Hooks.once("ready", async () => {
       }, 100);
     }
 
+    // A player asked for the recap page of an entry. They cannot create documents, so we do
+    // it, hand them ownership of their own recap, and tell them where it is.
+    if (data.action === "playerRequestRecapPage" && game.user.isGM) {
+      if (!fangApp) fangApp = new FangApplication();
+      const { entryId, userId } = data.payload || {};
+      const entry = fangApp._getHistoryStore().entries.find(item => item.id === entryId);
+      if (!entry) return;
+      const pageId = entry.recapPageId || await fangApp._createRecapPage(entry, userId);
+      if (pageId) game.socket.emit("module.fang", { action: "recapPageReady", payload: { entryId, userId, pageId } });
+    }
+
+    // ...and the answer, which only the player who asked acts on.
+    if (data.action === "recapPageReady") {
+      const { userId, pageId } = data.payload || {};
+      if (game.user.id !== userId || !pageId) return;
+      if (!fangApp) fangApp = new FangApplication();
+      const journal = await fangApp._getChronicleJournal();
+      journal?.sheet?.render(true, { pageId });
+    }
+
     if (data.action === "playerCreateHistoryEntry" && game.user.isGM) {
       if (!fangApp) fangApp = new FangApplication();
       const payload = data.payload || {};
