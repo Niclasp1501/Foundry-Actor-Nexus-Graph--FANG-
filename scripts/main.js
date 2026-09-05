@@ -1,4 +1,5 @@
 import { FangApplication } from "./fang-app.js";
+import { willkommenEinrichten, willkommenZeigen } from "./willkommen.js";
 
 // Singleton instance
 let fangApp = null;
@@ -42,6 +43,7 @@ function _fangApplyVisualThemeToOpenApps() {
 
 Hooks.once("init", () => {
   console.log("FANG | Initializing Foundry Actor Nexus Graph module");
+  willkommenEinrichten();
 
   // Register Handlebars Helpers
   Handlebars.registerHelper("eq", (a, b) => a === b);
@@ -373,7 +375,8 @@ Hooks.once("ready", async () => {
       }
     }
   };
-Ninjo's In-Person Tools has a sheet view of its own with a proper doorway for other
+
+  // Ninjo's In-Person Tools has a sheet view of its own with a proper doorway for other
   // modules' buttons: register once, and its bar draws the button whenever it draws
   // itself. No element to hunt for, no observer. Both calls are needed - our ready may
   // run before or after theirs, and a hook only reaches listeners that were already
@@ -755,6 +758,8 @@ Ninjo's In-Person Tools has a sheet view of its own with a proper doorway for ot
       console.error("FANG | DiploGlass updateSetting sync failed", err);
     }
   });
+
+  await willkommenZeigen();
 });
 
 Hooks.on("renderActorDirectory", (app, html, data) => {

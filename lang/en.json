@@ -520,6 +520,18 @@
         "Merge": {
             "ConflictResolved": "{names} was also being edited — your version was kept.",
             "DeletedElsewhere": "{names} was deleted by someone else — your change to it was dropped."
+        },
+        "Willkommen": {
+            "Setting": "Welcome window",
+            "Untertitel": "Foundry Actor Nexus Graph",
+            "Einleitung": "FANG draws your campaign's web of relationships as an interactive graph — inside Foundry, with no external tool and no second screen full of notes.",
+            "Punkt1": "<strong>Relationships</strong> — who owes whom money, who hates whom, which faction pulls the strings. Right-click a connection to rename it, flip the arrow or trigger a dual portrait.",
+            "Punkt2": "<strong>Roles and factions</strong> — a second layer of order above the bare connections, plus zones by place or theme and boss nodes that hang magnetically in the centre.",
+            "Punkt3": "<strong>Safe for players</strong> — hidden contacts keep your secrets while players may still keep their own aliases and notes.",
+            "Start": "To begin: <strong>Shift+G</strong> opens the graph. Drag actors in — it arranges itself.",
+            "ForgeZeile": "Every module, its documentation and the German translations in one place — open the module page",
+            "Nie": "Don't show again",
+            "Spaeter": "Later"
         }
     }
 }

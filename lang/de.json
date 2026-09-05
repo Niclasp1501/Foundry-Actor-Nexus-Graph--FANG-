@@ -520,6 +520,18 @@
         "Merge": {
             "ConflictResolved": "{names} wurde gleichzeitig bearbeitet — deine Version wurde übernommen.",
             "DeletedElsewhere": "{names} wurde von jemand anderem gelöscht — deine Änderung ist verfallen."
+        },
+        "Willkommen": {
+            "Setting": "Willkommensfenster",
+            "Untertitel": "Foundry Actor Nexus Graph",
+            "Einleitung": "FANG zeichnet das Beziehungsgeflecht deiner Kampagne als interaktiven Graphen — direkt in Foundry, ohne externes Werkzeug und ohne zweiten Bildschirm voller Notizen.",
+            "Punkt1": "<strong>Beziehungen</strong> — wer wem Geld schuldet, wer wen hasst, welche Fraktion im Hintergrund zieht. Rechtsklick auf eine Verbindung benennt sie um, dreht den Pfeil oder löst ein Doppelporträt aus.",
+            "Punkt2": "<strong>Rollen und Fraktionen</strong> — eine zweite Ordnungsebene über den bloßen Verbindungen. Dazu Zonen nach Ort oder Thema und Boss-Knoten, die magnetisch in der Mitte hängen.",
+            "Punkt3": "<strong>Spielersicher</strong> — verdeckte Kontakte schützen deine Geheimnisse, während Spieler eigene Aliasnamen und Notizen pflegen dürfen.",
+            "Start": "Zum Anfangen: <strong>Shift+G</strong> öffnet den Graphen. Akteure hineinziehen genügt — er ordnet sich selbst an.",
+            "ForgeZeile": "Alle Module, Anleitungen und deutschen Übersetzungen an einem Ort — Modulseite öffnen",
+            "Nie": "Nicht mehr anzeigen",
+            "Spaeter": "Später"
         }
     }
 }

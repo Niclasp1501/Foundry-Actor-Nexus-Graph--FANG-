@@ -520,6 +520,18 @@
         "Merge": {
             "ConflictResolved": "{names} était aussi en cours de modification — votre version a été conservée.",
             "DeletedElsewhere": "{names} a été supprimé par quelqu'un d'autre — votre modification a été abandonnée."
+        },
+        "Willkommen": {
+            "Setting": "Fenêtre de bienvenue",
+            "Untertitel": "Foundry Actor Nexus Graph",
+            "Einleitung": "FANG dessine le réseau de relations de votre campagne sous forme de graphe interactif — directement dans Foundry, sans outil externe ni second écran couvert de notes.",
+            "Punkt1": "<strong>Relations</strong> — qui doit de l'argent à qui, qui déteste qui, quelle faction tire les ficelles. Un clic droit sur une liaison la renomme, inverse la flèche ou déclenche un double portrait.",
+            "Punkt2": "<strong>Rôles et factions</strong> — une seconde couche d'organisation au-dessus des simples liaisons, plus des zones par lieu ou par thème et des nœuds de boss qui restent aimantés au centre.",
+            "Punkt3": "<strong>Sûr pour les joueurs</strong> — les contacts masqués gardent vos secrets, tandis que les joueurs peuvent tenir leurs propres alias et notes.",
+            "Start": "Pour commencer : <strong>Maj+G</strong> ouvre le graphe. Il suffit d'y glisser des acteurs — il s'organise tout seul.",
+            "ForgeZeile": "Tous les modules, leur documentation et les traductions allemandes au même endroit — ouvrir la page du module",
+            "Nie": "Ne plus afficher",
+            "Spaeter": "Plus tard"
         }
     }
 }

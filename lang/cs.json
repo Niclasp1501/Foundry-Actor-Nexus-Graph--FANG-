@@ -520,6 +520,18 @@
         "Merge": {
             "ConflictResolved": "{names} byl upravován současně — byla zachována tvoje verze.",
             "DeletedElsewhere": "{names} byl smazán někým jiným — tvoje změna propadla."
+        },
+        "Willkommen": {
+            "Setting": "Uvítací okno",
+            "Untertitel": "Foundry Actor Nexus Graph",
+            "Einleitung": "FANG kreslí síť vztahů tvé kampaně jako interaktivní graf — přímo ve Foundry, bez externího nástroje a bez druhé obrazovky plné poznámek.",
+            "Punkt1": "<strong>Vztahy</strong> — kdo komu dluží peníze, kdo koho nesnáší, která frakce tahá za nitky. Pravým tlačítkem na spojení ho přejmenuješ, otočíš šipku nebo otevřeš dvojportrét.",
+            "Punkt2": "<strong>Role a frakce</strong> — druhá vrstva pořádku nad holými spojeními, k tomu zóny podle místa či tématu a uzly bossů, které magneticky drží uprostřed.",
+            "Punkt3": "<strong>Bezpečné pro hráče</strong> — skryté kontakty chrání tvá tajemství, zatímco hráči si můžou vést vlastní přezdívky a poznámky.",
+            "Start": "Na začátek: <strong>Shift+G</strong> otevře graf. Stačí do něj přetáhnout postavy — uspořádá se sám.",
+            "ForgeZeile": "Všechny moduly, dokumentace a německé překlady na jednom místě — otevřít stránku modulu",
+            "Nie": "Už nezobrazovat",
+            "Spaeter": "Později"
         }
     }
 }

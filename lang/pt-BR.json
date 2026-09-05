@@ -520,6 +520,18 @@
         "Merge": {
             "ConflictResolved": "{names} também estava sendo editado — sua versão foi mantida.",
             "DeletedElsewhere": "{names} foi excluído por outra pessoa — sua alteração foi descartada."
+        },
+        "Willkommen": {
+            "Setting": "Janela de boas-vindas",
+            "Untertitel": "Foundry Actor Nexus Graph",
+            "Einleitung": "O FANG desenha a teia de relacionamentos da sua campanha como um grafo interativo — dentro do Foundry, sem ferramenta externa e sem uma segunda tela cheia de anotações.",
+            "Punkt1": "<strong>Relacionamentos</strong> — quem deve dinheiro a quem, quem odeia quem, qual facção puxa os cordões. Clique com o botão direito numa conexão para renomeá-la, inverter a seta ou abrir um retrato duplo.",
+            "Punkt2": "<strong>Papéis e facções</strong> — uma segunda camada de ordem acima das conexões simples, além de zonas por lugar ou tema e nós de chefe que ficam magneticamente no centro.",
+            "Punkt3": "<strong>Seguro para jogadores</strong> — contatos ocultos guardam seus segredos, enquanto os jogadores podem manter os próprios apelidos e anotações.",
+            "Start": "Para começar: <strong>Shift+G</strong> abre o grafo. Basta arrastar atores para dentro — ele se organiza sozinho.",
+            "ForgeZeile": "Todos os módulos, a documentação e as traduções para o alemão num só lugar — abrir a página do módulo",
+            "Nie": "Não mostrar novamente",
+            "Spaeter": "Mais tarde"
         }
     }
 }
