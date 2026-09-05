@@ -3,6 +3,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Module versions follow the Foundry-targeted `<foundry-major>.<YYMM>.<patch>` release scheme documented in `AGENTS.md`.
 
+## [14.2609.2] - 2026-09-05
+
+### Changed
+- **Knopf in der Blattansicht von Ninjo's In-Person Tools.** FANG meldet seinen Knopf jetzt über deren Schnittstelle (`api.sheetView.registerButton`) an, statt nur nach Sheet Onlys Leiste zu suchen. Beide Wege bleiben: Wer Sheet Only nutzt, sieht den Knopf dort wie bisher.
+
 ## [14.2609.1] - 2026-09-05
 
 ### Added

@@ -373,6 +373,19 @@ Hooks.once("ready", async () => {
       }
     }
   };
+Ninjo's In-Person Tools has a sheet view of its own with a proper doorway for other
+  // modules' buttons: register once, and its bar draws the button whenever it draws
+  // itself. No element to hunt for, no observer. Both calls are needed - our ready may
+  // run before or after theirs, and a hook only reaches listeners that were already
+  // there when it fired.
+  const _fangInPersonRegister = api => api?.sheetView?.registerButton?.({
+    id: "fang",
+    icon: "fa-diagram-project",
+    title: game.i18n.localize("FANG.ButtonOpen") || "Open FANG Graph",
+    onClick: () => module.api.toggleGraph()
+  });
+  _fangInPersonRegister(game.modules.get("ninjos-inperson-tools")?.api);
+  Hooks.on("ninjosInPersonTools.ready", _fangInPersonRegister);
 
   _fangApplyVisualThemeToOpenApps();
 
