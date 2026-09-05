@@ -48,6 +48,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   Die Punkte behalten einen Mindestabstand, statt bei vielen Tagen zusammenzurücken. Passt die Achse nicht mehr, wird sie **gezogen oder mit dem Mausrad geschoben** — bewusst ohne Scrollbalken, sonst sähe sie wieder aus wie eine übergelaufene Liste. Die Ränder blenden weich aus, damit man sieht, dass es weitergeht.
 
 ### Fixed
+- **Der Schließen-Knopf der Chronik war nicht mehr erreichbar.** Der angeheftete Kopfbereich, den Titel und Zeitachse seit gestern teilen, spannt sich mit deckendem Hintergrund über die volle Breite der Karte und lag mit `z-index: 3` über dem Knopf, der auf `1` steht. Er war damit nicht nur unsichtbar, sondern schluckte auch dessen Klicks. Der Knopf liegt jetzt darüber.
+
+- **Spieler sahen „Ereignis hinzufügen" gar nicht mehr.** Der Eintrag eines Spielers geht über die Spielleitung, also braucht es eine anwesende — ist keine da, war der Knopf einfach weg, und niemand konnte wissen, ob es die Möglichkeit überhaupt gibt. Er bleibt jetzt stehen, ausgegraut und mit dem Grund im Tooltip. Das Monitor-Konto bekommt weiterhin keinen: es ist eine Anzeige, kein Platz am Tisch.
+
 - **594 englische Zeichenketten in neun Sprachen übersetzt.** Die Schlüssel waren zwar überall vorhanden — die Prüfung achtet auf Vollzähligkeit —, aber ihr Wert war in vielen Sprachen unverändert der englische. Betroffen war vor allem die **gesamte Chronik**, die in acht Sprachen nie übersetzt worden war, dazu der Dialog zum Ablegen eines Akteurs, die Fraktions- und Auftragsdialoge sowie eine Reihe von Meldungen. Tschechisch und Russisch hatten je über hundert solcher Stellen.
 
   Übrig bleiben 29 Werte, die in ihrer Sprache tatsächlich gleich lauten — „Cyberpunk", „Region", „Ocean" auf Polnisch, „Role" auf Tschechisch, „Faction" und „Notes" auf Französisch. Außerdem stand im Deutschen einmal „fuer" statt „für".

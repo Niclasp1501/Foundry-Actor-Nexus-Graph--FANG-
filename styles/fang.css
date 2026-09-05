@@ -3971,7 +3971,9 @@ body.fang-theme-cyberpunk .background-config-container .premium-notice p {
     display: grid;
     place-items: center;
     font-size: 1.35rem;
-    z-index: 1;
+    /* Above the sticky header block, which spans the full width of the card with an opaque
+       background and would otherwise paint over this button and swallow its clicks. */
+    z-index: 4;
 }
 
 .fang-app-container .fang-history-canvas-close:hover {
@@ -4052,6 +4054,13 @@ body.fang-theme-cyberpunk .background-config-container .premium-notice p {
    things you reach for at any point in a long chronicle, not just at its top. They share
    one sticky block so the axis does not have to know how tall the header is. The
    background has to match the card behind it, hence the own property. */
+/* The disabled add button still reads as a button, just plainly out of reach. */
+.fang-app-container .fang-history-add:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+    filter: saturate(0.5);
+}
+
 .fang-history-sticky {
     --fang-history-rail-bg: #fdfbf7;
     position: sticky;

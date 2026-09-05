@@ -1979,9 +1979,16 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
         const canAdd = this._canCreateHistoryEntry(true);
         const canDelete = game.user?.isGM;
-        const addButton = canAdd
-            ? `<button type="button" class="fang-history-add"><i class="fas fa-plus"></i> ${this._escapeHtml(this._localize("FANG.History.AddEvent", "Add Event"))}</button>`
-            : "";
+        // The monitor account is a display, not a seat at the table -- it gets no button at all.
+        // Everyone else keeps theirs even when they cannot use it right now: a player's entry is
+        // relayed through the GM, so without one online it stays disabled and says why. Hiding it
+        // left them wondering whether the feature existed.
+        const monitorName = String(game.settings.get("fang", "monitorDisplayName") || "").toLowerCase();
+        const isMonitor = !!monitorName && String(game.user?.name || "").toLowerCase().includes(monitorName);
+        const addBlockedHint = this._localize("FANG.Messages.WarnNoGMOnline", "No GM is online.");
+        const addButton = isMonitor
+            ? ""
+            : `<button type="button" class="fang-history-add" ${canAdd ? "" : `disabled title="${this._escapeHtml(addBlockedHint)}"`}><i class="fas fa-plus"></i> ${this._escapeHtml(this._localize("FANG.History.AddEvent", "Add Event"))}</button>`;
         const empty = `<div class="fang-history-empty">${this._escapeHtml(this._localize("FANG.History.Empty", "No chronicle entries yet."))}</div>`;
         const dayGroups = [...grouped.entries()];
         const groupsHtml = dayGroups.map(([date, dayEntries], dayIndex) => `
