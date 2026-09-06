@@ -24,6 +24,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - **Knopf in der Blattansicht von Ninjo's In-Person Tools.** FANG meldet seinen Knopf jetzt über deren Schnittstelle (`api.sheetView.registerButton`) an, statt nur nach Sheet Onlys Leiste zu suchen. Beide Wege bleiben: Wer Sheet Only nutzt, sieht den Knopf dort wie bisher.
 
+### Fixed
+- **Rückblicke tauchten in der Chronik nicht auf.** Die Anzeige verwarf jeden Eintrag ohne Text — sinnvoll, solange Text das Einzige war, was ein Eintrag zeigen konnte. Seit dem Wegfall der Kurzfassung trägt ein Rückblick bewusst keinen Spielertext, weil sein Inhalt auf der Journalseite steht; damit verschwand er bei Spielern immer und bei der Spielleitung, sobald auch die GM-Notiz leer blieb. Eine Überschrift oder eine Seite zum Öffnen zählen jetzt ebenfalls. Die Einträge waren nie verloren, nur nicht gezeigt.
+
+- **Die Gestaltung des Eingabeformulars war seit dem Umbau der Zeitachse weg.** Der Bereichsersatz in `fang.css` griff weiter als beabsichtigt und nahm den Wann-Schalter, die Tag-Monat-Jahr-Auswahl, die Vorschauzeile des gewählten Datums und den Hinweis „Erfahren am …“ mit. Die Regeln stehen wieder da.
+
+- **„Für Spieler sichtbar“ stand unter den GM-Notizen** und las sich, als gälte es für sie. Gemeint ist der ganze Eintrag. Der Haken heißt jetzt **„Ganzen Eintrag für Spieler freigeben“**, steht in einem eigenen Rahmen und sagt darunter, was ohne ihn passiert; über dem Haken steht, dass GM-Notizen ohnehin nie zu Spielern gelangen.
+
 ## [14.2609.1] - 2026-09-05
 
 ### Added

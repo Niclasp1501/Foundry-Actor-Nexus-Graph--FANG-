@@ -1233,8 +1233,12 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         // GM sees BOTH player and GM text side-by-side. Players see only the player text.
         const displayText = playerText;
         const displayGmText = isGM ? gmText : "";
-        if (!isGM && !playerText) return null;
-        if (isGM && !playerText && !gmText) return null;
+        // An entry has to show something, or it is a blank line in the log. Text was the only
+        // thing that counted until recaps arrived: those deliberately carry no player text,
+        // because their content sits on a journal page - so they vanished from every chronicle
+        // the moment the teaser field was dropped. A heading, or a page to open, is enough.
+        const zeigtEtwas = playerText || (isGM && gmText) || normalized.recapPageId || normalized.title;
+        if (!zeigtEtwas) return null;
         const displayRefs = this._getHistoryDisplayRefs(normalized, user);
         if (!isGM && normalized.refs.some(ref => ref.type === "node") && !displayRefs.some(ref => ref.type === "node")) return null;
         return {
@@ -1781,7 +1785,11 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const gmFields = isGM ? `
                     <label>${this._escapeHtml(this._localize("FANG.History.GMText", "GM Notes"))}</label>
                     <textarea id="fang-history-gm-text" placeholder="${this._escapeHtml(this._localize("FANG.History.GMTextHint", "Private GM context."))}">${this._escapeHtml(editingEntry?.gmText || "")}</textarea>
-                    <label class="fang-editor-check"><input type="checkbox" id="fang-history-visible" ${editingEntry?.visibility === "players" ? "checked" : ""}> ${this._escapeHtml(this._localize("FANG.History.VisibleToPlayers", "Visible to players"))}</label>` : "";
+                    <p class="fang-hint">${this._escapeHtml(this._localize("FANG.History.GMTextPrivate", "GM notes stay private - players never see them, released or not."))}</p>
+                    <div class="fang-history-release">
+                        <label class="fang-editor-check"><input type="checkbox" id="fang-history-visible" ${editingEntry?.visibility === "players" ? "checked" : ""}> ${this._escapeHtml(this._localize("FANG.History.ReleaseEntry", "Release the whole entry to players"))}</label>
+                        <p class="fang-hint">${this._escapeHtml(this._localize("FANG.History.ReleaseEntryHint", "Unticked, the entry stays visible to the GM alone."))}</p>
+                    </div>` : "";
         const formGameDate = editingEntry?.gameDate || detectedGameDate;
         // Two questions, kept apart: WHEN did it happen, and did we only find out about it now.
         // Backfilling last session's notes is not the same thing as a revelation about the past,
