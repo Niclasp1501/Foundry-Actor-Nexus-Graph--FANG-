@@ -774,13 +774,14 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
     /**
      * What may be chosen by hand when writing an entry.
      *
-     * "flashback" is the players' own kind -- it is what a session recap written by the table is
-     * filed under. A GM writing an entry has encounter/insight/note; offering them flashback as
-     * well would blur what the category means the moment anyone filters by it.
+     * "flashback" is the session recap: it belongs to a character and its text lives on a journal
+     * page. That is what the kind means, and the form asks whose recap it is, so the meaning holds
+     * whoever fills the form in. It was briefly hidden from the GM on the reading that the kind
+     * was "for players" -- which took away the one case that needs a GM most, writing up the
+     * session for someone who was not there.
      */
-    _getManualHistoryCategories({ user = game.user } = {}) {
-        const kinds = user?.isGM ? ["encounter", "insight", "note"] : ["encounter", "insight", "flashback", "note"];
-        return this._getHistoryCategories().filter(category => kinds.includes(category.kind));
+    _getManualHistoryCategories() {
+        return this._getHistoryCategories().filter(category => ["encounter", "insight", "flashback", "note"].includes(category.kind));
     }
 
     _getHistoryType(type) {

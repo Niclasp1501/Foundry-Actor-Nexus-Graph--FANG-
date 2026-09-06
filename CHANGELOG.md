@@ -105,7 +105,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - **Die Kopfzeile der Chronik bleibt stehen.** Titel und „Ereignis hinzufügen" scrollten bisher weg; wer weit unten in einer langen Chronik war, musste erst wieder hochblättern, um etwas einzutragen. Kopfzeile und Zeitachse hängen jetzt gemeinsam oben.
 
-- **Rückblick ist eine Spielerkategorie.** Sie ist für die Sitzungsrückblicke gedacht, die der Tisch selbst schreibt, und steht deshalb nur Spielern zur Wahl; die Spielleitung hat Begegnung, Erkenntnis und Notiz. Wer als Spielleitung einen fremden Rückblick bearbeitet, sieht die Kategorie weiterhin in der Liste — sonst würde ein Speichern sie stillschweigend umschreiben. Der Schalter „Davon erst heute erfahren" stellt die Kategorie nicht mehr um; er hält nur noch fest, wann die Gruppe es erfahren hat.
+- **Rückblick ist die Kategorie für Sitzungsrückblicke.** Sie gehört einem Charakter, und ihr Text steht auf einer Journalseite — das Formular fragt entsprechend, wessen Rückblick es ist. Der Schalter „Davon erst heute erfahren" stellt die Kategorie nicht mehr um; er hält nur noch fest, wann die Gruppe es erfahren hat.
 
 - **Der Zeitpunkt-Schalter ist schlanker.** Symbol und Beschriftung in einer Zeile, der Spieltag als leisere Unterzeile darunter, und der aktive Zustand trägt die goldene Haarlinie der übrigen FANG-Bedienelemente statt eines flächigen roten Blocks.
 
