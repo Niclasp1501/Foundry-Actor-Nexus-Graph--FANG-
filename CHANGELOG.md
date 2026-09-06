@@ -48,6 +48,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   Die Punkte behalten einen Mindestabstand, statt bei vielen Tagen zusammenzurücken. Passt die Achse nicht mehr, wird sie **gezogen oder mit dem Mausrad geschoben** — bewusst ohne Scrollbalken, sonst sähe sie wieder aus wie eine übergelaufene Liste. Die Ränder blenden weich aus, damit man sieht, dass es weitergeht.
 
 ### Fixed
+- **Ein Rückblick legt seine Seite jetzt selbst an.** Beim Anlegen passierte mit der Journalseite gar nichts — sie entstand erst, wenn man den Eintrag hinterher erneut öffnete und das Buch-Symbol traf. Und das Textfeld sah aus, als gehöre der Rückblick dorthin. Beides falsch herum: die Seite entsteht jetzt zusammen mit dem Eintrag und öffnet sich direkt nach dem Speichern.
+
+  Das Textfeld sagt bei dieser Kategorie außerdem, was es ist: **Kurzfassung fürs Logbuch**, ein, zwei Sätze, mit einem Hinweis darauf, dass der Rückblick selbst auf der Seite geschrieben wird. Bei allen anderen Kategorien bleibt es der gewohnte Spielertext.
+
+  Legt eine Spielerin den Eintrag an, erzeugt die Spielleitung beim Übernehmen auch die Seite, überträgt ihr das Eigentum daran und meldet die Kennung zurück, sodass sich der Editor bei ihr öffnet.
+
 - **Der Schließen-Knopf der Chronik war nicht mehr erreichbar.** Der angeheftete Kopfbereich, den Titel und Zeitachse seit gestern teilen, spannt sich mit deckendem Hintergrund über die volle Breite der Karte und lag mit `z-index: 3` über dem Knopf, der auf `1` steht. Er war damit nicht nur unsichtbar, sondern schluckte auch dessen Klicks. Der Knopf liegt jetzt darüber.
 
 - **Spieler sahen „Ereignis hinzufügen" gar nicht mehr.** Der Eintrag eines Spielers geht über die Spielleitung, also braucht es eine anwesende — ist keine da, war der Knopf einfach weg, und niemand konnte wissen, ob es die Möglichkeit überhaupt gibt. Er bleibt jetzt stehen, ausgegraut und mit dem Grund im Tooltip. Das Monitor-Konto bekommt weiterhin keinen: es ist eine Anzeige, kein Platz am Tisch.

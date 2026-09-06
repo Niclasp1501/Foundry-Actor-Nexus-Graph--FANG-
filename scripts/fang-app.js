@@ -1291,8 +1291,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             ? refs.filter(ref => ref?.type && ref?.id).map(ref => ({ type: String(ref.type), id: String(ref.id) }))
             : (node?.id ? [{ type: "node", id: node.id }] : []);
         const createdAt = new Date().toISOString();
+        const neueId = foundry.utils.randomID(16);
         store.entries.push(this._normalizeHistoryEntry({
-            id: foundry.utils.randomID(16),
+            id: neueId,
             origin: origin === "auto" ? "auto" : "manual",
             type,
             kind: this._getHistoryCategory(kind)?.kind || "insight",
@@ -1311,7 +1312,21 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             refs: entryRefs,
             payload: {}
         }));
-        return this._saveHistoryStore(store);
+        if (!await this._saveHistoryStore(store)) return false;
+
+        // A recap is the one kind whose real content lives on a journal page, so the page is
+        // made together with the entry rather than waiting for someone to find a button later.
+        // Its author owns it, which is what lets a player write their own without the graph's
+        // edit lock; when the entry came in over the socket we tell them where it is.
+        if (this._getHistoryCategory(kind)?.kind === "flashback") {
+            const gespeichert = this._getHistoryStore().entries.find(item => item.id === neueId);
+            const verfasser = authorUserId || game.user.id;
+            const pageId = gespeichert ? await this._createRecapPage(gespeichert, verfasser) : null;
+            if (pageId && verfasser !== game.user.id) {
+                game.socket.emit("module.fang", { action: "recapPageReady", payload: { entryId: neueId, userId: verfasser, pageId } });
+            }
+        }
+        return neueId;
     }
 
     async _deleteHistoryEntry(entryId) {
@@ -1811,7 +1826,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     <select id="fang-history-kind" ${canEditCategory ? "" : "disabled"}>${categoryOptions}</select>
                     <label>${this._escapeHtml(this._localize("FANG.History.Title", "Title"))}</label>
                     <input type="text" id="fang-history-title" value="${this._escapeHtml(editingEntry?.title || "")}">
-                    <label>${this._escapeHtml(this._localize("FANG.History.PlayerText", "Player Text"))}</label>
+                    <label id="fang-history-player-text-label">${this._escapeHtml(this._localize("FANG.History.PlayerText", "Player Text"))}</label>
+                    <p class="fang-hint fang-history-recap-note" hidden>${this._escapeHtml(this._localize("FANG.History.RecapNote", "Only a short line for the log here - the recap itself opens as a journal page once you save."))}</p>
                     <textarea id="fang-history-player-text" placeholder="${this._escapeHtml(this._localize("FANG.History.PlayerTextHint", "Safe text players may see if published."))}">${this._escapeHtml(editingEntry?.playerText || "")}</textarea>
                     ${gmFields}
                     ${editingEntry ? `<button type="button" class="btn secondary-btn fang-history-recap-open"><i class="fas fa-book-open"></i> ${this._escapeHtml(editingEntry.recapPageId ? this._localize("FANG.History.RecapOpen", "Open recap") : this._localize("FANG.History.RecapCreate", "Write recap"))}</button>` : ""}
@@ -1822,6 +1838,30 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 </div>
             </div>`;
         panelHost?.appendChild(panel);
+
+        // The player text means something different for a recap: there it is the teaser in the
+        // log, not the text itself. Say so, instead of leaving an empty box that looks like the
+        // place to write five paragraphs.
+        const kindSelect = panel.querySelector("#fang-history-kind");
+        const recapNote = panel.querySelector(".fang-history-recap-note");
+        const playerLabel = panel.querySelector("#fang-history-player-text-label");
+        const playerBox = panel.querySelector("#fang-history-player-text");
+        const zeigeKategorie = () => {
+            const istRueckblick = kindSelect?.value === "flashback";
+            if (recapNote) recapNote.hidden = !istRueckblick;
+            if (playerLabel) {
+                playerLabel.textContent = istRueckblick
+                    ? this._localize("FANG.History.RecapTeaser", "Short version for the log")
+                    : this._localize("FANG.History.PlayerText", "Player Text");
+            }
+            if (playerBox) {
+                playerBox.placeholder = istRueckblick
+                    ? this._localize("FANG.History.RecapTeaserHint", "One or two sentences. The recap goes on its own page.")
+                    : this._localize("FANG.History.PlayerTextHint", "Safe text players may see if published.");
+            }
+        };
+        kindSelect?.addEventListener("change", zeigeKategorie);
+        zeigeKategorie();
 
         const whenButtons = [...panel.querySelectorAll(".fang-history-when button")];
         const earlierBlock = panel.querySelector(".fang-history-when-earlier");
@@ -1918,10 +1958,14 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 delete patch.knownSince;
                 delete patch.visibility;
             }
+            let neueId = null;
             if (editingEntry) await this._updateHistoryEntry(editingEntry.id, patch);
-            else await this._createHistoryEntry({ node, ...patch });
+            else neueId = await this._createHistoryEntry({ node, ...patch });
             if (typeof refresh === "function") refresh();
             else this._openHistoryDialog({ node });
+            // Straight into the page for a fresh recap: the form asked for a heading and a
+            // sentence for the log, the writing itself happens in the journal editor.
+            if (typeof neueId === "string" && patch.kind === "flashback") await this._openRecapPage(neueId);
         });
     }
 
