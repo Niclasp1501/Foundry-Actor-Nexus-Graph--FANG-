@@ -16,6 +16,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 
 ### Changed
+- **Ein Rückblick fragt nur noch, von wem er ist.** Titel und Kurzfassung waren beide überflüssig: der Text steht auf der Seite, und die Überschrift ist ohnehin immer dieselbe. Statt zweier Textfelder steht dort jetzt eine Auswahl der Charaktere, und der Eintrag heißt **„Rückblick von {name}“**. Vorgeschlagen wird der eigene Charakter; eine Spielleitung kann für jeden am Tisch schreiben.
+
+  Sitzt der gewählte Charakter im Graphen, hängt sich der Eintrag gleich an seinen Knoten — der Rückblick taucht damit auch in der Chronik dieses Tokens auf, nicht nur in der gesamten.
+
+  Ein vorhandener Rückblick behält seine Überschrift, solange niemand die Auswahl anfasst. Sie bei jedem Speichern neu zu bilden würde Einträge umbenennen, die vor Monaten geschrieben wurden.
+
 - **Knopf in der Blattansicht von Ninjo's In-Person Tools.** FANG meldet seinen Knopf jetzt über deren Schnittstelle (`api.sheetView.registerButton`) an, statt nur nach Sheet Onlys Leiste zu suchen. Beide Wege bleiben: Wer Sheet Only nutzt, sieht den Knopf dort wie bisher.
 
 ## [14.2609.1] - 2026-09-05

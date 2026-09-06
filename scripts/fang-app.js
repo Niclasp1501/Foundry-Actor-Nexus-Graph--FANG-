@@ -720,6 +720,29 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         return page.id;
     }
 
+    /**
+     * Whose recap this is. A recap belongs to a character, not to a login, so the list is the
+     * characters players actually have assigned; the graph's own nodes come along when the
+     * character sits in it, because that is what lets the recap show up in the token's chronicle.
+     * A GM writing on someone's behalf picks from the same list.
+     */
+    _getRecapAuthors({ user = game.user } = {}) {
+        const gesehen = new Set();
+        const liste = [];
+        const nimm = (actor, benutzer) => {
+            if (!actor || gesehen.has(actor.id)) return;
+            gesehen.add(actor.id);
+            liste.push({ actorId: actor.id, name: actor.name, userId: benutzer?.id ?? null });
+        };
+
+        if (user?.isGM) for (const u of game.users) { if (!u.isGM) nimm(u.character, u); }
+        else nimm(user?.character, user);
+
+        // Nobody has a character assigned: fall back to the person, so the field is never empty.
+        if (!liste.length) liste.push({ actorId: null, name: user?.name || "", userId: user?.id ?? null });
+        return liste;
+    }
+
     _getKnownGameDays({ user = game.user } = {}) {
         const days = [];
         const seen = new Set();
@@ -1792,6 +1815,10 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 ? `<input type="date" id="fang-history-pick-date" value="${this._escapeHtml(realDateValue)}" ${useCustom ? "" : "hidden"}>
                         <p class="fang-history-picked" ${useCustom ? "" : "hidden"}><i class="fas fa-calendar-day" aria-hidden="true"></i><span></span></p>`
                 : `<input type="text" id="fang-history-date" value="${this._escapeHtml(useCustom ? formGameDate.label : "")}" placeholder="${this._escapeHtml(this._localize("FANG.History.GameDatePlaceholder", "e.g. 12th of Praios"))}" ${useCustom ? "" : "hidden"}>`;
+        const recapAuthors = this._getRecapAuthors();
+        const recapAuthorOptions = recapAuthors
+            .map(a => `<option value="${this._escapeHtml(a.actorId ?? "")}">${this._escapeHtml(a.name)}</option>`)
+            .join("");
         const dateReadonly = !isGM && editingEntry;
         const dateControl = dateReadonly
             ? `<label>${this._escapeHtml(this._localize("FANG.History.GameDate", "Game Date"))}</label>
@@ -1824,8 +1851,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     ${dateControl}
                     <label>${this._escapeHtml(this._localize("FANG.History.Category", "Category"))}</label>
                     <select id="fang-history-kind" ${canEditCategory ? "" : "disabled"}>${categoryOptions}</select>
-                    <label>${this._escapeHtml(this._localize("FANG.History.Title", "Title"))}</label>
+                    <label id="fang-history-title-label">${this._escapeHtml(this._localize("FANG.History.Title", "Title"))}</label>
                     <input type="text" id="fang-history-title" value="${this._escapeHtml(editingEntry?.title || "")}">
+                    <select id="fang-history-recap-author" hidden>${recapAuthorOptions}</select>
                     <label id="fang-history-player-text-label">${this._escapeHtml(this._localize("FANG.History.PlayerText", "Player Text"))}</label>
                     <p class="fang-hint fang-history-recap-note" hidden>${this._escapeHtml(this._localize("FANG.History.RecapNote", "Only a short line for the log here - the recap itself opens as a journal page once you save."))}</p>
                     <textarea id="fang-history-player-text" placeholder="${this._escapeHtml(this._localize("FANG.History.PlayerTextHint", "Safe text players may see if published."))}">${this._escapeHtml(editingEntry?.playerText || "")}</textarea>
@@ -1846,21 +1874,26 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const recapNote = panel.querySelector(".fang-history-recap-note");
         const playerLabel = panel.querySelector("#fang-history-player-text-label");
         const playerBox = panel.querySelector("#fang-history-player-text");
+        const titleLabel = panel.querySelector("#fang-history-title-label");
+        const titleBox = panel.querySelector("#fang-history-title");
+        const authorSelect = panel.querySelector("#fang-history-recap-author");
         const zeigeKategorie = () => {
             const istRueckblick = kindSelect?.value === "flashback";
+            // A recap needs no summary and no headline typed by hand: it is someone's recap of a
+            // session, so the entry says whose, and everything else is on the page.
             if (recapNote) recapNote.hidden = !istRueckblick;
-            if (playerLabel) {
-                playerLabel.textContent = istRueckblick
-                    ? this._localize("FANG.History.RecapTeaser", "Short version for the log")
-                    : this._localize("FANG.History.PlayerText", "Player Text");
-            }
-            if (playerBox) {
-                playerBox.placeholder = istRueckblick
-                    ? this._localize("FANG.History.RecapTeaserHint", "One or two sentences. The recap goes on its own page.")
-                    : this._localize("FANG.History.PlayerTextHint", "Safe text players may see if published.");
+            if (playerLabel) playerLabel.hidden = istRueckblick;
+            if (playerBox) playerBox.hidden = istRueckblick;
+            if (titleBox) titleBox.hidden = istRueckblick;
+            if (authorSelect) authorSelect.hidden = !istRueckblick;
+            if (titleLabel) {
+                titleLabel.textContent = istRueckblick
+                    ? this._localize("FANG.History.RecapWhose", "Whose recap?")
+                    : this._localize("FANG.History.Title", "Title");
             }
         };
         kindSelect?.addEventListener("change", zeigeKategorie);
+        authorSelect?.addEventListener("change", () => { authorSelect.dataset.touched = "1"; });
         zeigeKategorie();
 
         const whenButtons = [...panel.querySelectorAll(".fang-history-when button")];
@@ -1937,16 +1970,32 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             else this._openHistoryDialog({ node });
         });
         panel.querySelector(".fang-history-save")?.addEventListener("click", async () => {
-            const entryTitle = panel.querySelector("#fang-history-title")?.value?.trim() || "";
-            const playerText = panel.querySelector("#fang-history-player-text")?.value?.trim() || "";
+            const kindNow = canEditCategory ? (panel.querySelector("#fang-history-kind")?.value || "insight") : (editingEntry?.kind || "insight");
+            const istRueckblick = kindNow === "flashback";
+            const gewaehlt = istRueckblick
+                ? recapAuthors.find(a => (a.actorId ?? "") === (panel.querySelector("#fang-history-recap-author")?.value ?? ""))
+                : null;
+            const authorBox = panel.querySelector("#fang-history-recap-author");
+            // An existing recap keeps its heading unless someone picks a different character;
+            // re-deriving it on every save would quietly rename entries written months ago.
+            const behalteTitel = istRueckblick && editingEntry?.title && authorBox?.dataset?.touched !== "1";
+            const entryTitle = !istRueckblick
+                ? (panel.querySelector("#fang-history-title")?.value?.trim() || "")
+                : behalteTitel
+                    ? editingEntry.title
+                    : this._localize("FANG.History.RecapBy", "Recap by {name}").replace("{name}", gewaehlt?.name || game.user.name);
+            const playerText = istRueckblick ? "" : (panel.querySelector("#fang-history-player-text")?.value?.trim() || "");
             const gmText = isGM ? (panel.querySelector("#fang-history-gm-text")?.value?.trim() || "") : "";
             if (!entryTitle && !playerText && !gmText) return;
+            // Tie the recap to the character's node when it is in the graph, so it also turns up
+            // in that token's own chronicle rather than only in the global one.
+            const recapNode = gewaehlt?.actorId ? this.graphData.nodes.find(n => n.actorId === gewaehlt.actorId) : null;
             const gameDate = this._readHistoryFormGameDate(panel, detectedGameDate, formGameDate, dateReadonly);
             const patch = {
                 title: entryTitle || this._localize("FANG.History.Untitled", "Untitled insight"),
                 playerText,
                 gmText,
-                kind: canEditCategory ? (panel.querySelector("#fang-history-kind")?.value || "insight") : (editingEntry?.kind || "insight"),
+                kind: kindNow,
                 gameDate: gameDate.gameDate,
                 knownSince: gameDate.knownSince,
                 visibility: isGM && panel.querySelector("#fang-history-visible")?.checked ? "players" : (isGM ? "gm" : "players")
@@ -1960,7 +2009,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             }
             let neueId = null;
             if (editingEntry) await this._updateHistoryEntry(editingEntry.id, patch);
-            else neueId = await this._createHistoryEntry({ node, ...patch });
+            else neueId = await this._createHistoryEntry({ node: recapNode ?? node, ...patch });
             if (typeof refresh === "function") refresh();
             else this._openHistoryDialog({ node });
             // Straight into the page for a fresh recap: the form asked for a heading and a
