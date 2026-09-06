@@ -426,8 +426,10 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
     _canUserSeeNode(node, user = game.user) {
         if (!node) return false;
         if (!user?.isGM && node.gmOnly === true) return false;
-        // Hidden nodes are still player-managed contacts. Players may interact
-        // with their safe facade, but must never receive the real identity.
+        // Hidden nodes are still player-managed contacts, so a player keeps interacting
+        // with the safe facade. Note what this does and does not do: it decides what gets
+        // drawn, not what gets sent. The real name travels to every client inside the graph
+        // flag either way - see "Visibility is a display filter" in AGENTS.md.
         return true;
     }
 
