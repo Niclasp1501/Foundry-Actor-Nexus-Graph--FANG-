@@ -1,57 +1,71 @@
 # FANG (Foundry Actor Nexus Graph) - TODO / Feature Requests
 
-Status synced to `v14.2609.1` (beta) / Stand synchronisiert auf `v14.2609.1` (Beta).
+Status synced to `14.2609.2` (beta, unreleased) / Stand synchronisiert auf `14.2609.2` (Beta, noch nicht ausgeliefert).
+Last release on main is `v14.2608.1` / Letzte Auslieferung auf main ist `v14.2608.1`.
 
-## 1. Features and Improvements / Features und Verbesserungen
+Open items come first, because that is what this file is for. What is already built is listed in one line each further down; the reasoning behind each feature is in `CHANGELOG.md`, the description for users in `README.md` / Offene Punkte stehen oben, dafuer ist die Datei da. Was bereits gebaut ist, steht weiter unten in je einer Zeile; die Begruendung zu jeder Funktion steht im `CHANGELOG.md`, die Beschreibung fuer Nutzer im `README.md`.
 
-### 1.1 Factions and Affiliations / Fraktionen und Zugehoerigkeiten
-- [x] **1.1.1 Factions implemented / Fraktionen implementiert:** Base system including management is available / Grundsystem inkl. Verwaltung ist vorhanden.
-- [x] **1.1.2 Affiliation zones / Zugehoerigkeitsfelder:** Visual zones (e.g. city/region/organization) to group characters / Visuelle Bereiche (z. B. Stadt/Region/Organisation), in denen Charaktere zugeordnet werden koennen.
-- [x] **1.1.3 Relationship types / Beziehungstypen:** Connections can use curated type presets with theme-aware colors and line styles / Verbindungen koennen kuratierte Typen mit theme-faehigen Farben und Linienstilen nutzen.
+The numbers are kept as they were, so older references still lead somewhere / Die Nummern bleiben wie sie waren, damit aeltere Verweise noch irgendwo hinfuehren.
 
-### 1.2 Visuals and UI / Visuelles und UI
-- [x] **1.2.1 Background customization / Hintergrundbild:** Configurable background exists (color/image/preset) / Konfigurierbarer Hintergrund ist vorhanden (Farbe/Bild/Preset).
-- [x] **1.2.2 Connection labels / Verbindungs-Texte:** Labeled connections are available / Beschriftete Verbindungen sind vorhanden.
-- [x] **1.2.3 Hover focus highlighting / Hover-Fokus:** Hover dims unrelated nodes/links / Hover dimmt irrelevante Nodes/Links.
-- [ ] **1.2.4 Expand conditions / Zustaende erweitern:** On hold for now / Vorerst pausiert (keine weiteren Zustaende geplant).
 
-### 1.3 Usability and Settings / Usability und Einstellungen
-- [x] **1.3.1 Stop simulation wobble more clearly / Simulation "Wabbeln" offensichtlicher anhalten:** Done / Erledigt.
-- [x] **1.3.2 "Show Monitor" button / "Zeigen Monitor"-Button:** Tooltip/options revised / Tooltip/Optionen ueberarbeitet.
-- [x] **1.3.3 Search and filter / Suche und Filter:** Search overlay with highlight/isolate for larger graphs / Such-Overlay mit Highlight/Isolate fuer grosse Graphen ist vorhanden.
-- [x] **1.3.4 Actor Directory popout compatibility / Actor Directory Popout-Kompatibilitaet:** Popout integration stabilized / Integration fuer Popout-Fenster stabilisiert.
-- [x] **1.3.5 Placeholder NPC workflow / Platzhalter-NPCs:** Placeholders can be created and later replaced by real actors via drag and drop or context menu / Platzhalter koennen direkt angelegt und spaeter per Drag & Drop oder Kontextmenue durch echte Akteure ersetzt werden.
+## Open / Offen
 
-## 2. Visibility and Focus Management / Sichtbarkeit und Fokus-Management
+### Needs a live check before it counts as finished / Braucht eine Abnahme im laufenden Spiel
 
-- [x] **2.1 Fully hide tokens for players/monitor / Token komplett ausblenden (Spieler/Monitor):** Hide token including incoming/outgoing links for player/monitor views / Vollstaendig unsichtbar inkl. eingehender/ausgehender Verbindungen (nur fuer Spieler/Monitor).
-- [x] **2.2 GM secret nodes / GM-Secret-Nodes:** Hidden story nodes with later GM reveal / Versteckte Story-Knoten mit spaeterem Reveal durch den GM.
-- [x] **2.3 Player edit leak audit / Spieler-Bearbeitung gegen Spoiler pruefen:** Player-facing edit dialogs must never expose hidden-node GM fields, true names, aliases, player-view settings, journals, quests, factions, or conditions that would reveal secrets / Spieler-Dialoge duerfen bei verdeckten Knoten keine GM-Felder, echten Namen, Alias-/Spieleransicht-Einstellungen, Journale, Auftraege, Fraktionen oder Zustaende verraten.
+- [ ] **6.1 Walk a recap through a real session / Rueckblick einmal echt durchspielen:** The journal page behind a recap has never been exercised in a running world. Five things have to hold: the page is created when the entry is made, the button opens it, its author can edit it without holding the graph's edit lock, deleting the entry asks whether the page goes too, and a player - who is not allowed to create documents - gets a page through the GM's client. Until that is confirmed, 3.5 stays open / Die Journalseite hinter einem Rueckblick wurde nie in einer laufenden Welt benutzt. Fuenf Dinge muessen stimmen: Die Seite entsteht beim Anlegen des Eintrags, der Knopf oeffnet sie, ihr Verfasser kann sie ohne die Bearbeitungssperre des Graphen aendern, beim Loeschen des Eintrags wird nach der Seite gefragt, und ein Spieler - der keine Dokumente anlegen darf - bekommt seine Seite ueber den Client der Spielleitung. Solange das nicht bestaetigt ist, bleibt 3.5 offen.
 
-## 3. Timeline and Player Knowledge / Chronik und Spielerwissen
+- [ ] **3.5 Proper editor for flashbacks / Richtiger Editor fuer Rueckblicke:** Built, not yet accepted. A recap no longer carries its prose in a world setting but on a page in the journal **FANG Chronik**, opened in Foundry's own editor with formatting, images and `@UUID` references. Closes together with 6.1 / Gebaut, noch nicht abgenommen. Ein Rueckblick traegt seinen Fliesstext nicht mehr in einer Welt-Einstellung, sondern auf einer Seite im Journal **FANG Chronik**, geoeffnet in Foundrys eigenem Editor mit Formatierung, Bildern und `@UUID`-Verweisen. Schliesst zusammen mit 6.1.
 
-- [x] **3.1 Player Story Timeline / Spieler-Chronik:** Curated, GM-controlled timeline of story events linked to nodes, factions, quests, and sessions / Kuratierte, vom GM gesteuerte Chronik mit Ereignissen, die mit Knoten, Fraktionen, Auftraegen und Sitzungen verknuepft sind.
-- [x] **3.2 Timeline visibility rules / Chronik-Sichtbarkeit:** Timeline entries must use the same central visibility policy as nodes, links, quests, and factions / Chronik-Eintraege muessen dieselbe zentrale Sichtbarkeitslogik wie Knoten, Verbindungen, Auftraege und Fraktionen nutzen.
-- [x] **3.3 Timeline first beta scope / Chronik erster Beta-Umfang:** In-canvas chronicle with manual events, player-safe visibility, token-level views, and editable player-facing text / In-Canvas-Chronik mit manuellen Ereignissen, spielersicherer Sichtbarkeit, Token-Ansichten und bearbeitbarem Spielertext.
-- [x] **3.4 Chronicle automation / Chronik-Automatik:** Graph actions create narrative default entries for appearing tokens, revealed identities, and new relationships while preserving hidden-token facades / Graph-Aktionen erzeugen erzaehlerische Standardeintraege fuer auftauchende Tokens, enthuellte Identitaeten und neue Beziehungen, ohne verdeckte Token aufzudecken.
-- [ ] **3.5 Proper editor for flashbacks / Richtiger Editor fuer Rueckblicke:** Session recaps are written by the table itself and run to real prose, but the form offers a bare textarea. Look at Foundry's rich text editor instead, so a recap can carry formatting, links, and @UUID references to actors, scenes, and journals / Sitzungsrueckblicke schreibt der Tisch selbst und sie werden echter Fliesstext, das Formular bietet aber nur ein einfaches Textfeld. Foundrys Rich-Text-Editor anschauen, damit ein Rueckblick Formatierung, Links und @UUID-Verweise auf Akteure, Szenen und Journale tragen kann.
-- [x] **3.6 Chronicle calendar support / Chronik-Kalenderanbindung:** Entries carry the game day and the time of day from a calendar module (Calendaria, Seasons & Stars, Simple Calendar) or from Foundry's own calendar, with the real date as a fallback when a world has neither / Eintraege tragen Spieltag und Uhrzeit aus einem Kalendermodul (Calendaria, Seasons & Stars, Simple Calendar) oder aus Foundrys eigenem Kalender; ohne beides faellt FANG auf das echte Datum zurueck.
-- [x] **3.7 Chronicle time axis / Zeitachse der Chronik:** One tick per game day above the log, oldest left, dragged or wheeled sideways instead of carrying a scrollbar / Ein Punkt je Spieltag ueber dem Logbuch, aeltester links, per Ziehen oder Mausrad verschiebbar statt mit Scrollbalken.
-- [x] **3.8 Chronological ordering / Chronologische Ordnung:** Days and entries sort by game day and time of day rather than by the moment they were typed / Tage und Eintraege ordnen sich nach Spieltag und Uhrzeit statt nach dem Zeitpunkt der Eingabe.
+### Quality pass / Qualitaetspass
 
-## 4. Internationalization and Misc / Internationalisierung und Sonstiges
+- [ ] **5.1 Full in-Foundry player leak audit / Vollstaendiger In-Foundry-Spieler-Leak-Audit:** Walk every player and GM path in v13/v14 with hidden nodes, GM-only fields, quests, factions, zones and chronicle data. The chronicle is the youngest and least-tested surface of the module and belongs at the front of this / Jeden Spieler- und GM-Pfad in v13/v14 mit verdeckten Knoten, GM-Feldern, Quests, Fraktionen, Zonen und Chronikdaten durchgehen. Die Chronik ist die juengste und am wenigsten gepruefte Flaeche des Moduls und gehoert an den Anfang.
 
-- [x] **4.1 Additional languages / Weitere Sprachen:** Added French, Spanish, Portuguese (Brazil), Italian, Polish, Russian, Czech, and Dutch / Hinzugefuegt: Franzoesisch, Spanisch, Portugiesisch (Brasilien), Italienisch, Polnisch, Russisch, Tschechisch und Niederlaendisch.
-- [x] **4.2 Localization cleanup / Lokalisierungen bereinigt:** Missing keys and broken mojibake/question-mark strings were repaired from the English source where needed / Fehlende Keys und kaputte Mojibake-/Fragezeichen-Strings wurden bei Bedarf aus der englischen Quelle repariert.
-- [x] **4.3 FANG direct server deploy script / FANG Server-Direktdeploy-Script:** Added a guarded PowerShell deploy helper for direct server testing before beta/stable releases / Abgesichertes PowerShell-Deploy-Hilfsscript fuer direkte Server-Tests vor Beta-/Stable-Releases hinzugefuegt.
+- [ ] **5.3 Unused localization keys / Ungenutzte Lokalisierungs-Schluessel:** 81 of 475 keys are referenced nowhere, mostly leftovers of the removed tab bar, the old grouping buttons and the old context-menu dialogs. Two of them are not tidy-up: `Messages.HiddenEditBlocked` and `ActorEditor.HiddenPlayerEditHint` suggest a player is no longer told why a hidden actor cannot be edited. Check every key for lost behaviour before deleting, and delete only in `de.json` and `en.json` - the other eight belong to Weblate / 81 von 475 Schluesseln werden nirgends referenziert, groesstenteils Reste der entfernten Reiterleiste, der alten Gruppierungsknoepfe und der alten Kontextmenue-Dialoge. Zwei davon sind kein blosses Aufraeumen: `Messages.HiddenEditBlocked` und `ActorEditor.HiddenPlayerEditHint` deuten darauf hin, dass Spielern nicht mehr gesagt wird, warum ein verdeckter Akteur nicht bearbeitbar ist. Jeden Schluessel vor dem Loeschen auf verlorene Funktion pruefen, und nur in `de.json` und `en.json` loeschen - die anderen acht gehoeren Weblate.
 
-## 5. Next Quality Pass / Naechster Qualitaetspass
+- [ ] **5.4 Calendar module coverage / Abdeckung von Kalendermodulen:** Only Calendaria, Seasons & Stars and Simple Calendar are recognised by name. Any other module falls back to Foundry's own calendar and loses the campaign epoch, so the years come out wrong rather than missing - which is worse, because nobody notices / Erkannt werden nur Calendaria, Seasons & Stars und Simple Calendar. Jedes andere Modul faellt auf Foundrys eigenen Kalender zurueck und verliert dabei die Kampagnen-Epoche; die Jahreszahlen sind dann falsch statt zu fehlen - was schlimmer ist, weil es niemandem auffaellt.
 
-- [ ] **5.1 Full in-Foundry player leak audit / Vollstaendiger In-Foundry-Spieler-Leak-Audit:** Run through every player and GM menu in v13/v14 with hidden, GM-only, quest, faction, zone, and history data / Jeden Spieler- und GM-Pfad in v13/v14 mit verdeckten, GM-only-, Quest-, Fraktions-, Zonen- und Chronikdaten testen.
-- [ ] **5.2 Zone manager polish / Zonenmanager-Feinschliff:** Improve visual design once the first beta feedback confirms the model / Design verbessern, sobald erstes Beta-Feedback das Modell bestaetigt.
-- [ ] **5.3 Unused localization keys / Ungenutzte Lokalisierungs-Schluessel:** 74 of 451 keys are never referenced, mostly leftovers from the removed tab bar, the old grouping buttons and the old context-menu dialogs. Some are not merely tidy-up: `Messages.HiddenEditBlocked` and `ActorEditor.HiddenPlayerEditHint` suggest a player is no longer told why a hidden actor cannot be edited. Check each for lost behaviour before deleting / 74 von 451 Schluesseln werden nirgends referenziert, groesstenteils Reste der entfernten Reiterleiste, der alten Gruppierungsknoepfe und der alten Kontextmenue-Dialoge. Nicht alles davon ist blosses Aufraeumen: `Messages.HiddenEditBlocked` und `ActorEditor.HiddenPlayerEditHint` deuten darauf hin, dass Spielern nicht mehr gesagt wird, warum ein verdeckter Akteur nicht bearbeitbar ist. Vor dem Loeschen jeden Punkt auf verlorene Funktion pruefen.
-- [ ] **5.4 Calendar module coverage / Abdeckung von Kalendermodulen:** Only Calendaria, Seasons & Stars and Simple Calendar are recognised by name; any other module falls back to Foundry's calendar and loses the campaign epoch / Erkannt werden nur Calendaria, Seasons & Stars und Simple Calendar. Jedes andere Modul faellt auf Foundrys Kalender zurueck und verliert dabei die Kampagnen-Epoche.
+- [ ] **5.2 Zone manager polish / Zonenmanager-Feinschliff:** Waiting on beta feedback that confirms the model before the design is worked on / Wartet auf Beta-Rueckmeldungen, die das Modell bestaetigen, bevor am Design gearbeitet wird.
 
-## Removed from Roadmap / Aus der Planung entfernt
+### On hold / Zurueckgestellt
 
-- **Mini-map navigator / Mini-Map-Navigator:** Not currently planned / Wird aktuell nicht weiter verfolgt.
+- [ ] **1.2.4 Expand conditions / Zustaende erweitern:** No further conditions planned for now / Vorerst keine weiteren Zustaende geplant.
+
+
+## Done / Erledigt
+
+### 1. Features and Improvements / Features und Verbesserungen
+- [x] **1.1.1 Factions / Fraktionen** - base system including management.
+- [x] **1.1.2 Affiliation zones / Zugehoerigkeitsfelder** - visual zones for a city, region or organization.
+- [x] **1.1.3 Relationship types / Beziehungstypen** - curated presets with theme-aware colors and line styles.
+- [x] **1.2.1 Background customization / Hintergrundbild** - color, image or preset.
+- [x] **1.2.2 Connection labels / Verbindungs-Texte**
+- [x] **1.2.3 Hover focus highlighting / Hover-Fokus** - dims unrelated nodes and links.
+- [x] **1.3.1 Stop the simulation wobble / Simulation "Wabbeln" anhalten**
+- [x] **1.3.2 "Show Monitor" button / "Zeigen Monitor"-Knopf** - tooltip and options revised.
+- [x] **1.3.3 Search and filter / Suche und Filter** - overlay with highlight and isolate for larger graphs.
+- [x] **1.3.4 Actor Directory popout compatibility / Popout-Kompatibilitaet**
+- [x] **1.3.5 Placeholder NPCs / Platzhalter-NPCs** - created directly, later replaced by real actors.
+
+### 2. Visibility and Focus / Sichtbarkeit und Fokus
+- [x] **2.1 Fully hide tokens / Token komplett ausblenden** - including their incoming and outgoing links.
+- [x] **2.2 GM secret nodes / GM-Secret-Nodes** - hidden story nodes with a later reveal.
+- [x] **2.3 Player edit leak audit / Spieler-Bearbeitung gegen Spoiler geprueft** - dialogs shown to players expose no GM fields, true names, aliases, journals, quests, factions or conditions of a hidden node. The broader sweep is 5.1.
+
+### 3. Chronicle / Chronik
+- [x] **3.1 Player story timeline / Spieler-Chronik** - GM-controlled events linked to nodes, factions, quests and sessions.
+- [x] **3.2 Visibility rules / Sichtbarkeit** - entries use the same central policy as nodes, links, quests and factions.
+- [x] **3.3 First beta scope / Erster Beta-Umfang** - in-canvas chronicle, manual events, token views, editable player-facing text.
+- [x] **3.4 Automation / Automatik** - graph actions write narrative default entries without uncovering hidden tokens.
+- [x] **3.6 Calendar support / Kalenderanbindung** - game day and time of day from a calendar module or Foundry's own calendar, with the real date as a fallback when a world has neither.
+- [x] **3.7 Time axis / Zeitachse** - one tick per game day, newest to the right, dragged or wheeled instead of carrying a scrollbar.
+- [x] **3.8 Chronological ordering / Chronologische Ordnung** - sorted by game day and time of day, not by the moment someone typed it.
+
+### 4. Internationalization and Misc / Internationalisierung und Sonstiges
+- [x] **4.1 Additional languages / Weitere Sprachen** - French, Spanish, Portuguese (Brazil), Italian, Polish, Russian, Czech and Dutch. Since 06.09.2026 these eight are maintained on Weblate; only `de.json` and `en.json` are edited here / Seit dem 06.09.2026 werden diese acht ueber Weblate gepflegt; hier werden nur `de.json` und `en.json` bearbeitet.
+- [x] **4.2 Localization cleanup / Lokalisierungen bereinigt** - missing keys and broken strings repaired from the English source.
+- [x] **4.3 Direct server deploy script / Server-Direktdeploy-Script** - guarded PowerShell helper for testing on the server before a beta or stable release.
+
+
+## Removed from the roadmap / Aus der Planung entfernt
+
+- **Mini-map navigator / Mini-Map-Navigator:** not planned any further / wird nicht weiter verfolgt.
