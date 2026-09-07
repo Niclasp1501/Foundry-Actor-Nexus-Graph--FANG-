@@ -1,5 +1,6 @@
 import { FangApplication } from "./fang-app.js";
 import { willkommenEinrichten, willkommenZeigen } from "./willkommen.js";
+import { fensterPassenEinrichten } from "./fensterpassen.js";
 
 // Singleton instance
 let fangApp = null;
@@ -353,6 +354,7 @@ Hooks.once("init", () => {
 });
 
 Hooks.once("ready", async () => {
+  fensterPassenEinrichten();
   // Mark body for role-based CSS — enables body.role-player .gm-only { display:none }
   // to hide GM-only elements globally, including dynamically added ones.
   document.body.classList.toggle("role-player", !game.user.isGM);

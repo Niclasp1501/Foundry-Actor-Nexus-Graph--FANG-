@@ -1,0 +1,148 @@
+/* =============================================================================
+ * Die Marke — in jedem Ninjo-Modul dieselbe Datei.
+ *
+ * **Warum es sie gibt.** Am 07.09.2026 stand dieselbe Palette sechsmal im
+ * Workspace: Rot #8B0000, Gold #D4AF37, Pergament #fdfbf7, Rand #dcd6cc — in
+ * FANG unter `--fang-`, in den In-Person Tools unter `--tm-`, in NDRS unter
+ * `--ndrs-`, im Player Wheel unter `--ninjos-player-wheel-`, im MCP unter
+ * `--mcp-`, in Shops unter `--shops-`. Sechs Namen für eine Entscheidung. Das
+ * MCP-Stylesheet sagte es selbst: „Ändert sich das Hausdesign, gehört diese
+ * Datei mit angepasst." Genau das ist der Zustand, den diese Datei beendet.
+ *
+ * **Kopiert, nicht geteilt.** Wie `willkommen.js`: Die Module erscheinen
+ * einzeln im Foundry-Katalog und sollen sich nicht gegenseitig brauchen. Zwanzig
+ * doppelte Zeilen sind billiger als eine Abhängigkeit zwischen zwei getrennt
+ * veröffentlichten Paketen. Was sich ändert, ist nicht die Anzahl der Kopien,
+ * sondern dass sie **denselben Namen** tragen: Wer die Marke ändert, ändert
+ * diese Datei und setzt sie sechsmal ein — statt sechsmal zu suchen.
+ *
+ * **Benannt nach der Rolle, nie nach der Farbe.** In FANG stand
+ * `--fang-accent-gold: #33d9ff` — ein Token namens „Gold", das Cyan enthielt.
+ * Ein Name, der die Farbe nennt, lügt beim ersten Thema. `--ninjo-akzent` lügt
+ * nie. Und `--ninjo-akzent-text` heißt so, weil seine Aufgabe „Gold, das sich
+ * als Schrift liest" ist — im Hellen wird es dafür dunkler, im Dunklen heller.
+ * Ein Name wie „gold-dark" hätte im dunklen Modus das Gegenteil behauptet.
+ *
+ * Die modul­eigenen Tokens bleiben bestehen und zeigen hierher. Ein Modul, das
+ * eine Farbe bewusst anders will, überschreibt seinen eigenen Token — dafür
+ * sind sie da.
+ * ========================================================================== */
+
+:root {
+  /* ── Marke ─────────────────────────────────────────────────────────── */
+  --ninjo-marke:        #8B0000;   /* Dunkelrot: Kopfleisten, Titel, Gefahr */
+  --ninjo-marke-tief:   #5e0000;   /* Verlauf und Tiefe darunter */
+  --ninjo-auf-marke:    #ffffff;   /* Text auf der Marke */
+  --ninjo-akzent:       #D4AF37;   /* Gold: Kanten, Hervorhebung, Fokus */
+  --ninjo-akzent-text:  #b8860b;   /* Gold, das sich auf dem Grund als Schrift liest */
+
+  /* ── Flächen ───────────────────────────────────────────────────────── */
+  --ninjo-grund:        #fdfbf7;   /* Pergament: der Fensterhintergrund */
+  --ninjo-flaeche:      #ffffff;   /* Karten und Felder darauf — heller als der Grund */
+  --ninjo-leiste:       #f4f1ea;   /* Leisten, Spaltenköpfe, Ruhezonen */
+  --ninjo-rand:         #dcd6cc;   /* Trennlinien */
+
+  /* ── Schrift ───────────────────────────────────────────────────────── */
+  --ninjo-text:         #1a1a1a;
+  --ninjo-text-blass:   #5f5a52;   /* Hinweise, Einheiten, Nebensächliches */
+
+  /*
+   * **Keine Segoe UI mehr.**
+   *
+   * Alle sechs Module setzten `'Segoe UI', Tahoma, Geneva, Verdana`. Segoe UI
+   * ist eine Windows-Schrift: Auf dem Tablet am Tisch fiel die Kette auf
+   * Tahoma, auf dem Monitor an der Wand auf Verdana, auf einem Mac auf Geneva —
+   * drei Schriften mit anderer Laufweite und Höhe. Dasselbe Fenster sah auf
+   * jedem Gerät anders aus, und niemand hatte das entschieden.
+   *
+   * Foundry liefert **Signika** mit und stellt sie als `--font-body` bereit.
+   * Sie ist auf jedem Client dieselbe, und die Module sehen damit aus, als
+   * gehörten sie dorthin, wo sie laufen.
+   */
+  --ninjo-schrift:      var(--font-body, "Signika", ui-sans-serif, sans-serif);
+
+  /*
+   * **Überschriften ebenfalls Signika — nicht Modesto Condensed.**
+   *
+   * Modesto ist Foundrys Überschriftenschrift und wäre die naheliegende Wahl.
+   * Sie **hat keine Umlaute**: Ä, Ö, Ü und ß fallen auf eine Ersatzschrift
+   * zurück, mitten im Wort. Das eigene Übersetzungsmodul repariert das für
+   * dnd5e mit einem `@font-face` und `unicode-range` — eine Lösung, die hier
+   * niemand voraussetzen darf, weil sie in einem anderen Paket steckt. Bis das
+   * in die Marke wandert, sind deutsche Überschriften in Modesto ein Risiko
+   * und keine Gestaltung.
+   */
+  --ninjo-schrift-kopf: var(--ninjo-schrift);
+
+  /* ── Maße ──────────────────────────────────────────────────────────── */
+  --ninjo-schatten-sm:  0 1px 3px rgb(0 0 0 / 10%);
+  --ninjo-schatten-md:  0 4px 6px rgb(0 0 0 / 10%);
+
+  /*
+   * Kleinstes Tippziel. Ab 44 Pixeln trifft ein Finger zuverlässig — die Zahl
+   * stammt aus KONZEPT-tausch.md und gilt für jedes Modul, das am Tisch auf
+   * einem Tablet landet. Das sind alle.
+   */
+  --ninjo-tippziel:     44px;
+
+  /*
+   * Papierfaser als Hintergrund, nicht als Schicht darüber.
+   *
+   * Ein SVG-Rauschen im Datenstrom statt einer Bilddatei: Ein Pergament als
+   * PNG wären hundert Kilobyte, die auf jedem Bildschirm anders aussehen.
+   * Angewendet wird sie mit `background-blend-mode: multiply`, damit das
+   * Rauschen sich in die Farbe mischt statt auf der Schrift zu liegen.
+   * Stammt aus Ninjo's Shops.
+   */
+  --ninjo-faser: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23f)' opacity='0.14'/%3E%3C/svg%3E");
+}
+
+/* =============================================================================
+ * Die dunkle Fassung
+ *
+ * **Wofür.** Ein leuchtend weißer Schirm im abgedunkelten Wohnzimmer blendet.
+ * Auf dem Monitor am Tisch, in der Schau-Ansicht eines Ladens, auf einem
+ * OLED-Panel, das bei echtem Schwarz nichts verbraucht und unendlichen Kontrast
+ * zeigt — dort ist Pergament die falsche Entscheidung.
+ *
+ * **Es ist dieselbe Marke, nicht eine zweite.** Die Werte sind das Negativ des
+ * Pergaments in derselben warmen Familie: Der Grund ist ein warmes
+ * Braunschwarz, kein neutrales Grau, und die Fläche liegt darüber statt
+ * darunter — genau wie im Hellen die Karte heller ist als der Bogen. Rot und
+ * Gold bleiben unverändert; Gold trägt auf dunklem Grund von selbst
+ * (etwa 7,5:1 gegen #14100c) und ist dort der natürliche Akzent.
+ *
+ * **Kein reines Schwarz.** `#000` spart auf OLED zwar noch ein wenig mehr, aber
+ * heller Text darauf schmiert auf manchen Panels und wirkt hart. `#14100c` ist
+ * dunkel genug, dass die Pixel praktisch aus sind, und behält die Wärme.
+ *
+ * **Anwendung:** die Klasse `ninjo-dunkel` an das Element, das dunkel werden
+ * soll. Alles darin liest dieselben Tokens wie sonst und braucht keine eigenen
+ * Regeln.
+ * ========================================================================== */
+
+.ninjo-dunkel {
+  --ninjo-grund:        #14100c;   /* warmes Braunschwarz statt neutralem Grau */
+  --ninjo-flaeche:      #1e1912;   /* die Karte liegt über dem Grund, wie im Hellen */
+  --ninjo-leiste:       #241d15;
+  --ninjo-rand:         #3b3227;
+
+  --ninjo-text:         #f3ece0;   /* warmes Gebrochenweiß, kein reines Weiß */
+  --ninjo-text-blass:   #b8ab98;
+
+  /*
+   * Gold als Schrift geht hier **heller**, nicht dunkler. Das ist der Grund,
+   * warum der Token `-text` heißt und nicht `-dunkel`: Die Rolle ist „liest
+   * sich auf dem Grund", und die Richtung dreht sich mit dem Grund.
+   */
+  --ninjo-akzent-text:  #e6c65c;
+
+  /*
+   * Ein Schatten auf dunklem Grund muss tiefer sein, um überhaupt zu erscheinen.
+   */
+  --ninjo-schatten-sm:  0 1px 3px rgb(0 0 0 / 45%);
+  --ninjo-schatten-md:  0 6px 18px rgb(0 0 0 / 55%);
+
+  /* Auf dunklem Grund würde `multiply` die Faser verschlucken. */
+  --ninjo-faser: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23f)' opacity='0.06'/%3E%3C/svg%3E");
+}

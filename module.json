@@ -18,6 +18,7 @@
     "scripts/main.js"
   ],
   "styles": [
+    "styles/ninjo-marke.css",
     "styles/fang.css"
   ],
   "url": "https://github.com/Niclasp1501/Foundry-Actor-Nexus-Graph--FANG-",

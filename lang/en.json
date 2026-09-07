@@ -136,7 +136,9 @@
             "FactionsHint": "Factions are shown as lines between members, and as a coloured ring on the token.",
             "SectionPermissions": "Permissions",
             "ShowFactionLines": "Show faction display",
-            "PinnedHint": "Position held. Right-click → Release position."
+            "PinnedHint": "Position held. Right-click → Release position.",
+            "RailLabel": "FANG tools",
+            "Close": "Close"
         },
         "Journal": {
             "FolderName": "FANG - Do Not Delete",
@@ -546,6 +548,13 @@
             "ForgeZeile": "Every module, its documentation and the German translations in one place — open the module page",
             "Nie": "Don't show again",
             "Spaeter": "Later"
+        },
+        "Notify": {
+            "DropOnNode": "Please drop the journal onto a specific node in the graph.",
+            "GmNoteLinked": "GM note linked to {name}.",
+            "QuestLogLinked": "Quest log linked to {name}.",
+            "LoreAutoLinked": "Linked the existing player lore journal for {name}.",
+            "QuestJournalMissing": "Quest journal not found — or the permissions are missing."
         }
     }
 }

@@ -177,3 +177,39 @@ Two things follow for anyone working here:
 Recaps are deliberately not secret. Their pages sit in the **FANG Chronik** journal
 at `OBSERVER` for everyone, with `OWNER` for the author, and nothing confidential
 is meant to hang off them.
+
+
+## Oberfläche: die acht Regeln
+
+Sie stehen vollständig in der [CLAUDE.md des Workspace](../../CLAUDE.md),
+Abschnitt „Regelgrundsätze für die Oberfläche der Foundry-Module", und gelten
+für jedes Modul: Fenster passen ins Bild · die Marke steht in einer Datei · die
+Schrift liefert Foundry · kein sichtbarer Text ohne Sprachschlüssel · die
+Rückmeldung steht dort, wo der Mensch hinschaut · jeder Knopf hat einen Namen ·
+Unwiderrufliches fragt vorher · neue Fenster sind ApplicationV2.
+
+Zwei Dateien werden dafür **kopiert, nicht geteilt** — wie `willkommen.js`:
+
+| Datei | Angepasst wird |
+|---|---|
+| `styles/ninjo-marke.css` | nichts, sie ist überall identisch |
+| `scripts/fensterpassen.js` | nur der `MODUL`-Block ganz oben |
+
+Verbessert man eine davon, gehört sie in alle Module nachgezogen.
+
+### Was hier gilt
+
+**Fensterklassen:** `fang-app-window` und `fang-dialog`. Beide stehen im
+`MODUL`-Block von `fensterpassen.js`; ein neues Fenster braucht eine davon,
+sonst wird es nicht geklemmt.
+
+**Das Cyberpunk-Thema bleibt unberührt.** Es setzt eigene Werte (`#ff2e88`,
+`#33d9ff`, `Rajdhani`) und überschreibt die Modultokens — das ist der Zweck
+eines Themas. Nur der helle Grundzustand zeigt auf `--ninjo-*`.
+
+**Offen:** 116 verschiedene Rohfarben stehen neben 16 Tokens. Das Token-System
+ist da und wird umgangen; die Farben auf die Tokens zurückzuführen ist die eine
+Aufgabe hier, die kein Wochenende ist. Dazu: die Knotennamen im Graphen sind aus
+zwei Metern nicht lesbar (Schriftgröße an die Fenstergröße koppeln, wie
+`.shops-schau` es mit `clamp()` macht), die Legende ist dunkel auf
+Pergament, und der Charaktertext im Dialog steht sechs Absätze lang kursiv.

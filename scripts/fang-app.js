@@ -4697,7 +4697,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
         if (isJournalDrop) {
             if (!targetNode) {
-                ui.notifications.warn("Please drop the Journal onto a specific node in the graph.");
+                ui.notifications.warn(game.i18n.localize("FANG.Notify.DropOnNode"));
                 return;
             }
 
@@ -4717,7 +4717,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                             targetNode.journalUuid = data.uuid;
                             targetNode._gmJournalName = droppedDoc.name;
                             await this.saveData();
-                            ui.notifications.info("GM Note linked to " + targetNode.name + ".");
+                            ui.notifications.info(game.i18n.format("FANG.Notify.GmNoteLinked", { name: targetNode.name }));
                         }
                     },
                     quest: {
@@ -4735,7 +4735,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                             }
                             this.ticked();
                             await this.saveData();
-                            ui.notifications.info("Quest Log linked to " + targetNode.name + ".");
+                            ui.notifications.info(game.i18n.format("FANG.Notify.QuestLogLinked", { name: targetNode.name }));
                         }
                     }
                 },
@@ -4927,7 +4927,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     const matchingPage = entry.pages.find(p => p.name === "Lore: " + actor.name);
                     if (matchingPage) {
                         generatedLorePageId = matchingPage.id;
-                        ui.notifications.info(`Auto-linked existing Player Lore journal for ${actor.name}.`);
+                        ui.notifications.info(game.i18n.format("FANG.Notify.LoreAutoLinked", { name: actor.name }));
                     }
                 }
 
@@ -5272,7 +5272,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         if (!node?.questUuids?.length) return;
         const quest = node.questUuids[0];
         const opened = await this._openJournalDocument(quest.uuid);
-        if (!opened && !game.user.isGM) ui.notifications.warn("Quest Journal not found or you lack permissions.");
+        if (!opened && !game.user.isGM) ui.notifications.warn(game.i18n.localize("FANG.Notify.QuestJournalMissing"));
     }
 
     async _resolveJournalDocument(uuid) {
@@ -5448,7 +5448,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             button.addEventListener("click", async (event) => {
                 const row = event.currentTarget.closest(".fang-quest-manager-row");
                 const opened = row?.dataset?.uuid ? await this._openJournalDocument(row.dataset.uuid) : false;
-                if (!opened) ui.notifications.warn("Quest Journal not found or permissions missing.");
+                if (!opened) ui.notifications.warn(game.i18n.localize("FANG.Notify.QuestJournalMissing"));
             });
         });
         panel.querySelectorAll(".fang-quest-spotlight").forEach(button => {
@@ -8986,7 +8986,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                                 clickTimer = null;
                                 // Long Press: Open Journal Sheet
                                 const opened = await this._openJournalDocument(uuid);
-                                if (!opened) ui.notifications.warn("Quest Journal not found or permissions missing.");
+                                if (!opened) ui.notifications.warn(game.i18n.localize("FANG.Notify.QuestJournalMissing"));
                             }, 500);
                         });
 

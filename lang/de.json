@@ -136,7 +136,9 @@
             "FactionsHint": "Fraktionen werden als Linien zwischen den Mitgliedern gezeigt und als farbiger Ring am Token.",
             "SectionPermissions": "Berechtigungen",
             "ShowFactionLines": "Fraktionsanzeige einblenden",
-            "PinnedHint": "Position festgehalten. Rechtsklick → Position freigeben."
+            "PinnedHint": "Position festgehalten. Rechtsklick → Position freigeben.",
+            "RailLabel": "FANG-Werkzeuge",
+            "Close": "Schließen"
         },
         "Journal": {
             "FolderName": "FANG - Nicht löschen",
@@ -546,6 +548,13 @@
             "ForgeZeile": "Alle Module, Anleitungen und deutschen Übersetzungen an einem Ort — Modulseite öffnen",
             "Nie": "Nicht mehr anzeigen",
             "Spaeter": "Später"
+        },
+        "Notify": {
+            "DropOnNode": "Bitte lege das Journal auf einen bestimmten Knoten im Graphen.",
+            "GmNoteLinked": "Spielleiter-Notiz mit {name} verknüpft.",
+            "QuestLogLinked": "Auftragsbuch mit {name} verknüpft.",
+            "LoreAutoLinked": "Vorhandenes Spielerwissen für {name} automatisch verknüpft.",
+            "QuestJournalMissing": "Auftragsjournal nicht gefunden — oder die Rechte fehlen."
         }
     }
 }

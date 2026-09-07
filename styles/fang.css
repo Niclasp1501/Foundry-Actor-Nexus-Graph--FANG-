@@ -1,16 +1,16 @@
 :root {
     /* D&D Reference Design - Strict Red/Gold Theme */
-    --fang-bg-color: #fdfbf7;
+    --fang-bg-color: var(--ninjo-grund);
     /* Parchment Light */
-    --fang-text-color: #1a1a1a;
+    --fang-text-color: var(--ninjo-text);
     --fang-card-bg: #ffffff;
-    --fang-nav-bg: #f4f1ea;
-    --fang-border-color: #dcd6cc;
+    --fang-nav-bg: var(--ninjo-leiste);
+    --fang-border-color: var(--ninjo-rand);
 
     /* Strict Theme Colors */
-    --fang-primary-red: #8B0000;
+    --fang-primary-red: var(--ninjo-marke);
     /* Dark D&D Red */
-    --fang-accent-gold: #D4AF37;
+    --fang-accent-gold: var(--ninjo-akzent);
     /* Metallic Gold */
     --fang-header-text: #ffffff;
     --fang-canvas-bg: #fbf9f4;
@@ -24,7 +24,7 @@
     --fang-primary-red-rgb: 139, 0, 0;
     --fang-accent-gold-rgb: 212, 175, 55;
 
-    --fang-font-main: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    --fang-font-main: var(--ninjo-schrift);
     --fang-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
     --fang-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
@@ -4062,7 +4062,7 @@ body.fang-theme-cyberpunk .background-config-container .premium-notice p {
 }
 
 .fang-history-sticky {
-    --fang-history-rail-bg: #fdfbf7;
+    --fang-history-rail-bg: var(--ninjo-grund);
     position: sticky;
     top: -20px;
     z-index: 3;
