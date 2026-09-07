@@ -1,0 +1,31 @@
+name: Validate
+
+# Runs on every pull request and on pushes to the working branches.
+#
+# It exists for Weblate. Translations arrive as pull requests from people we
+# cannot ask questions, in languages nobody here reads. A green check that says
+# "the JSON parses, every locale has the same keys as en.json, and no
+# placeholder was lost" is the only review that scales — and it is the gate the
+# auto-merge workflow waits for.
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - beta
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Validate locales, scripts and stylesheets
+        run: node tools/fang-validate.mjs
