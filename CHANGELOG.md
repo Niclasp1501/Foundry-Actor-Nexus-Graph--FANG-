@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [14.2609.2] - 2026-09-05
 
 ### Added
+- **Ein Charakter kann mehreren Fraktionen angehören.** Bisher gab es ein Auswahlfeld mit genau einer Fraktion — wer beim Söldner, der für die Gilde arbeitet und heimlich im Zirkel sitzt, alle drei festhalten wollte, musste sich für eine entscheiden. Im Knoten-Editor steht jetzt eine Liste mit Kästchen; angehakt wird, was zutrifft. Gewünscht von @Axel-of-the-Key (#8).
+
+  **Der Tokenring zeigt alle.** Statt eines Kreises in einer Farbe bekommt jede Fraktion einen Bogen. Bei einer Fraktion sieht das aus wie vorher — für alle, die nie eine zweite vergeben, ändert sich nichts. Die Mitgliederlinien werden ebenfalls für jede Fraktion gezogen, ein Charakter hängt also in mehreren Ringen.
+
+  **Eine davon trägt einen Stern.** Position und Fläche lassen sich nicht teilen: Die Gruppierung zieht einen Knoten zu genau einem Mittelpunkt, und eine Fraktionsfläche wird auf ihre eigene Rasterzelle beschnitten, damit sich zwei Flächen nie überlappen. Deshalb bestimmt die Fraktion mit dem Stern, wo ein Charakter steht — und das auch nur, solange die Gruppierung eingeschaltet ist. Alles, was bloß gezeichnet wird, nimmt die ganze Liste. Der Stern erscheint erst ab der zweiten Fraktion; vorher gibt es nichts zu entscheiden.
+
+  Vorhandene Welten müssen nichts tun. Aus der einen Fraktion wird beim Laden eine Liste mit einem Eintrag, und das alte Feld bleibt als Spiegel der primären Fraktion erhalten — damit ein älteres FANG, eine exportierte Datei und der Diploglass-Abgleich weiter das lesen, was sie erwarten.
+
 - **Rückblicke bekommen eine Journalseite — angelegt und geöffnet aus FANG heraus.** Ein Sitzungsrückblick ist Fließtext und gehört nicht in eine Welt-Einstellung, die bei jeder Änderung komplett neu geschrieben und verteilt wird — auch dann, wenn nur automatisch „Token aufgetaucht“ dazukommt. Ein Eintrag der Kategorie *Rückblick* trägt deshalb nur noch die Kurzfassung; der lange Text steht auf einer eigenen Seite im Journal **FANG Chronik**, das im selben Ordner wie das Graph-Journal liegt.
 
   Angelegt und geöffnet wird sie über einen Knopf am Eintrag und im Bearbeitungsformular — Foundrys eigener Editor mit Formatierung, Bildern und `@UUID`-Verweisen auf Akteure, Szenen und Journale, ohne dass FANG davon etwas nachbauen muss.

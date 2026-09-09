@@ -408,6 +408,44 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         return types.find(type => type.id === typeId) || null;
     }
 
+    /**
+     * Every faction a node belongs to, primary first.
+     *
+     * factionIds is the truth. factionId stays as a mirror of its first entry, because three
+     * things outside this list still expect a single id: an older FANG reading a graph saved
+     * by a newer one, an exported file taken to another world, and the Diploglass sync that
+     * writes membership from another module. Keeping the mirror costs one line per write and
+     * saves a migration for all three.
+     */
+    _getNodeFactionIds(node) {
+        if (!node) return [];
+        const liste = Array.isArray(node.factionIds) ? node.factionIds.filter(Boolean).map(String) : [];
+        if (!liste.length && node.factionId) liste.push(String(node.factionId));
+        return [...new Set(liste)];
+    }
+
+    /**
+     * The one faction that decides where a node sits. Position cannot be shared: the cluster
+     * force pulls a node to a single point, and a faction's area is clamped to its own grid
+     * cell so two areas can never overlap. Everything that is only drawn - the ring, the
+     * member lines, the legend - takes the whole list.
+     */
+    _getPrimaryFactionId(node) {
+        return this._getNodeFactionIds(node)[0] ?? null;
+    }
+
+    /** Writes list and mirror together, so the two can never drift apart. */
+    _setNodeFactionIds(node, ids = []) {
+        if (!node) return;
+        const liste = [...new Set((ids || []).filter(Boolean).map(String))];
+        node.factionIds = liste;
+        node.factionId = liste[0] ?? null;
+    }
+
+    _nodeBelongsToFaction(node, factionId) {
+        return !!factionId && this._getNodeFactionIds(node).includes(String(factionId));
+    }
+
     _isFactionVisibleToCurrentUser(faction) {
         if (!faction) return false;
         return game.user.isGM || faction.playerVisible !== false;
@@ -2321,7 +2359,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
         const factionIds = new Set(graph.factions.map(f => f.id).filter(Boolean));
         for (const node of graph.nodes) {
-            if (node.factionId && !factionIds.has(node.factionId)) node.factionId = null;
+            this._setNodeFactionIds(node, this._getNodeFactionIds(node).filter(id => factionIds.has(id)));
             node.conditions = Array.isArray(node.conditions) ? node.conditions : [];
             node.questUuids = Array.isArray(node.questUuids) ? node.questUuids : [];
             node.questUuids = node.questUuids.map(q => ({ ...q, status: q.status || "open" }));
@@ -2891,15 +2929,20 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 if (!this.graphData.factions) this.graphData.factions = [];
                 this.graphData.factions = this.graphData.factions.map(f => this._normalizeFaction(f));
 
-                // Convert 'groupIds' array or 'groupId' string to 'factionId' string
+                // Old shapes into the list. 'groupIds' was a list once already, so this time
+                // it is kept whole instead of collapsed onto its first entry.
                 this.graphData.nodes.forEach(node => {
-                    if (node.groupIds && Array.isArray(node.groupIds) && !node.factionId) {
-                        node.factionId = node.groupIds[0] || null;
+                    if (Array.isArray(node.groupIds) && !node.factionId && !node.factionIds?.length) {
+                        this._setNodeFactionIds(node, node.groupIds);
                         delete node.groupIds;
-                    } else if (node.groupId && !node.factionId) {
-                        node.factionId = node.groupId;
+                    } else if (node.groupId && !node.factionId && !node.factionIds?.length) {
+                        this._setNodeFactionIds(node, [node.groupId]);
                         delete node.groupId;
+                    } else if (!Array.isArray(node.factionIds)) {
+                        this._setNodeFactionIds(node, node.factionId ? [node.factionId] : []);
                     }
+                    delete node.groupIds;
+                    delete node.groupId;
                 });
 
                 // Ensure factions have X/Y positions for drawing hubs
@@ -3099,8 +3142,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             nextFactions.forEach((f) => factionById.set(f.id, f));
 
             for (const node of (this.graphData.nodes || [])) {
-                if (node.factionId && staleImportedFactionIds.has(node.factionId)) {
-                    node.factionId = null;
+                if (this._getNodeFactionIds(node).some(id => staleImportedFactionIds.has(id))) {
+                    this._setNodeFactionIds(node, this._getNodeFactionIds(node).filter(id => !staleImportedFactionIds.has(id)));
                     changed = true;
                 }
             }
@@ -3172,12 +3215,15 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             const currentIsDiploFaction = currentFaction?.externalSource?.module === "diploglass";
 
             if (nextFactionId) {
-                if (node.factionId !== nextFactionId) {
-                    node.factionId = nextFactionId;
+                // The sync owns the faction it brought and nothing else. Replacing the whole
+                // list would throw away memberships someone set by hand in FANG.
+                if (this._getPrimaryFactionId(node) !== nextFactionId) {
+                    this._setNodeFactionIds(node, [nextFactionId,
+                        ...this._getNodeFactionIds(node).filter(id => id !== nextFactionId && !factionById.get(id)?.diploglassId)]);
                     changed = true;
                 }
             } else if (currentIsDiploFaction && node.factionId) {
-                node.factionId = null;
+                this._setNodeFactionIds(node, this._getNodeFactionIds(node).filter(id => id !== node.factionId));
                 changed = true;
             }
         }
@@ -3898,6 +3944,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             originalName: name,
             role,
             factionId,
+            factionIds: factionId ? [factionId] : [],
             x,
             y,
             hidden: game.settings.get("fang", "defaultHiddenMode"),
@@ -4002,7 +4049,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         }
         if (!keepRole) {
             node.role = null;
-            node.factionId = null;
+            this._setNodeFactionIds(node, []);
         }
         this.initSimulation();
         this.simulation.alpha(0.25).restart();
@@ -4547,7 +4594,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
                         const keptFactionIds = new Set(newFactions.map(f => f.id));
                         this.graphData.nodes.forEach(node => {
-                            if (node.factionId && !keptFactionIds.has(node.factionId)) node.factionId = null;
+                            this._setNodeFactionIds(node, this._getNodeFactionIds(node).filter(id => keptFactionIds.has(id)));
                         });
 
                         this.graphData.factions = newFactions.map(f => this._normalizeFaction(f));
@@ -4557,7 +4604,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                         for (const faction of this.graphData.factions) {
                             const wasVisible = previousFactionVisibility.get(faction.id);
                             if (wasVisible === false && faction.playerVisible !== false) {
-                                const members = this.graphData.nodes.filter(node => node.factionId === faction.id);
+                                const members = this.graphData.nodes.filter(node => this._nodeBelongsToFaction(node, faction.id));
                                 for (const member of members) await this._recordFactionAssignedHistory(member, faction);
                             }
                         }
@@ -5695,10 +5742,29 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             return;
         }
 
+        // A copy, edited by the checkboxes and the star while the dialog is open, so nothing
+        // is written to the node until Save.
+        const nodeFactionIds = this._getNodeFactionIds(node);
         const factionOptions = (this.graphData.factions || [])
             .map(f => this._normalizeFaction(f))
-            .filter(f => this._isFactionVisibleToCurrentUser(f) || f.id === node.factionId)
-            .map(f => `<option value="${escapeHtml(f.id)}" ${f.id === node.factionId ? "selected" : ""}>${escapeHtml(f.name)}</option>`)
+            .filter(f => this._isFactionVisibleToCurrentUser(f) || nodeFactionIds.includes(f.id))
+            .map(f => {
+                const dabei = nodeFactionIds.includes(f.id);
+                const istPrimaer = nodeFactionIds[0] === f.id;
+                return `<li class="fang-faction-pick${dabei ? " is-on" : ""}" data-faction-id="${escapeHtml(f.id)}">
+                    <label class="fang-editor-check">
+                        <input type="checkbox" class="fang-faction-check" ${dabei ? "checked" : ""}>
+                        <span class="fang-faction-swatch" style="background:${escapeHtml(f.color || "#d4af37")}"></span>
+                        <span class="fang-faction-name">${escapeHtml(f.name)}</span>
+                    </label>
+                    <button type="button" class="fang-faction-primary${istPrimaer ? " is-primary" : ""}"
+                        title="${escapeHtml(localize("FANG.Dialogs.FactionPrimaryHint", "Decides where this character sits while grouping is on"))}"
+                        aria-label="${escapeHtml(localize("FANG.Dialogs.FactionPrimary", "Primary faction"))}"
+                        aria-pressed="${istPrimaer ? "true" : "false"}">
+                        <i class="${istPrimaer ? "fas" : "far"} fa-star" aria-hidden="true"></i>
+                    </button>
+                </li>`;
+            })
             .join("");
         const zoneOptions = (this.graphData.zones || [])
             .map(z => this._normalizeZone(z))
@@ -5739,10 +5805,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     <label>${localize("FANG.Dialogs.RoleInput", "Role")}</label>
                     <input type="text" id="fang-profile-role" value="${escapeHtml(node.role || "")}">
                     <label>${localize("FANG.Dialogs.FactionInput", "Faction")}</label>
-                    <select id="fang-profile-faction">
-                        <option value="">-- None --</option>
-                        ${factionOptions}
-                    </select>
+                    <ul id="fang-profile-factions" class="fang-faction-picks">${factionOptions}</ul>
+                    ${factionOptions ? `<p class="fang-hint">${localize("FANG.Dialogs.FactionMultiHint", "A character can belong to several factions. The starred one decides where they sit while grouping is on.")}</p>` : ""}
                     <label>${localize("FANG.Zones.Zone", "Zone")}</label>
                     <select id="fang-profile-zone">
                         <option value="">-- None --</option>
@@ -5761,9 +5825,52 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 ${actionSection}
             </div>`;
 
+        // The list the dialog works on. Order carries the meaning: the first entry is the
+        // primary faction, so the star does not need a field of its own.
+        let gewaehlteFraktionen = [...nodeFactionIds];
+
         await this._openPanelEditor({
             title: localize("FANG.ActorEditor.Title", "Edit Actor"),
             content,
+            render: (html) => {
+                const liste = html.find("#fang-profile-factions");
+                const zeichne = () => {
+                    liste.find(".fang-faction-pick").each((_, el) => {
+                        const id = el.dataset.factionId;
+                        const dabei = gewaehlteFraktionen.includes(id);
+                        const primaer = gewaehlteFraktionen[0] === id;
+                        el.classList.toggle("is-on", dabei);
+                        $(el).find(".fang-faction-check").prop("checked", dabei);
+                        const stern = $(el).find(".fang-faction-primary");
+                        stern.toggleClass("is-primary", primaer).attr("aria-pressed", primaer ? "true" : "false");
+                        stern.find("i").attr("class", `${primaer ? "fas" : "far"} fa-star`);
+                        // With one faction there is nothing to choose, so the star would only
+                        // be a button that changes nothing.
+                        stern.toggle(gewaehlteFraktionen.length > 1 && dabei);
+                    });
+                };
+
+                liste.find(".fang-faction-check").on("change", (e) => {
+                    const id = e.currentTarget.closest(".fang-faction-pick")?.dataset.factionId;
+                    if (!id) return;
+                    if (e.currentTarget.checked) {
+                        if (!gewaehlteFraktionen.includes(id)) gewaehlteFraktionen.push(id);
+                    } else {
+                        gewaehlteFraktionen = gewaehlteFraktionen.filter(x => x !== id);
+                    }
+                    zeichne();
+                });
+
+                liste.find(".fang-faction-primary").on("click", (e) => {
+                    e.preventDefault();
+                    const id = e.currentTarget.closest(".fang-faction-pick")?.dataset.factionId;
+                    if (!id || !gewaehlteFraktionen.includes(id)) return;
+                    gewaehlteFraktionen = [id, ...gewaehlteFraktionen.filter(x => x !== id)];
+                    zeichne();
+                });
+
+                zeichne();
+            },
             buttons: {
                 save: {
                     icon: '<i class="fas fa-save"></i>',
@@ -5775,7 +5882,14 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                         const previousShowHiddenQuests = node.showHiddenQuestsToPlayers !== false;
                         const newName = html.find("#fang-profile-name").val().trim();
                         const newRole = html.find("#fang-profile-role").val().trim();
-                        const newFactionId = html.find("#fang-profile-faction").val();
+                        // Factions that the current user cannot see were never offered, so they
+                        // must survive untouched - a player editing a node may not quietly drop
+                        // a GM-only membership just by pressing Save.
+                        const unsichtbare = this._getNodeFactionIds(node).filter(id => {
+                            const f = (this.graphData.factions || []).map(x => this._normalizeFaction(x)).find(x => x.id === id);
+                            return f && !this._isFactionVisibleToCurrentUser(f);
+                        });
+                        const newFactionIds = [...gewaehlteFraktionen, ...unsichtbare.filter(id => !gewaehlteFraktionen.includes(id))];
                         const newZoneId = html.find("#fang-profile-zone").val();
                         const newAlias = isGM ? html.find("#fang-profile-alias").val().trim() : node.displayName;
                         const newLore = html.find("#fang-profile-lore").val().trim();
@@ -5786,7 +5900,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
                         if (newName) node.name = newName;
                         node.role = newRole || null;
-                        node.factionId = newFactionId || null;
+                        this._setNodeFactionIds(node, newFactionIds);
                         node.zoneId = newZoneId || null;
                         if (isGM) {
                             node.hidden = html.find("#fang-profile-hidden").is(":checked");
@@ -7260,7 +7374,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             this.graphData.factions.forEach(faction => {
                 faction = this._normalizeFaction(faction);
                 if (!this._shouldShowFactionLinesToCurrentUser(faction)) return;
-                const members = visibleNodes.filter(n => n.factionId === faction.id);
+                const members = visibleNodes.filter(n => this._nodeBelongsToFaction(n, faction.id));
                 if (members.length < 2) return;
 
                 // 1. Calculate Centroid for sorting
@@ -7647,8 +7761,12 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             }
 
             // -----------------------------
+            // The primary one still drives the icon badge; the whole list drives the ring.
             const faction = node.factionId ? factionsById.get(node.factionId) : null;
             const visibleFaction = this._isFactionVisibleToCurrentUser(faction) ? faction : null;
+            const visibleFactions = this._getNodeFactionIds(node)
+                .map(id => factionsById.get(id))
+                .filter(f => f && this._isFactionVisibleToCurrentUser(f));
 
             // --- Draw Center (Boss) Aura ---
             if (node.isCenter) {
@@ -7735,13 +7853,35 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             // the search ring radius+8, the QuickConnect marker radius+12.
             // globalAlpha is inherited on purpose. It already encodes focus and the
             // "missing" condition; overriding it here made faded-out characters light up.
-            if (visibleFaction && !isHidden && this.graphData.showFactionLines !== false) {
+            // One arc per faction instead of one full circle. With a single faction the two
+            // are indistinguishable, which is the point: nothing changes for anyone who never
+            // assigns a second one. The gaps are what makes three colours read as three
+            // memberships rather than as a decorative gradient.
+            if (visibleFactions.length && !isHidden && this.graphData.showFactionLines !== false) {
+                const ringRadius = Math.max(2, radius - 2);
                 this.context.save();
-                this.context.beginPath();
-                this.context.arc(pos.x, pos.y, Math.max(2, radius - 2), 0, Math.PI * 2);
                 this.context.lineWidth = 3;
-                this.context.strokeStyle = visibleFaction.color || "#d4af37";
-                this.context.stroke();
+                if (visibleFactions.length === 1) {
+                    this.context.beginPath();
+                    this.context.arc(pos.x, pos.y, ringRadius, 0, Math.PI * 2);
+                    this.context.strokeStyle = visibleFactions[0].color || "#d4af37";
+                    this.context.stroke();
+                } else {
+                    const step = (Math.PI * 2) / visibleFactions.length;
+                    // A fixed gap in radians would swallow the segment itself once a character
+                    // joins six factions, so it shrinks with the slice and never takes more
+                    // than a fifth of it.
+                    const gap = Math.min(0.12, step * 0.2);
+                    visibleFactions.forEach((f, i) => {
+                        // Start at the top: the first faction is the primary one, and the eye
+                        // looks there first.
+                        const from = -Math.PI / 2 + i * step + gap / 2;
+                        this.context.beginPath();
+                        this.context.arc(pos.x, pos.y, ringRadius, from, from + step - gap);
+                        this.context.strokeStyle = f.color || "#d4af37";
+                        this.context.stroke();
+                    });
+                }
                 this.context.restore();
             }
 
@@ -8583,6 +8723,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 showHiddenQuestsToPlayers: n.showHiddenQuestsToPlayers !== false,
                 conditions: n.conditions || [],
                 factionId: n.factionId || null,
+                factionIds: this._getNodeFactionIds(n),
                 zoneId: n.zoneId || null,
                 role: n.role || "",
                 x: n.x,
@@ -8890,8 +9031,14 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
         const imgSrc = hiddenForUser ? FANG_DEFAULT_PLACEHOLDER_IMG : this._getNodeImageSource(node);
         const role = hiddenForUser ? "" : node.role || "";
-        const factionObj = hiddenForUser ? null : this.graphData.factions.find(f => f.id === node.factionId);
-        const faction = factionObj?.playerVisible !== false ? factionObj?.name || "" : "";
+        // All of them, primary first. The subtitle is where someone looks to find out who a
+        // character answers to, and naming only one of three would be the wrong answer.
+        const faction = hiddenForUser ? "" : this._getNodeFactionIds(node)
+            .map(id => this.graphData.factions.find(f => f.id === id))
+            .filter(f => f && f.playerVisible !== false)
+            .map(f => f.name)
+            .filter(Boolean)
+            .join(", ");
         const subtitle = [role, faction].filter(s => s).join(" - ");
 
         let loreText = hiddenForUser ? formatPlayerNotes(node.playerNotes) : node.lore || "";

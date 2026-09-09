@@ -4329,6 +4329,75 @@ body.fang-theme-cyberpunk .background-config-container .premium-notice p {
 
 /* Releasing the entry is its own decision, not a property of the GM notes it used to sit
    under. The frame is what says so at a glance. */
+/* Faction membership is a list now, so it is shown as one. Each row carries the colour of
+   its faction, because that is the colour its arc gets on the token ring. */
+.fang-faction-picks {
+    list-style: none;
+    margin: 4px 0 0;
+    padding: 0;
+    max-height: 190px;
+    overflow-y: auto;
+    border: 1px solid var(--fang-border, rgba(212, 175, 55, 0.3));
+    border-radius: 8px;
+}
+
+.fang-faction-pick {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 6px 4px 8px;
+    border-bottom: 1px solid rgba(212, 175, 55, 0.14);
+}
+
+.fang-faction-pick:last-child {
+    border-bottom: none;
+}
+
+.fang-faction-pick.is-on {
+    background: rgba(212, 175, 55, 0.09);
+}
+
+.fang-faction-pick .fang-editor-check {
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    min-width: 0;
+}
+
+.fang-faction-swatch {
+    flex: 0 0 auto;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 1px solid rgba(0, 0, 0, 0.35);
+}
+
+.fang-faction-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Hidden until a second faction is ticked - with one there is nothing to choose. */
+.fang-faction-primary {
+    flex: 0 0 auto;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px 6px;
+    min-width: var(--ninjo-tippziel, 32px);
+    min-height: var(--ninjo-tippziel, 32px);
+    color: rgba(212, 175, 55, 0.55);
+    line-height: 1;
+}
+
+.fang-faction-primary:hover,
+.fang-faction-primary.is-primary {
+    color: var(--ninjo-akzent, #d4af37);
+}
+
 .fang-history-release {
     margin: 10px 0 4px;
     padding: 10px 12px 4px;

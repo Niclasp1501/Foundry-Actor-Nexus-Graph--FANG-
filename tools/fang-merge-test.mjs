@@ -315,5 +315,65 @@ section("15. Sortierschluessel der Chronik");
     ok(key(0, 3, 100).localeCompare(key(0, 3, 99)) > 0, "dreistelliger Tag vergleicht numerisch");
 }
 
+// 16 — faction membership is a list now. The list is one field value, so it merges the same
+// way questUuids and conditions always have: whole-value, last writer wins, conflict reported.
+// The point of these is to prove that nothing special was needed - and that the mirror field
+// factionId cannot silently disagree with the list.
+section("16. Mehrere Fraktionen");
+{
+    const baseline = baseGraph();
+    baseline.factions.push({ id: "f2", name: "Gilde", color: "#0f0", x: 80, y: 80 });
+    baseline.nodes[0].factionIds = ["f1"];
+    baseline.nodes[0].factionId = "f1";
+
+    // Nobody touched it on the server; we added a second membership.
+    const mine = clone(baseline);
+    mine.nodes[0].factionIds = ["f1", "f2"];
+    const server = clone(baseline);
+    const { merged } = mergeGraphData(baseline, mine, server);
+    ok(JSON.stringify(merged.nodes[0].factionIds) === JSON.stringify(["f1", "f2"]),
+        "zweite Fraktion ueberlebt den Abgleich");
+    ok(merged.nodes[0].factionId === "f1", "die primaere bleibt die erste");
+}
+{
+    // The other side changed something else on the same node. Both survive.
+    const baseline = baseGraph();
+    baseline.factions.push({ id: "f2", name: "Gilde", color: "#0f0", x: 80, y: 80 });
+    baseline.nodes[0].factionIds = ["f1"];
+    baseline.nodes[0].factionId = "f1";
+
+    const mine = clone(baseline);
+    mine.nodes[0].factionIds = ["f1", "f2"];
+    const server = clone(baseline);
+    server.nodes[0].lore = "Neu geschrieben.";
+
+    const { merged, conflicts } = mergeGraphData(baseline, mine, server);
+    ok(JSON.stringify(merged.nodes[0].factionIds) === JSON.stringify(["f1", "f2"]),
+        "Fraktionsliste und fremde Textaenderung stossen sich nicht");
+    ok(merged.nodes[0].lore === "Neu geschrieben.", "der fremde Text bleibt stehen");
+    ok(conflicts.length === 0, "kein Konflikt, weil verschiedene Felder");
+}
+{
+    // Both changed the list. Ours wins, and it is reported - same as any other field.
+    const baseline = baseGraph();
+    baseline.factions.push({ id: "f2", name: "Gilde", color: "#0f0", x: 80, y: 80 });
+    baseline.nodes[0].factionIds = ["f1"];
+
+    const mine = clone(baseline);
+    mine.nodes[0].factionIds = ["f1", "f2"];
+    const server = clone(baseline);
+    server.nodes[0].factionIds = ["f2"];
+
+    const { merged, conflicts } = mergeGraphData(baseline, mine, server);
+    ok(JSON.stringify(merged.nodes[0].factionIds) === JSON.stringify(["f1", "f2"]),
+        "bei beidseitiger Aenderung gewinnt der letzte Schreiber");
+    ok(conflicts.some(c => c?.field === "factionIds" && c?.id === "elara"), "und der Konflikt wird gemeldet");
+}
+{
+    // Reordering is what makes another faction primary, so it has to count as a change.
+    ok(!valuesEqual(["f1", "f2"], ["f2", "f1"]),
+        "eine andere Reihenfolge ist eine Aenderung - sonst waere der Sternklick verloren");
+}
+
 console.log(`\n${failed === 0 ? "=== ALLE TESTS BESTANDEN ===" : `=== ${failed} FEHLER ===`}  (${passed} ok, ${failed} fail)\n`);
 process.exit(failed ? 1 : 0);

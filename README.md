@@ -25,7 +25,7 @@ An interactive, self-arranging Actor Graph module for visualizing Character & NP
 - **Player-Safe Actor Editing:** Hidden contacts keep GM secrets protected while players can still edit allowed alias/player notes and view safe information.
 - **Collaborative Editing (Optional):** Instead of an exclusive lock, several people can work on the graph at once. Saving merges field by field against the stored state, so two people editing different things no longer overwrite each other. Physics drift is discarded on purpose – only positions someone actually dragged count as intent.
 - **Precise Coordinate Dragging:** Fully corrected coordinate tracking ensures tokens stay perfectly under your mouse during drag-and-drop, even when zoomed or panned.
-- **Roles & Organizations:** Assign roles or faction affiliations to individual tokens, adding secondary layers of depth to the map.
+- **Roles & Organizations:** Assign roles and faction affiliations to individual tokens. A character can belong to **several factions at once** — each one gets its own arc on the token ring and its own member lines. One of them carries a star and decides where that character sits while grouping is on, because a position cannot be shared.
 - **Locations:** Assign a location to a token – region, city, district, building, or realm. Factions answer who someone belongs to, locations answer where they are, and either can drive the visual grouping.
 - **Gravity Center (Boss Nodes):** Magnetically anchor important actors (e.g., villains) to the center of the graph with a customizable glowing aura.
 - **Visual Grouping:** Group actors (e.g., by location) with visual bounding boxes or cluster zones.
@@ -91,7 +91,7 @@ For the current development status and planned features, please refer to the [TO
 - **Spielersichere Akteur-Bearbeitung:** Verdeckte Kontakte schützen GM-Geheimnisse, während Spieler erlaubte Aliasnamen, Spielernotizen und sichere Informationen weiterhin pflegen können.
 - **Gemeinsames Bearbeiten (optional):** Statt einer exklusiven Sperre können mehrere Personen gleichzeitig am Graphen arbeiten. Speichern führt die Änderungen feldweise mit dem gespeicherten Stand zusammen, sodass zwei Leute an verschiedenen Dingen sich nicht mehr gegenseitig überschreiben. Physik-Drift wird dabei bewusst verworfen – nur gezogene Positionen zählen als Absicht.
 - **Präzises Drag & Drop:** Korrigierte Koordinaten-Berechnung sorgt dafür, dass Tokens beim Ziehen exakt unter der Maus bleiben, auch wenn du gezoomt hast.
-- **Rollen & Fraktionen:** Weise Rollen oder Fraktionen zu, um dem Netzwerk eine völlig neue Organisationstiefe zu verleihen.
+- **Rollen & Fraktionen:** Weise Rollen und Fraktionen zu. Ein Charakter kann **mehreren Fraktionen zugleich** angehören — jede bekommt einen eigenen Bogen auf dem Tokenring und eigene Mitgliederlinien. Eine davon trägt einen Stern und bestimmt, wo der Charakter steht, solange die Gruppierung an ist; einen Platz kann man sich nicht teilen.
 - **Orte:** Ordne einem Token einen Ort zu – Region, Stadt, Viertel, Gebäude oder Reich. Fraktionen beantworten, wem jemand angehört, Orte beantworten, wo jemand ist; nach beidem lässt sich der Graph gruppieren.
 - **Zentrums-Gravitation (Boss-Knoten):** Verankere wichtige Akteure magnetisch in der Mitte des Graphen, inklusive leuchtender Aura.
 - **Visuelle Gruppierung:** Fasse Akteure (z.B. nach Standort) optisch in Gruppen oder Zonen zusammen.
