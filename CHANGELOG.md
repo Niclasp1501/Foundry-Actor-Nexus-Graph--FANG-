@@ -25,6 +25,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **Knopf in der Blattansicht von Ninjo's In-Person Tools.** FANG meldet seinen Knopf jetzt über deren Schnittstelle (`api.sheetView.registerButton`) an, statt nur nach Sheet Onlys Leiste zu suchen. Beide Wege bleiben: Wer Sheet Only nutzt, sieht den Knopf dort wie bisher.
 
 ### Fixed
+- **Das Bild eines Knotens folgt jetzt seinem Akteur.** Beim Hinzufuegen wurde eine Kopie des Bildes gespeichert und beim Zeichnen bevorzugt; ein spaeter geaendertes Portraet oder Token erreichte den Graphen deshalb nie. Gezeichnet wird jetzt zuerst das Bild des Akteurs. Die gespeicherte Kopie bleibt als Rueckfall fuer die Faelle, in denen es keinen Akteur zu lesen gibt: ein Spieler, der ihn nicht sehen darf und ihn deshalb gar nicht hat, und ein geloeschter Akteur. Gemeldet von @taylor-nightingale (#7).
+
+  Aendert sich ein Akteur, verwirft FANG ausserdem das zwischengespeicherte Bild — sonst bliebe das alte bis zum naechsten Oeffnen stehen — und zieht bei der Spielleitung Kopie und Name nach. Der Name folgt dabei nur, wenn der Knoten nie von Hand umbenannt wurde; sonst bleibt er stehen und nur der hinterlegte echte Name wandert mit.
+
 - **Rückblicke tauchten in der Chronik nicht auf.** Die Anzeige verwarf jeden Eintrag ohne Text — sinnvoll, solange Text das Einzige war, was ein Eintrag zeigen konnte. Seit dem Wegfall der Kurzfassung trägt ein Rückblick bewusst keinen Spielertext, weil sein Inhalt auf der Journalseite steht; damit verschwand er bei Spielern immer und bei der Spielleitung, sobald auch die GM-Notiz leer blieb. Eine Überschrift oder eine Seite zum Öffnen zählen jetzt ebenfalls. Die Einträge waren nie verloren, nur nicht gezeigt.
 
 - **Die Gestaltung des Eingabeformulars war seit dem Umbau der Zeitachse weg.** Der Bereichsersatz in `fang.css` griff weiter als beabsichtigt und nahm den Wann-Schalter, die Tag-Monat-Jahr-Auswahl, die Vorschauzeile des gewählten Datums und den Hinweis „Erfahren am …“ mit. Die Regeln stehen wieder da.

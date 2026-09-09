@@ -820,6 +820,14 @@ Hooks.on("renderJournalTextPageSheet", (app, html, data) => {
   $html.find(".fang-open-btn").on("click", _fangOpenGraphFromJournalButtonEvent);
 });
 
+// An actor's picture or name changed. The graph reads the picture from the actor now, so a
+// client only has to let go of its cached image; the GM additionally keeps the node's own
+// copy of picture and name in step, because that copy is what a player who may not see the
+// actor gets to see. Optional call: a client can hold a cached older fang-app.js.
+Hooks.on("updateActor", async (actor, changes) => {
+  if (fangApp) await fangApp._onActorUpdated?.(actor, changes);
+});
+
 // Auto-Release lock on Disconnect
 Hooks.on("userConnected", async (user, connected) => {
   // In collaborative mode the banner lists who else is in the graph — keep it honest

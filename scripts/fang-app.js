@@ -3831,7 +3831,52 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         if (node?.isPlaceholder) {
             return normalizedNodeImg || FANG_DEFAULT_PLACEHOLDER_IMG;
         }
-        return normalizedNodeImg || actor?.prototypeToken?.texture?.src || actor?.img || "icons/svg/mystery-man.svg";
+        // The actor first, the stored copy second. The other way round froze the picture at
+        // the moment the node was added, so changing a portrait never reached the graph.
+        // node.img still matters: a player who may not see the actor does not have it in
+        // their collection at all, and nobody has it once the actor is deleted.
+        return actor?.prototypeToken?.texture?.src || actor?.img || normalizedNodeImg || "icons/svg/mystery-man.svg";
+    }
+
+    /**
+     * An actor changed. Three fields matter here - its own picture, its token's picture and
+     * its name. Everything else an actor does fires this hook too (hit points, items, effects),
+     * and none of that may cost a graph save.
+     */
+    async _onActorUpdated(actor, changes = {}) {
+        if (!actor) return;
+        const bildGeaendert = ("img" in changes) || changes.prototypeToken?.texture?.src !== undefined;
+        const nameGeaendert = typeof changes.name === "string";
+        if (!bildGeaendert && !nameGeaendert) return;
+
+        const nodes = (this.graphData?.nodes || []).filter(node => node && !node.isPlaceholder
+            && (node.actorId === actor.id || node.id === actor.id));
+        if (!nodes.length) return;
+
+        let zuSpeichern = false;
+        for (const node of nodes) {
+            // The drawn image is cached on the node. Without dropping it the canvas keeps
+            // painting the old portrait until the window is reopened.
+            if (bildGeaendert) node.imgElement = null;
+            if (!game.user?.isGM) continue;
+
+            if (bildGeaendert) {
+                const neuesBild = actor.prototypeToken?.texture?.src || actor.img || null;
+                if (node.img !== neuesBild) { node.img = neuesBild; zuSpeichern = true; }
+            }
+
+            if (nameGeaendert) {
+                // A node whose name still equals originalName was never renamed by hand, so it
+                // follows the actor. A renamed one keeps its name - only originalName moves,
+                // so the GM still sees who is really behind it.
+                const nieUmbenannt = !node.originalName || node.name === node.originalName;
+                if (nieUmbenannt && node.name !== actor.name) { node.name = actor.name; zuSpeichern = true; }
+                if (node.originalName !== actor.name) { node.originalName = actor.name; zuSpeichern = true; }
+            }
+        }
+
+        if (zuSpeichern) await this.saveData();
+        if (this.rendered) this.ticked();
     }
 
     _buildPlaceholderNode({
