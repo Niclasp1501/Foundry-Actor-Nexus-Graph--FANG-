@@ -5832,45 +5832,6 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         await this._openPanelEditor({
             title: localize("FANG.ActorEditor.Title", "Edit Actor"),
             content,
-            render: (html) => {
-                const liste = html.find("#fang-profile-factions");
-                const zeichne = () => {
-                    liste.find(".fang-faction-pick").each((_, el) => {
-                        const id = el.dataset.factionId;
-                        const dabei = gewaehlteFraktionen.includes(id);
-                        const primaer = gewaehlteFraktionen[0] === id;
-                        el.classList.toggle("is-on", dabei);
-                        $(el).find(".fang-faction-check").prop("checked", dabei);
-                        const stern = $(el).find(".fang-faction-primary");
-                        stern.toggleClass("is-primary", primaer).attr("aria-pressed", primaer ? "true" : "false");
-                        stern.find("i").attr("class", `${primaer ? "fas" : "far"} fa-star`);
-                        // With one faction there is nothing to choose, so the star would only
-                        // be a button that changes nothing.
-                        stern.toggle(gewaehlteFraktionen.length > 1 && dabei);
-                    });
-                };
-
-                liste.find(".fang-faction-check").on("change", (e) => {
-                    const id = e.currentTarget.closest(".fang-faction-pick")?.dataset.factionId;
-                    if (!id) return;
-                    if (e.currentTarget.checked) {
-                        if (!gewaehlteFraktionen.includes(id)) gewaehlteFraktionen.push(id);
-                    } else {
-                        gewaehlteFraktionen = gewaehlteFraktionen.filter(x => x !== id);
-                    }
-                    zeichne();
-                });
-
-                liste.find(".fang-faction-primary").on("click", (e) => {
-                    e.preventDefault();
-                    const id = e.currentTarget.closest(".fang-faction-pick")?.dataset.factionId;
-                    if (!id || !gewaehlteFraktionen.includes(id)) return;
-                    gewaehlteFraktionen = [id, ...gewaehlteFraktionen.filter(x => x !== id)];
-                    zeichne();
-                });
-
-                zeichne();
-            },
             buttons: {
                 save: {
                     icon: '<i class="fas fa-save"></i>',
@@ -5947,6 +5908,46 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             },
             default: "save",
             render: (html, dialog) => {
+                // Everything the faction picker needs, before the GM-only part below: a player
+                // who may edit an open node gets the same list.
+                const liste = html.find("#fang-profile-factions");
+                const zeichneFraktionen = () => {
+                    liste.find(".fang-faction-pick").each((_, el) => {
+                        const id = el.dataset.factionId;
+                        const dabei = gewaehlteFraktionen.includes(id);
+                        const primaer = gewaehlteFraktionen[0] === id;
+                        el.classList.toggle("is-on", dabei);
+                        $(el).find(".fang-faction-check").prop("checked", dabei);
+                        const stern = $(el).find(".fang-faction-primary");
+                        stern.toggleClass("is-primary", primaer).attr("aria-pressed", primaer ? "true" : "false");
+                        stern.find("i").attr("class", `${primaer ? "fas" : "far"} fa-star`);
+                        // With one faction there is nothing to choose, so the star would only
+                        // be a button that changes nothing.
+                        stern.toggle(gewaehlteFraktionen.length > 1 && dabei);
+                    });
+                };
+
+                liste.find(".fang-faction-check").on("change", (e) => {
+                    const id = e.currentTarget.closest(".fang-faction-pick")?.dataset.factionId;
+                    if (!id) return;
+                    if (e.currentTarget.checked) {
+                        if (!gewaehlteFraktionen.includes(id)) gewaehlteFraktionen.push(id);
+                    } else {
+                        gewaehlteFraktionen = gewaehlteFraktionen.filter(x => x !== id);
+                    }
+                    zeichneFraktionen();
+                });
+
+                liste.find(".fang-faction-primary").on("click", (e) => {
+                    e.preventDefault();
+                    const id = e.currentTarget.closest(".fang-faction-pick")?.dataset.factionId;
+                    if (!id || !gewaehlteFraktionen.includes(id)) return;
+                    gewaehlteFraktionen = [id, ...gewaehlteFraktionen.filter(x => x !== id)];
+                    zeichneFraktionen();
+                });
+
+                zeichneFraktionen();
+
                 if (!isGM) return;
                 html.find("#fang-profile-gm-journal").on("click", async () => this._openNodeJournal(node));
                 html.find("#fang-profile-replace").on("click", async () => {

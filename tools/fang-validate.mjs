@@ -144,6 +144,78 @@ for (const file of [...localeFiles, "README.md", "TODO.md", "DEVELOPER_GUIDE.md"
   fs.rmSync(tmpDir, { recursive: true, force: true });
 }
 
+// Duplicate keys in a dialog's option object.
+//
+// A second "render:" in the same object literal silently wins over the first, and the wiring
+// in the first one never runs: no error, no warning, the dialog simply does nothing when you
+// click. That shipped once, in the faction picker, and cost a beta tester an evening. JavaScript
+// allows duplicate keys even in strict mode, so no parser will ever report this.
+//
+// The scan is deliberately narrow: it walks the option object of the calls FANG builds its
+// dialogs from and only looks at keys directly inside it. Nested objects are skipped, because
+// "callback" appearing once per button is correct.
+{
+  const scriptDir = path.join(root, "scripts");
+  const files = fs.existsSync(scriptDir)
+    ? fs.readdirSync(scriptDir).filter((file) => /\.(js|mjs)$/.test(file)).sort()
+    : [];
+
+  for (const file of files) {
+    const text = fs.readFileSync(path.join(scriptDir, file), "utf8");
+    const opener = /(_openPanelEditor|_openDialog|DialogV2\.wait)\s*\(\s*\{/g;
+    let match;
+    while ((match = opener.exec(text)) !== null) {
+      const start = opener.lastIndex - 1;           // auf die Klammer selbst
+      const seen = new Map();
+      let depth = 0;
+      let i = start;
+      let inString = null;
+      let inLineComment = false;
+      let inBlockComment = false;
+
+      for (; i < text.length; i++) {
+        const c = text[i];
+        const next = text[i + 1];
+
+        if (inLineComment) { if (c === "\n") inLineComment = false; continue; }
+        if (inBlockComment) { if (c === "*" && next === "/") { inBlockComment = false; i++; } continue; }
+        if (inString) {
+          if (c === "\\") { i++; continue; }
+          // A template literal can hold ${ ... } with braces of its own; those are counted
+          // by the depth below, which is why the string state is left on the closing quote only.
+          if (c === inString) inString = null;
+          continue;
+        }
+        if (c === "/" && next === "/") { inLineComment = true; i++; continue; }
+        if (c === "/" && next === "*") { inBlockComment = true; i++; continue; }
+        if (c === '"' || c === "'" || c === "`") { inString = c; continue; }
+
+        if (c === "{" || c === "(" || c === "[") { depth++; continue; }
+        if (c === "}" || c === ")" || c === "]") { depth--; if (depth === 0) break; continue; }
+
+        // Only keys sitting directly inside the option object count.
+        if (depth === 1 && /[A-Za-z_$]/.test(c)) {
+          const rest = text.slice(i);
+          const key = /^([A-Za-z_$][\w$]*)\s*:/.exec(rest);
+          if (key) {
+            const line = text.slice(0, i).split("\n").length;
+            if (seen.has(key[1])) {
+              errors.push(`scripts/${file}:${line}: duplicate option key "${key[1]}" in ${match[1]}(...) - the later one silently wins (first at line ${seen.get(key[1])})`);
+            } else {
+              seen.set(key[1], line);
+            }
+            i += key[0].length - 1;
+          } else {
+            // Skip the rest of the identifier so "renderFoo" is not read as "render".
+            const wort = /^[\w$]+/.exec(rest);
+            if (wort) i += wort[0].length - 1;
+          }
+        }
+      }
+    }
+  }
+}
+
 if (warnings.length) {
   console.warn("Warnings:");
   for (const warning of warnings) console.warn(`- ${warning}`);

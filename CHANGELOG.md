@@ -33,6 +33,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **Knopf in der Blattansicht von Ninjo's In-Person Tools.** FANG meldet seinen Knopf jetzt über deren Schnittstelle (`api.sheetView.registerButton`) an, statt nur nach Sheet Onlys Leiste zu suchen. Beide Wege bleiben: Wer Sheet Only nutzt, sieht den Knopf dort wie bisher.
 
 ### Fixed
+- **Der Fraktionswähler tat nichts.** Kästchen ließen sich anhaken, der Stern ließ sich klicken, beim Speichern stand alles wieder wie vorher — ohne eine einzige Meldung in der Konsole. Der Grund: Das Optionsobjekt des Editors trug **zweimal `render`**, meinen neuen Block und einen älteren. JavaScript nimmt in so einem Fall den letzten und verwirft den ersten stillschweigend; die ganze Verdrahtung lief also nie. Sie steht jetzt im vorhandenen Block, und zwar vor dessen GM-Sperre, damit auch ein Spieler den Wähler bedienen kann. Gemeldet von @Axel-of-the-Key (#8).
+
+  Dagegen prüft `fang-validate` jetzt: Es liest das Optionsobjekt jedes Dialogaufrufs und meldet einen Schlüssel, der dort zweimal steht. Doppelte Schlüssel sind auch im strengen Modus erlaubt, kein Parser warnt davor — und der Fehler zeigt sich nur daran, dass eine Schaltfläche nichts tut. Gegen den ausgelieferten Stand geprüft: Die Regel findet ihn.
+
 - **Das Bild eines Knotens folgt jetzt seinem Akteur.** Beim Hinzufuegen wurde eine Kopie des Bildes gespeichert und beim Zeichnen bevorzugt; ein spaeter geaendertes Portraet oder Token erreichte den Graphen deshalb nie. Gezeichnet wird jetzt zuerst das Bild des Akteurs. Die gespeicherte Kopie bleibt als Rueckfall fuer die Faelle, in denen es keinen Akteur zu lesen gibt: ein Spieler, der ihn nicht sehen darf und ihn deshalb gar nicht hat, und ein geloeschter Akteur. Gemeldet von @taylor-nightingale (#7).
 
   Aendert sich ein Akteur, verwirft FANG ausserdem das zwischengespeicherte Bild — sonst bliebe das alte bis zum naechsten Oeffnen stehen — und zieht bei der Spielleitung Kopie und Name nach. Der Name folgt dabei nur, wenn der Knoten nie von Hand umbenannt wurde; sonst bleibt er stehen und nur der hinterlegte echte Name wandert mit.
