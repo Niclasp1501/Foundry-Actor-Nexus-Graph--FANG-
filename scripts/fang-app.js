@@ -408,6 +408,44 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         return types.find(type => type.id === typeId) || null;
     }
 
+    /**
+     * Every faction a node belongs to, primary first.
+     *
+     * factionIds is the truth. factionId stays as a mirror of its first entry, because three
+     * things outside this list still expect a single id: an older FANG reading a graph saved
+     * by a newer one, an exported file taken to another world, and the Diploglass sync that
+     * writes membership from another module. Keeping the mirror costs one line per write and
+     * saves a migration for all three.
+     */
+    _getNodeFactionIds(node) {
+        if (!node) return [];
+        const liste = Array.isArray(node.factionIds) ? node.factionIds.filter(Boolean).map(String) : [];
+        if (!liste.length && node.factionId) liste.push(String(node.factionId));
+        return [...new Set(liste)];
+    }
+
+    /**
+     * The one faction that decides where a node sits. Position cannot be shared: the cluster
+     * force pulls a node to a single point, and a faction's area is clamped to its own grid
+     * cell so two areas can never overlap. Everything that is only drawn - the ring, the
+     * member lines, the legend - takes the whole list.
+     */
+    _getPrimaryFactionId(node) {
+        return this._getNodeFactionIds(node)[0] ?? null;
+    }
+
+    /** Writes list and mirror together, so the two can never drift apart. */
+    _setNodeFactionIds(node, ids = []) {
+        if (!node) return;
+        const liste = [...new Set((ids || []).filter(Boolean).map(String))];
+        node.factionIds = liste;
+        node.factionId = liste[0] ?? null;
+    }
+
+    _nodeBelongsToFaction(node, factionId) {
+        return !!factionId && this._getNodeFactionIds(node).includes(String(factionId));
+    }
+
     _isFactionVisibleToCurrentUser(faction) {
         if (!faction) return false;
         return game.user.isGM || faction.playerVisible !== false;
@@ -426,8 +464,10 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
     _canUserSeeNode(node, user = game.user) {
         if (!node) return false;
         if (!user?.isGM && node.gmOnly === true) return false;
-        // Hidden nodes are still player-managed contacts. Players may interact
-        // with their safe facade, but must never receive the real identity.
+        // Hidden nodes are still player-managed contacts, so a player keeps interacting
+        // with the safe facade. Note what this does and does not do: it decides what gets
+        // drawn, not what gets sent. The real name travels to every client inside the graph
+        // flag either way - see "Visibility is a display filter" in AGENTS.md.
         return true;
     }
 
@@ -518,10 +558,248 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         return escapeHtml(String(value ?? ""));
     }
 
+    /**
+     * The game days the chronicle already knows, newest first. Offering these as a list is what
+     * makes back-dating reliable: typing "12. Hammer" a second time with a different spelling
+     * used to create a second day group that looks identical and sorts somewhere else entirely.
+     */
+    /**
+     * What the active calendar offers a date picker: month names with their real lengths, and
+     * where "now" sits. Built from Foundry's own calendar, because that is the one that can
+     * convert components back into a timestamp. Returns null when there is no usable calendar --
+     * then the form falls back to a plain text field.
+     */
+    _getCalendarPickerModel() {
+        const calendar = game.time?.calendar;
+        if (!calendar || typeof calendar.componentsToTime !== "function" || typeof calendar.timeToComponents !== "function") return null;
+        const months = calendar.months?.values;
+        if (!Array.isArray(months) || !months.length) return null;
+
+        const now = calendar.timeToComponents(Number.isFinite(game.time?.worldTime) ? game.time.worldTime : 0);
+        const year = this._calendarNumber(now?.year) ?? 0;
+        const leap = typeof calendar.isLeapYear === "function";
+        // Foundry's own year is not the one anybody reads. In this world the core calendar says
+        // -66 where Calendaria says 1435, and putting -66 in the year field would be nonsense to
+        // everyone but the parser. Show their reckoning, convert back when reading.
+        let yearOffset = 0;
+        for (const candidate of this._getCalendarApiCandidates()) {
+            const offsets = this._getCalendarModuleOffsets(candidate.api);
+            if (offsets) { yearOffset = offsets.year; break; }
+        }
+        return {
+            year,
+            yearOffset,
+            displayYear: year + yearOffset,
+            monthIndex: this._calendarNumber(now?.month) ?? 0,
+            dayIndex: this._calendarNumber(now?.dayOfMonth ?? now?.day) ?? 0,
+            months: months.map((month, index) => ({
+                index,
+                // Month names are i18n keys in every shipped calendar.
+                name: month?.name ? this._localize(month.name, month.name) : `${index + 1}`,
+                days: this._getCalendarMonthLength(month, year, leap ? calendar : null)
+            }))
+        };
+    }
+
+    _getCalendarMonthLength(month, year, calendarForLeap = null) {
+        const normal = this._calendarNumber(month?.days);
+        const leapDays = this._calendarNumber(month?.leapDays);
+        let days = normal;
+        if (leapDays !== null && calendarForLeap) {
+            try {
+                if (calendarForLeap.isLeapYear(year)) days = leapDays;
+            } catch (_err) {
+                // Calendar does not want to answer for this year -- the ordinary length will do.
+            }
+        }
+        return Math.max(1, days ?? 1);
+    }
+
+    /**
+     * How far a calendar module's reckoning is from Foundry's own. Harptos as shipped by
+     * Calendaria has yearZero 1501, so the module says 1501 where the core calendar says 0, and
+     * it counts months and days from one where the core counts from zero. Rather than hard-code
+     * any of that, the offset is measured against "now", which both sides can describe.
+     */
+    _getCalendarModuleOffsets(api) {
+        const calendar = game.time?.calendar;
+        if (!api || typeof calendar?.timeToComponents !== "function") return null;
+        let theirs = null;
+        try {
+            theirs = api.getCurrentDate?.() ?? api.currentDateTime?.() ?? api.currentDate?.() ?? api.getCurrentDateTime?.();
+        } catch (_err) {
+            return null;
+        }
+        const ours = calendar.timeToComponents(Number.isFinite(game.time?.worldTime) ? game.time.worldTime : 0);
+        const theirYear = this._calendarNumber(theirs?.year);
+        const theirMonth = this._calendarNumber(theirs?.month?.number ?? theirs?.month?.ordinal ?? theirs?.month);
+        const theirDay = this._calendarNumber(theirs?.day ?? theirs?.dayOfMonth);
+        const ourYear = this._calendarNumber(ours?.year);
+        const ourMonth = this._calendarNumber(ours?.month);
+        const ourDay = this._calendarNumber(ours?.dayOfMonth ?? ours?.day);
+        if ([theirYear, theirMonth, theirDay, ourYear, ourMonth, ourDay].some(v => v === null)) return null;
+        return { year: theirYear - ourYear, month: theirMonth - ourMonth, day: theirDay - ourDay };
+    }
+
+    /**
+     * Describe an arbitrary game day the same way detectCurrentGameDate describes today, so a
+     * hand-picked date carries a label and a sort key of exactly the same shape as an automatic
+     * one. Takes Foundry's own components; asks the calendar module first.
+     */
+    _describeGameDateForComponents(components) {
+        const calendar = game.time?.calendar;
+        if (!components || !calendar) return null;
+
+        for (const candidate of this._getCalendarApiCandidates()) {
+            const offsets = this._getCalendarModuleOffsets(candidate.api);
+            if (!offsets) continue;
+            const theirDate = {
+                year: this._calendarNumber(components.year) + offsets.year,
+                month: this._calendarNumber(components.month) + offsets.month,
+                day: this._calendarNumber(components.dayOfMonth ?? components.day) + offsets.day
+            };
+            const label = this._sanitizeCalendarLabel(this._formatWithCalendarModule(candidate.api, theirDate));
+            if (!this._calendarLabelLooksUsable(label)) continue;
+            // No time: the picker asks for a day, and midnight would be a claim nobody made.
+            return { label, sort: this._getCalendarSort(theirDate), time: "", source: candidate.source };
+        }
+
+        const label = this._buildCalendarLabelFromComponents(components, calendar);
+        if (!this._calendarLabelLooksUsable(label)) return null;
+        return { label, sort: this._getCalendarSort(components), time: "", source: "foundry-calendar" };
+    }
+
+    /** Turn a picked year/month/day into a game date, via the calendar so festivals land right. */
+    _describePickedGameDate(year, monthIndex, dayIndex) {
+        const calendar = game.time?.calendar;
+        if (!calendar) return null;
+        try {
+            const timestamp = calendar.componentsToTime({ year, month: monthIndex, dayOfMonth: dayIndex });
+            return this._describeGameDateForComponents(calendar.timeToComponents(timestamp));
+        } catch (_err) {
+            return this._describeGameDateForComponents({ year, month: monthIndex, dayOfMonth: dayIndex });
+        }
+    }
+
+    /**
+     * The journal that holds the long-form recaps, next to the graph's own journal in the same
+     * FANG folder. A separate entry rather than pages inside "FANG Graph": that one carries the
+     * graph in a flag and warns against touching it, which is no place for what the table writes.
+     */
+    async _getChronicleJournal({ createIfMissing = false } = {}) {
+        const name = this._localize("FANG.Journal.ChronicleName", "FANG Chronicle");
+        let journal = game.journal.getName(name);
+        if (journal || !createIfMissing || !game.user?.isGM) return journal ?? null;
+
+        const folderName = this._localize("FANG.Journal.FolderName", "FANG - Do Not Delete");
+        let folder = game.folders.find(f => f.name === folderName && f.type === "JournalEntry");
+        if (!folder) folder = await Folder.create({ name: folderName, type: "JournalEntry", color: "#8b0000" });
+
+        return JournalEntry.create({
+            name,
+            folder: folder?.id ?? null,
+            ownership: { default: CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER }
+        });
+    }
+
+    /**
+     * Open the recap page of an entry, creating it on first use.
+     *
+     * Players cannot create documents, so theirs is relayed to the GM, who creates the page,
+     * hands its author ownership of it and sends the id back. From then on the player edits their
+     * own recap in Foundry's journal editor without the graph's edit lock coming into it.
+     */
+    async _openRecapPage(entryId, { createIfMissing = true } = {}) {
+        const entry = this._getHistoryStore().entries.find(item => item.id === entryId);
+        if (!entry) return false;
+
+        if (entry.recapPageId) {
+            const journal = await this._getChronicleJournal();
+            const page = journal?.pages?.get(entry.recapPageId);
+            if (page) { journal.sheet.render(true, { pageId: page.id }); return true; }
+            // The page was deleted outside FANG. Forget it rather than pointing at nothing.
+            if (game.user?.isGM) await this._updateHistoryEntry(entryId, { recapPageId: null });
+        }
+        if (!createIfMissing) return false;
+
+        if (!game.user?.isGM) {
+            game.socket.emit("module.fang", { action: "playerRequestRecapPage", payload: { entryId, userId: game.user.id } });
+            ui.notifications.info(this._localize("FANG.History.RecapRequested", "Asking the GM to create the page..."));
+            return true;
+        }
+
+        const pageId = await this._createRecapPage(entry, entry.authorUserId || game.user.id);
+        if (!pageId) return false;
+        const journal = await this._getChronicleJournal();
+        journal?.sheet?.render(true, { pageId });
+        return true;
+    }
+
+    /** Create the page for an entry and remember its id. Returns the page id. */
+    async _createRecapPage(entry, ownerUserId = null) {
+        if (!game.user?.isGM || !entry) return null;
+        const journal = await this._getChronicleJournal({ createIfMissing: true });
+        if (!journal) return null;
+
+        const title = entry.title || this._localize("FANG.History.Untitled", "Untitled insight");
+        const day = entry.gameDate?.label ? ` (${entry.gameDate.label})` : "";
+        // The author owns their own recap; everyone else may read it. The entry's own
+        // visibility still decides whether the entry shows up in a player's chronicle at all.
+        const ownership = { default: CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER };
+        if (ownerUserId && game.users.get(ownerUserId) && !game.users.get(ownerUserId).isGM) {
+            ownership[ownerUserId] = CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER;
+        }
+        const page = await JournalEntryPage.create({
+            name: `${title}${day}`,
+            type: "text",
+            ownership,
+            text: { content: entry.playerText ? `<p>${this._escapeHtml(entry.playerText)}</p>` : "" }
+        }, { parent: journal });
+        if (!page) return null;
+        await this._updateHistoryEntry(entry.id, { recapPageId: page.id });
+        return page.id;
+    }
+
+    /**
+     * Whose recap this is. A recap belongs to a character, not to a login, so the list is the
+     * characters players actually have assigned; the graph's own nodes come along when the
+     * character sits in it, because that is what lets the recap show up in the token's chronicle.
+     * A GM writing on someone's behalf picks from the same list.
+     */
+    _getRecapAuthors({ user = game.user } = {}) {
+        const gesehen = new Set();
+        const liste = [];
+        const nimm = (actor, benutzer) => {
+            if (!actor || gesehen.has(actor.id)) return;
+            gesehen.add(actor.id);
+            liste.push({ actorId: actor.id, name: actor.name, userId: benutzer?.id ?? null });
+        };
+
+        if (user?.isGM) for (const u of game.users) { if (!u.isGM) nimm(u.character, u); }
+        else nimm(user?.character, user);
+
+        // Nobody has a character assigned: fall back to the person, so the field is never empty.
+        if (!liste.length) liste.push({ actorId: null, name: user?.name || "", userId: user?.id ?? null });
+        return liste;
+    }
+
+    _getKnownGameDays({ user = game.user } = {}) {
+        const days = [];
+        const seen = new Set();
+        for (const entry of this._getHistoryEntriesForUser({ user })) {
+            const label = entry.gameDate?.label;
+            if (!label || seen.has(label)) continue;
+            seen.add(label);
+            days.push({ label, sort: String(entry.gameDate?.sort || ""), source: String(entry.gameDate?.source || "manual") });
+        }
+        return days;
+    }
+
     _getHistoryCategories() {
         return [
             { kind: "encounter", icon: "fa-handshake", label: this._localize("FANG.History.Categories.Encounter", "Encounter") },
             { kind: "insight", icon: "fa-lightbulb", label: this._localize("FANG.History.Categories.Insight", "Insight") },
+            { kind: "flashback", icon: "fa-clock-rotate-left", label: this._localize("FANG.History.Categories.Flashback", "Flashback") },
             { kind: "quest", icon: "fa-scroll", label: this._localize("FANG.History.Categories.Quest", "Quest") },
             { kind: "relationship", icon: "fa-link", label: this._localize("FANG.History.Categories.Relationship", "Relationship") },
             { kind: "faction", icon: "fa-users", label: this._localize("FANG.History.Categories.Faction", "Faction") },
@@ -533,8 +811,17 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         return this._getHistoryCategories().find(category => category.kind === kind) || this._getHistoryCategories().find(category => category.kind === "insight");
     }
 
+    /**
+     * What may be chosen by hand when writing an entry.
+     *
+     * "flashback" is the session recap: it belongs to a character and its text lives on a journal
+     * page. That is what the kind means, and the form asks whose recap it is, so the meaning holds
+     * whoever fills the form in. It was briefly hidden from the GM on the reading that the kind
+     * was "for players" -- which took away the one case that needs a GM most, writing up the
+     * session for someone who was not there.
+     */
     _getManualHistoryCategories() {
-        return this._getHistoryCategories().filter(category => ["encounter", "insight", "note"].includes(category.kind));
+        return this._getHistoryCategories().filter(category => ["encounter", "insight", "flashback", "note"].includes(category.kind));
     }
 
     _getHistoryType(type) {
@@ -588,6 +875,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         return {
             label,
             sort: String(gameDate?.sort || ""),
+            // Time of day, "HH:MM", empty when the calendar could not say or nobody chose one.
+            // Entries keep the hour they were written at, which is what orders a busy day.
+            time: /^\d{1,2}:\d{2}$/.test(String(gameDate?.time || "")) ? String(gameDate.time) : "",
             source: String(gameDate?.source || "manual")
         };
     }
@@ -673,14 +963,60 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         return sanitized || null;
     }
 
+    _safeCalendarFormat(calendar, timestamp, formatter) {
+        try {
+            const value = calendar.format(timestamp, formatter, { includeTime: false });
+            return typeof value === "string" ? value.trim() : "";
+        } catch (_err) {
+            return "";
+        }
+    }
+
+    /** "0000-04-11 00:00:00" -> "0000-04-11". The timestamp formatter ignores includeTime. */
+    _stripClockFromLabel(label) {
+        return String(label || "").replace(/[s,]+d{1,2}:d{2}(:d{2})?$/, "").trim();
+    }
+
+    /**
+     * Assemble "11. April 0" from Foundry's TimeComponents when the calendar offers no readable
+     * formatter. Month and dayOfMonth are zero-based there, and month names are i18n keys.
+     */
+    _buildCalendarLabelFromComponents(components, calendar) {
+        if (!components || typeof components !== "object") return "";
+        const year = this._calendarNumber(components.year);
+        const monthIndex = this._calendarNumber(components.month);
+        const dayIndex = this._calendarNumber(components.dayOfMonth ?? components.day);
+        if (year === null || monthIndex === null || dayIndex === null) return "";
+        const months = calendar?.months?.values ?? calendar?.months;
+        const rawName = Array.isArray(months) ? (months[monthIndex]?.name || months[monthIndex]?.abbreviation || "") : "";
+        const monthName = rawName ? this._localize(rawName, rawName) : "";
+        return monthName
+            ? `${dayIndex + 1}. ${monthName} ${year}`
+            : `${dayIndex + 1}.${monthIndex + 1}.${year}`;
+    }
+
     _getCalendarSort(dateLike) {
         if (!dateLike || typeof dateLike !== "object") return "";
-        const year = dateLike.year ?? dateLike.y;
-        const monthValue = dateLike.month?.number ?? dateLike.month?.value ?? dateLike.month?.index ?? dateLike.month;
-        const day = dateLike.day ?? dateLike.dayOfMonth ?? dateLike.date?.day;
-        if (year === undefined || monthValue === undefined || day === undefined) return "";
+        const year = this._calendarNumber(dateLike.year ?? dateLike.y);
+        const monthValue = this._calendarNumber(dateLike.month?.number ?? dateLike.month?.value ?? dateLike.month?.index ?? dateLike.month);
+        // Foundry's TimeComponents carries BOTH fields: "day" is the day of the YEAR, "dayOfMonth" the
+        // day within the month. Reading "day" first produced keys like "000000-03-100" for day 100,
+        // which sorts before "000000-03-99" as a string. Calendar modules only ever send "day", so
+        // prefer dayOfMonth whenever both are present.
+        const hasBothDayFields = dateLike.dayOfMonth !== undefined && dateLike.day !== undefined;
+        const day = this._calendarNumber(hasBothDayFields ? dateLike.dayOfMonth : (dateLike.day ?? dateLike.dayOfMonth ?? dateLike.date?.day));
+        if (year === null || monthValue === null || day === null) return "";
         const month = Number(monthValue) + (dateLike.month?.index !== undefined ? 1 : 0);
-        return `${String(year).padStart(6, "0")}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+        // Three digits for the day so that a day-of-year value still compares numerically.
+        //
+        // Negative years happen: a calendar module carries the campaign epoch, so a world whose
+        // module FANG does not know falls back to Foundry's own reckoning, where the present can
+        // sit before year zero. Padding the absolute value reverses them -- "-000009" sorts before
+        // "-000066", making year -9 look older than -66. The complement restores the order, and
+        // leaves every non-negative key byte-for-byte what it was, so existing entries still
+        // interleave correctly.
+        const yearKey = year < 0 ? `-${String(999999 + year).padStart(6, "0")}` : String(year).padStart(6, "0");
+        return `${yearKey}-${String(month).padStart(3, "0")}-${String(day).padStart(3, "0")}`;
     }
 
     _calendarLabelLooksUsable(label) {
@@ -704,6 +1040,31 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         return candidates.filter(candidate => candidate.api && typeof candidate.api === "object");
     }
 
+    /**
+     * Ask a calendar module to render a date. Each module wants its own arguments -- Calendaria's
+     * formatDate takes a token string and turns an options object into "n.replace is not a
+     * function", while others expect exactly that object. A module that refuses one call must not
+     * cost us the date entirely, so every attempt stands on its own and the no-argument form (the
+     * module's own default rendering) is tried first.
+     */
+    _formatWithCalendarModule(api, dateLike) {
+        if (!api || !dateLike) return "";
+        const attempts = [
+            () => api.formatDate(dateLike),
+            () => api.formatDate(dateLike, { includeTime: false, format: "long" }),
+            () => api.formatDateTime(dateLike)
+        ];
+        for (const attempt of attempts) {
+            try {
+                const value = attempt();
+                if (typeof value === "string" && value.trim()) return value.trim();
+            } catch (_err) {
+                // Next shape.
+            }
+        }
+        return "";
+    }
+
     _detectCalendarApiGameDate() {
         const timestamp = Number.isFinite(game.time?.worldTime) ? game.time.worldTime : 0;
         for (const candidate of this._getCalendarApiCandidates()) {
@@ -716,14 +1077,19 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     || api.getCurrentDateTime?.()
                     || (typeof api.worldTimeToDate === "function" ? api.worldTimeToDate(timestamp) : null)
                     || (typeof api.timestampToDate === "function" && Number.isFinite(apiTimestamp) ? api.timestampToDate(apiTimestamp) : null);
-                const formatted = typeof api.formatDate === "function" && dateLike
-                    ? api.formatDate(dateLike, { includeTime: false, format: "long" })
-                    : (typeof api.formatDateTime === "function" && dateLike ? api.formatDateTime(dateLike) : "");
-                const label = this._formatCalendarDateObject(dateLike, api, formatted) || (typeof formatted === "string" ? this._sanitizeCalendarLabel(formatted) : "");
+                const formatted = this._formatWithCalendarModule(api, dateLike);
+                const built = this._formatCalendarDateObject(dateLike, api, formatted);
+                // Three sources, in order of trust. A label we assembled ourselves is best -- but
+                // only when it carries a month NAME; without one it degrades to "1.1.1501", and the
+                // module's own rendering ("1 Hammer, 1501") is plainly better than that.
+                const label = built && /\p{L}/u.test(built)
+                    ? built
+                    : (this._calendarLabelLooksUsable(formatted) ? this._sanitizeCalendarLabel(formatted) : built);
                 if (!this._calendarLabelLooksUsable(label)) continue;
                 return {
                     label,
                     sort: this._getCalendarSort(dateLike),
+                    time: this._formatCalendarTime(dateLike),
                     source: candidate.source
                 };
             } catch (err) {
@@ -739,19 +1105,21 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         try {
             const timestamp = Number.isFinite(game.time?.worldTime) ? game.time.worldTime : undefined;
             const components = typeof calendar.timeToComponents === "function" ? calendar.timeToComponents(timestamp) : null;
-            const label = ["date", "timestamp"]
-                .map(formatter => {
-                    try {
-                        return calendar.format(timestamp, formatter, { includeTime: false });
-                    } catch (_err) {
-                        return "";
-                    }
-                })
-                .find(value => this._calendarLabelLooksUsable(value));
-            if (!label) return null;
+            // Foundry resolves a formatter name either from CONFIG.time.formatters or from a static
+            // method on the calendar class. The base class registers only "timestamp", "duration" and
+            // "ago" -- and "timestamp" renders a machine string like "0000-04-11 00:00:00" that also
+            // ignores includeTime. Systems add readable ones (dnd5e ships formatMonthDayYear), so try
+            // those first, then build the label from the components, and keep the timestamp last.
+            const label = ["formatMonthDayYear", "formatMonthDay", "date"]
+                .map(formatter => this._safeCalendarFormat(calendar, timestamp, formatter))
+                .find(value => this._calendarLabelLooksUsable(value))
+                || this._buildCalendarLabelFromComponents(components, calendar)
+                || this._stripClockFromLabel(this._safeCalendarFormat(calendar, timestamp, "timestamp"));
+            if (!this._calendarLabelLooksUsable(label)) return null;
             return {
                 label,
                 sort: this._getCalendarSort(components),
+                time: this._formatCalendarTime(components),
                 source: "foundry-calendar"
             };
         } catch (err) {
@@ -772,10 +1140,38 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             return { ...lastDate, source: "last-used" };
         }
 
+        // Nothing calendrical anywhere: fall back to the real date. A world without a calendar
+        // still deserves entries that order themselves and carry something a reader can place --
+        // "Unscheduled" on every single one tells nobody anything.
+        return this._describeRealWorldDate(new Date());
+    }
+
+    /**
+     * Describe a real-world date the way a game date is described, so both kinds travel through
+     * the same store, sort with the same comparison and render in the same places.
+     */
+    /** "YYYY-MM-DD" for an <input type="date">, in local time rather than UTC. */
+    _toDateInputValue(date) {
+        const when = date instanceof Date && !Number.isNaN(date.valueOf()) ? date : new Date();
+        const pad = (value) => String(value).padStart(2, "0");
+        return `${when.getFullYear()}-${pad(when.getMonth() + 1)}-${pad(when.getDate())}`;
+    }
+
+    _describeRealWorldDate(date) {
+        const when = date instanceof Date && !Number.isNaN(date.valueOf()) ? date : new Date();
+        const pad = (value, width) => String(value).padStart(width, "0");
+        let label = "";
+        try {
+            label = new Intl.DateTimeFormat(game.i18n?.lang || undefined, { dateStyle: "long" }).format(when);
+        } catch (_err) {
+            label = `${when.getFullYear()}-${pad(when.getMonth() + 1, 2)}-${pad(when.getDate(), 2)}`;
+        }
         return {
-            label: this._localize("FANG.History.UnknownDate", "Unscheduled"),
-            sort: "",
-            source: "unknown"
+            label,
+            // Same 6-3-3 shape as a game date, so the chronicle's ordering needs no special case.
+            sort: `${pad(when.getFullYear(), 6)}-${pad(when.getMonth() + 1, 3)}-${pad(when.getDate(), 3)}`,
+            time: `${pad(when.getHours(), 2)}:${pad(when.getMinutes(), 2)}`,
+            source: "real-time"
         };
     }
 
@@ -814,6 +1210,13 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             playerText: String(entry.playerText || entry.text || ""),
             gmText: String(entry.gmText || ""),
             editableByPlayers: entry.editableByPlayers !== false,
+            // When the group learned of it, if that is not the day it happened. The entry still
+            // belongs to the day of the event -- this only records that it was a revelation.
+            knownSince: entry.knownSince?.label ? this._normalizeGameDate(entry.knownSince) : null,
+            // Id of the journal page holding the long form of this entry, if it has one.
+            // A recap is prose, and prose does not belong in a world setting that is rewritten
+            // and broadcast in full every time a token appears.
+            recapPageId: entry.recapPageId ? String(entry.recapPageId) : null,
             refs,
             payload: entry.payload && typeof entry.payload === "object" ? foundry.utils.duplicate(entry.payload) : {}
         };
@@ -830,6 +1233,30 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             .map(entry => this._getHistoryEntryForUser(entry, user))
             .filter(Boolean)
             .sort((a, b) => {
+                // The chronicle is ordered by GAME day, newest first -- not by the real-world moment
+                // the entry was typed. Anything typed up later still lands on its own day.
+                const aSort = String(a.gameDate?.sort || "");
+                const bSort = String(b.gameDate?.sort || "");
+                if (aSort !== bSort) {
+                    // Undated entries collect at the end rather than jumping to the top.
+                    if (!aSort) return 1;
+                    if (!bSort) return -1;
+                    return bSort.localeCompare(aSort);
+                }
+                if (!aSort) {
+                    // Without a sortable date, at least keep entries of the same label together.
+                    const labelCompare = String(a.gameDate?.label || "").localeCompare(String(b.gameDate?.label || ""));
+                    if (labelCompare) return labelCompare;
+                }
+                // Same game day: the later hour comes first. Entries without a time fall back to
+                // the order they were written in, and sort after the ones that have one.
+                const aTime = String(a.gameDate?.time || "");
+                const bTime = String(b.gameDate?.time || "");
+                if (aTime !== bTime) {
+                    if (!aTime) return 1;
+                    if (!bTime) return -1;
+                    return bTime.padStart(5, "0").localeCompare(aTime.padStart(5, "0"));
+                }
                 const orderCompare = String(b.orderKey || b.createdAt).localeCompare(String(a.orderKey || a.createdAt));
                 if (orderCompare) return orderCompare;
                 return String(b.createdAt || "").localeCompare(String(a.createdAt || ""));
@@ -846,8 +1273,12 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         // GM sees BOTH player and GM text side-by-side. Players see only the player text.
         const displayText = playerText;
         const displayGmText = isGM ? gmText : "";
-        if (!isGM && !playerText) return null;
-        if (isGM && !playerText && !gmText) return null;
+        // An entry has to show something, or it is a blank line in the log. Text was the only
+        // thing that counted until recaps arrived: those deliberately carry no player text,
+        // because their content sits on a journal page - so they vanished from every chronicle
+        // the moment the teaser field was dropped. A heading, or a page to open, is enough.
+        const zeigtEtwas = playerText || (isGM && gmText) || normalized.recapPageId || normalized.title;
+        if (!zeigtEtwas) return null;
         const displayRefs = this._getHistoryDisplayRefs(normalized, user);
         if (!isGM && normalized.refs.some(ref => ref.type === "node") && !displayRefs.some(ref => ref.type === "node")) return null;
         return {
@@ -891,7 +1322,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         return true;
     }
 
-    async _createHistoryEntry({ node = null, refs = null, title, playerText, gmText, gameDate, kind, visibility, origin = "manual", type = "manual", editableByPlayers = true, authorUserId = null, authorName = "" }) {
+    async _createHistoryEntry({ node = null, refs = null, title, playerText, gmText, gameDate, knownSince = null, kind, visibility, origin = "manual", type = "manual", editableByPlayers = true, authorUserId = null, authorName = "", recapPageId = null }) {
         if (!game.user?.isGM) {
             if (!this._canCreateHistoryEntry(false)) return false;
             game.socket.emit("module.fang", {
@@ -902,6 +1333,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     title,
                     playerText,
                     gameDate,
+                    knownSince,
                     kind,
                     origin,
                     type,
@@ -927,8 +1359,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             ? refs.filter(ref => ref?.type && ref?.id).map(ref => ({ type: String(ref.type), id: String(ref.id) }))
             : (node?.id ? [{ type: "node", id: node.id }] : []);
         const createdAt = new Date().toISOString();
+        const neueId = foundry.utils.randomID(16);
         store.entries.push(this._normalizeHistoryEntry({
-            id: foundry.utils.randomID(16),
+            id: neueId,
             origin: origin === "auto" ? "auto" : "manual",
             type,
             kind: this._getHistoryCategory(kind)?.kind || "insight",
@@ -937,6 +1370,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             authorUserId: authorUserId || game.user.id,
             authorName: authorName || game.user.name,
             gameDate: normalizedGameDate,
+            knownSince,
+            recapPageId,
             visibility: visibility === "players" ? "players" : "gm",
             title,
             playerText,
@@ -945,7 +1380,21 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             refs: entryRefs,
             payload: {}
         }));
-        return this._saveHistoryStore(store);
+        if (!await this._saveHistoryStore(store)) return false;
+
+        // A recap is the one kind whose real content lives on a journal page, so the page is
+        // made together with the entry rather than waiting for someone to find a button later.
+        // Its author owns it, which is what lets a player write their own without the graph's
+        // edit lock; when the entry came in over the socket we tell them where it is.
+        if (this._getHistoryCategory(kind)?.kind === "flashback") {
+            const gespeichert = this._getHistoryStore().entries.find(item => item.id === neueId);
+            const verfasser = authorUserId || game.user.id;
+            const pageId = gespeichert ? await this._createRecapPage(gespeichert, verfasser) : null;
+            if (pageId && verfasser !== game.user.id) {
+                game.socket.emit("module.fang", { action: "recapPageReady", payload: { entryId: neueId, userId: verfasser, pageId } });
+            }
+        }
+        return neueId;
     }
 
     async _deleteHistoryEntry(entryId) {
@@ -1109,8 +1558,155 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         return this.element?.querySelector(".fang-app-container") || this.element;
     }
 
+    /**
+     * Wire the time axis: a tick per game day, oldest left. Clicking one scrolls the log to that
+     * day; scrolling the log moves the marker. When there are more days than fit, the axis is
+     * dragged or wheeled sideways -- deliberately without a scrollbar, so it still reads as an
+     * axis rather than a list that spilled over.
+     */
+    _wireHistoryTimeline(panel) {
+        const log = panel.querySelector(".fang-history-log");
+        const track = panel.querySelector(".fang-history-axis-scroll");
+        const ticks = [...panel.querySelectorAll(".fang-history-tick")];
+        const sections = [...panel.querySelectorAll(".fang-history-day")];
+        const labelDate = panel.querySelector(".fang-history-axis-date");
+        const labelCount = panel.querySelector(".fang-history-axis-count");
+        if (!log || !track || !ticks.length || !sections.length) return;
+
+        let activeIndex = 0;
+
+        const showLabel = (tick) => {
+            if (!labelDate) return;
+            labelDate.textContent = tick?.dataset?.date ?? "";
+            if (labelCount) labelCount.textContent = tick?.dataset?.count ?? "";
+        };
+
+        const keepTickInView = (tick) => {
+            if (!tick) return;
+            const left = tick.offsetLeft - track.scrollLeft;
+            const right = left + tick.offsetWidth;
+            if (left < 12) track.scrollLeft = tick.offsetLeft - 12;
+            else if (right > track.clientWidth - 12) track.scrollLeft = tick.offsetLeft + tick.offsetWidth - track.clientWidth + 12;
+        };
+
+        const markActive = (dayIndex, { follow = true } = {}) => {
+            activeIndex = dayIndex;
+            let activeTick = null;
+            for (const tick of ticks) {
+                const isActive = Number(tick.dataset.dayIndex) === dayIndex;
+                tick.classList.toggle("active", isActive);
+                if (isActive) activeTick = tick;
+            }
+            showLabel(activeTick);
+            if (follow) keepTickInView(activeTick);
+        };
+
+        // Hovering previews a day without losing where you are.
+        for (const tick of ticks) {
+            tick.addEventListener("pointerenter", () => showLabel(tick));
+            tick.addEventListener("click", () => {
+                if (track.dataset.dragged === "1") return;   // that was a drag, not a click
+                const dayIndex = Number(tick.dataset.dayIndex);
+                const section = sections.find(item => Number(item.dataset.dayIndex) === dayIndex);
+                if (!section) return;
+                const target = Math.max(0, section.offsetTop - log.offsetTop - 8);
+                // Chrome quietly refuses a smooth scroll over a very large distance -- measured at
+                // ~29000px it simply never starts, and the click looks broken. Nobody can follow an
+                // animation that long anyway, so past a point just be there.
+                const far = Math.abs(target - log.scrollTop) > 2000;
+                log.scrollTo({ top: target, behavior: far ? "auto" : "smooth" });
+                markActive(dayIndex);
+            });
+        }
+        track.addEventListener("pointerleave", () => {
+            const activeTick = ticks.find(tick => Number(tick.dataset.dayIndex) === activeIndex);
+            showLabel(activeTick);
+        });
+
+        // Wheel over the axis moves it sideways; the log keeps its own wheel.
+        track.addEventListener("wheel", (event) => {
+            const delta = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
+            if (!delta || track.scrollWidth <= track.clientWidth) return;
+            track.scrollLeft += delta;
+            event.preventDefault();
+        }, { passive: false });
+
+        // Drag to pan. The threshold is what tells a drag from a click on a tick.
+        let dragFrom = null;
+        track.addEventListener("pointerdown", (event) => {
+            if (track.scrollWidth <= track.clientWidth) return;
+            dragFrom = { x: event.clientX, scrollLeft: track.scrollLeft, moved: false };
+            track.dataset.dragged = "0";
+            track.setPointerCapture?.(event.pointerId);
+        });
+        track.addEventListener("pointermove", (event) => {
+            if (!dragFrom) return;
+            const dx = event.clientX - dragFrom.x;
+            if (!dragFrom.moved && Math.abs(dx) < 4) return;
+            dragFrom.moved = true;
+            track.classList.add("dragging");
+            track.scrollLeft = dragFrom.scrollLeft - dx;
+        });
+        const endDrag = (event) => {
+            if (!dragFrom) return;
+            track.dataset.dragged = dragFrom.moved ? "1" : "0";
+            track.classList.remove("dragging");
+            track.releasePointerCapture?.(event.pointerId);
+            dragFrom = null;
+            // Let the click that follows a real drag be swallowed, then allow clicks again.
+            if (track.dataset.dragged === "1") setTimeout(() => { track.dataset.dragged = "0"; }, 0);
+        };
+        track.addEventListener("pointerup", endDrag);
+        track.addEventListener("pointercancel", endDrag);
+
+        let scheduled = false;
+        const syncActive = () => {
+            scheduled = false;
+            // At the bottom the last day may still begin below the cutoff -- there is no content
+            // left to scroll it up. Mark it anyway, or the final day could never become active.
+            if (log.scrollTop + log.clientHeight >= log.scrollHeight - 2) {
+                markActive(Number(sections[sections.length - 1]?.dataset?.dayIndex ?? 0));
+                return;
+            }
+            const cutoff = log.scrollTop + 24;
+            let current = sections[0];
+            for (const section of sections) {
+                if (section.offsetTop - log.offsetTop <= cutoff) current = section;
+                else break;
+            }
+            markActive(Number(current?.dataset?.dayIndex ?? 0));
+        };
+        log.addEventListener("scroll", () => {
+            if (scheduled) return;
+            scheduled = true;
+            requestAnimationFrame(syncActive);
+        });
+
+        // Start at the right-hand end: that is the present, and the top of the log.
+        track.scrollLeft = track.scrollWidth;
+        markActive(0, { follow: false });
+    }
+
     _closeHistoryPanel() {
         this._getHistoryPanelHost()?.querySelector(".fang-history-canvas-panel")?.remove();
+        this._historyPanelContext = null;
+    }
+
+    /**
+     * The chronicle store changed. Redraw an open log in place, keeping the reading position --
+     * but never while someone is filling in the entry form, which would throw away their text.
+     */
+    _onHistoryStoreChanged() {
+        const context = this._historyPanelContext;
+        if (context?.mode !== "log") return;
+        const panel = this._getHistoryPanelHost()?.querySelector(".fang-history-canvas-panel");
+        if (!panel) { this._historyPanelContext = null; return; }
+        const node = context.nodeId ? this.graphData.nodes.find(n => n.id === context.nodeId) : null;
+        if (context.nodeId && !node) { this._closeHistoryPanel(); return; }
+        const scrollTop = panel.querySelector(".fang-history-log")?.scrollTop ?? 0;
+        this._openHistoryDialog({ node });
+        const log = this._getHistoryPanelHost()?.querySelector(".fang-history-log");
+        if (log && scrollTop) log.scrollTop = scrollTop;
     }
 
     _closeCanvasPrompt() {
@@ -1207,7 +1803,18 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const editingEntry = entry ? this._normalizeHistoryEntry(entry) : null;
         const safeNodeName = node ? this._getSafeNodeName(node, game.user) : "";
         const detectedGameDate = this.detectCurrentGameDate();
-        const categorySource = editingEntry?.origin === "auto" ? this._getHistoryCategories() : this._getManualHistoryCategories();
+        const categorySource = editingEntry?.origin === "auto"
+            ? this._getHistoryCategories()
+            : (() => {
+                const list = this._getManualHistoryCategories();
+                // A GM editing a player's recap must keep seeing "flashback" in the list, or
+                // saving would quietly refile it as something else.
+                if (editingEntry && !list.some(category => category.kind === editingEntry.kind)) {
+                    const own = this._getHistoryCategory(editingEntry.kind);
+                    if (own) return [own, ...list];
+                }
+                return list;
+            })();
         const categoryOptions = categorySource
             .map(category => `<option value="${this._escapeHtml(category.kind)}" ${category.kind === (editingEntry?.kind || "insight") ? "selected" : ""}>${this._escapeHtml(category.label)}</option>`)
             .join("");
@@ -1218,10 +1825,68 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const gmFields = isGM ? `
                     <label>${this._escapeHtml(this._localize("FANG.History.GMText", "GM Notes"))}</label>
                     <textarea id="fang-history-gm-text" placeholder="${this._escapeHtml(this._localize("FANG.History.GMTextHint", "Private GM context."))}">${this._escapeHtml(editingEntry?.gmText || "")}</textarea>
-                    <label class="fang-editor-check"><input type="checkbox" id="fang-history-visible" ${editingEntry?.visibility === "players" ? "checked" : ""}> ${this._escapeHtml(this._localize("FANG.History.VisibleToPlayers", "Visible to players"))}</label>` : "";
+                    <p class="fang-hint">${this._escapeHtml(this._localize("FANG.History.GMTextPrivate", "GM notes stay private - players never see them, released or not."))}</p>
+                    <div class="fang-history-release">
+                        <label class="fang-editor-check"><input type="checkbox" id="fang-history-visible" ${editingEntry?.visibility === "players" ? "checked" : ""}> ${this._escapeHtml(this._localize("FANG.History.ReleaseEntry", "Release the whole entry to players"))}</label>
+                        <p class="fang-hint">${this._escapeHtml(this._localize("FANG.History.ReleaseEntryHint", "Unticked, the entry stays visible to the GM alone."))}</p>
+                    </div>` : "";
         const formGameDate = editingEntry?.gameDate || detectedGameDate;
+        // Two questions, kept apart: WHEN did it happen, and did we only find out about it now.
+        // Backfilling last session's notes is not the same thing as a revelation about the past,
+        // and lumping them together was what made the free-text field so easy to get wrong.
+        const isEarlier = !!editingEntry && formGameDate.label !== detectedGameDate.label;
+        const knownDays = this._getKnownGameDays().filter(day => day.label !== detectedGameDate.label);
+        const matchedDayIndex = knownDays.findIndex(day => day.label === formGameDate.label);
+        // Picking a fresh date is the common case for a back-dated entry, so it goes first;
+        // burying it under every day the chronicle already knows is what made it hard to find.
+        const useCustom = matchedDayIndex === -1;
+        const knownOptions = knownDays
+            .map((day, index) => `<option value="${index}" data-label="${this._escapeHtml(day.label)}" data-sort="${this._escapeHtml(day.sort)}" ${index === matchedDayIndex ? "selected" : ""}>${this._escapeHtml(day.label)}</option>`)
+            .join("");
+        const dayOptions = `<option value="custom" ${useCustom ? "selected" : ""}>${this._escapeHtml(this._localize("FANG.History.CustomDate", "Own date..."))}</option>`
+            + (knownOptions ? `<optgroup label="${this._escapeHtml(this._localize("FANG.History.KnownDays", "Days in the chronicle"))}">${knownOptions}</optgroup>` : "");
+        // A real date picker whenever the world has a calendar: month names with their true
+        // lengths (Harptos festivals are one-day months), the year as a spinner. Falls back to a
+        // text field when there is no calendar to ask.
+        const picker = this._getCalendarPickerModel();
+        // With no calendar at all the world runs on real dates, so back-dating gets a real date
+        // field rather than a text box someone has to spell consistently.
+        const useRealDate = !picker && detectedGameDate.source === "real-time";
+        const realDateValue = useRealDate ? this._toDateInputValue(editingEntry ? null : new Date()) : "";
+        const customControl = picker
+            ? `<div class="fang-history-picker" ${useCustom ? "" : "hidden"}>
+                            <select id="fang-history-pick-day"></select>
+                            <select id="fang-history-pick-month">${picker.months.map(month => `<option value="${month.index}" ${month.index === picker.monthIndex ? "selected" : ""}>${this._escapeHtml(month.name)}</option>`).join("")}</select>
+                            <input type="number" id="fang-history-pick-year" value="${picker.displayYear}" data-year-offset="${picker.yearOffset}" step="1">
+                        </div>
+                        <p class="fang-history-picked" ${useCustom ? "" : "hidden"}><i class="fas fa-calendar-day" aria-hidden="true"></i><span></span></p>`
+            : useRealDate
+                ? `<input type="date" id="fang-history-pick-date" value="${this._escapeHtml(realDateValue)}" ${useCustom ? "" : "hidden"}>
+                        <p class="fang-history-picked" ${useCustom ? "" : "hidden"}><i class="fas fa-calendar-day" aria-hidden="true"></i><span></span></p>`
+                : `<input type="text" id="fang-history-date" value="${this._escapeHtml(useCustom ? formGameDate.label : "")}" placeholder="${this._escapeHtml(this._localize("FANG.History.GameDatePlaceholder", "e.g. 12th of Praios"))}" ${useCustom ? "" : "hidden"}>`;
+        const recapAuthors = this._getRecapAuthors();
+        const recapAuthorOptions = recapAuthors
+            .map(a => `<option value="${this._escapeHtml(a.actorId ?? "")}">${this._escapeHtml(a.name)}</option>`)
+            .join("");
+        const dateReadonly = !isGM && editingEntry;
+        const dateControl = dateReadonly
+            ? `<label>${this._escapeHtml(this._localize("FANG.History.GameDate", "Game Date"))}</label>
+                    <input type="text" id="fang-history-date" value="${this._escapeHtml(formGameDate.label)}" readonly>`
+            : `<label>${this._escapeHtml(this._localize("FANG.History.When", "When did it happen?"))}</label>
+                    <div class="fang-segmented fang-history-when">
+                        <button type="button" class="fang-segment${isEarlier ? "" : " active"}" data-when="today"><span class="fang-history-when-main"><i class="fas fa-calendar-day" aria-hidden="true"></i>${this._escapeHtml(this._localize("FANG.History.WhenToday", "Today"))}</span><span class="fang-history-when-date">${this._escapeHtml(detectedGameDate.label)}${detectedGameDate.time ? " · " + this._escapeHtml(detectedGameDate.time) : ""}</span></button>
+                        <button type="button" class="fang-segment${isEarlier ? " active" : ""}" data-when="earlier"><span class="fang-history-when-main"><i class="fas fa-clock-rotate-left" aria-hidden="true"></i>${this._escapeHtml(this._localize("FANG.History.WhenEarlier", "On an earlier day"))}</span></button>
+                    </div>
+                    <div class="fang-history-when-earlier" ${isEarlier ? "" : "hidden"}>
+                        <label>${this._escapeHtml(this._localize("FANG.History.PickDay", "Game day"))}</label>
+                        <select id="fang-history-day">${dayOptions}</select>
+                        ${customControl}
+                        <label class="fang-editor-check"><input type="checkbox" id="fang-history-learned-today" ${editingEntry?.knownSince?.label ? "checked" : ""}> ${this._escapeHtml(this._localize("FANG.History.LearnedToday", "We only found out about this today"))}</label>
+                        <p class="fang-hint">${this._escapeHtml(this._localize("FANG.History.LearnedTodayHint", "The entry stays on the day it happened and is marked as a flashback."))}</p>
+                    </div>`;
         const panelHost = this._getHistoryPanelHost();
         this._closeHistoryPanel();
+        this._historyPanelContext = { mode: "editor", nodeId: node?.id || null };
         const panel = document.createElement("div");
         panel.className = "fang-history-canvas-panel";
         panel.innerHTML = `
@@ -1232,15 +1897,17 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 </header>
                 <div class="fang-history-editor">
                     ${node ? `<p class="hint">${this._escapeHtml(this._localize("FANG.History.LinkedTo", "Linked to"))}: <strong>${this._escapeHtml(safeNodeName)}</strong></p>` : ""}
-                    <label>${this._escapeHtml(this._localize("FANG.History.GameDate", "Game Date"))}</label>
-                    <input type="text" id="fang-history-date" value="${this._escapeHtml(formGameDate.label)}" data-source="${this._escapeHtml(formGameDate.source)}" data-sort="${this._escapeHtml(formGameDate.sort)}" placeholder="${this._escapeHtml(this._localize("FANG.History.GameDatePlaceholder", "e.g. 12th of Praios"))}" ${!isGM && editingEntry ? "readonly" : ""}>
+                    ${dateControl}
                     <label>${this._escapeHtml(this._localize("FANG.History.Category", "Category"))}</label>
                     <select id="fang-history-kind" ${canEditCategory ? "" : "disabled"}>${categoryOptions}</select>
-                    <label>${this._escapeHtml(this._localize("FANG.History.Title", "Title"))}</label>
+                    <label id="fang-history-title-label">${this._escapeHtml(this._localize("FANG.History.Title", "Title"))}</label>
                     <input type="text" id="fang-history-title" value="${this._escapeHtml(editingEntry?.title || "")}">
-                    <label>${this._escapeHtml(this._localize("FANG.History.PlayerText", "Player Text"))}</label>
+                    <select id="fang-history-recap-author" hidden>${recapAuthorOptions}</select>
+                    <label id="fang-history-player-text-label">${this._escapeHtml(this._localize("FANG.History.PlayerText", "Player Text"))}</label>
+                    <p class="fang-hint fang-history-recap-note" hidden>${this._escapeHtml(this._localize("FANG.History.RecapNote", "Only a short line for the log here - the recap itself opens as a journal page once you save."))}</p>
                     <textarea id="fang-history-player-text" placeholder="${this._escapeHtml(this._localize("FANG.History.PlayerTextHint", "Safe text players may see if published."))}">${this._escapeHtml(editingEntry?.playerText || "")}</textarea>
                     ${gmFields}
+                    ${editingEntry ? `<button type="button" class="btn secondary-btn fang-history-recap-open"><i class="fas fa-book-open"></i> ${this._escapeHtml(editingEntry.recapPageId ? this._localize("FANG.History.RecapOpen", "Open recap") : this._localize("FANG.History.RecapCreate", "Write recap"))}</button>` : ""}
                     <div class="fang-history-editor-actions">
                         <button type="button" class="btn action-btn fang-history-save"><i class="fas fa-save"></i> ${this._escapeHtml(this._localize("FANG.Dialogs.BtnSave", "Save"))}</button>
                         <button type="button" class="btn secondary-btn fang-history-cancel"><i class="fas fa-arrow-left"></i> ${this._escapeHtml(this._localize("FANG.Dialogs.BtnCancel", "Cancel"))}</button>
@@ -1249,42 +1916,198 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             </div>`;
         panelHost?.appendChild(panel);
 
+        // The player text means something different for a recap: there it is the teaser in the
+        // log, not the text itself. Say so, instead of leaving an empty box that looks like the
+        // place to write five paragraphs.
+        const kindSelect = panel.querySelector("#fang-history-kind");
+        const recapNote = panel.querySelector(".fang-history-recap-note");
+        const playerLabel = panel.querySelector("#fang-history-player-text-label");
+        const playerBox = panel.querySelector("#fang-history-player-text");
+        const titleLabel = panel.querySelector("#fang-history-title-label");
+        const titleBox = panel.querySelector("#fang-history-title");
+        const authorSelect = panel.querySelector("#fang-history-recap-author");
+        const zeigeKategorie = () => {
+            const istRueckblick = kindSelect?.value === "flashback";
+            // A recap needs no summary and no headline typed by hand: it is someone's recap of a
+            // session, so the entry says whose, and everything else is on the page.
+            if (recapNote) recapNote.hidden = !istRueckblick;
+            if (playerLabel) playerLabel.hidden = istRueckblick;
+            if (playerBox) playerBox.hidden = istRueckblick;
+            if (titleBox) titleBox.hidden = istRueckblick;
+            if (authorSelect) authorSelect.hidden = !istRueckblick;
+            if (titleLabel) {
+                titleLabel.textContent = istRueckblick
+                    ? this._localize("FANG.History.RecapWhose", "Whose recap?")
+                    : this._localize("FANG.History.Title", "Title");
+            }
+        };
+        kindSelect?.addEventListener("change", zeigeKategorie);
+        authorSelect?.addEventListener("change", () => { authorSelect.dataset.touched = "1"; });
+        zeigeKategorie();
+
+        const whenButtons = [...panel.querySelectorAll(".fang-history-when button")];
+        const earlierBlock = panel.querySelector(".fang-history-when-earlier");
+        const daySelect = panel.querySelector("#fang-history-day");
+        const customDate = panel.querySelector("#fang-history-date");
+        for (const button of whenButtons) {
+            button.addEventListener("click", () => {
+                for (const other of whenButtons) other.classList.toggle("active", other === button);
+                if (earlierBlock) earlierBlock.hidden = button.dataset.when !== "earlier";
+            });
+        }
+        const realDateInput = panel.querySelector("#fang-history-pick-date");
+        const pickerBox = panel.querySelector(".fang-history-picker");
+        const pickedHint = panel.querySelector(".fang-history-picked");
+        const pickDay = panel.querySelector("#fang-history-pick-day");
+        const pickMonth = panel.querySelector("#fang-history-pick-month");
+        const pickYear = panel.querySelector("#fang-history-pick-year");
+
+        const refillDays = (keep = null) => {
+            if (!picker || !pickDay || !pickMonth) return;
+            const month = picker.months[Number(pickMonth.value)] ?? picker.months[0];
+            const wanted = keep ?? (Number(pickDay.value) || 1);
+            pickDay.innerHTML = Array.from({ length: month.days }, (_, i) =>
+                `<option value="${i}" ${i === Math.min(wanted, month.days) - 1 ? "selected" : ""}>${i + 1}</option>`).join("");
+        };
+        const kernJahr = () => Number(pickYear.value) - Number(pickYear.dataset.yearOffset || 0);
+        const showPicked = () => {
+            if (!picker || !pickedHint) return;
+            const described = this._describePickedGameDate(kernJahr(), Number(pickMonth.value), Number(pickDay.value));
+            const ziel = pickedHint.querySelector("span") ?? pickedHint;
+            ziel.textContent = described?.label || "";
+        };
+        const showPickedReal = () => {
+            if (!realDateInput || !pickedHint) return;
+            const [year, month, day] = String(realDateInput.value || "").split("-").map(Number);
+            const described = Number.isFinite(year) ? this._describeRealWorldDate(new Date(year, month - 1, day)) : null;
+            const ziel = pickedHint.querySelector("span") ?? pickedHint;
+            ziel.textContent = described?.label || "";
+        };
+        if (realDateInput) {
+            showPickedReal();
+            realDateInput.addEventListener("change", showPickedReal);
+            realDateInput.addEventListener("input", showPickedReal);
+        }
+        if (picker) {
+            refillDays(picker.dayIndex + 1);
+            showPicked();
+            pickMonth?.addEventListener("change", () => { refillDays(); showPicked(); });
+            pickDay?.addEventListener("change", showPicked);
+            pickYear?.addEventListener("change", showPicked);
+            pickYear?.addEventListener("input", showPicked);
+        }
+
+        daySelect?.addEventListener("change", () => {
+            const custom = daySelect.value === "custom";
+            if (customDate) customDate.hidden = !custom;
+            if (realDateInput) realDateInput.hidden = !custom;
+            if (pickerBox) pickerBox.hidden = !custom;
+            if (pickedHint) pickedHint.hidden = !custom;
+            if (custom) {
+                if (picker) showPicked();
+                else if (realDateInput) showPickedReal();
+                else customDate?.focus();
+            }
+        });
+
+        panel.querySelector(".fang-history-recap-open")?.addEventListener("click", async () => {
+            if (editingEntry) await this._openRecapPage(editingEntry.id);
+        });
         panel.querySelector(".fang-history-canvas-close")?.addEventListener("click", () => this._closeHistoryPanel());
         panel.querySelector(".fang-history-cancel")?.addEventListener("click", () => {
             if (typeof refresh === "function") refresh();
             else this._openHistoryDialog({ node });
         });
         panel.querySelector(".fang-history-save")?.addEventListener("click", async () => {
-            const entryTitle = panel.querySelector("#fang-history-title")?.value?.trim() || "";
-            const playerText = panel.querySelector("#fang-history-player-text")?.value?.trim() || "";
+            const kindNow = canEditCategory ? (panel.querySelector("#fang-history-kind")?.value || "insight") : (editingEntry?.kind || "insight");
+            const istRueckblick = kindNow === "flashback";
+            const gewaehlt = istRueckblick
+                ? recapAuthors.find(a => (a.actorId ?? "") === (panel.querySelector("#fang-history-recap-author")?.value ?? ""))
+                : null;
+            const authorBox = panel.querySelector("#fang-history-recap-author");
+            // An existing recap keeps its heading unless someone picks a different character;
+            // re-deriving it on every save would quietly rename entries written months ago.
+            const behalteTitel = istRueckblick && editingEntry?.title && authorBox?.dataset?.touched !== "1";
+            const entryTitle = !istRueckblick
+                ? (panel.querySelector("#fang-history-title")?.value?.trim() || "")
+                : behalteTitel
+                    ? editingEntry.title
+                    : this._localize("FANG.History.RecapBy", "Recap by {name}").replace("{name}", gewaehlt?.name || game.user.name);
+            const playerText = istRueckblick ? "" : (panel.querySelector("#fang-history-player-text")?.value?.trim() || "");
             const gmText = isGM ? (panel.querySelector("#fang-history-gm-text")?.value?.trim() || "") : "";
             if (!entryTitle && !playerText && !gmText) return;
-            const dateInput = panel.querySelector("#fang-history-date");
-            const dateLabel = dateInput?.value?.trim() || "";
-            const dateIsDetected = !editingEntry && dateLabel === detectedGameDate.label;
+            // Tie the recap to the character's node when it is in the graph, so it also turns up
+            // in that token's own chronicle rather than only in the global one.
+            const recapNode = gewaehlt?.actorId ? this.graphData.nodes.find(n => n.actorId === gewaehlt.actorId) : null;
+            const gameDate = this._readHistoryFormGameDate(panel, detectedGameDate, formGameDate, dateReadonly);
             const patch = {
                 title: entryTitle || this._localize("FANG.History.Untitled", "Untitled insight"),
                 playerText,
                 gmText,
-                kind: canEditCategory ? (panel.querySelector("#fang-history-kind")?.value || "insight") : (editingEntry?.kind || "insight"),
-                gameDate: {
-                    label: dateLabel,
-                    sort: dateIsDetected ? detectedGameDate.sort : "",
-                    source: dateIsDetected ? detectedGameDate.source : "manual"
-                },
+                kind: kindNow,
+                gameDate: gameDate.gameDate,
+                knownSince: gameDate.knownSince,
                 visibility: isGM && panel.querySelector("#fang-history-visible")?.checked ? "players" : (isGM ? "gm" : "players")
             };
             if (!isGM && editingEntry) {
                 delete patch.kind;
                 delete patch.gmText;
                 delete patch.gameDate;
+                delete patch.knownSince;
                 delete patch.visibility;
             }
+            let neueId = null;
             if (editingEntry) await this._updateHistoryEntry(editingEntry.id, patch);
-            else await this._createHistoryEntry({ node, ...patch });
+            else neueId = await this._createHistoryEntry({ node: recapNode ?? node, ...patch });
             if (typeof refresh === "function") refresh();
             else this._openHistoryDialog({ node });
+            // Straight into the page for a fresh recap: the form asked for a heading and a
+            // sentence for the log, the writing itself happens in the journal editor.
+            if (typeof neueId === "string" && patch.kind === "flashback") await this._openRecapPage(neueId);
         });
+    }
+
+    /**
+     * Read the game date out of the entry form. Picking an existing day carries that day's own
+     * sort key over verbatim, which is the point: a hand-typed label sorts nowhere.
+     */
+    _readHistoryFormGameDate(panel, detectedGameDate, formGameDate, readonly = false) {
+        if (readonly) return { gameDate: formGameDate, knownSince: null };
+        const earlier = panel.querySelector('.fang-history-when button[data-when="earlier"]')?.classList.contains("active");
+        if (!earlier) return { gameDate: { ...detectedGameDate }, knownSince: null };
+
+        const daySelect = panel.querySelector("#fang-history-day");
+        const option = daySelect?.selectedOptions?.[0];
+        let gameDate;
+        if (option && option.value !== "custom") {
+            gameDate = { label: option.dataset.label || "", sort: option.dataset.sort || "", source: "chronicle" };
+        } else {
+            const realDate = panel.querySelector("#fang-history-pick-date");
+            if (realDate) {
+                const [year, month, day] = String(realDate.value || "").split("-").map(Number);
+                if (Number.isFinite(year)) gameDate = this._describeRealWorldDate(new Date(year, month - 1, day));
+                // A day chosen by hand carries no time -- same reasoning as the calendar picker.
+                if (gameDate) gameDate = { ...gameDate, time: "" };
+            }
+            const pickMonth = panel.querySelector("#fang-history-pick-month");
+            const pickDay = panel.querySelector("#fang-history-pick-day");
+            const pickYear = panel.querySelector("#fang-history-pick-year");
+            const picked = pickMonth && pickDay && pickYear
+                ? this._describePickedGameDate(
+                    Number(pickYear.value) - Number(pickYear.dataset.yearOffset || 0),
+                    Number(pickMonth.value),
+                    Number(pickDay.value))
+                : null;
+            if (picked?.label) gameDate = picked;
+            else if (gameDate?.label) { /* already taken from the real-date field */ }
+            else {
+                const label = panel.querySelector("#fang-history-date")?.value?.trim() || "";
+                gameDate = { label, sort: "", source: "manual" };
+            }
+        }
+        if (!gameDate.label) gameDate = { ...detectedGameDate };
+        const knownSince = panel.querySelector("#fang-history-learned-today")?.checked ? { ...detectedGameDate } : null;
+        return { gameDate, knownSince };
     }
 
     _renderHistoryDialogContent({ node = null } = {}) {
@@ -1298,12 +2121,20 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
         const canAdd = this._canCreateHistoryEntry(true);
         const canDelete = game.user?.isGM;
-        const addButton = canAdd
-            ? `<button type="button" class="fang-history-add"><i class="fas fa-plus"></i> ${this._escapeHtml(this._localize("FANG.History.AddEvent", "Add Event"))}</button>`
-            : "";
+        // The monitor account is a display, not a seat at the table -- it gets no button at all.
+        // Everyone else keeps theirs even when they cannot use it right now: a player's entry is
+        // relayed through the GM, so without one online it stays disabled and says why. Hiding it
+        // left them wondering whether the feature existed.
+        const monitorName = String(game.settings.get("fang", "monitorDisplayName") || "").toLowerCase();
+        const isMonitor = !!monitorName && String(game.user?.name || "").toLowerCase().includes(monitorName);
+        const addBlockedHint = this._localize("FANG.Messages.WarnNoGMOnline", "No GM is online.");
+        const addButton = isMonitor
+            ? ""
+            : `<button type="button" class="fang-history-add" ${canAdd ? "" : `disabled title="${this._escapeHtml(addBlockedHint)}"`}><i class="fas fa-plus"></i> ${this._escapeHtml(this._localize("FANG.History.AddEvent", "Add Event"))}</button>`;
         const empty = `<div class="fang-history-empty">${this._escapeHtml(this._localize("FANG.History.Empty", "No chronicle entries yet."))}</div>`;
-        const groupsHtml = [...grouped.entries()].map(([date, dayEntries]) => `
-            <section class="fang-history-day">
+        const dayGroups = [...grouped.entries()];
+        const groupsHtml = dayGroups.map(([date, dayEntries], dayIndex) => `
+            <section class="fang-history-day" data-day-index="${dayIndex}">
                 <h3><i class="fas fa-calendar-day"></i> ${this._escapeHtml(date)}</h3>
                 <ol class="fang-history-list">
                     ${dayEntries.map(entry => {
@@ -1328,14 +2159,19 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                                                 ${primaryRef ? `<span class="fang-history-token-label">${this._escapeHtml(primaryRef.label)}</span>` : ""}
                                                 <strong><i class="fas ${this._escapeHtml(category.icon)}"></i> ${this._escapeHtml(entry.title || this._localize("FANG.History.Untitled", "Untitled insight"))}</strong>
                                             </div>
-                                            <div class="fang-history-category">${this._escapeHtml(category.label)}</div>
+                                            <div class="fang-history-meta">
+                                                ${entry.gameDate?.time ? `<span class="fang-history-time"><i class="fas fa-clock" aria-hidden="true"></i>${this._escapeHtml(entry.gameDate.time)}</span>` : ""}
+                                                <span class="fang-history-category">${this._escapeHtml(category.label)}</span>
+                                            </div>
                                         </div>
+                                        ${entry.knownSince?.label ? `<div class="fang-history-learned"><i class="fas fa-clock-rotate-left" aria-hidden="true"></i> ${this._escapeHtml(this._localize("FANG.History.LearnedOn", "Found out on {date}").replace("{date}", entry.knownSince.label))}</div>` : ""}
                                         ${entry.displayText ? `<p class="fang-history-player-text">${this._escapeHtml(entry.displayText)}</p>` : ""}
                                         ${entry.displayGmText ? `<p class="fang-history-gm-text"><i class="fas fa-user-shield" aria-hidden="true"></i> <span>${this._escapeHtml(entry.displayGmText)}</span></p>` : ""}
                                         ${refs}
                                     </div>
                                 </div>
                                 <div class="fang-history-actions">
+                                    ${entry.recapPageId || (canEdit && entry.kind === "flashback") ? `<button type="button" class="fang-icon-btn fang-history-recap" title="${this._escapeHtml(entry.recapPageId ? this._localize("FANG.History.RecapOpen", "Open recap") : this._localize("FANG.History.RecapCreate", "Write recap"))}"><i class="fas fa-book-open"></i></button>` : ""}
                                     ${focusRef ? `<button type="button" class="fang-icon-btn fang-history-focus" data-node-id="${this._escapeHtml(focusRef.id)}" title="${this._escapeHtml(this._localize("FANG.History.Focus", "Focus"))}"><i class="fas fa-crosshairs"></i></button>` : ""}
                                     ${canEdit ? `<button type="button" class="fang-icon-btn fang-history-edit" title="${this._escapeHtml(this._localize("FANG.ContextMenu.Edit", "Edit"))}"><i class="fas fa-pen-to-square"></i></button>` : ""}
                                     ${canDelete ? `<button type="button" class="fang-icon-btn danger fang-history-delete" title="${this._escapeHtml(this._localize("FANG.UI.Delete", "Delete"))}"><i class="fas fa-trash"></i></button>` : ""}
@@ -1345,15 +2181,39 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 </ol>
             </section>`).join("");
 
+        // A time axis above the log: oldest day at the left, most recent at the right, the way a
+        // timeline is read. Every day is a tick on one line, so a whole campaign fits where a row
+        // of labelled chips would have overflowed. Ticks keep a minimum spacing rather than
+        // squeezing together; past that the axis is dragged or wheeled sideways, without a
+        // scrollbar. The label underneath names whatever the pointer or the reading position is on.
+        const axisDays = [...dayGroups].reverse();   // oldest first
+        const maxCount = Math.max(1, ...axisDays.map(([, entries]) => entries.length));
+        const timelineHtml = dayGroups.length > 1 ? `
+            <nav class="fang-history-timeline" aria-label="${this._escapeHtml(this._localize("FANG.History.JumpToDay", "Jump to game day"))}">
+                <div class="fang-history-axis-scroll">
+                    <div class="fang-history-axis">
+                        ${axisDays.map(([date, dayEntries]) => {
+                            const dayIndex = dayGroups.findIndex(([label]) => label === date);
+                            const weight = 6 + Math.round((dayEntries.length / maxCount) * 6);
+                            return `<button type="button" class="fang-history-tick" data-day-index="${dayIndex}" data-date="${this._escapeHtml(date)}" data-count="${dayEntries.length}" style="--fang-tick-size: ${weight}px" title="${this._escapeHtml(date)}"><span></span></button>`;
+                        }).join("")}
+                    </div>
+                </div>
+                <p class="fang-history-axis-label"><span class="fang-history-axis-date"></span><span class="fang-history-axis-count"></span></p>
+            </nav>` : "";
+
         return `
             <div class="fang-history-log">
-                <header class="fang-history-log-header">
-                    <div>
-                        <h2>${this._escapeHtml(node ? this._localize("FANG.History.NodeChronicle", "Token Chronicle") : this._localize("FANG.History.Timeline", "Chronicle"))}</h2>
-                        ${node ? `<p>${this._escapeHtml(this._getSafeNodeName(node))}</p>` : ""}
-                    </div>
-                    ${addButton}
-                </header>
+                <div class="fang-history-sticky">
+                    <header class="fang-history-log-header">
+                        <div>
+                            <h2>${this._escapeHtml(node ? this._localize("FANG.History.NodeChronicle", "Token Chronicle") : this._localize("FANG.History.Timeline", "Chronicle"))}</h2>
+                            ${node ? `<p>${this._escapeHtml(this._getSafeNodeName(node))}</p>` : ""}
+                        </div>
+                        ${addButton}
+                    </header>
+                    ${entries.length ? timelineHtml : ""}
+                </div>
                 ${entries.length ? groupsHtml : empty}
             </div>`;
     }
@@ -1361,6 +2221,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
     _openHistoryDialog({ node = null } = {}) {
         const panelHost = this._getHistoryPanelHost();
         this._closeHistoryPanel();
+        // Remember what is on screen so a store change can redraw exactly this view -- and so it
+        // knows to leave a half-written entry alone.
+        this._historyPanelContext = { mode: "log", nodeId: node?.id || null };
         const panel = document.createElement("div");
         panel.className = "fang-history-canvas-panel";
         panel.innerHTML = `
@@ -1383,9 +2246,60 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         panel.querySelectorAll(".fang-history-delete").forEach(button => {
             button.addEventListener("click", async (event) => {
                 const entryId = event.currentTarget.closest(".fang-history-entry")?.dataset?.entryId;
+                if (!entryId) return;
+                // Deleting a chronicle entry cannot be undone and the button sits right next to
+                // "edit", so ask first. The entry's own title makes clear which one is meant.
+                const entry = this._getHistoryStore().entries.find(item => item.id === entryId);
+                const title = entry?.title || this._localize("FANG.History.Untitled", "Untitled insight");
+                const confirmed = await this._openCanvasPrompt({
+                    title: this._localize("FANG.Dialogs.DeleteConfirmTitle", "Confirm Deletion"),
+                    icon: "fa-trash",
+                    body: this._localize("FANG.History.DeleteConfirmBody", "\"{title}\" will be removed from the chronicle for good.").replace("{title}", title),
+                    actions: [
+                        {
+                            id: "delete",
+                            label: this._localize("FANG.UI.Delete", "Delete"),
+                            icon: "fa-trash",
+                            className: "danger",
+                            resolve: () => true
+                        },
+                        {
+                            id: "cancel",
+                            label: this._localize("FANG.Dialogs.BtnCancel", "Cancel"),
+                            icon: "fa-arrow-left",
+                            resolve: () => false
+                        }
+                    ]
+                });
+                if (!confirmed) return;
+                // The page holds someone's prose. Deleting it silently along with a one-line
+                // entry would be the kind of loss nobody notices until they look for it.
+                if (entry?.recapPageId && game.user?.isGM) {
+                    const journal = await this._getChronicleJournal();
+                    const page = journal?.pages?.get(entry.recapPageId);
+                    if (page) {
+                        const auch = await this._openCanvasPrompt({
+                            title: this._localize("FANG.History.RecapDeleteTitle", "Delete the recap too?"),
+                            icon: "fa-book-open",
+                            body: this._localize("FANG.History.RecapDeleteBody", "This entry has a recap page. Keep it, or delete it with the entry?"),
+                            actions: [
+                                { id: "keep", label: this._localize("FANG.History.RecapKeep", "Keep the page"), icon: "fa-book", resolve: () => false },
+                                { id: "both", label: this._localize("FANG.History.RecapDeleteBoth", "Delete both"), icon: "fa-trash", className: "danger", resolve: () => true }
+                            ]
+                        });
+                        if (auch) await page.delete();
+                    }
+                }
                 if (await this._deleteHistoryEntry(entryId)) refresh();
             });
         });
+        panel.querySelectorAll(".fang-history-recap").forEach(button => {
+            button.addEventListener("click", async (event) => {
+                const entryId = event.currentTarget.closest(".fang-history-entry")?.dataset?.entryId;
+                if (entryId) await this._openRecapPage(entryId);
+            });
+        });
+        this._wireHistoryTimeline(panel);
         panel.querySelectorAll(".fang-history-focus").forEach(button => {
             button.addEventListener("click", (event) => {
                 const nodeId = event.currentTarget?.dataset?.nodeId;
@@ -1445,7 +2359,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
         const factionIds = new Set(graph.factions.map(f => f.id).filter(Boolean));
         for (const node of graph.nodes) {
-            if (node.factionId && !factionIds.has(node.factionId)) node.factionId = null;
+            this._setNodeFactionIds(node, this._getNodeFactionIds(node).filter(id => factionIds.has(id)));
             node.conditions = Array.isArray(node.conditions) ? node.conditions : [];
             node.questUuids = Array.isArray(node.questUuids) ? node.questUuids : [];
             node.questUuids = node.questUuids.map(q => ({ ...q, status: q.status || "open" }));
@@ -1559,6 +2473,16 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         // 2. Re-initialize D3 and Canvas context
         this._initD3();
         this._rebuildSearchMatches();
+
+        // Rotating a tablet or opening its keyboard changes how much room there is. Re-clamp,
+        // or the window keeps a height the screen no longer has.
+        if (!this._viewportFitHandler) {
+            this._viewportFitHandler = foundry.utils.debounce(() => {
+                if (this.rendered) this.setPosition({});
+            }, 120);
+            window.addEventListener("resize", this._viewportFitHandler);
+            window.addEventListener("orientationchange", this._viewportFitHandler);
+        }
 
         // Manage ResizeObserver
         if (this._resizeObserver) this._resizeObserver.disconnect();
@@ -1839,6 +2763,12 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         document.body.style.removeProperty("margin");
         document.body.style.removeProperty("overflow");
 
+        if (this._viewportFitHandler) {
+            window.removeEventListener("resize", this._viewportFitHandler);
+            window.removeEventListener("orientationchange", this._viewportFitHandler);
+            this._viewportFitHandler = null;
+        }
+
         super._onClose(options);
     }
 
@@ -1847,7 +2777,33 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             // Force absolute fullscreen for Monitor to avoid Foundry UI offsets
             return this;
         }
-        return super.setPosition(position);
+        return super.setPosition(this._fitPositionToViewport(position));
+    }
+
+    /**
+     * Keep the window inside what the browser actually shows.
+     *
+     * The defaults are 1400x950, which is more than a tablet in landscape has left once the
+     * browser's own chrome is subtracted. The lower edge of the window then sits below the
+     * screen -- and with it the footer of the in-window editor, the one holding Save. Nothing
+     * scrolls it into view either: that overlay is anchored to the window, not to the page, so
+     * players simply could not save. Shrinking is the fix; the panel bodies scroll on their own.
+     */
+    _fitPositionToViewport(position = {}) {
+        const margin = 12;
+        const maxWidth = Math.max(320, window.innerWidth - margin * 2);
+        const maxHeight = Math.max(320, window.innerHeight - margin * 2);
+        const fitted = { ...position };
+        const width = Number.isFinite(fitted.width) ? fitted.width : this.position?.width;
+        const height = Number.isFinite(fitted.height) ? fitted.height : this.position?.height;
+
+        if (Number.isFinite(width) && width > maxWidth) fitted.width = maxWidth;
+        if (Number.isFinite(height) && height > maxHeight) fitted.height = maxHeight;
+        // A window that had to shrink is as wide or tall as the screen allows, so its only
+        // valid origin is the margin. Leaving the old offset would push it back off the edge.
+        if (fitted.width === maxWidth) fitted.left = margin;
+        if (fitted.height === maxHeight) fitted.top = margin;
+        return fitted;
     }
 
     /** Override _updatePosition to prevent Foundry from constraining window dimensions for Monitor */
@@ -1973,15 +2929,20 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 if (!this.graphData.factions) this.graphData.factions = [];
                 this.graphData.factions = this.graphData.factions.map(f => this._normalizeFaction(f));
 
-                // Convert 'groupIds' array or 'groupId' string to 'factionId' string
+                // Old shapes into the list. 'groupIds' was a list once already, so this time
+                // it is kept whole instead of collapsed onto its first entry.
                 this.graphData.nodes.forEach(node => {
-                    if (node.groupIds && Array.isArray(node.groupIds) && !node.factionId) {
-                        node.factionId = node.groupIds[0] || null;
+                    if (Array.isArray(node.groupIds) && !node.factionId && !node.factionIds?.length) {
+                        this._setNodeFactionIds(node, node.groupIds);
                         delete node.groupIds;
-                    } else if (node.groupId && !node.factionId) {
-                        node.factionId = node.groupId;
+                    } else if (node.groupId && !node.factionId && !node.factionIds?.length) {
+                        this._setNodeFactionIds(node, [node.groupId]);
                         delete node.groupId;
+                    } else if (!Array.isArray(node.factionIds)) {
+                        this._setNodeFactionIds(node, node.factionId ? [node.factionId] : []);
                     }
+                    delete node.groupIds;
+                    delete node.groupId;
                 });
 
                 // Ensure factions have X/Y positions for drawing hubs
@@ -2181,8 +3142,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             nextFactions.forEach((f) => factionById.set(f.id, f));
 
             for (const node of (this.graphData.nodes || [])) {
-                if (node.factionId && staleImportedFactionIds.has(node.factionId)) {
-                    node.factionId = null;
+                if (this._getNodeFactionIds(node).some(id => staleImportedFactionIds.has(id))) {
+                    this._setNodeFactionIds(node, this._getNodeFactionIds(node).filter(id => !staleImportedFactionIds.has(id)));
                     changed = true;
                 }
             }
@@ -2254,12 +3215,15 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             const currentIsDiploFaction = currentFaction?.externalSource?.module === "diploglass";
 
             if (nextFactionId) {
-                if (node.factionId !== nextFactionId) {
-                    node.factionId = nextFactionId;
+                // The sync owns the faction it brought and nothing else. Replacing the whole
+                // list would throw away memberships someone set by hand in FANG.
+                if (this._getPrimaryFactionId(node) !== nextFactionId) {
+                    this._setNodeFactionIds(node, [nextFactionId,
+                        ...this._getNodeFactionIds(node).filter(id => id !== nextFactionId && !factionById.get(id)?.diploglassId)]);
                     changed = true;
                 }
             } else if (currentIsDiploFaction && node.factionId) {
-                node.factionId = null;
+                this._setNodeFactionIds(node, this._getNodeFactionIds(node).filter(id => id !== node.factionId));
                 changed = true;
             }
         }
@@ -2580,6 +3544,16 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
      *
      * @param {object} payload  { newGraphData, baseline, draggedNodeIds, authorName }
      */
+    /**
+     * Take over an edit a player relayed to us, because they cannot write the flag themselves.
+     *
+     * Our own baseline deliberately stays where it is. It describes what the SERVER holds, and
+     * the save that follows this call needs it that way: it merges baseline / ours / server, and
+     * the player's addition only counts as OUR pending change while the baseline still lacks it.
+     * Moving the baseline forward to the merged result made the very next merge read that node
+     * as "the server deleted it" -- so a placeholder a player added in edit mode was neither
+     * broadcast nor written, it just quietly vanished. See scenario 14 in the merge tests.
+     */
     async applyRemoteGraphEdit(payload = {}) {
         const theirState = payload.newGraphData;
         if (!theirState) return;
@@ -2591,7 +3565,6 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             console.warn("FANG | Player edit without a mergeable baseline, applying as-is.");
             this.graphData = theirState;
             this._repairGraphData();
-            this._setBaseline(this._buildExportData());
             return;
         }
 
@@ -2603,7 +3576,6 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             });
             this.graphData = merged;
             this._repairGraphData();
-            this._setBaseline(this._buildExportData());
             if (conflicts.length) {
                 console.log(`FANG | Merged edit from ${payload.authorName ?? "player"} with ${conflicts.length} conflict(s).`, conflicts);
             }
@@ -2611,7 +3583,6 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             console.error("FANG | Could not merge player edit, applying as-is.", err);
             this.graphData = theirState;
             this._repairGraphData();
-            this._setBaseline(this._buildExportData());
         }
     }
 
@@ -2906,7 +3877,52 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         if (node?.isPlaceholder) {
             return normalizedNodeImg || FANG_DEFAULT_PLACEHOLDER_IMG;
         }
-        return normalizedNodeImg || actor?.prototypeToken?.texture?.src || actor?.img || "icons/svg/mystery-man.svg";
+        // The actor first, the stored copy second. The other way round froze the picture at
+        // the moment the node was added, so changing a portrait never reached the graph.
+        // node.img still matters: a player who may not see the actor does not have it in
+        // their collection at all, and nobody has it once the actor is deleted.
+        return actor?.prototypeToken?.texture?.src || actor?.img || normalizedNodeImg || "icons/svg/mystery-man.svg";
+    }
+
+    /**
+     * An actor changed. Three fields matter here - its own picture, its token's picture and
+     * its name. Everything else an actor does fires this hook too (hit points, items, effects),
+     * and none of that may cost a graph save.
+     */
+    async _onActorUpdated(actor, changes = {}) {
+        if (!actor) return;
+        const bildGeaendert = ("img" in changes) || changes.prototypeToken?.texture?.src !== undefined;
+        const nameGeaendert = typeof changes.name === "string";
+        if (!bildGeaendert && !nameGeaendert) return;
+
+        const nodes = (this.graphData?.nodes || []).filter(node => node && !node.isPlaceholder
+            && (node.actorId === actor.id || node.id === actor.id));
+        if (!nodes.length) return;
+
+        let zuSpeichern = false;
+        for (const node of nodes) {
+            // The drawn image is cached on the node. Without dropping it the canvas keeps
+            // painting the old portrait until the window is reopened.
+            if (bildGeaendert) node.imgElement = null;
+            if (!game.user?.isGM) continue;
+
+            if (bildGeaendert) {
+                const neuesBild = actor.prototypeToken?.texture?.src || actor.img || null;
+                if (node.img !== neuesBild) { node.img = neuesBild; zuSpeichern = true; }
+            }
+
+            if (nameGeaendert) {
+                // A node whose name still equals originalName was never renamed by hand, so it
+                // follows the actor. A renamed one keeps its name - only originalName moves,
+                // so the GM still sees who is really behind it.
+                const nieUmbenannt = !node.originalName || node.name === node.originalName;
+                if (nieUmbenannt && node.name !== actor.name) { node.name = actor.name; zuSpeichern = true; }
+                if (node.originalName !== actor.name) { node.originalName = actor.name; zuSpeichern = true; }
+            }
+        }
+
+        if (zuSpeichern) await this.saveData();
+        if (this.rendered) this.ticked();
     }
 
     _buildPlaceholderNode({
@@ -2928,6 +3944,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             originalName: name,
             role,
             factionId,
+            factionIds: factionId ? [factionId] : [],
             x,
             y,
             hidden: game.settings.get("fang", "defaultHiddenMode"),
@@ -3032,7 +4049,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         }
         if (!keepRole) {
             node.role = null;
-            node.factionId = null;
+            this._setNodeFactionIds(node, []);
         }
         this.initSimulation();
         this.simulation.alpha(0.25).restart();
@@ -3577,7 +4594,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
                         const keptFactionIds = new Set(newFactions.map(f => f.id));
                         this.graphData.nodes.forEach(node => {
-                            if (node.factionId && !keptFactionIds.has(node.factionId)) node.factionId = null;
+                            this._setNodeFactionIds(node, this._getNodeFactionIds(node).filter(id => keptFactionIds.has(id)));
                         });
 
                         this.graphData.factions = newFactions.map(f => this._normalizeFaction(f));
@@ -3587,7 +4604,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                         for (const faction of this.graphData.factions) {
                             const wasVisible = previousFactionVisibility.get(faction.id);
                             if (wasVisible === false && faction.playerVisible !== false) {
-                                const members = this.graphData.nodes.filter(node => node.factionId === faction.id);
+                                const members = this.graphData.nodes.filter(node => this._nodeBelongsToFaction(node, faction.id));
                                 for (const member of members) await this._recordFactionAssignedHistory(member, faction);
                             }
                         }
@@ -3772,7 +4789,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
         if (isJournalDrop) {
             if (!targetNode) {
-                ui.notifications.warn("Please drop the Journal onto a specific node in the graph.");
+                ui.notifications.warn(game.i18n.localize("FANG.Notify.DropOnNode"));
                 return;
             }
 
@@ -3792,7 +4809,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                             targetNode.journalUuid = data.uuid;
                             targetNode._gmJournalName = droppedDoc.name;
                             await this.saveData();
-                            ui.notifications.info("GM Note linked to " + targetNode.name + ".");
+                            ui.notifications.info(game.i18n.format("FANG.Notify.GmNoteLinked", { name: targetNode.name }));
                         }
                     },
                     quest: {
@@ -3810,7 +4827,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                             }
                             this.ticked();
                             await this.saveData();
-                            ui.notifications.info("Quest Log linked to " + targetNode.name + ".");
+                            ui.notifications.info(game.i18n.format("FANG.Notify.QuestLogLinked", { name: targetNode.name }));
                         }
                     }
                 },
@@ -4002,7 +5019,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     const matchingPage = entry.pages.find(p => p.name === "Lore: " + actor.name);
                     if (matchingPage) {
                         generatedLorePageId = matchingPage.id;
-                        ui.notifications.info(`Auto-linked existing Player Lore journal for ${actor.name}.`);
+                        ui.notifications.info(game.i18n.format("FANG.Notify.LoreAutoLinked", { name: actor.name }));
                     }
                 }
 
@@ -4347,7 +5364,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         if (!node?.questUuids?.length) return;
         const quest = node.questUuids[0];
         const opened = await this._openJournalDocument(quest.uuid);
-        if (!opened && !game.user.isGM) ui.notifications.warn("Quest Journal not found or you lack permissions.");
+        if (!opened && !game.user.isGM) ui.notifications.warn(game.i18n.localize("FANG.Notify.QuestJournalMissing"));
     }
 
     async _resolveJournalDocument(uuid) {
@@ -4523,7 +5540,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             button.addEventListener("click", async (event) => {
                 const row = event.currentTarget.closest(".fang-quest-manager-row");
                 const opened = row?.dataset?.uuid ? await this._openJournalDocument(row.dataset.uuid) : false;
-                if (!opened) ui.notifications.warn("Quest Journal not found or permissions missing.");
+                if (!opened) ui.notifications.warn(game.i18n.localize("FANG.Notify.QuestJournalMissing"));
             });
         });
         panel.querySelectorAll(".fang-quest-spotlight").forEach(button => {
@@ -4725,10 +5742,29 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             return;
         }
 
+        // A copy, edited by the checkboxes and the star while the dialog is open, so nothing
+        // is written to the node until Save.
+        const nodeFactionIds = this._getNodeFactionIds(node);
         const factionOptions = (this.graphData.factions || [])
             .map(f => this._normalizeFaction(f))
-            .filter(f => this._isFactionVisibleToCurrentUser(f) || f.id === node.factionId)
-            .map(f => `<option value="${escapeHtml(f.id)}" ${f.id === node.factionId ? "selected" : ""}>${escapeHtml(f.name)}</option>`)
+            .filter(f => this._isFactionVisibleToCurrentUser(f) || nodeFactionIds.includes(f.id))
+            .map(f => {
+                const dabei = nodeFactionIds.includes(f.id);
+                const istPrimaer = nodeFactionIds[0] === f.id;
+                return `<li class="fang-faction-pick${dabei ? " is-on" : ""}" data-faction-id="${escapeHtml(f.id)}">
+                    <label class="fang-editor-check">
+                        <input type="checkbox" class="fang-faction-check" ${dabei ? "checked" : ""}>
+                        <span class="fang-faction-swatch" style="background:${escapeHtml(f.color || "#d4af37")}"></span>
+                        <span class="fang-faction-name">${escapeHtml(f.name)}</span>
+                    </label>
+                    <button type="button" class="fang-faction-primary${istPrimaer ? " is-primary" : ""}"
+                        title="${escapeHtml(localize("FANG.Dialogs.FactionPrimaryHint", "Decides where this character sits while grouping is on"))}"
+                        aria-label="${escapeHtml(localize("FANG.Dialogs.FactionPrimary", "Primary faction"))}"
+                        aria-pressed="${istPrimaer ? "true" : "false"}">
+                        <i class="${istPrimaer ? "fas" : "far"} fa-star" aria-hidden="true"></i>
+                    </button>
+                </li>`;
+            })
             .join("");
         const zoneOptions = (this.graphData.zones || [])
             .map(z => this._normalizeZone(z))
@@ -4769,10 +5805,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     <label>${localize("FANG.Dialogs.RoleInput", "Role")}</label>
                     <input type="text" id="fang-profile-role" value="${escapeHtml(node.role || "")}">
                     <label>${localize("FANG.Dialogs.FactionInput", "Faction")}</label>
-                    <select id="fang-profile-faction">
-                        <option value="">-- None --</option>
-                        ${factionOptions}
-                    </select>
+                    <ul id="fang-profile-factions" class="fang-faction-picks">${factionOptions}</ul>
+                    ${factionOptions ? `<p class="fang-hint">${localize("FANG.Dialogs.FactionMultiHint", "A character can belong to several factions. The starred one decides where they sit while grouping is on.")}</p>` : ""}
                     <label>${localize("FANG.Zones.Zone", "Zone")}</label>
                     <select id="fang-profile-zone">
                         <option value="">-- None --</option>
@@ -4791,6 +5825,10 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 ${actionSection}
             </div>`;
 
+        // The list the dialog works on. Order carries the meaning: the first entry is the
+        // primary faction, so the star does not need a field of its own.
+        let gewaehlteFraktionen = [...nodeFactionIds];
+
         await this._openPanelEditor({
             title: localize("FANG.ActorEditor.Title", "Edit Actor"),
             content,
@@ -4805,7 +5843,14 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                         const previousShowHiddenQuests = node.showHiddenQuestsToPlayers !== false;
                         const newName = html.find("#fang-profile-name").val().trim();
                         const newRole = html.find("#fang-profile-role").val().trim();
-                        const newFactionId = html.find("#fang-profile-faction").val();
+                        // Factions that the current user cannot see were never offered, so they
+                        // must survive untouched - a player editing a node may not quietly drop
+                        // a GM-only membership just by pressing Save.
+                        const unsichtbare = this._getNodeFactionIds(node).filter(id => {
+                            const f = (this.graphData.factions || []).map(x => this._normalizeFaction(x)).find(x => x.id === id);
+                            return f && !this._isFactionVisibleToCurrentUser(f);
+                        });
+                        const newFactionIds = [...gewaehlteFraktionen, ...unsichtbare.filter(id => !gewaehlteFraktionen.includes(id))];
                         const newZoneId = html.find("#fang-profile-zone").val();
                         const newAlias = isGM ? html.find("#fang-profile-alias").val().trim() : node.displayName;
                         const newLore = html.find("#fang-profile-lore").val().trim();
@@ -4816,7 +5861,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
                         if (newName) node.name = newName;
                         node.role = newRole || null;
-                        node.factionId = newFactionId || null;
+                        this._setNodeFactionIds(node, newFactionIds);
                         node.zoneId = newZoneId || null;
                         if (isGM) {
                             node.hidden = html.find("#fang-profile-hidden").is(":checked");
@@ -4863,6 +5908,46 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             },
             default: "save",
             render: (html, dialog) => {
+                // Everything the faction picker needs, before the GM-only part below: a player
+                // who may edit an open node gets the same list.
+                const liste = html.find("#fang-profile-factions");
+                const zeichneFraktionen = () => {
+                    liste.find(".fang-faction-pick").each((_, el) => {
+                        const id = el.dataset.factionId;
+                        const dabei = gewaehlteFraktionen.includes(id);
+                        const primaer = gewaehlteFraktionen[0] === id;
+                        el.classList.toggle("is-on", dabei);
+                        $(el).find(".fang-faction-check").prop("checked", dabei);
+                        const stern = $(el).find(".fang-faction-primary");
+                        stern.toggleClass("is-primary", primaer).attr("aria-pressed", primaer ? "true" : "false");
+                        stern.find("i").attr("class", `${primaer ? "fas" : "far"} fa-star`);
+                        // With one faction there is nothing to choose, so the star would only
+                        // be a button that changes nothing.
+                        stern.toggle(gewaehlteFraktionen.length > 1 && dabei);
+                    });
+                };
+
+                liste.find(".fang-faction-check").on("change", (e) => {
+                    const id = e.currentTarget.closest(".fang-faction-pick")?.dataset.factionId;
+                    if (!id) return;
+                    if (e.currentTarget.checked) {
+                        if (!gewaehlteFraktionen.includes(id)) gewaehlteFraktionen.push(id);
+                    } else {
+                        gewaehlteFraktionen = gewaehlteFraktionen.filter(x => x !== id);
+                    }
+                    zeichneFraktionen();
+                });
+
+                liste.find(".fang-faction-primary").on("click", (e) => {
+                    e.preventDefault();
+                    const id = e.currentTarget.closest(".fang-faction-pick")?.dataset.factionId;
+                    if (!id || !gewaehlteFraktionen.includes(id)) return;
+                    gewaehlteFraktionen = [id, ...gewaehlteFraktionen.filter(x => x !== id)];
+                    zeichneFraktionen();
+                });
+
+                zeichneFraktionen();
+
                 if (!isGM) return;
                 html.find("#fang-profile-gm-journal").on("click", async () => this._openNodeJournal(node));
                 html.find("#fang-profile-replace").on("click", async () => {
@@ -6290,7 +7375,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             this.graphData.factions.forEach(faction => {
                 faction = this._normalizeFaction(faction);
                 if (!this._shouldShowFactionLinesToCurrentUser(faction)) return;
-                const members = visibleNodes.filter(n => n.factionId === faction.id);
+                const members = visibleNodes.filter(n => this._nodeBelongsToFaction(n, faction.id));
                 if (members.length < 2) return;
 
                 // 1. Calculate Centroid for sorting
@@ -6677,8 +7762,12 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             }
 
             // -----------------------------
+            // The primary one still drives the icon badge; the whole list drives the ring.
             const faction = node.factionId ? factionsById.get(node.factionId) : null;
             const visibleFaction = this._isFactionVisibleToCurrentUser(faction) ? faction : null;
+            const visibleFactions = this._getNodeFactionIds(node)
+                .map(id => factionsById.get(id))
+                .filter(f => f && this._isFactionVisibleToCurrentUser(f));
 
             // --- Draw Center (Boss) Aura ---
             if (node.isCenter) {
@@ -6765,13 +7854,35 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             // the search ring radius+8, the QuickConnect marker radius+12.
             // globalAlpha is inherited on purpose. It already encodes focus and the
             // "missing" condition; overriding it here made faded-out characters light up.
-            if (visibleFaction && !isHidden && this.graphData.showFactionLines !== false) {
+            // One arc per faction instead of one full circle. With a single faction the two
+            // are indistinguishable, which is the point: nothing changes for anyone who never
+            // assigns a second one. The gaps are what makes three colours read as three
+            // memberships rather than as a decorative gradient.
+            if (visibleFactions.length && !isHidden && this.graphData.showFactionLines !== false) {
+                const ringRadius = Math.max(2, radius - 2);
                 this.context.save();
-                this.context.beginPath();
-                this.context.arc(pos.x, pos.y, Math.max(2, radius - 2), 0, Math.PI * 2);
                 this.context.lineWidth = 3;
-                this.context.strokeStyle = visibleFaction.color || "#d4af37";
-                this.context.stroke();
+                if (visibleFactions.length === 1) {
+                    this.context.beginPath();
+                    this.context.arc(pos.x, pos.y, ringRadius, 0, Math.PI * 2);
+                    this.context.strokeStyle = visibleFactions[0].color || "#d4af37";
+                    this.context.stroke();
+                } else {
+                    const step = (Math.PI * 2) / visibleFactions.length;
+                    // A fixed gap in radians would swallow the segment itself once a character
+                    // joins six factions, so it shrinks with the slice and never takes more
+                    // than a fifth of it.
+                    const gap = Math.min(0.12, step * 0.2);
+                    visibleFactions.forEach((f, i) => {
+                        // Start at the top: the first faction is the primary one, and the eye
+                        // looks there first.
+                        const from = -Math.PI / 2 + i * step + gap / 2;
+                        this.context.beginPath();
+                        this.context.arc(pos.x, pos.y, ringRadius, from, from + step - gap);
+                        this.context.strokeStyle = f.color || "#d4af37";
+                        this.context.stroke();
+                    });
+                }
                 this.context.restore();
             }
 
@@ -7613,6 +8724,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 showHiddenQuestsToPlayers: n.showHiddenQuestsToPlayers !== false,
                 conditions: n.conditions || [],
                 factionId: n.factionId || null,
+                factionIds: this._getNodeFactionIds(n),
                 zoneId: n.zoneId || null,
                 role: n.role || "",
                 x: n.x,
@@ -7920,8 +9032,14 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
         const imgSrc = hiddenForUser ? FANG_DEFAULT_PLACEHOLDER_IMG : this._getNodeImageSource(node);
         const role = hiddenForUser ? "" : node.role || "";
-        const factionObj = hiddenForUser ? null : this.graphData.factions.find(f => f.id === node.factionId);
-        const faction = factionObj?.playerVisible !== false ? factionObj?.name || "" : "";
+        // All of them, primary first. The subtitle is where someone looks to find out who a
+        // character answers to, and naming only one of three would be the wrong answer.
+        const faction = hiddenForUser ? "" : this._getNodeFactionIds(node)
+            .map(id => this.graphData.factions.find(f => f.id === id))
+            .filter(f => f && f.playerVisible !== false)
+            .map(f => f.name)
+            .filter(Boolean)
+            .join(", ");
         const subtitle = [role, faction].filter(s => s).join(" - ");
 
         let loreText = hiddenForUser ? formatPlayerNotes(node.playerNotes) : node.lore || "";
@@ -8061,7 +9179,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                                 clickTimer = null;
                                 // Long Press: Open Journal Sheet
                                 const opened = await this._openJournalDocument(uuid);
-                                if (!opened) ui.notifications.warn("Quest Journal not found or permissions missing.");
+                                if (!opened) ui.notifications.warn(game.i18n.localize("FANG.Notify.QuestJournalMissing"));
                             }, 500);
                         });
 

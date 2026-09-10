@@ -1,11 +1,10 @@
 import { FangApplication } from "./fang-app.js";
+import { willkommenEinrichten, willkommenZeigen } from "./willkommen.js";
+import { fensterPassenEinrichten } from "./fensterpassen.js";
 
 // Singleton instance
 let fangApp = null;
 
-const FANG_ACTOR_DIRECTORY_POPOUT_SELECTOR = ".actors-sidebar.sidebar-popout";
-let _fangActorDirectoryShellSweepQueued = false;
-let _fangActorDirectoryPopout = null;
 
 function _fangOpenGraphFromJournalButtonEvent(event) {
   const button = event?.target?.closest?.(".fang-open-btn");
@@ -16,10 +15,6 @@ function _fangOpenGraphFromJournalButtonEvent(event) {
 
   const toggleGraph = game.modules.get("fang")?.api?.toggleGraph;
   if (typeof toggleGraph === "function") toggleGraph();
-}
-
-function _fangSetActorPanelOpenState(isOpen) {
-  document.body?.classList?.toggle("fang-actor-panel-open", !!isOpen);
 }
 
 function _fangGetThemeVariant() {
@@ -47,247 +42,9 @@ function _fangApplyVisualThemeToOpenApps() {
   }
 }
 
-function _fangGetActorDirectoryPopoutShells() {
-  return Array.from(document.querySelectorAll(FANG_ACTOR_DIRECTORY_POPOUT_SELECTOR));
-}
-
-function _fangIsGhostActorDirectoryShell(shell) {
-  if (!shell) return false;
-  const content = shell.querySelector(".window-content");
-  // Foundry's "ghost shell" reports: header remains, inner content gone.
-  if (!content) return true;
-  if (content.childElementCount === 0) return true;
-  if (!shell.querySelector(".directory, .directory-header, .directory-list, .directory-item")) return true;
-  return false;
-}
-
-function _fangForceRemoveActorDirectoryShells({ onlyGhost = false } = {}) {
-  const shells = _fangGetActorDirectoryPopoutShells();
-  for (const shell of shells) {
-    if (!onlyGhost || _fangIsGhostActorDirectoryShell(shell)) shell.remove();
-  }
-  return shells.length;
-}
-
-function _fangQueueActorDirectoryShellSweep(reason = "unknown", { onlyGhost = true, force = false } = {}) {
-  if (_fangActorDirectoryShellSweepQueued && !force) return;
-  _fangActorDirectoryShellSweepQueued = true;
-
-  const sweep = () => {
-    _fangForceRemoveActorDirectoryShells({ onlyGhost });
-  };
-
-  queueMicrotask(() => {
-    sweep();
-    _fangActorDirectoryShellSweepQueued = false;
-  });
-  setTimeout(sweep, 0);
-  setTimeout(sweep, 50);
-  setTimeout(sweep, 250);
-
-  let rafs = 0;
-  const rafSweep = () => {
-    sweep();
-    if (++rafs < 5) requestAnimationFrame(rafSweep);
-  };
-  requestAnimationFrame(rafSweep);
-
-  console.debug(`FANG | ActorDirectory shell sweep (${reason})`);
-}
-
-function _fangResolveActorDirectoryApp() {
-  const fromUi = ui?.actors ?? null;
-  if (fromUi && typeof fromUi.renderPopout === "function") return fromUi;
-
-  if (!game?.actors?.apps) return null;
-  const fromGame = Object.values(game.actors.apps).find((app) => {
-    if (typeof app?.renderPopout !== "function") return false;
-    if (app?.constructor?.name === "ActorDirectory") return true;
-    if (app?.id === "actors" || app?.tabName === "actors") return true;
-    return false;
-  });
-  return fromGame ?? null;
-}
-
-function _fangGetPopoutDomNode(popout) {
-  if (!popout) return null;
-  if (popout instanceof HTMLElement) return popout;
-  return popout.element?.[0] ?? popout.element ?? null;
-}
-
-function _fangIsActorDirectoryApp(app) {
-  if (!app) return false;
-  if (app?.constructor?.name === "ActorDirectory") return true;
-  if (app?.id === "actors" || app?.tabName === "actors") return true;
-  return false;
-}
-
-function _fangIsActorDirectoryPopoutApp(app) {
-  if (!_fangIsActorDirectoryApp(app)) return false;
-  // v14: ApplicationV2 popout state
-  if (app?.isPopout === true) return true;
-  // v13 + legacy fallback
-  if (app?.popOut === true || app?.options?.popOut === true) return true;
-  return false;
-}
-
-function _fangGetActorDirectoryPopoutFromUi() {
-  const dir = ui?.actors ?? null;
-  if (!dir) return null;
-  const popout = dir?.popout ?? dir?.popOut ?? null;
-  if (!popout) return null;
-  const el = _fangGetPopoutDomNode(popout);
-  return el ? popout : null;
-}
-
-function _fangHasLiveActorPopout() {
-  if (!_fangActorDirectoryPopout) return false;
-  const el = _fangGetPopoutDomNode(_fangActorDirectoryPopout);
-  if (!el || !document.body.contains(el)) {
-    _fangActorDirectoryPopout = null;
-    return false;
-  }
-  return true;
-}
-
-function _fangAttachActorPopoutListener(popout) {
-  const el = _fangGetPopoutDomNode(popout);
-  if (!el?.addEventListener) return;
-  el.addEventListener("close", () => {
-    _fangActorDirectoryPopout = null;
-    _fangSetActorPanelOpenState(false);
-    _fangQueueActorDirectoryShellSweep("event:close", { onlyGhost: false, force: true });
-  }, { once: true });
-}
-
-function _fangFindActorDirectoryPopoutApp() {
-  const fromUiPopout = _fangGetActorDirectoryPopoutFromUi();
-  if (fromUiPopout) return fromUiPopout;
-
-  const windows = Object.values(ui?.windows ?? {});
-  const byElement = windows.find((app) => _fangGetPopoutDomNode(app)?.matches?.(FANG_ACTOR_DIRECTORY_POPOUT_SELECTOR));
-  if (byElement) return byElement;
-  const byType = windows.find((app) => _fangIsActorDirectoryPopoutApp(app));
-  return byType ?? null;
-}
-
-async function _fangOpenActorDirectoryPopout({ reason = "unknown" } = {}) {
-  _fangForceRemoveActorDirectoryShells({ onlyGhost: true });
-
-  if (_fangHasLiveActorPopout()) {
-    try {
-      _fangActorDirectoryPopout.bringToFront?.();
-    } catch {
-      // no-op
-    }
-    return;
-  }
-
-  const dirApp = _fangResolveActorDirectoryApp();
-  if (!dirApp) return;
-
-  try {
-    const popout = typeof dirApp.renderPopout === "function"
-      ? await dirApp.renderPopout()
-      : await dirApp.render(true, { popOut: true, isPopout: true });
-
-    if (popout) {
-      _fangActorDirectoryPopout = popout;
-      _fangAttachActorPopoutListener(popout);
-      _fangSetActorPanelOpenState(true);
-      console.debug(`FANG | ActorDirectory popout opened (${reason})`);
-      return;
-    }
-  } catch (err) {
-    console.error("FANG | ActorDirectory open failed", err);
-  }
-
-  // Last-resort fallback using visible window tracking.
-  const app = _fangFindActorDirectoryPopoutApp();
-  if (app) {
-    _fangActorDirectoryPopout = app;
-    _fangAttachActorPopoutListener(app);
-  } else {
-    console.warn("FANG | ActorDirectory popout did not open", { reason });
-  }
-}
-
-async function _fangForceCloseActorDirectoryPopout({ reason = "unknown" } = {}) {
-  // Collapse layout immediately; technical close/cleanup can continue asynchronously.
-  _fangSetActorPanelOpenState(false);
-
-  // 1) Close tracked popout first (same pattern as sheet-only journal/chat).
-  if (_fangHasLiveActorPopout() && typeof _fangActorDirectoryPopout?.close === "function") {
-    try {
-      await _fangActorDirectoryPopout.close();
-    } catch {
-      try {
-        await _fangActorDirectoryPopout.close({ force: true });
-      } catch {
-        // ignore
-      }
-    }
-  }
-  _fangActorDirectoryPopout = null;
-
-  // 2) Close any remaining ActorDirectory popout app discovered via ui/ui.windows.
-  const app = _fangFindActorDirectoryPopoutApp();
-  if (app?.close) {
-    try {
-      await app.close();
-    } catch {
-      try {
-        await app.close({ force: true });
-      } catch {
-        // ignore
-      }
-    }
-  }
-
-  // 3) Hard-remove leftovers so CSS :has() cannot stick on ghost shells.
-  _fangQueueActorDirectoryShellSweep(reason, { onlyGhost: false, force: true });
-  console.debug(`FANG | ActorDirectory popout cleanup (${reason})`);
-}
-
-function _fangIsActorDirectoryOpen() {
-  if (_fangHasLiveActorPopout()) return true;
-  return !!document.querySelector(FANG_ACTOR_DIRECTORY_POPOUT_SELECTOR);
-}
-
-function _fangClearActorDirectoryPopoutRef() {
-  _fangActorDirectoryPopout = null;
-  _fangSetActorPanelOpenState(false);
-}
-
-function _fangMarkActorDirectoryPopout(popout) {
-  if (!popout) return;
-  _fangActorDirectoryPopout = popout;
-  _fangSetActorPanelOpenState(true);
-  _fangAttachActorPopoutListener(popout);
-}
-
-function _fangApplyActorDirectorySidebarStyle(app) {
-  const el = _fangGetPopoutDomNode(app);
-  if (!el) return;
-  Object.assign(el.style, {
-    position: "fixed",
-    right: "0px",
-    top: "0px",
-    left: "auto",
-    width: "300px",
-    height: "100vh",
-    maxHeight: "100vh",
-    margin: "0",
-    borderRadius: "0",
-    zIndex: "9999",
-    background: "rgba(11, 10, 19, 0.95)",
-    border: "1px solid rgb(48, 40, 49)",
-    boxShadow: "-4px 0 16px rgba(0,0,0,0.6)"
-  });
-}
-
 Hooks.once("init", () => {
   console.log("FANG | Initializing Foundry Actor Nexus Graph module");
+  willkommenEinrichten();
 
   // Register Handlebars Helpers
   Handlebars.registerHelper("eq", (a, b) => a === b);
@@ -496,22 +253,6 @@ Hooks.once("init", () => {
     }
   });
 
-  game.settings.register("fang", "replaceOnlySheetActor", {
-    name: "FANG.Settings.ReplaceOnlySheetActor.Name",
-    hint: "FANG.Settings.ReplaceOnlySheetActor.Hint",
-    scope: "world",
-    config: true,
-    type: Boolean,
-    default: false,
-    onChange: () => {
-      // Remove injected buttons so they get re-injected with new setting
-      document.getElementById("fang-so-btn")?.remove();
-      document.getElementById("fang-so-actors-btn")?.remove();
-      const orig = document.getElementById("so-collapse-actor-select");
-      if (orig) orig.style.display = "";
-    }
-  });
-
   game.settings.register("fang", "diploglassOneWaySync", {
     name: "FANG.Settings.DiploGlassOneWaySync.Name",
     hint: "FANG.Settings.DiploGlassOneWaySync.Hint",
@@ -550,6 +291,14 @@ Hooks.once("init", () => {
     default: {
       schemaVersion: 1,
       entries: []
+    },
+    onChange: () => {
+      // An open chronicle showed whatever was in the store when it was opened. Entries arrive
+      // from elsewhere all the time -- a player submitting one, the graph recording an automatic
+      // one, a second GM editing -- and none of that reached the panel until it was reopened.
+      // Optional call: a client can hold a cached older fang-app.js while main.js is new.
+      // A hard TypeError inside a setting hook would take the whole hook chain down with it.
+      if (fangApp?.rendered) fangApp._onHistoryStoreChanged?.();
     }
   });
 
@@ -605,6 +354,7 @@ Hooks.once("init", () => {
 });
 
 Hooks.once("ready", async () => {
+  fensterPassenEinrichten();
   // Mark body for role-based CSS — enables body.role-player .gm-only { display:none }
   // to hide GM-only elements globally, including dynamically added ones.
   document.body.classList.toggle("role-player", !game.user.isGM);
@@ -613,21 +363,6 @@ Hooks.once("ready", async () => {
   if (!window._fangJournalOpenButtonFixInstalled) {
     document.addEventListener("click", _fangOpenGraphFromJournalButtonEvent, true);
     window._fangJournalOpenButtonFixInstalled = true;
-  }
-
-  // Global, robust "Ghost Shell" cleanup for Foundry v13/v14 Actor Directory popouts.
-  // Runs for players + GM, regardless of Only-Sheet usage.
-  if (!window._fangActorDirectoryGhostFixInstalled) {
-    Hooks.on("closeActorDirectory", () => {
-      _fangClearActorDirectoryPopoutRef();
-      _fangQueueActorDirectoryShellSweep("hook:closeActorDirectory", { onlyGhost: true, force: true });
-    });
-    Hooks.on("closeApplicationV2", (app) => {
-      if (!_fangIsActorDirectoryPopoutApp(app)) return;
-      _fangClearActorDirectoryPopoutRef();
-      _fangQueueActorDirectoryShellSweep("hook:closeApplicationV2", { onlyGhost: true, force: true });
-    });
-    window._fangActorDirectoryGhostFixInstalled = true;
   }
 
   // Expose API for Macros
@@ -642,6 +377,20 @@ Hooks.once("ready", async () => {
       }
     }
   };
+
+  // Ninjo's In-Person Tools has a sheet view of its own with a proper doorway for other
+  // modules' buttons: register once, and its bar draws the button whenever it draws
+  // itself. No element to hunt for, no observer. Both calls are needed - our ready may
+  // run before or after theirs, and a hook only reaches listeners that were already
+  // there when it fired.
+  const _fangInPersonRegister = api => api?.sheetView?.registerButton?.({
+    id: "fang",
+    icon: "fa-diagram-project",
+    title: game.i18n.localize("FANG.ButtonOpen") || "Open FANG Graph",
+    onClick: () => module.api.toggleGraph()
+  });
+  _fangInPersonRegister(game.modules.get("ninjos-inperson-tools")?.api);
+  Hooks.on("ninjosInPersonTools.ready", _fangInPersonRegister);
 
   _fangApplyVisualThemeToOpenApps();
 
@@ -787,8 +536,32 @@ Hooks.once("ready", async () => {
           fangApp.simulation.alpha(0.05).restart();
           fangApp._populateActors();
         }
-        await fangApp.saveData(false);
+        // Broadcast the result. Without it the graph landed in the journal but nobody else
+        // was told, so everyone kept the state they had until they reopened the window --
+        // including the player who just made the change. refreshFromServer keeps unsaved
+        // local work, so telling everyone is safe.
+        await fangApp.saveData(true);
       }, 100);
+    }
+
+    // A player asked for the recap page of an entry. They cannot create documents, so we do
+    // it, hand them ownership of their own recap, and tell them where it is.
+    if (data.action === "playerRequestRecapPage" && game.user.isGM) {
+      if (!fangApp) fangApp = new FangApplication();
+      const { entryId, userId } = data.payload || {};
+      const entry = fangApp._getHistoryStore().entries.find(item => item.id === entryId);
+      if (!entry) return;
+      const pageId = entry.recapPageId || await fangApp._createRecapPage(entry, userId);
+      if (pageId) game.socket.emit("module.fang", { action: "recapPageReady", payload: { entryId, userId, pageId } });
+    }
+
+    // ...and the answer, which only the player who asked acts on.
+    if (data.action === "recapPageReady") {
+      const { userId, pageId } = data.payload || {};
+      if (game.user.id !== userId || !pageId) return;
+      if (!fangApp) fangApp = new FangApplication();
+      const journal = await fangApp._getChronicleJournal();
+      journal?.sheet?.render(true, { pageId });
     }
 
     if (data.action === "playerCreateHistoryEntry" && game.user.isGM) {
@@ -803,6 +576,7 @@ Hooks.once("ready", async () => {
         playerText: payload.playerText,
         gmText: "",
         gameDate: payload.gameDate,
+        knownSince: payload.knownSince || null,
         kind: payload.kind,
         visibility: "players",
         origin: payload.origin,
@@ -910,61 +684,72 @@ Hooks.once("ready", async () => {
     btn.style.cursor = "pointer";
   }
 
-  // Inject FANG button (and optionally replace actor-opener) into "only-sheet" module
-  const observer = new MutationObserver((mutations) => {
-    for (let mutation of mutations) {
-      if (mutation.addedNodes.length) {
-        const container = document.getElementById("so-main-buttons");
-        if (container && !document.getElementById("fang-so-btn")) {
-          const replaceActorBtn = game.settings.get("fang", "replaceOnlySheetActor");
+  // Put the FANG button into Sheet Only's button bar.
+  //
+  // Replacing that module's actor selector with a docked directory used to live here as
+  // well. It moved to Ninjo's In-Person Tools in 14.2609.1: it rearranges another module's
+  // interface for the sake of playing at a table, which is that module's subject, not ours.
+  // FANG keeps its own button and nothing else.
+  //
+  // This used to happen ONLY from inside a MutationObserver, which made it a race: Sheet Only
+  // builds its bar in its own async ready hook, and if that finished before we started
+  // watching, no mutation ever followed and the button simply never appeared. It also swaps
+  // the whole bar for a narrow-screen variant, which drops the button again. So: one
+  // idempotent function, called from everywhere the bar can plausibly have changed.
+  function _fangEnsureOnlySheetButton() {
+    const container = document.getElementById("so-main-buttons");
+    if (!container || document.getElementById("fang-so-btn")) return !!container;
+    const fangBtn = document.createElement("button");
+    fangBtn.id = "fang-so-btn";
+    fangBtn.title = game.i18n.localize("FANG.ButtonOpen") || "Open FANG Graph";
+    _applyOnlySheetStyle(fangBtn);
+    fangBtn.innerHTML = '<i class="fas fa-project-diagram"></i>';
+    fangBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      game.modules.get("fang")?.api?.toggleGraph();
+    });
+    container.appendChild(fangBtn);
+    // One line, once, so "the button is missing" can be answered from the log instead of
+    // guessed at: either it says this, or the bar never turned up.
+    console.log("FANG | Button mounted in Sheet Only's bar.");
+    return true;
+  }
 
-          // 1) Optionally replace the original actor-selector button
-          if (replaceActorBtn) {
-            const orig = document.getElementById("so-collapse-actor-select");
-            if (orig) orig.style.display = "none";
+  {
+    // Deliberately not gated on the module being active: forks and renames exist, and the
+    // only thing that actually matters is whether a bar with that id shows up. Everything
+    // below is a cheap id lookup that does nothing when it does not.
 
-            if (!document.getElementById("fang-so-actors-btn")) {
-              const actorsBtn = document.createElement("button");
-              actorsBtn.id = "fang-so-actors-btn";
-              actorsBtn.title = game.i18n.localize("ACTOR.TabActor") || "Actors";
-              _applyOnlySheetStyle(actorsBtn);
-              actorsBtn.innerHTML = '<i class="fa-solid fa-user"></i>';
-              // FIX: Robust toggle and close logic for V13 + Only-Sheet
-              actorsBtn.addEventListener("click", async (e) => {
-                e.preventDefault();
+    // 1. Right now, in case the bar is already standing.
+    _fangEnsureOnlySheetButton();
 
-                // Pre-clean: remove any already-empty ghost shells so state can't desync.
-                _fangForceRemoveActorDirectoryShells({ onlyGhost: true });
+    // 2. Whenever the DOM grows a bar -- including the narrow-screen swap.
+    const observer = new MutationObserver(() => _fangEnsureOnlySheetButton());
+    observer.observe(document.body, { childList: true, subtree: true });
 
-                if (_fangIsActorDirectoryOpen()) {
-                  await _fangForceCloseActorDirectoryPopout({ reason: "only-sheet-toggle:close" });
-                  return;
-                }
+    // 3. Sheet Only rebuilds around the sheet, so re-check when one renders.
+    Hooks.on("renderActorSheetV2", () => _fangEnsureOnlySheetButton());
+    Hooks.on("renderActorSheet", () => _fangEnsureOnlySheetButton());
 
-                const dir = ui.actors;
-                if (dir) await _fangOpenActorDirectoryPopout({ reason: "only-sheet-toggle:open" });
-              });
-              // Insert at same position as the original (first child)
-              container.insertBefore(actorsBtn, container.firstChild);
-            }
-          }
-
-          // 2) Always inject the FANG button (matching Only-Sheet style)
-          const fangBtn = document.createElement("button");
-          fangBtn.id = "fang-so-btn";
-          fangBtn.title = game.i18n.localize("FANG.ButtonOpen") || "Open FANG Graph";
-          _applyOnlySheetStyle(fangBtn);
-          fangBtn.innerHTML = '<i class="fas fa-project-diagram"></i>';
-          fangBtn.addEventListener("click", (e) => {
-            e.preventDefault();
-            game.modules.get("fang")?.api?.toggleGraph();
-          });
-          container.appendChild(fangBtn);
+    // 4. A few late attempts, for the case where its ready hook is still awaiting something
+    //    and the observer has nothing to see yet. Stops as soon as the button is in place.
+    let versuche = 0;
+    const nachfassen = setInterval(() => {
+      if (document.getElementById("fang-so-btn")) { clearInterval(nachfassen); return; }
+      if (++versuche > 20) {
+        clearInterval(nachfassen);
+        // The observer stays on, so a bar appearing later is still served. This only says
+        // that ten seconds after ready there was nothing to attach to.
+        if (!document.getElementById("so-main-buttons")) {
+          console.log("FANG | No Sheet Only button bar after 10s - not in that mode, or it never loaded.");
+        } else {
+          console.warn("FANG | Sheet Only bar is present but the button would not attach.");
         }
+        return;
       }
-    }
-  });
-  observer.observe(document.body, { childList: true, subtree: true });
+      _fangEnsureOnlySheetButton();
+    }, 500);
+  }
 
   // Optional one-way background sync: DiploGlass factions -> FANG factions.
   Hooks.on("updateSetting", async (setting) => {
@@ -995,6 +780,8 @@ Hooks.once("ready", async () => {
       console.error("FANG | DiploGlass updateSetting sync failed", err);
     }
   });
+
+  await willkommenZeigen();
 });
 
 Hooks.on("renderActorDirectory", (app, html, data) => {
@@ -1024,15 +811,6 @@ Hooks.on("renderActorDirectory", (app, html, data) => {
 
   // Append to the directory header
   $(html).find(".directory-header .header-actions").append(button);
-
-  // If Only-Sheet is active and this is a popout, position it like the journal panel
-  if (document.getElementById("so-main-buttons") && _fangIsActorDirectoryPopoutApp(app)) {
-    _fangMarkActorDirectoryPopout(app);
-    // Small delay to let Foundry finish positioning first
-    setTimeout(() => {
-      _fangApplyActorDirectorySidebarStyle(app);
-    }, 50);
-  }
 });
 
 
@@ -1040,6 +818,14 @@ Hooks.on("renderJournalTextPageSheet", (app, html, data) => {
   // Foundry sanitizes onclick attributes for security. We attach the listener here safely.
   const $html = $(html);
   $html.find(".fang-open-btn").on("click", _fangOpenGraphFromJournalButtonEvent);
+});
+
+// An actor's picture or name changed. The graph reads the picture from the actor now, so a
+// client only has to let go of its cached image; the GM additionally keeps the node's own
+// copy of picture and name in step, because that copy is what a player who may not see the
+// actor gets to see. Optional call: a client can hold a cached older fang-app.js.
+Hooks.on("updateActor", async (actor, changes) => {
+  if (fangApp) await fangApp._onActorUpdated?.(actor, changes);
 });
 
 // Auto-Release lock on Disconnect

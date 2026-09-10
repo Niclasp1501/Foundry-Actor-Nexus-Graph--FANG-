@@ -243,5 +243,137 @@ section("13. structurallyEqual ignoriert Positionen");
     ok(structurallyEqual(merged, merged), "reflexiv");
 }
 
+// 14 — the player relay, both steps
+// A player adds a node and their client relays it to the GM. The GM applies it and then
+// saves. Both merges have to be fed the right baseline: the GM's baseline must keep
+// describing what the SERVER holds, not the freshly merged result. Move it forward and
+// the second merge reads the player's new node as "the server deleted it" and drops it.
+section("14. Spieler-Relay: Grundlage darf nicht mitwandern");
+{
+    const server0 = baseGraph();                       // was der Server hat
+    const playerBase = clone(server0);                 // Grundlage des Spielers
+    const playerState = clone(server0);
+    playerState.nodes.push(node("ph-neu", { name: "Unbekannter Kontakt", isPlaceholder: true }));
+
+    const gmLive = clone(server0);
+    const gmBaseline = clone(server0);
+
+    // Schritt 1: applyRemoteGraphEdit
+    const { merged: nachRelay } = mergeGraphData(playerBase, playerState, gmLive);
+    ok(!!nachRelay.nodes.find(n => n.id === "ph-neu"), "Schritt 1 uebernimmt den neuen Knoten");
+
+    // Schritt 2a: so war es — Grundlage auf das Ergebnis gesetzt
+    const { merged: mitFalscherBasis } = mergeGraphData(clone(nachRelay), clone(nachRelay), clone(server0));
+    ok(!mitFalscherBasis.nodes.find(n => n.id === "ph-neu"),
+        "BELEG: mitgewanderte Grundlage laesst den Knoten beim Speichern verschwinden");
+
+    // Schritt 2b: so ist es jetzt — Grundlage bleibt der Serverstand
+    const { merged: mitRichtigerBasis } = mergeGraphData(gmBaseline, clone(nachRelay), clone(server0));
+    ok(!!mitRichtigerBasis.nodes.find(n => n.id === "ph-neu"),
+        "unveraenderte Grundlage rettet den Knoten in den Speichervorgang");
+}
+{
+    // Same trap for a relayed deletion: it must not come back.
+    const server0 = baseGraph();
+    const playerState = clone(server0);
+    playerState.nodes = playerState.nodes.filter(n => n.id !== "garrek");
+    const { merged: nachRelay } = mergeGraphData(clone(server0), playerState, clone(server0));
+    const { merged: gespeichert } = mergeGraphData(clone(server0), clone(nachRelay), clone(server0));
+    ok(!gespeichert.nodes.find(n => n.id === "garrek"), "geloeschter Knoten kehrt nicht zurueck");
+}
+
+// 15 — chronicle sort keys have to order as plain strings, negative years included
+//
+// Not part of the merge, but the same class of trap and no better home: the chronicle sorts
+// days by comparing these keys as text. A world whose calendar module FANG does not know
+// falls back to Foundry's own reckoning, where the present can sit before year zero.
+section("15. Sortierschluessel der Chronik");
+{
+    // Mirrors _getCalendarSort's year handling in fang-app.js.
+    const yearKey = (year) => year < 0
+        ? `-${String(999999 + year).padStart(6, "0")}`
+        : String(year).padStart(6, "0");
+    const key = (year, month, day) =>
+        `${yearKey(year)}-${String(month).padStart(3, "0")}-${String(day).padStart(3, "0")}`;
+
+    const chronologisch = [
+        [-66, 1, 1], [-9, 1, 1], [-1, 12, 30], [0, 1, 1], [5, 6, 15], [1435, 11, 13], [1492, 11, 1]
+    ];
+    const sortiert = [...chronologisch]
+        .map(d => ({ d, k: key(...d) }))
+        .sort((a, b) => a.k.localeCompare(b.k))
+        .map(x => x.d);
+    ok(JSON.stringify(sortiert) === JSON.stringify(chronologisch),
+        "Jahre sortieren chronologisch, auch negative");
+
+    ok(key(1435, 1, 12) === "001435-001-012", "positive Jahre behalten ihr altes Format");
+    ok(key(-1, 1, 1).localeCompare(key(0, 1, 1)) < 0, "negatives Jahr vor Jahr null");
+    ok(key(1435, 11, 13).localeCompare(key(1435, 11, 3)) > 0, "Tage innerhalb eines Monats");
+    ok(key(1435, 2, 30).localeCompare(key(1435, 11, 1)) < 0, "Monate innerhalb eines Jahres");
+    ok(key(1435, 17, 30).localeCompare(key(1436, 1, 1)) < 0, "ueber den Jahreswechsel");
+    // Ein Tag des Jahres statt eines Tags im Monat: dreistellig, damit 100 nach 99 kommt.
+    ok(key(0, 3, 100).localeCompare(key(0, 3, 99)) > 0, "dreistelliger Tag vergleicht numerisch");
+}
+
+// 16 — faction membership is a list now. The list is one field value, so it merges the same
+// way questUuids and conditions always have: whole-value, last writer wins, conflict reported.
+// The point of these is to prove that nothing special was needed - and that the mirror field
+// factionId cannot silently disagree with the list.
+section("16. Mehrere Fraktionen");
+{
+    const baseline = baseGraph();
+    baseline.factions.push({ id: "f2", name: "Gilde", color: "#0f0", x: 80, y: 80 });
+    baseline.nodes[0].factionIds = ["f1"];
+    baseline.nodes[0].factionId = "f1";
+
+    // Nobody touched it on the server; we added a second membership.
+    const mine = clone(baseline);
+    mine.nodes[0].factionIds = ["f1", "f2"];
+    const server = clone(baseline);
+    const { merged } = mergeGraphData(baseline, mine, server);
+    ok(JSON.stringify(merged.nodes[0].factionIds) === JSON.stringify(["f1", "f2"]),
+        "zweite Fraktion ueberlebt den Abgleich");
+    ok(merged.nodes[0].factionId === "f1", "die primaere bleibt die erste");
+}
+{
+    // The other side changed something else on the same node. Both survive.
+    const baseline = baseGraph();
+    baseline.factions.push({ id: "f2", name: "Gilde", color: "#0f0", x: 80, y: 80 });
+    baseline.nodes[0].factionIds = ["f1"];
+    baseline.nodes[0].factionId = "f1";
+
+    const mine = clone(baseline);
+    mine.nodes[0].factionIds = ["f1", "f2"];
+    const server = clone(baseline);
+    server.nodes[0].lore = "Neu geschrieben.";
+
+    const { merged, conflicts } = mergeGraphData(baseline, mine, server);
+    ok(JSON.stringify(merged.nodes[0].factionIds) === JSON.stringify(["f1", "f2"]),
+        "Fraktionsliste und fremde Textaenderung stossen sich nicht");
+    ok(merged.nodes[0].lore === "Neu geschrieben.", "der fremde Text bleibt stehen");
+    ok(conflicts.length === 0, "kein Konflikt, weil verschiedene Felder");
+}
+{
+    // Both changed the list. Ours wins, and it is reported - same as any other field.
+    const baseline = baseGraph();
+    baseline.factions.push({ id: "f2", name: "Gilde", color: "#0f0", x: 80, y: 80 });
+    baseline.nodes[0].factionIds = ["f1"];
+
+    const mine = clone(baseline);
+    mine.nodes[0].factionIds = ["f1", "f2"];
+    const server = clone(baseline);
+    server.nodes[0].factionIds = ["f2"];
+
+    const { merged, conflicts } = mergeGraphData(baseline, mine, server);
+    ok(JSON.stringify(merged.nodes[0].factionIds) === JSON.stringify(["f1", "f2"]),
+        "bei beidseitiger Aenderung gewinnt der letzte Schreiber");
+    ok(conflicts.some(c => c?.field === "factionIds" && c?.id === "elara"), "und der Konflikt wird gemeldet");
+}
+{
+    // Reordering is what makes another faction primary, so it has to count as a change.
+    ok(!valuesEqual(["f1", "f2"], ["f2", "f1"]),
+        "eine andere Reihenfolge ist eine Aenderung - sonst waere der Sternklick verloren");
+}
+
 console.log(`\n${failed === 0 ? "=== ALLE TESTS BESTANDEN ===" : `=== ${failed} FEHLER ===`}  (${passed} ok, ${failed} fail)\n`);
 process.exit(failed ? 1 : 0);

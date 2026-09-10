@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
+import { execFileSync } from "node:child_process";
 
 const root = process.cwd();
 const langDir = path.join(root, "lang");
@@ -34,13 +36,35 @@ for (const file of localeFiles) {
 const english = locales.get("en.json");
 if (!english) errors.push("Missing lang/en.json");
 
+/**
+ * Die Sprachen, die hier geschrieben werden.
+ *
+ * Alles andere gehoert seit dem 06.09.2026 Weblate. Dort fuellen Freiwillige
+ * die Luecken — eine fehlende Uebersetzung ist dann kein Fehler, sondern
+ * genau der Zustand, den Weblate anzeigt und der jemanden zum Mitmachen
+ * bringt. Wuerde der Validator sie weiter als Fehler fuehren, waere jede neue
+ * Zeichenkette ein roter Bau, bis acht Fremde reagiert haben — und der
+ * naheliegende Ausweg waere, die acht Dateien selbst zu fuellen und damit
+ * gespendete Arbeit zu ueberschreiben.
+ *
+ * `en` ist die Quelle und muss vollstaendig sein; `de` schreiben wir mit, weil
+ * es die Sprache des Tisches ist. Beide bleiben Fehler.
+ */
+const EIGENE_SPRACHEN = new Set(["en.json", "de.json"]);
+
 if (english) {
   const baseKeys = new Set(flattenKeys(english).filter(Boolean));
   for (const [file, json] of locales.entries()) {
     const keys = new Set(flattenKeys(json).filter(Boolean));
     const missing = [...baseKeys].filter((key) => !keys.has(key));
     const extra = [...keys].filter((key) => !baseKeys.has(key));
-    if (missing.length) errors.push(`${file}: missing keys: ${missing.join(", ")}`);
+    if (missing.length) {
+      const zeile = `${file}: missing keys: ${missing.join(", ")}`;
+      if (EIGENE_SPRACHEN.has(file)) errors.push(zeile);
+      else warnings.push(`${zeile} (Weblate)`);
+    }
+    // Ueberzaehlige Schluessel bleiben ueberall eine Warnung: Sie deuten auf
+    // eine Umbenennung, die in einer Sprache nicht nachgezogen wurde.
     if (extra.length) warnings.push(`${file}: extra keys: ${extra.join(", ")}`);
   }
 }
@@ -65,6 +89,133 @@ for (const file of [...localeFiles, "README.md", "TODO.md", "DEVELOPER_GUIDE.md"
   }
 }
 
+// Braces in the stylesheets have to balance.
+//
+// One unclosed block swallows everything after it: the rules are still in the file, still served,
+// and simply never match. A selector list edited by script is how it happened -- a line ending in
+// "{" was duplicated, so one block got two opening braces, and five of those left the last four
+// hundred rules inert with nothing anywhere reporting a problem.
+{
+  const styleDir = path.join(root, "styles");
+  const sheets = fs.existsSync(styleDir)
+    ? fs.readdirSync(styleDir).filter((file) => file.endsWith(".css")).sort()
+    : [];
+  for (const file of sheets) {
+    const text = fs.readFileSync(path.join(styleDir, file), "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
+    let depth = 0;
+    let line = 1;
+    let firstExtraClose = 0;
+    for (const char of text) {
+      if (char === "\n") line++;
+      else if (char === "{") depth++;
+      else if (char === "}") {
+        depth--;
+        if (depth < 0 && !firstExtraClose) firstExtraClose = line;
+      }
+    }
+    if (depth > 0) errors.push(`styles/${file}: unbalanced braces, ${depth} block(s) never closed`);
+    else if (depth < 0 || firstExtraClose) errors.push(`styles/${file}: unbalanced braces, extra "}" around line ${firstExtraClose}`);
+  }
+}
+
+// Parse every script the way Foundry actually loads it: as an ES module.
+//
+// "node --check foo.js" treats the file as a CommonJS script and waves through things a module
+// parser rejects. "a ?? b || c" is one of them. It shipped, and the browser answered with a
+// SyntaxError pointing at an unrelated private method thirty lines into a different class --
+// which meant main.js never evaluated, so there were no hooks, no button, no FANG at all, for
+// everyone. Copying to .mjs before checking is what makes this honest.
+{
+  const scriptDir = path.join(root, "scripts");
+  const scripts = fs.existsSync(scriptDir)
+    ? fs.readdirSync(scriptDir).filter((file) => /\.(js|mjs)$/.test(file)).sort()
+    : [];
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "fang-check-"));
+  for (const file of scripts) {
+    const asModule = path.join(tmpDir, file.replace(/\.js$/, ".mjs"));
+    fs.copyFileSync(path.join(scriptDir, file), asModule);
+    try {
+      execFileSync(process.execPath, ["--check", asModule], { stdio: "pipe" });
+    } catch (err) {
+      const message = String(err.stderr || err.message).match(/SyntaxError: .*/)?.[0] ?? "parse failed";
+      errors.push(`scripts/${file}: ${message}`);
+    }
+  }
+  fs.rmSync(tmpDir, { recursive: true, force: true });
+}
+
+// Duplicate keys in a dialog's option object.
+//
+// A second "render:" in the same object literal silently wins over the first, and the wiring
+// in the first one never runs: no error, no warning, the dialog simply does nothing when you
+// click. That shipped once, in the faction picker, and cost a beta tester an evening. JavaScript
+// allows duplicate keys even in strict mode, so no parser will ever report this.
+//
+// The scan is deliberately narrow: it walks the option object of the calls FANG builds its
+// dialogs from and only looks at keys directly inside it. Nested objects are skipped, because
+// "callback" appearing once per button is correct.
+{
+  const scriptDir = path.join(root, "scripts");
+  const files = fs.existsSync(scriptDir)
+    ? fs.readdirSync(scriptDir).filter((file) => /\.(js|mjs)$/.test(file)).sort()
+    : [];
+
+  for (const file of files) {
+    const text = fs.readFileSync(path.join(scriptDir, file), "utf8");
+    const opener = /(_openPanelEditor|_openDialog|DialogV2\.wait)\s*\(\s*\{/g;
+    let match;
+    while ((match = opener.exec(text)) !== null) {
+      const start = opener.lastIndex - 1;           // auf die Klammer selbst
+      const seen = new Map();
+      let depth = 0;
+      let i = start;
+      let inString = null;
+      let inLineComment = false;
+      let inBlockComment = false;
+
+      for (; i < text.length; i++) {
+        const c = text[i];
+        const next = text[i + 1];
+
+        if (inLineComment) { if (c === "\n") inLineComment = false; continue; }
+        if (inBlockComment) { if (c === "*" && next === "/") { inBlockComment = false; i++; } continue; }
+        if (inString) {
+          if (c === "\\") { i++; continue; }
+          // A template literal can hold ${ ... } with braces of its own; those are counted
+          // by the depth below, which is why the string state is left on the closing quote only.
+          if (c === inString) inString = null;
+          continue;
+        }
+        if (c === "/" && next === "/") { inLineComment = true; i++; continue; }
+        if (c === "/" && next === "*") { inBlockComment = true; i++; continue; }
+        if (c === '"' || c === "'" || c === "`") { inString = c; continue; }
+
+        if (c === "{" || c === "(" || c === "[") { depth++; continue; }
+        if (c === "}" || c === ")" || c === "]") { depth--; if (depth === 0) break; continue; }
+
+        // Only keys sitting directly inside the option object count.
+        if (depth === 1 && /[A-Za-z_$]/.test(c)) {
+          const rest = text.slice(i);
+          const key = /^([A-Za-z_$][\w$]*)\s*:/.exec(rest);
+          if (key) {
+            const line = text.slice(0, i).split("\n").length;
+            if (seen.has(key[1])) {
+              errors.push(`scripts/${file}:${line}: duplicate option key "${key[1]}" in ${match[1]}(...) - the later one silently wins (first at line ${seen.get(key[1])})`);
+            } else {
+              seen.set(key[1], line);
+            }
+            i += key[0].length - 1;
+          } else {
+            // Skip the rest of the identifier so "renderFoo" is not read as "render".
+            const wort = /^[\w$]+/.exec(rest);
+            if (wort) i += wort[0].length - 1;
+          }
+        }
+      }
+    }
+  }
+}
+
 if (warnings.length) {
   console.warn("Warnings:");
   for (const warning of warnings) console.warn(`- ${warning}`);
@@ -76,4 +227,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log(`FANG validation passed (${localeFiles.length} locales).`);
+console.log(`FANG validation passed (${localeFiles.length} locales, scripts parse as ES modules, stylesheets balanced).`);

@@ -10,46 +10,46 @@
             <!-- Edit Lock Banner -->
             <div id="fang-lock-banner" class="lock-banner no-editor">
                 <div class="lock-info">
-                    <i class="fas fa-lock-open"></i>
+                    <i class="fas fa-lock-open" aria-hidden="true"></i>
                     <span id="lock-text">{{localize "FANG.UI.NoEditor"}}</span>
                 </div>
                 <button id="btnToggleLock" class="fang-lock-btn" title="{{localize 'FANG.UI.EditMode'}}"
                     data-tooltip="{{localize 'FANG.UI.EditMode'}}" aria-label="{{localize 'FANG.UI.EditMode'}}">
-                    <i class="fas fa-pen-to-square"></i>
+                    <i class="fas fa-pen-to-square" aria-hidden="true"></i>
                     <span id="lock-btn-text">{{localize "FANG.UI.EditMode"}}</span>
                 </button>
                 <button id="btnForceRelease" class="fang-lock-btn gm-only hidden"
                     title="{{localize 'FANG.UI.ForceRelease'}}" data-tooltip="{{localize 'FANG.UI.ForceRelease'}}"
                     aria-label="{{localize 'FANG.UI.ForceRelease'}}">
-                    <i class="fas fa-unlock-alt"></i>
+                    <i class="fas fa-unlock-alt" aria-hidden="true"></i>
                 </button>
             </div>
         </div>
 
-        <nav class="fang-rail" aria-label="FANG tools">
+        <nav class="fang-rail" aria-label="{{localize 'FANG.UI.RailLabel'}}">
             <button type="button" id="fangRailSearch" class="fang-rail-btn" title="{{localize 'FANG.UI.SearchToggle'}}"
                 data-tooltip="{{localize 'FANG.UI.SearchToggle'}}" aria-label="{{localize 'FANG.UI.SearchToggle'}}">
-                <i class="fas fa-magnifying-glass"></i>
+                <i class="fas fa-magnifying-glass" aria-hidden="true"></i>
             </button>
             <button type="button" id="fangRailAffiliation" class="fang-rail-btn gm-only"
                 title="{{localize 'FANG.UI.RailAffiliation'}}" data-tooltip="{{localize 'FANG.UI.RailAffiliation'}}"
                 aria-label="{{localize 'FANG.UI.RailAffiliation'}}">
-                <i class="fas fa-sitemap"></i>
+                <i class="fas fa-sitemap" aria-hidden="true"></i>
             </button>
             <button type="button" id="fangRailPresentation" class="fang-rail-btn gm-only"
                 title="{{localize 'FANG.UI.Presentation'}}" data-tooltip="{{localize 'FANG.UI.Presentation'}}"
                 aria-label="{{localize 'FANG.UI.Presentation'}}">
-                <i class="fas fa-display"></i>
+                <i class="fas fa-display" aria-hidden="true"></i>
             </button>
             <button type="button" id="fangRailHistory" class="fang-rail-btn"
                 title="{{localize 'FANG.History.Timeline'}}" data-tooltip="{{localize 'FANG.History.Timeline'}}"
                 aria-label="{{localize 'FANG.History.Timeline'}}">
-                <i class="fas fa-clock-rotate-left"></i>
+                <i class="fas fa-clock-rotate-left" aria-hidden="true"></i>
             </button>
             <button type="button" id="fangRailManage" class="fang-rail-btn gm-only"
                 title="{{localize 'FANG.UI.RailSettings'}}" data-tooltip="{{localize 'FANG.UI.RailSettings'}}"
                 aria-label="{{localize 'FANG.UI.RailSettings'}}">
-                <i class="fas fa-sliders"></i>
+                <i class="fas fa-sliders" aria-hidden="true"></i>
             </button>
         </nav>
 
@@ -61,7 +61,7 @@
                     <h3>{{localize "FANG.UI.ManageFactions"}}</h3>
                     <div class="input-stack">
                         <button id="btnManageFactions" class="btn action-btn fang-btn-block">
-                            <i class="fas fa-users-gear"></i> {{localize "FANG.UI.ManageFactions"}}
+                            <i class="fas fa-users-gear" aria-hidden="true"></i> {{localize "FANG.UI.ManageFactions"}}
                         </button>
                         <p class="fang-hint">{{localize "FANG.UI.FactionsHint"}}</p>
                         <div class="fang-toggle-row">
@@ -79,7 +79,7 @@
                     <h3>{{localize "FANG.Zones.Title"}}</h3>
                     <div class="input-stack">
                         <button id="btnManageZones" class="btn action-btn fang-btn-block">
-                            <i class="fas fa-location-dot"></i> {{localize "FANG.Zones.Manage"}}
+                            <i class="fas fa-location-dot" aria-hidden="true"></i> {{localize "FANG.Zones.Manage"}}
                         </button>
                         <p class="fang-hint">{{localize "FANG.Zones.Hint"}}</p>
                     </div>
@@ -94,17 +94,17 @@
                         <p class="fang-hint">{{localize "FANG.UI.GroupingHint"}}</p>
                         <div class="fang-segmented" role="radiogroup" aria-label="{{localize 'FANG.UI.GroupingTitle'}}">
                             <button type="button" class="fang-segment active" data-grouping="none" role="radio" aria-checked="true">
-                                <i class="fas fa-circle-nodes"></i> {{localize "FANG.UI.GroupingNone"}}
+                                <i class="fas fa-circle-nodes" aria-hidden="true"></i> {{localize "FANG.UI.GroupingNone"}}
                             </button>
                             <button type="button" class="fang-segment" data-grouping="faction" role="radio" aria-checked="false">
-                                <i class="fas fa-users"></i> {{localize "FANG.UI.GroupByFactionShort"}}
+                                <i class="fas fa-users" aria-hidden="true"></i> {{localize "FANG.UI.GroupByFactionShort"}}
                             </button>
                             <button type="button" class="fang-segment" data-grouping="zone" role="radio" aria-checked="false">
-                                <i class="fas fa-location-dot"></i> {{localize "FANG.UI.GroupByZoneShort"}}
+                                <i class="fas fa-location-dot" aria-hidden="true"></i> {{localize "FANG.UI.GroupByZoneShort"}}
                             </button>
                         </div>
                         <p class="fang-hint fang-hint-warn" id="groupingLockedHint" hidden>
-                            <i class="fas fa-lock"></i> {{localize "FANG.Messages.GroupingPositionsLocked"}}
+                            <i class="fas fa-lock" aria-hidden="true"></i> {{localize "FANG.Messages.GroupingPositionsLocked"}}
                         </p>
                     </div>
                 </div>
@@ -117,11 +117,11 @@
                             <h4>{{localize "FANG.UI.GroupPlayers"}}</h4>
                             <button id="btnShareGraph" class="btn action-btn"
                                 title="{{localize 'FANG.UI.ShowPlayersHint'}}">
-                                <i class="fas fa-eye"></i> {{localize "FANG.UI.ShowPlayers"}}
+                                <i class="fas fa-eye" aria-hidden="true"></i> {{localize "FANG.UI.ShowPlayers"}}
                             </button>
                             <button id="btnCloseGraphRemote" class="btn action-btn"
                                 title="{{localize 'FANG.UI.ClosePlayersHint'}}">
-                                <i class="fas fa-times-circle"></i> {{localize "FANG.UI.ClosePlayers"}}
+                                <i class="fas fa-times-circle" aria-hidden="true"></i> {{localize "FANG.UI.ClosePlayers"}}
                             </button>
                         </div>
 
@@ -131,17 +131,17 @@
                             <h4>{{localize "FANG.UI.GroupMonitor"}}</h4>
                             <button id="btnShareGraphMonitor" class="btn action-btn"
                                 title="{{localize 'FANG.UI.ShowMonitorHint'}}">
-                                <i class="fas fa-tv"></i> {{localize "FANG.UI.ShowMonitor"}}
+                                <i class="fas fa-tv" aria-hidden="true"></i> {{localize "FANG.UI.ShowMonitor"}}
                             </button>
                             <button id="btnCloseGraphMonitor" class="btn action-btn"
                                 title="{{localize 'FANG.UI.CloseMonitorHint'}}">
-                                <i class="fas fa-desktop"></i> {{localize "FANG.UI.CloseMonitor"}}
+                                <i class="fas fa-desktop" aria-hidden="true"></i> {{localize "FANG.UI.CloseMonitor"}}
                             </button>
                         </div>
 
                         <button id="btnCenterGraph" class="btn action-btn fang-btn-accent"
                             title="{{localize 'FANG.UI.CenterGraphHint'}}">
-                            <i class="fas fa-expand-arrows-alt"></i> {{localize "FANG.UI.CenterGraph"}}
+                            <i class="fas fa-expand-arrows-alt" aria-hidden="true"></i> {{localize "FANG.UI.CenterGraph"}}
                         </button>
                      </div>
                  </div>
@@ -199,7 +199,7 @@
                     <div class="input-stack">
                         <button id="btnOpenBackgroundConfig" class="btn action-btn fang-btn-block fang-btn-accent"
                             title="{{localize 'FANG.UI.Background.BackgroundConfigTitle'}}">
-                            <i class="fas fa-palette"></i> {{localize "FANG.UI.Background.BackgroundConfigTitle"}}
+                            <i class="fas fa-palette" aria-hidden="true"></i> {{localize "FANG.UI.Background.BackgroundConfigTitle"}}
                         </button>
                         <p class="fang-hint">{{localize "FANG.UI.Background.Hint"}}</p>
                     </div>
@@ -209,10 +209,10 @@
                     <h3>{{localize "FANG.UI.Export"}} / {{localize "FANG.UI.Import"}}</h3>
                     <div class="button-row">
                         <button id="btnExportGraph" class="btn action-btn">
-                            <i class="fas fa-download"></i> {{localize "FANG.UI.ExportBtn"}}
+                            <i class="fas fa-download" aria-hidden="true"></i> {{localize "FANG.UI.ExportBtn"}}
                         </button>
                         <label for="importFile" class="btn action-btn file-label">
-                            <i class="fas fa-file-import"></i> {{localize "FANG.UI.ImportBtn"}}
+                            <i class="fas fa-file-import" aria-hidden="true"></i> {{localize "FANG.UI.ImportBtn"}}
                         </label>
                         <input type="file" id="importFile" accept=".json" hidden>
                     </div>
@@ -232,26 +232,26 @@
                     <input type="checkbox" id="fangSearchIsolate">
                     <span>{{localize "FANG.UI.SearchOnlyMatches"}}</span>
                 </label>
-                <button id="fangSearchClear" class="btn action-btn" title="{{localize 'FANG.UI.SearchCloseHint'}}">
-                    <i class="fas fa-times"></i>
+                <button id="fangSearchClear" class="btn action-btn" title="{{localize 'FANG.UI.SearchCloseHint'}}" aria-label="{{localize 'FANG.UI.SearchCloseHint'}}">
+                    <i class="fas fa-times" aria-hidden="true"></i>
                 </button>
             </div>
         </div>
         <div id="fang-canvas-lock-indicator" class="canvas-lock-indicator hidden">
-            <i class="fas fa-user-edit"></i>
+            <i class="fas fa-user-edit" aria-hidden="true"></i>
             <span id="canvas-lock-text"></span>
         </div>
         <div id="fang-canvas-edit-tools" class="fang-canvas-edit-tools hidden">
             <button type="button" id="btnCanvasQuickConnect" class="fang-canvas-tool-btn fang-quick-connect-tool"
                 title="{{localize 'FANG.UI.QuickConnect'}}" data-tooltip="{{localize 'FANG.UI.QuickConnect'}}"
                 aria-label="{{localize 'FANG.UI.QuickConnect'}}">
-                <i class="fas fa-route"></i>
+                <i class="fas fa-route" aria-hidden="true"></i>
                 <span>{{localize "FANG.UI.QuickConnect"}}</span>
             </button>
             <button type="button" id="btnCanvasAddPlaceholder" class="fang-canvas-tool-btn"
                 title="{{localize 'FANG.UI.AddPlaceholder'}}" data-tooltip="{{localize 'FANG.UI.AddPlaceholder'}}"
                 aria-label="{{localize 'FANG.UI.AddPlaceholder'}}">
-                <i class="fas fa-user-plus"></i>
+                <i class="fas fa-user-plus" aria-hidden="true"></i>
                 <span>{{localize "FANG.UI.AddPlaceholder"}}</span>
             </button>
             <div id="fangCanvasEditStatus" class="fang-canvas-edit-status hidden"></div>
@@ -263,32 +263,32 @@
 
         <!-- Spectator Mode Activity Indicator -->
         <div id="spectator-active-indicator" class="spectator-active-indicator">
-            <i class="fas fa-video"></i> {{localize "FANG.UI.SpectatorActive"}}
+            <i class="fas fa-video" aria-hidden="true"></i> {{localize "FANG.UI.SpectatorActive"}}
         </div>
 
         <!-- Right-Click Radial Context Menu -->
         <div id="fang-context-menu" class="fang-context-menu hidden">
             <ul>
                 <li id="ctxInfo" class="ctx-item ctx-primary">
-                    <i class="fas fa-circle-info"></i> {{localize "FANG.ContextMenu.Info"}}
+                    <i class="fas fa-circle-info" aria-hidden="true"></i> {{localize "FANG.ContextMenu.Info"}}
                 </li>
                 <li id="ctxSpotlight" class="ctx-item ctx-primary">
-                    <i class="fas fa-compass"></i> {{localize "FANG.ContextMenu.Spotlight"}}
+                    <i class="fas fa-compass" aria-hidden="true"></i> {{localize "FANG.ContextMenu.Spotlight"}}
                 </li>
                 <li id="ctxQuests" class="ctx-item ctx-primary">
-                    <i class="fas fa-scroll"></i> {{localize "FANG.UI.Quests"}}
+                    <i class="fas fa-scroll" aria-hidden="true"></i> {{localize "FANG.UI.Quests"}}
                 </li>
                 <li id="ctxHistory" class="ctx-item ctx-primary">
-                    <i class="fas fa-clock-rotate-left"></i> {{localize "FANG.History.Events"}}
+                    <i class="fas fa-clock-rotate-left" aria-hidden="true"></i> {{localize "FANG.History.Events"}}
                 </li>
                 <li id="ctxEditActor" class="ctx-item ctx-primary">
-                    <i class="fas fa-pen-to-square"></i> {{localize "FANG.ContextMenu.Edit"}}
+                    <i class="fas fa-pen-to-square" aria-hidden="true"></i> {{localize "FANG.ContextMenu.Edit"}}
                 </li>
                 <li id="ctxUnpinNode" class="ctx-item ctx-primary hidden">
-                    <i class="fas fa-thumbtack-slash"></i> {{localize "FANG.ContextMenu.UnpinNode"}}
+                    <i class="fas fa-thumbtack-slash" aria-hidden="true"></i> {{localize "FANG.ContextMenu.UnpinNode"}}
                 </li>
                 <li id="ctxDeleteNode" class="ctx-item danger">
-                    <i class="fas fa-trash"></i> {{localize "FANG.ContextMenu.DeleteNode"}}
+                    <i class="fas fa-trash" aria-hidden="true"></i> {{localize "FANG.ContextMenu.DeleteNode"}}
                 </li>
             </ul>
         </div>
@@ -297,16 +297,16 @@
         <div id="fang-edge-context-menu" class="fang-context-menu hidden">
             <ul>
                 <li id="ctxEdgeInfo" class="ctx-item">
-                    <i class="fas fa-circle-info"></i> {{localize "FANG.ContextMenu.Info"}}
+                    <i class="fas fa-circle-info" aria-hidden="true"></i> {{localize "FANG.ContextMenu.Info"}}
                 </li>
                 <li id="ctxEdgeSpotlight" class="ctx-item">
-                    <i class="fas fa-compass"></i> {{localize "FANG.ContextMenu.Spotlight"}}
+                    <i class="fas fa-compass" aria-hidden="true"></i> {{localize "FANG.ContextMenu.Spotlight"}}
                 </li>
                 <li id="ctxEditConnection" class="ctx-item">
-                    <i class="fas fa-edit"></i> {{localize "FANG.ContextMenu.EditConnection"}}
+                    <i class="fas fa-edit" aria-hidden="true"></i> {{localize "FANG.ContextMenu.EditConnection"}}
                 </li>
                 <li id="ctxDeleteConnection" class="ctx-item danger">
-                    <i class="fas fa-unlink"></i> {{localize "FANG.ContextMenu.DeleteConnection"}}
+                    <i class="fas fa-unlink" aria-hidden="true"></i> {{localize "FANG.ContextMenu.DeleteConnection"}}
                 </li>
             </ul>
         </div>
@@ -319,7 +319,7 @@
                         <img id="narrative-portrait" src="">
                     </div>
                     <div id="narrative-quests-container" class="hidden">
-                        <h4 class="narrative-quests-header"><i class="fas fa-scroll"></i> {{localize
+                        <h4 class="narrative-quests-header"><i class="fas fa-scroll" aria-hidden="true"></i> {{localize
                             "FANG.UI.Quests"}}</h4>
                         <ul id="narrative-quests-list"></ul>
                     </div>
@@ -330,7 +330,7 @@
                     <div id="narrative-text"></div>
                 </div>
                 <div class="narrative-close">
-                    <i class="fas fa-times"></i>
+                    <i class="fas fa-times" aria-hidden="true"></i>
                 </div>
             </div>
         </div>
@@ -343,7 +343,7 @@
                     <div id="quest-spotlight-text"></div>
                 </div>
                 <div class="narrative-close">
-                    <i class="fas fa-times"></i>
+                    <i class="fas fa-times" aria-hidden="true"></i>
                 </div>
             </div>
         </div>
@@ -360,20 +360,20 @@
                 </div>
                 <div class="edge-directional-indicator"
                     style="display: none; align-self: center; font-size: 2.5em; color: var(--fang-accent); margin: 0 15px; opacity: 0.8; text-shadow: 0 0 10px rgba(0,0,0,0.5);">
-                    <i class="fas fa-arrow-right"></i>
+                    <i class="fas fa-arrow-right" aria-hidden="true"></i>
                 </div>
                 <div class="narrative-portrait-container edge-target-portrait">
                     <img id="edge-target-portrait" src="">
                 </div>
                 <div class="narrative-close">
-                    <i class="fas fa-times"></i>
+                    <i class="fas fa-times" aria-hidden="true"></i>
                 </div>
             </div>
         </div>
         <!-- Quest Picker Panel (In-Canvas, shown when a node has multiple quests) -->
         <div id="fang-quest-picker" class="hidden">
             <div id="fang-quest-picker-header">
-                <i class="fas fa-scroll"></i>
+                <i class="fas fa-scroll" aria-hidden="true"></i>
                 <span id="fang-quest-picker-title"></span>
             </div>
             <ul id="fang-quest-picker-list"></ul>
@@ -387,7 +387,7 @@
         <div class="fang-editor-panel" role="dialog" aria-modal="true" aria-labelledby="fang-editor-title">
             <header class="fang-editor-header">
                 <h2 id="fang-editor-title"></h2>
-                <button type="button" class="fang-editor-close" aria-label="Close"><i class="fas fa-xmark"></i></button>
+                <button type="button" class="fang-editor-close" aria-label="{{localize 'FANG.UI.Close'}}"><i class="fas fa-xmark" aria-hidden="true"></i></button>
             </header>
             <div class="fang-editor-body fang-dialog"></div>
             <footer class="fang-editor-footer"></footer>

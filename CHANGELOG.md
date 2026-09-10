@@ -3,6 +3,140 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Module versions follow the Foundry-targeted `<foundry-major>.<YYMM>.<patch>` release scheme documented in `AGENTS.md`.
 
+## [14.2609.2] - 2026-09-05
+
+### Added
+- **Ein Charakter kann mehreren Fraktionen angehören.** Bisher gab es ein Auswahlfeld mit genau einer Fraktion — wer beim Söldner, der für die Gilde arbeitet und heimlich im Zirkel sitzt, alle drei festhalten wollte, musste sich für eine entscheiden. Im Knoten-Editor steht jetzt eine Liste mit Kästchen; angehakt wird, was zutrifft. Gewünscht von @Axel-of-the-Key (#8).
+
+  **Der Tokenring zeigt alle.** Statt eines Kreises in einer Farbe bekommt jede Fraktion einen Bogen. Bei einer Fraktion sieht das aus wie vorher — für alle, die nie eine zweite vergeben, ändert sich nichts. Die Mitgliederlinien werden ebenfalls für jede Fraktion gezogen, ein Charakter hängt also in mehreren Ringen.
+
+  **Eine davon trägt einen Stern.** Position und Fläche lassen sich nicht teilen: Die Gruppierung zieht einen Knoten zu genau einem Mittelpunkt, und eine Fraktionsfläche wird auf ihre eigene Rasterzelle beschnitten, damit sich zwei Flächen nie überlappen. Deshalb bestimmt die Fraktion mit dem Stern, wo ein Charakter steht — und das auch nur, solange die Gruppierung eingeschaltet ist. Alles, was bloß gezeichnet wird, nimmt die ganze Liste. Der Stern erscheint erst ab der zweiten Fraktion; vorher gibt es nichts zu entscheiden.
+
+  Vorhandene Welten müssen nichts tun. Aus der einen Fraktion wird beim Laden eine Liste mit einem Eintrag, und das alte Feld bleibt als Spiegel der primären Fraktion erhalten — damit ein älteres FANG, eine exportierte Datei und der Diploglass-Abgleich weiter das lesen, was sie erwarten.
+
+- **Rückblicke bekommen eine Journalseite — angelegt und geöffnet aus FANG heraus.** Ein Sitzungsrückblick ist Fließtext und gehört nicht in eine Welt-Einstellung, die bei jeder Änderung komplett neu geschrieben und verteilt wird — auch dann, wenn nur automatisch „Token aufgetaucht“ dazukommt. Ein Eintrag der Kategorie *Rückblick* trägt deshalb nur noch die Kurzfassung; der lange Text steht auf einer eigenen Seite im Journal **FANG Chronik**, das im selben Ordner wie das Graph-Journal liegt.
+
+  Angelegt und geöffnet wird sie über einen Knopf am Eintrag und im Bearbeitungsformular — Foundrys eigener Editor mit Formatierung, Bildern und `@UUID`-Verweisen auf Akteure, Szenen und Journale, ohne dass FANG davon etwas nachbauen muss.
+
+  Die Seite gehört ihrem Verfasser: ein Spieler bearbeitet seinen eigenen Rückblick direkt, ohne die Bearbeitungssperre des Graphen. Da Spieler keine Dokumente anlegen dürfen, geht die erste Anfrage über die Spielleitung, die die Seite erzeugt und die Kennung zurückmeldet.
+
+  Beim Löschen eines Eintrags mit Seite wird gefragt, ob die Seite mitgehen soll. Fremde Prosa still zu löschen wäre ein Verlust, den niemand bemerkt, bis er sie sucht.
+
+
+### Changed
+- **Ein Rückblick fragt nur noch, von wem er ist.** Titel und Kurzfassung waren beide überflüssig: der Text steht auf der Seite, und die Überschrift ist ohnehin immer dieselbe. Statt zweier Textfelder steht dort jetzt eine Auswahl der Charaktere, und der Eintrag heißt **„Rückblick von {name}“**. Vorgeschlagen wird der eigene Charakter; eine Spielleitung kann für jeden am Tisch schreiben.
+
+  Sitzt der gewählte Charakter im Graphen, hängt sich der Eintrag gleich an seinen Knoten — der Rückblick taucht damit auch in der Chronik dieses Tokens auf, nicht nur in der gesamten.
+
+  Ein vorhandener Rückblick behält seine Überschrift, solange niemand die Auswahl anfasst. Sie bei jedem Speichern neu zu bilden würde Einträge umbenennen, die vor Monaten geschrieben wurden.
+
+- **Knopf in der Blattansicht von Ninjo's In-Person Tools.** FANG meldet seinen Knopf jetzt über deren Schnittstelle (`api.sheetView.registerButton`) an, statt nur nach Sheet Onlys Leiste zu suchen. Beide Wege bleiben: Wer Sheet Only nutzt, sieht den Knopf dort wie bisher.
+
+### Fixed
+- **Der Fraktionswähler tat nichts.** Kästchen ließen sich anhaken, der Stern ließ sich klicken, beim Speichern stand alles wieder wie vorher — ohne eine einzige Meldung in der Konsole. Der Grund: Das Optionsobjekt des Editors trug **zweimal `render`**, meinen neuen Block und einen älteren. JavaScript nimmt in so einem Fall den letzten und verwirft den ersten stillschweigend; die ganze Verdrahtung lief also nie. Sie steht jetzt im vorhandenen Block, und zwar vor dessen GM-Sperre, damit auch ein Spieler den Wähler bedienen kann. Gemeldet von @Axel-of-the-Key (#8).
+
+  Dagegen prüft `fang-validate` jetzt: Es liest das Optionsobjekt jedes Dialogaufrufs und meldet einen Schlüssel, der dort zweimal steht. Doppelte Schlüssel sind auch im strengen Modus erlaubt, kein Parser warnt davor — und der Fehler zeigt sich nur daran, dass eine Schaltfläche nichts tut. Gegen den ausgelieferten Stand geprüft: Die Regel findet ihn.
+
+- **Das Bild eines Knotens folgt jetzt seinem Akteur.** Beim Hinzufuegen wurde eine Kopie des Bildes gespeichert und beim Zeichnen bevorzugt; ein spaeter geaendertes Portraet oder Token erreichte den Graphen deshalb nie. Gezeichnet wird jetzt zuerst das Bild des Akteurs. Die gespeicherte Kopie bleibt als Rueckfall fuer die Faelle, in denen es keinen Akteur zu lesen gibt: ein Spieler, der ihn nicht sehen darf und ihn deshalb gar nicht hat, und ein geloeschter Akteur. Gemeldet von @taylor-nightingale (#7).
+
+  Aendert sich ein Akteur, verwirft FANG ausserdem das zwischengespeicherte Bild — sonst bliebe das alte bis zum naechsten Oeffnen stehen — und zieht bei der Spielleitung Kopie und Name nach. Der Name folgt dabei nur, wenn der Knoten nie von Hand umbenannt wurde; sonst bleibt er stehen und nur der hinterlegte echte Name wandert mit.
+
+- **Rückblicke tauchten in der Chronik nicht auf.** Die Anzeige verwarf jeden Eintrag ohne Text — sinnvoll, solange Text das Einzige war, was ein Eintrag zeigen konnte. Seit dem Wegfall der Kurzfassung trägt ein Rückblick bewusst keinen Spielertext, weil sein Inhalt auf der Journalseite steht; damit verschwand er bei Spielern immer und bei der Spielleitung, sobald auch die GM-Notiz leer blieb. Eine Überschrift oder eine Seite zum Öffnen zählen jetzt ebenfalls. Die Einträge waren nie verloren, nur nicht gezeigt.
+
+- **Die Gestaltung des Eingabeformulars war seit dem Umbau der Zeitachse weg.** Der Bereichsersatz in `fang.css` griff weiter als beabsichtigt und nahm den Wann-Schalter, die Tag-Monat-Jahr-Auswahl, die Vorschauzeile des gewählten Datums und den Hinweis „Erfahren am …“ mit. Die Regeln stehen wieder da.
+
+- **„Für Spieler sichtbar“ stand unter den GM-Notizen** und las sich, als gälte es für sie. Gemeint ist der ganze Eintrag. Der Haken heißt jetzt **„Ganzen Eintrag für Spieler freigeben“**, steht in einem eigenen Rahmen und sagt darunter, was ohne ihn passiert; über dem Haken steht, dass GM-Notizen ohnehin nie zu Spielern gelangen.
+
+## [14.2609.1] - 2026-09-05
+
+### Added
+- **Echtzeit als Rückfallebene ohne Kalender.** Findet FANG weder ein bekanntes Kalendermodul noch einen Kalender in der Welt, trägt ein Eintrag jetzt das echte Datum samt Uhrzeit statt „Ohne Spieltag" — in der Sprache der Oberfläche, mit Sortierschlüssel in derselben Form wie ein Spieldatum. Die Chronik ordnet sich damit auch in einer Welt ganz ohne Kalender.
+
+  Zum Nachtragen gibt es in diesem Fall ein echtes Datumsfeld statt eines Textfelds, das jemand jedes Mal gleich schreiben müsste.
+
+- **Uhrzeit in der Chronik.** Ein Eintrag hält jetzt auch die Tageszeit fest, zu der er entstanden ist, und zeigt sie am Kopf des Eintrags neben der Kategorie. Innerhalb eines Spieltags wird danach geordnet — die spätere Stunde zuerst; Einträge ohne Uhrzeit stehen dahinter. Am Schalter „Heute" steht sie hinter dem Datum.
+
+  Ein von Hand gewählter Tag bekommt bewusst **keine** Uhrzeit: der Picker fragt nach einem Tag, und Mitternacht wäre eine Behauptung, die niemand aufgestellt hat.
+
+- **Löschen fragt jetzt nach.** Der Papierkorb an einem Chronikeintrag löschte sofort und endgültig — direkt neben dem Stift zum Bearbeiten. Es kommt jetzt eine Rückfrage, die den Titel des Eintrags nennt.
+
+- **„Eigenes Datum …“ steht jetzt oben.** In der Spieltagsauswahl war es die letzte Möglichkeit unter allen bereits bekannten Tagen und damit kaum zu finden — dabei ist ein frisches Datum genau das, was man bei einem nachgetragenen Ereignis meistens braucht. Es ist jetzt der erste Eintrag und vorausgewählt; die bekannten Tage stehen darunter in einer eigenen Gruppe. Das gewählte Datum steht als Zeile darunter, damit niemand die drei Felder im Kopf zusammensetzen muss.
+
+- **Kalender-Auswahl statt Tippen.** Für einen Tag, den die Chronik noch nicht kennt, stehen jetzt drei Felder bereit — Tag, Monat, Jahr —, gefüllt aus dem Kalender der Welt: echte Monatsnamen, echte Monatslängen, und die Ein-Tages-Feiertage von Harptos als eigene Monate. Darunter steht sofort, wie der Tag heißen wird. Ohne Kalender in der Welt bleibt es beim Textfeld.
+
+  Die Umrechnung zwischen Foundrys Kernkalender und einem Kalendermodul wird dabei nicht geraten, sondern an „heute" gemessen: Calendarias Harptos zählt Jahre ab 1501 sowie Monate und Tage ab eins, Foundrys Kern ab null. Diese Differenz wird einmal bestimmt und auf den gewählten Tag angewandt — dadurch trägt ein von Hand gewählter Tag dieselbe Beschriftung und denselben Sortierschlüssel wie ein automatisch erkannter.
+
+- **Kategorie „Rückblick".** Eine sechste Kategorie für Ereignisse, von denen die Gruppe erst später erfährt.
+
+- **Datumsauswahl statt Freitextfeld.** Das Formular fragt jetzt zuerst, *wann* etwas geschehen ist: heute — mit dem aktuellen Spieltag daneben — oder an einem früheren Tag. Bei „früher" steht eine Liste der Spieltage bereit, die in der Chronik schon vorkommen, und ein daraus gewählter Tag übernimmt dessen Sortierschlüssel unverändert. Ein Tag, den es noch nicht gibt, geht weiterhin als Freitext. Vorher war jedes Datum Freitext: ein Tippfehler erzeugte eine zweite, gleich aussehende Tagesgruppe, die an ganz anderer Stelle einsortiert wurde.
+
+- **„Davon erst heute erfahren".** Ein Schalter trennt zwei Dinge, die vorher gleich aussahen: das Nachtragen von Notizen der letzten Sitzung, die die Gruppe damals schon wusste, und eine Enthüllung über die Vergangenheit, von der sie erst jetzt erfährt. Der Eintrag bleibt in beiden Fällen beim Tag des Geschehens — die Chronik ist eine Chronologie. Im zweiten Fall steht darunter „Erfahren am …", und die Kategorie springt auf Rückblick.
+
+- **Zeitachse in der Chronik.** Über dem Logbuch liegt eine Achse: ein Punkt je Spieltag, der älteste links, der aktuellste rechts — so, wie man eine Zeitleiste liest. Die Punktgröße zeigt, wie viel an dem Tag passiert ist; darunter steht der Tag, auf dem du gerade bist oder über dem du schwebst. Ein Klick springt hin, und beim Blättern wandert die Markierung mit.
+
+  Die Punkte behalten einen Mindestabstand, statt bei vielen Tagen zusammenzurücken. Passt die Achse nicht mehr, wird sie **gezogen oder mit dem Mausrad geschoben** — bewusst ohne Scrollbalken, sonst sähe sie wieder aus wie eine übergelaufene Liste. Die Ränder blenden weich aus, damit man sieht, dass es weitergeht.
+
+### Fixed
+- **Ein Rückblick legt seine Seite jetzt selbst an.** Beim Anlegen passierte mit der Journalseite gar nichts — sie entstand erst, wenn man den Eintrag hinterher erneut öffnete und das Buch-Symbol traf. Und das Textfeld sah aus, als gehöre der Rückblick dorthin. Beides falsch herum: die Seite entsteht jetzt zusammen mit dem Eintrag und öffnet sich direkt nach dem Speichern.
+
+  Das Textfeld sagt bei dieser Kategorie außerdem, was es ist: **Kurzfassung fürs Logbuch**, ein, zwei Sätze, mit einem Hinweis darauf, dass der Rückblick selbst auf der Seite geschrieben wird. Bei allen anderen Kategorien bleibt es der gewohnte Spielertext.
+
+  Legt eine Spielerin den Eintrag an, erzeugt die Spielleitung beim Übernehmen auch die Seite, überträgt ihr das Eigentum daran und meldet die Kennung zurück, sodass sich der Editor bei ihr öffnet.
+
+- **Der Schließen-Knopf der Chronik war nicht mehr erreichbar.** Der angeheftete Kopfbereich, den Titel und Zeitachse seit gestern teilen, spannt sich mit deckendem Hintergrund über die volle Breite der Karte und lag mit `z-index: 3` über dem Knopf, der auf `1` steht. Er war damit nicht nur unsichtbar, sondern schluckte auch dessen Klicks. Der Knopf liegt jetzt darüber.
+
+- **Spieler sahen „Ereignis hinzufügen" gar nicht mehr.** Der Eintrag eines Spielers geht über die Spielleitung, also braucht es eine anwesende — ist keine da, war der Knopf einfach weg, und niemand konnte wissen, ob es die Möglichkeit überhaupt gibt. Er bleibt jetzt stehen, ausgegraut und mit dem Grund im Tooltip. Das Monitor-Konto bekommt weiterhin keinen: es ist eine Anzeige, kein Platz am Tisch.
+
+- **594 englische Zeichenketten in neun Sprachen übersetzt.** Die Schlüssel waren zwar überall vorhanden — die Prüfung achtet auf Vollzähligkeit —, aber ihr Wert war in vielen Sprachen unverändert der englische. Betroffen war vor allem die **gesamte Chronik**, die in acht Sprachen nie übersetzt worden war, dazu der Dialog zum Ablegen eines Akteurs, die Fraktions- und Auftragsdialoge sowie eine Reihe von Meldungen. Tschechisch und Russisch hatten je über hundert solcher Stellen.
+
+  Übrig bleiben 29 Werte, die in ihrer Sprache tatsächlich gleich lauten — „Cyberpunk", „Region", „Ocean" auf Polnisch, „Role" auf Tschechisch, „Faction" und „Notes" auf Französisch. Außerdem stand im Deutschen einmal „fuer" statt „für".
+
+- **Negative Jahre sortierten verkehrt herum.** Der Sortierschlüssel füllte den Betrag des Jahres auf, sodass `-000009` vor `-000066` stand — Jahr −9 wirkte damit älter als −66. Das trifft jede Welt, deren Kalendermodul FANG nicht kennt: die Epoche steckt im Modul, und ohne sie rechnet Foundrys eigener Kalender unter Umständen vor Jahr null. Der Schlüssel nutzt jetzt das Komplement; nicht-negative Jahre bleiben Byte für Byte wie zuvor, vorhandene Einträge reihen sich also unverändert ein. Festgehalten als Szenario 15 in `tools/fang-merge-test.mjs`.
+
+- **Ein Rechteck um den Punkt der Zeitachse.** Ein Punkt ist ein Knopf, und allgemeine Knopfregeln von außerhalb dieser Stilvorlage zeichneten darauf ein abgerundetes Rechteck: nach einem Klick der Fokusumriss, dauerhaft am aktuellen Tag zusätzlich ein orangefarbener Schimmer mit Haarlinie. Um einen runden Punkt sah das nach einem Fehler aus. Der Knopf ist jetzt nur noch Trefferfläche; alles Sichtbare liegt auf dem runden Element darin. Tastaturfokus wird weiterhin angezeigt — als runder Ring in der Form des Punktes.
+
+- **Weite Sprünge in der Chronik taten nichts.** Der Sprung zu einem Tag lief immer als weiches Scrollen. Über sehr große Strecken verweigert Chrome das stillschweigend — bei rund 29 000 Pixeln gemessen: die Bewegung beginnt gar nicht erst, und der Klick sieht kaputt aus. Bei mehr als 2 000 Pixeln wird jetzt direkt gesprungen; folgen könnte man einer solchen Animation ohnehin nicht.
+
+- **Die Stilvorlage brach in der Mitte ab.** Beim Ergänzen von Selektoren wurde eine Zeile, die auf `{` endet, verdoppelt — damit bekam ein Block zwei öffnende Klammern. Fünf solcher Stellen ließen alle folgenden Regeln wirkungslos: sie standen weiter in der Datei, wurden weiter ausgeliefert und griffen einfach nicht mehr. Betroffen war der gesamte hintere Teil, weshalb die Bearbeitungsfenster zuletzt unfertig aussahen. `tools/fang-validate.mjs` prüft die Klammerbilanz jeder Datei unter `styles/` jetzt mit.
+
+- **Zahlenfelder trugen Foundrys dunkles Standardaussehen.** Gestaltet waren nur `input[type="text"]` und `select`; das Jahresfeld der Datumsauswahl fiel dadurch als dunkler Kasten zwischen zwei hellen Feldern auf und war zehn Pixel höher. `input[type="number"]` gehört jetzt überall dazu, wo auch Textfelder stehen.
+
+- **FANG ließ sich gar nicht mehr laden.** In der Datumsauswahl stand ein Ausdruck, der `??` ohne Klammern mit `||` mischt — das ist ein Syntaxfehler. Damit ließ sich `fang-app.js` nicht mehr auswerten, `main.js` lief nie an, und es gab weder Hooks noch Knopf noch Graphen; für alle. Der Browser meldete dabei irreführend ein Problem mit einer privaten Methode dreißig Zeilen weiter oben, in einer anderen Klasse.
+
+  Warum es durchging: geprüft wurde mit `node --check` auf einer `.js`-Datei, und das behandelt sie als CommonJS-Skript, dessen Grammatik den Ausdruck durchwinkt. Foundry lädt sie als ES-Modul, und dort ist er ungültig. `tools/fang-validate.mjs` prüft jede Datei unter `scripts/` jetzt als ES-Modul und schlägt bei genau diesem Fall fehl — gegen den kaputten Stand nachgestellt.
+
+- **In Sheet Only fehlte der FANG-Knopf.** Er wurde ausschließlich aus einem `MutationObserver` heraus eingehängt — also nur dann, wenn nach dem Start des Beobachters noch Elemente hinzukamen. Sheet Only baut seine Knopfleiste aber in seinem eigenen, asynchronen Ready-Hook: war die Leiste vorher fertig, folgte nie eine Änderung, und der Knopf erschien nicht mehr. Wer nur diesen Weg hatte, kam gar nicht mehr an den Graphen. Das Einhängen ist jetzt eine eigene, mehrfach aufgerufene Funktion — sofort beim Start, bei jeder DOM-Änderung, beim Rendern eines Charakterbogens und über einige Nachfassversuche. Damit überlebt der Knopf auch den Wechsel auf Sheet Onlys schmale Leistenvariante, die die Leiste komplett austauscht.
+
+- **Auf Tablets war der Speichern-Knopf nicht erreichbar.** Das FANG-Fenster öffnete fest mit 1400×950 Pixeln. Auf einem Tablet im Querformat bleibt nach der Browserleiste weniger übrig, also lag der untere Rand des Fensters unterhalb des Bildschirms — und mit ihm der Fußbereich der Bearbeitungsfenster, in dem „Speichern" sitzt. Scrollen half nicht: dieser Bereich hängt am Fenster, nicht an der Seite. Wer kein Spielleiter war, konnte damit schlicht nichts speichern. Das Fenster wird jetzt auf den sichtbaren Bereich begrenzt und beim Drehen des Geräts neu angepasst; auf kleinen Bildschirmen fallen zusätzlich die Ränder der Bearbeitungsfenster schmaler aus.
+
+- **Spieler-Bearbeitungen gingen beim Übernehmen verloren.** Wer nicht Eigentümer des Journals ist, kann den Graphen nicht selbst schreiben — die Änderung geht per Socket an die Spielleitung, die sie anwendet und speichert. Beim Anwenden wurde jedoch auch die eigene Vergleichsgrundlage auf das Ergebnis gesetzt. Der unmittelbar folgende Speichervorgang verglich dann Grundlage, eigenen Stand und Serverstand — und da der neue Knoten in der Grundlage stand, im Serverstand aber noch nicht, las der Abgleich das als „die Gegenseite hat ihn gelöscht" und warf ihn weg. Ein Platzhalter, den jemand im Bearbeitungsmodus angelegt hat, verschwand damit spurlos: nicht gespeichert, nicht verteilt, keine Fehlermeldung. Die Grundlage bleibt jetzt beim Serverstand, wo sie hingehört. Festgehalten als Szenario 14 in `tools/fang-merge-test.mjs`.
+
+- **Nach einer übernommenen Spieler-Bearbeitung erfuhr es niemand.** Die Spielleitung speicherte mit unterdrückter Rundmeldung, also behielten alle anderen ihren Stand, bis sie das Fenster neu öffneten — auch die Person, die die Änderung gemacht hatte. Es wird jetzt verteilt; unfertige lokale Arbeit bleibt dabei erhalten.
+
+- **Eine offene Chronik zeigte den Stand vom Öffnen.** Der Speicher hatte keine `onChange`-Rückmeldung, also erreichte keine Änderung ein bereits offenes Fenster: weder ein Eintrag, den eine Spielerin eingereicht hat, noch ein automatischer aus einer Graphenaktion, noch die Bearbeitung durch eine zweite Spielleitung. Man musste die Chronik schließen und neu öffnen. Jetzt zeichnet sie sich selbst neu und behält die Leseposition — außer während jemand das Eingabeformular ausgefüllt hat, dessen Text sonst verlorenginge.
+
+- **Ein aktives Kalendermodul wurde stillschweigend übergangen.** FANG fragte den Formatierer eines Moduls immer mit einem Optionsobjekt. Calendaria erwartet dort eine Formatzeichenkette und wirft bei einem Objekt `n.replace is not a function` — und weil der ganze Erkennungsversuch in einem `try` stand, verwarf diese Ausnahme den kompletten Kalender. FANG fiel auf Foundrys Kernkalender zurück und schrieb in einer Welt, in der Calendaria den **1. Hammer 1501** anzeigt, den Spieltag **„1. Hammer 0"** in die Chronik. Jetzt steht jeder Formatierungsversuch für sich: zuerst die Form ohne Argumente (die Voreinstellung des Moduls, bei Calendaria „1 Hammer, 1501"), dann die Form mit Optionsobjekt, dann `formatDateTime`. Scheitern alle, wird die Beschriftung weiterhin aus den Datumsfeldern gebaut — aber der Kalender selbst geht nicht mehr verloren. Betroffen war jede Welt mit Calendaria; Simple Calendar und Seasons & Stars verhalten sich unverändert.
+
+- **Die Chronik war nach Tippzeitpunkt sortiert, nicht nach Spieltag.** Jeder Eintrag trägt seit jeher einen Sortierschlüssel aus dem Spieldatum — gelesen wurde er nie. Geordnet wurde nach `createdAt`, also nach dem realen Moment der Eingabe. Wer nach der Sitzung ein Ereignis vom 9. April nachtrug, fand es über dem 12. April wieder, und die Tagesüberschriften standen in der Reihenfolge, in der man getippt hatte. Sortiert wird jetzt nach Spieltag (neuester zuerst), innerhalb eines Tages weiter nach Eingabezeit; Einträge ohne Datum sammeln sich am Ende, statt nach oben zu rutschen.
+
+- **Der Sortierschlüssel las das falsche Feld des Foundry-Kalenders.** Foundrys `TimeComponents` führt beides: `day` ist der Tag des **Jahres**, `dayOfMonth` der Tag im Monat. Gelesen wurde `day`, und die Zahl wurde auf zwei Stellen aufgefüllt — der 11. April ergab den Schlüssel `000000-03-100`, der als Zeichenkette **vor** `000000-03-99` (dem 10. April) steht. In jedem Monat, in dem der Jahrestag von zwei auf drei Stellen wächst, kippte damit die Reihenfolge. Jetzt wird `dayOfMonth` bevorzugt, sobald beide Felder da sind — Kalendermodule senden nur `day` und bleiben unberührt —, und der Tag wird dreistellig aufgefüllt.
+
+- **Der eingebaute Kalender lieferte einen Maschinen-Zeitstempel als Tagesüberschrift.** Gesucht wurde ein Formatierer namens `date`. Den gibt es nicht: Foundry kennt nur `timestamp`, `duration` und `ago`. Also fiel die Erkennung auf `timestamp` zurück und schrieb `0000-04-11 00:00:00` über den Tag — samt Uhrzeit, denn dieser Formatierer ignoriert `includeTime`. Systeme bringen lesbare Formatierer mit; dnd5e etwa `formatMonthDayYear`. Die werden jetzt zuerst probiert (Ergebnis: „April 11., 0"), danach wird die Beschriftung aus den Komponenten samt übersetztem Monatsnamen gebaut, und erst zuletzt bleibt der Zeitstempel — dann wenigstens ohne die immer gleiche Uhrzeit.
+
+### Changed
+- **Beschreibung des Moduls, README und TODO auf Stand gebracht.** Die Katalogbeschreibung nannte nur den Beziehungsgraphen; Fraktionen, Orte, Aufträge und die kalenderfähige Chronik fehlten. Im README erklären die Anleitungen für Spielleitung und Spieler jetzt auch die Chronik und das Nachtragen von Ereignissen. Die `TODO.md` stand noch auf `v14.2605.3` und kannte die Chronikarbeit nicht.
+
+- **Die Kopfzeile der Chronik bleibt stehen.** Titel und „Ereignis hinzufügen" scrollten bisher weg; wer weit unten in einer langen Chronik war, musste erst wieder hochblättern, um etwas einzutragen. Kopfzeile und Zeitachse hängen jetzt gemeinsam oben.
+
+- **Rückblick ist die Kategorie für Sitzungsrückblicke.** Sie gehört einem Charakter, und ihr Text steht auf einer Journalseite — das Formular fragt entsprechend, wessen Rückblick es ist. Der Schalter „Davon erst heute erfahren" stellt die Kategorie nicht mehr um; er hält nur noch fest, wann die Gruppe es erfahren hat.
+
+- **Der Zeitpunkt-Schalter ist schlanker.** Symbol und Beschriftung in einer Zeile, der Spieltag als leisere Unterzeile darunter, und der aktive Zustand trägt die goldene Haarlinie der übrigen FANG-Bedienelemente statt eines flächigen roten Blocks.
+
+### Removed
+- **Die Ersetzung der Akteursauswahl von „Sheet Only" ist ausgezogen.** Sie ist nach *Ninjo's In-Person Tools* gewandert und steht dort unter „Akteursauswahl von Sheet Only ersetzen". FANG ist ein Werkzeug für Beziehungsgeflechte; eine Funktion, die die Oberfläche eines fremden Moduls umräumt, damit man bequemer am Tisch spielt, gehört zu den Tischwerkzeugen. Mitgegangen sind die Einstellung `replaceOnlySheetActor`, die Verwaltung des Popouts samt der Abwehr gegen Foundrys leere Fensterhüllen und die zugehörigen Regeln in der Stilvorlage — rund 330 Zeilen.
+
+  **Was das für dich heißt:** Wer beide Module hat, findet die Funktion an ihrem neuen Ort wieder und muss sie dort einmal einschalten; sie ist standardmäßig aus. Wer nur FANG hat, verliert das angedockte Akteursverzeichnis im Sheet-Only-Modus. Der FANG-Knopf in der Leiste von Sheet Only bleibt unverändert, ebenso alles am Graphen.
+
 ## [14.2608.1] - 2026-08-29
 
 Großes Oberflächen- und Stabilitäts-Release. Die Seitenleiste ist nach Aufgaben gegliedert, Editoren öffnen im FANG-Fenster statt in eigenen Foundry-Fenstern, Fraktionen und Orte haben eine gemeinsame Heimat — und mehrere Fehler in Datenspeicherung, Physik und Darstellung sind behoben. Enthält die gesamte Beta-Arbeit seit 14.2605.5.

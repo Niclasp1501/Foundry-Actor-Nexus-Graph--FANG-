@@ -1,16 +1,16 @@
 :root {
     /* D&D Reference Design - Strict Red/Gold Theme */
-    --fang-bg-color: #fdfbf7;
+    --fang-bg-color: var(--ninjo-grund);
     /* Parchment Light */
-    --fang-text-color: #1a1a1a;
+    --fang-text-color: var(--ninjo-text);
     --fang-card-bg: #ffffff;
-    --fang-nav-bg: #f4f1ea;
-    --fang-border-color: #dcd6cc;
+    --fang-nav-bg: var(--ninjo-leiste);
+    --fang-border-color: var(--ninjo-rand);
 
     /* Strict Theme Colors */
-    --fang-primary-red: #8B0000;
+    --fang-primary-red: var(--ninjo-marke);
     /* Dark D&D Red */
-    --fang-accent-gold: #D4AF37;
+    --fang-accent-gold: var(--ninjo-akzent);
     /* Metallic Gold */
     --fang-header-text: #ffffff;
     --fang-canvas-bg: #fbf9f4;
@@ -24,7 +24,7 @@
     --fang-primary-red-rgb: 139, 0, 0;
     --fang-accent-gold-rgb: 212, 175, 55;
 
-    --fang-font-main: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    --fang-font-main: var(--ninjo-schrift);
     --fang-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
     --fang-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
@@ -126,6 +126,8 @@ body.fang-theme-cyberpunk {
 }
 
 .fang-app-container.fang-theme-cyberpunk input[type="text"],
+.fang-app-container.fang-theme-cyberpunk input[type="number"],
+.fang-app-container.fang-theme-cyberpunk input[type="date"],
 .fang-app-container.fang-theme-cyberpunk select {
     background: #0c1b2a;
     border-color: #27506f;
@@ -133,6 +135,8 @@ body.fang-theme-cyberpunk {
 }
 
 .fang-app-container.fang-theme-cyberpunk input[type="text"]:focus,
+.fang-app-container.fang-theme-cyberpunk input[type="number"]:focus,
+.fang-app-container.fang-theme-cyberpunk input[type="date"]:focus,
 .fang-app-container.fang-theme-cyberpunk select:focus {
     border-color: #33d9ff;
     box-shadow: 0 0 0 2px rgba(51, 217, 255, 0.24);
@@ -1155,6 +1159,8 @@ body.role-gm .fang-app-container .tab-content.gm-only:not(.active) {
 
 /* Inputs & Selects */
 .fang-app-container input[type="text"],
+.fang-app-container input[type="number"],
+.fang-app-container input[type="date"],
 .fang-app-container select {
     width: 100%;
     padding: 10px 12px;
@@ -1170,6 +1176,8 @@ body.role-gm .fang-app-container .tab-content.gm-only:not(.active) {
 }
 
 .fang-app-container input[type="text"]:focus,
+.fang-app-container input[type="number"]:focus,
+.fang-app-container input[type="date"]:focus,
 .fang-app-container select:focus {
     border-color: var(--fang-accent-gold);
     box-shadow: 0 0 0 2px rgba(var(--fang-accent-gold-rgb), 0.2);
@@ -1713,6 +1721,8 @@ body.fang-monitor .fang-app-container .narrative-close {
    is what made the description fields look like code editors next to the tidy name
    inputs. All three now share the same light, rounded, app-font styling. */
 .fang-dialog input[type="text"],
+.fang-dialog input[type="number"],
+.fang-dialog input[type="date"],
 .fang-dialog select,
 .fang-dialog textarea {
     width: 100%;
@@ -1736,11 +1746,15 @@ body.fang-monitor .fang-app-container .narrative-close {
 }
 
 .fang-dialog input[type="text"]::placeholder,
+.fang-dialog input[type="number"]::placeholder,
+.fang-dialog input[type="date"]::placeholder,
 .fang-dialog textarea::placeholder {
     color: rgba(43, 34, 26, 0.4);
 }
 
 .fang-dialog input[type="text"]:focus,
+.fang-dialog input[type="number"]:focus,
+.fang-dialog input[type="date"]:focus,
 .fang-dialog select:focus,
 .fang-dialog textarea:focus {
     border-color: var(--fang-accent-gold);
@@ -1805,6 +1819,30 @@ body.fang-monitor .fang-app-container .narrative-close {
 
 .fang-editor-overlay.hidden {
     display: none;
+}
+
+/* On a tablet the window is already clamped to the screen, so every pixel of padding here
+   comes straight off the panel. Give the editor the room instead. */
+@media (max-height: 780px), (max-width: 860px) {
+    .fang-editor-overlay {
+        padding: 8px;
+    }
+
+    .fang-editor-panel {
+        border-radius: 10px;
+    }
+
+    .fang-editor-header {
+        padding: 10px 14px;
+    }
+
+    .fang-editor-body {
+        padding: 12px 14px;
+    }
+
+    .fang-editor-footer {
+        padding: 10px 14px;
+    }
 }
 
 .fang-editor-backdrop {
@@ -2188,9 +2226,13 @@ body.fang-monitor .fang-app-container .narrative-close {
 }
 
 :root.fang-theme-cyberpunk .fang-dialog input[type="text"],
+:root.fang-theme-cyberpunk .fang-dialog input[type="number"],
+:root.fang-theme-cyberpunk .fang-dialog input[type="date"],
 :root.fang-theme-cyberpunk .fang-dialog select,
 :root.fang-theme-cyberpunk .fang-dialog textarea,
 body.fang-theme-cyberpunk .fang-dialog input[type="text"],
+body.fang-theme-cyberpunk .fang-dialog input[type="number"],
+body.fang-theme-cyberpunk .fang-dialog input[type="date"],
 body.fang-theme-cyberpunk .fang-dialog select,
 body.fang-theme-cyberpunk .fang-dialog textarea {
     background: #0c1b2a;
@@ -2201,8 +2243,12 @@ body.fang-theme-cyberpunk .fang-dialog textarea {
 /* Placeholder on the dark cyberpunk input surface — the default parchment tone is
    invisible there. */
 :root.fang-theme-cyberpunk .fang-dialog input[type="text"]::placeholder,
+:root.fang-theme-cyberpunk .fang-dialog input[type="number"]::placeholder,
+:root.fang-theme-cyberpunk .fang-dialog input[type="date"]::placeholder,
 :root.fang-theme-cyberpunk .fang-dialog textarea::placeholder,
 body.fang-theme-cyberpunk .fang-dialog input[type="text"]::placeholder,
+body.fang-theme-cyberpunk .fang-dialog input[type="number"]::placeholder,
+body.fang-theme-cyberpunk .fang-dialog input[type="date"]::placeholder,
 body.fang-theme-cyberpunk .fang-dialog textarea::placeholder {
     color: rgba(217, 236, 255, 0.4);
 }
@@ -2395,6 +2441,8 @@ body.fang-theme-cyberpunk .fang-dialog .faction-icon-preview {
 }
 
 .fang-actor-editor input[type="text"],
+.fang-actor-editor input[type="number"],
+.fang-actor-editor input[type="date"],
 .fang-actor-editor select,
 .fang-actor-editor textarea {
     width: 100%;
@@ -2984,14 +3032,6 @@ body.fang-theme-cyberpunk .fang-dialog .faction-icon-preview {
     width: 100%;
 }
 
-/* === Only-Sheet: Actor Panel Open — shift actor sheet left to make room === */
-/* Applied when FANG injects the actor directory panel on the right side.     */
-body.fang-actor-panel-open .window-app:not(.sidebar-popout):not(.fang-app-window):not(.fang-dialog),
-body.fang-actor-panel-open .application:not(.sidebar-popout):not(.fang-app-window):not(.fang-dialog) {
-    max-width: calc(100vw - 300px) !important;
-    transition: none !important;
-}
-
 /* --- Background Settings & Premium Features --- */
 .fang-app-container #fang-bg-layer {
     position: absolute;
@@ -3161,6 +3201,8 @@ body.fang-actor-panel-open .application:not(.sidebar-popout):not(.fang-app-windo
 }
 
 .background-config-container select,
+.background-config-container input[type="number"],
+.background-config-container input[type="date"],
 .background-config-container input[type="text"] {
     height: 34px;
     background: #fff;
@@ -3365,6 +3407,8 @@ body.fang-actor-panel-open .application:not(.sidebar-popout):not(.fang-app-windo
 }
 
 .background-config-container select:focus,
+.background-config-container input[type="number"]:focus,
+.background-config-container input[type="date"]:focus,
 .background-config-container input[type="text"]:focus {
     border-color: var(--fang-accent-gold);
     box-shadow: 0 0 5px var(--fang-accent-gold);
@@ -3416,7 +3460,11 @@ body.fang-theme-cyberpunk .background-config-container .bg-config-section label 
 
 :root.fang-theme-cyberpunk .background-config-container select,
 :root.fang-theme-cyberpunk .background-config-container input[type="text"],
+:root.fang-theme-cyberpunk .background-config-container input[type="number"],
+:root.fang-theme-cyberpunk .background-config-container input[type="date"],
 body.fang-theme-cyberpunk .background-config-container select,
+body.fang-theme-cyberpunk .background-config-container input[type="number"],
+body.fang-theme-cyberpunk .background-config-container input[type="date"],
 body.fang-theme-cyberpunk .background-config-container input[type="text"] {
     background: #0c1b2a;
     color: #d9ecff;
@@ -3693,46 +3741,6 @@ body.fang-theme-cyberpunk .background-config-container .premium-notice p {
     letter-spacing: 0.02em;
 }
 
-/* === Only-Sheet: Instant Side-Shift & Pinned Sidebar (BULLETPROOF V13 FIX) === */
-
-/* 1. FORCE PIN: Ensure the actor directory popout ALWAYS docks to the right sidebar area */
-/* This prevents the "centered window" bug even if JS fails to apply classes. */
-.actors-sidebar.sidebar-popout {
-    position: fixed !important;
-    right: 0px !important;
-    top: 0px !important;
-    left: auto !important; /* Force it out of the center */
-    width: 300px !important;
-    height: 100vh !important;
-    max-height: 100vh !important;
-    margin: 0 !important;
-    border-radius: 0 !important;
-    z-index: 9999 !important;
-}
-
-/* 2. SHIFT: Shift main windows to the left when the actor panel exists AND actually has content.
-   Prevents Foundry v13 "ghost shells" (empty window-content) from triggering :has(). */
-body.fang-actor-panel-open .sheet-only-sheet,
-body:has(.actors-sidebar.sidebar-popout:has(.window-content > *)) .application.sheet.actor:not(.sidebar-popout) {
-    max-width: calc(100vw - 300px) !important;
-    width: calc(100vw - 300px) !important;
-    transition: none !important; /* Eliminate the toggle delay requested by user */
-}
-
-/* 3. RECOVERY: Forced full width when the panel is GONE (destroys the "black void") */
-body:not(.fang-actor-panel-open):not(:has(.actors-sidebar.sidebar-popout:has(.window-content > *))) .application.sheet.actor:not(.sidebar-popout),
-body:not(.fang-actor-panel-open) .sheet-only-sheet {
-    width: 100vw !important; /* Force true 100vw instead of just 100% */
-    max-width: 100vw !important;
-}
-
-/* 4. Color the FANG Actor button red when the panel is open */
-body.fang-actor-panel-open #fang-so-actors-btn,
-body:has(.actors-sidebar.sidebar-popout:has(.window-content > *)) #fang-so-actors-btn {
-    color: #ff3b3b !important;
-    text-shadow: 0 0 10px rgba(255, 59, 59, 0.4);
-}
-
 /* === Beta Rail Layout Hardening ===
    Older sidebar/tab rules live above this block and can otherwise override the
    compact rail. Keep this late in the file so the modern layout wins. */
@@ -3963,7 +3971,9 @@ body:has(.actors-sidebar.sidebar-popout:has(.window-content > *)) #fang-so-actor
     display: grid;
     place-items: center;
     font-size: 1.35rem;
-    z-index: 1;
+    /* Above the sticky header block, which spans the full width of the card with an opaque
+       background and would otherwise paint over this button and swallow its clicks. */
+    z-index: 4;
 }
 
 .fang-app-container .fang-history-canvas-close:hover {
@@ -4038,6 +4048,390 @@ body:has(.actors-sidebar.sidebar-popout:has(.window-content > *)) #fang-so-actor
 
 .fang-history-filter-row select {
     min-width: 170px;
+}
+
+/* Title, "add event" and the time axis stay put while the log scrolls -- all three are
+   things you reach for at any point in a long chronicle, not just at its top. They share
+   one sticky block so the axis does not have to know how tall the header is. The
+   background has to match the card behind it, hence the own property. */
+/* The disabled add button still reads as a button, just plainly out of reach. */
+.fang-app-container .fang-history-add:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+    filter: saturate(0.5);
+}
+
+.fang-history-sticky {
+    --fang-history-rail-bg: var(--ninjo-grund);
+    position: sticky;
+    top: -20px;
+    z-index: 3;
+    margin: 0 -24px 16px;
+    padding: 20px 24px 8px;
+    background: var(--fang-history-rail-bg);
+    border-bottom: 1px solid rgba(var(--fang-accent-gold-rgb), 0.4);
+}
+
+.fang-history-sticky .fang-history-log-header {
+    margin-bottom: 10px;
+}
+
+.fang-history-timeline {
+    margin: 0;
+    padding: 0;
+}
+
+/* No scrollbar on purpose: the axis is wheeled or dragged. A visible bar turns it back
+   into a list that spilled over, which is exactly what it should not look like. */
+.fang-history-axis-scroll {
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    cursor: grab;
+    /* Room for the dots to grow into on hover without clipping. */
+    padding: 6px 0;
+    /* The edges hint that there is more when it does not all fit. */
+    -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 14px, #000 calc(100% - 14px), transparent 100%);
+    mask-image: linear-gradient(90deg, transparent 0, #000 14px, #000 calc(100% - 14px), transparent 100%);
+}
+
+.fang-history-axis-scroll::-webkit-scrollbar {
+    display: none;
+}
+
+.fang-history-axis-scroll.dragging {
+    cursor: grabbing;
+}
+
+.fang-history-axis {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-width: 100%;
+    /* Minimum spacing per day. Below this the ticks would touch, so the axis grows instead
+       and is panned. */
+    gap: 4px;
+    /* Keeps the outermost ticks clear of the fade at the edges. */
+    padding: 0 10px;
+}
+
+/* The line the ticks sit on. */
+.fang-history-axis::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 2px;
+    transform: translateY(-50%);
+    background: linear-gradient(90deg,
+        rgba(var(--fang-accent-gold-rgb), 0.45),
+        rgba(var(--fang-accent-gold-rgb), 0.9));
+    border-radius: 2px;
+}
+
+.fang-history-tick {
+    position: relative;
+    flex: 0 0 auto;
+    width: 20px;
+    height: 22px;
+    padding: 0;
+    border: none;
+    background: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* The dot itself. Its size carries how much happened that day. */
+.fang-history-tick > span {
+    width: var(--fang-tick-size, 8px);
+    height: var(--fang-tick-size, 8px);
+    border-radius: 50%;
+    background: var(--fang-history-rail-bg);
+    box-shadow: 0 0 0 2px var(--fang-accent-gold);
+    transition: transform 0.12s ease, background 0.12s ease, box-shadow 0.12s ease;
+}
+
+/* Foundry outlines every focused button with a 2.7px rounded rectangle. On a round tick
+   that reads as damage, and it lingers after a click. Gone for the pointer; keyboard users
+   get a round ring instead, so tabbing through the axis is still visible. */
+/* The tick is a bare hit area; everything visible lives on the round span inside it.
+   Generic button styling from outside this stylesheet drew a rounded rectangle on it --
+   a focus outline after a click, and an orange glow plus hairline on .active. Both looked
+   like damage around a dot. Keyboard focus is shown on the span instead, in its own shape. */
+.fang-app-container .fang-history-tick,
+.fang-app-container .fang-history-tick.active,
+.fang-app-container .fang-history-tick:hover,
+.fang-app-container .fang-history-tick:focus,
+.fang-app-container .fang-history-tick:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+    border: none;
+    background: none;
+}
+
+.fang-app-container .fang-history-tick:focus-visible > span {
+    box-shadow: 0 0 0 2px var(--fang-accent-gold), 0 0 0 5px rgba(var(--fang-accent-gold-rgb), 0.45);
+}
+
+.fang-history-tick:hover > span {
+    transform: scale(1.35);
+    background: var(--fang-accent-gold);
+}
+
+.fang-history-tick.active > span {
+    background: var(--fang-primary-red);
+    box-shadow: 0 0 0 2px var(--fang-accent-gold), 0 0 0 5px rgba(var(--fang-primary-red-rgb), 0.18);
+    transform: scale(1.25);
+}
+
+/* Names whatever the pointer is on, or where the reading position is. */
+.fang-history-axis-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: flex-end;
+    min-height: 1.4em;
+    margin: 2px 0 0;
+    color: var(--fang-primary-red);
+    font-size: 0.86rem;
+    font-weight: 600;
+}
+
+.fang-history-axis-count {
+    min-width: 20px;
+    padding: 1px 6px;
+    border-radius: 999px;
+    background: rgba(var(--fang-primary-red-rgb), 0.12);
+    font-size: 0.78rem;
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+}
+
+.fang-history-axis-count:empty {
+    display: none;
+}
+
+.fang-app-container.fang-theme-cyberpunk .fang-history-sticky {
+    --fang-history-rail-bg: rgba(3, 15, 26, 0.95);
+    border-bottom-color: rgba(51, 217, 255, 0.45);
+}
+
+/* Restored after the time-axis rewrite replaced a range of this file that reached further
+   than intended and took the whole entry-form styling with it. */
+.fang-app-container .fang-history-when {
+    margin-bottom: 10px;
+}
+
+.fang-app-container .fang-history-when .fang-segment {
+    flex-direction: column;
+    gap: 2px;
+    padding: 7px 8px;
+    line-height: 1.2;
+}
+
+.fang-app-container .fang-history-when-main {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.fang-app-container .fang-history-when-main i {
+    font-size: 0.95em;
+    opacity: 0.85;
+}
+
+/* The date is context for the label above it, not a heading of its own. */
+.fang-app-container .fang-history-when .fang-history-when-date {
+    font-size: 0.8em;
+    font-weight: 500;
+    opacity: 0.72;
+}
+
+/* The plain red block read as a warning. A gold hairline and a little depth put it
+   back in line with the rest of FANG's controls. */
+.fang-app-container .fang-history-when .fang-segment.active {
+    background: linear-gradient(180deg, rgba(var(--fang-primary-red-rgb), 0.94), var(--fang-primary-red));
+    box-shadow: inset 0 0 0 1px rgba(var(--fang-accent-gold-rgb), 0.55), 0 1px 3px rgba(0, 0, 0, 0.22);
+}
+
+.fang-history-when-earlier {
+    margin: 0 0 6px;
+    padding: 10px 12px 4px;
+    border: 1px solid rgba(var(--fang-accent-gold-rgb), 0.45);
+    border-radius: 8px;
+    background: rgba(var(--fang-accent-gold-rgb), 0.07);
+}
+
+.fang-history-when-earlier > label:first-child {
+    margin-top: 0;
+}
+
+/* Day, month, year. The month carries the name, so it gets the room. */
+.fang-app-container .fang-history-picker {
+    display: grid;
+    grid-template-columns: 5rem 1fr 6.5rem;
+    gap: 8px;
+    margin: 0 0 8px;
+}
+
+.fang-app-container .fang-history-picker select,
+.fang-app-container .fang-history-picker input {
+    width: 100%;
+    min-width: 0;
+    height: 42px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    /* Foundry gives number inputs a 32px line-height, which made the year field taller
+       than the two selects beside it. */
+    line-height: 1.2;
+    font-size: 0.92rem;
+}
+
+.fang-app-container .fang-history-picker input[type="number"] {
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+}
+
+/* The resolved date, so nobody has to add the three fields up in their head. */
+.fang-app-container .fang-history-picked {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin: 0 0 10px;
+    padding: 7px 10px;
+    border-radius: 6px;
+    background: rgba(var(--fang-accent-gold-rgb), 0.16);
+    color: var(--fang-primary-red);
+    font-size: 0.92rem;
+    font-weight: 600;
+}
+
+.fang-app-container .fang-history-picked i {
+    opacity: 0.75;
+}
+
+/* Marks an entry that sits on the day it happened but was only learned of later. */
+.fang-history-learned {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 2px 0 6px;
+    color: var(--fang-primary-red);
+    font-size: 0.84rem;
+    font-style: italic;
+    opacity: 0.9;
+}
+
+/* Releasing the entry is its own decision, not a property of the GM notes it used to sit
+   under. The frame is what says so at a glance. */
+/* Faction membership is a list now, so it is shown as one. Each row carries the colour of
+   its faction, because that is the colour its arc gets on the token ring. */
+.fang-faction-picks {
+    list-style: none;
+    margin: 4px 0 0;
+    padding: 0;
+    max-height: 190px;
+    overflow-y: auto;
+    border: 1px solid var(--fang-border, rgba(212, 175, 55, 0.3));
+    border-radius: 8px;
+}
+
+.fang-faction-pick {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 6px 4px 8px;
+    border-bottom: 1px solid rgba(212, 175, 55, 0.14);
+}
+
+.fang-faction-pick:last-child {
+    border-bottom: none;
+}
+
+.fang-faction-pick.is-on {
+    background: rgba(212, 175, 55, 0.09);
+}
+
+.fang-faction-pick .fang-editor-check {
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    min-width: 0;
+}
+
+.fang-faction-swatch {
+    flex: 0 0 auto;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 1px solid rgba(0, 0, 0, 0.35);
+}
+
+.fang-faction-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Hidden until a second faction is ticked - with one there is nothing to choose. */
+.fang-faction-primary {
+    flex: 0 0 auto;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px 6px;
+    min-width: var(--ninjo-tippziel, 32px);
+    min-height: var(--ninjo-tippziel, 32px);
+    color: rgba(212, 175, 55, 0.55);
+    line-height: 1;
+}
+
+.fang-faction-primary:hover,
+.fang-faction-primary.is-primary {
+    color: var(--ninjo-akzent, #d4af37);
+}
+
+.fang-history-release {
+    margin: 10px 0 4px;
+    padding: 10px 12px 4px;
+    border: 1px solid rgba(var(--fang-accent-gold-rgb), 0.45);
+    border-radius: 8px;
+    background: rgba(var(--fang-accent-gold-rgb), 0.07);
+}
+
+.fang-history-release .fang-editor-check {
+    margin: 0;
+    font-weight: 600;
+}
+
+/* Time and category sit together at the head of an entry, right-aligned. */
+.fang-history-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 0 0 auto;
+}
+
+.fang-history-time {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--fang-text-color);
+    font-size: 0.8rem;
+    font-variant-numeric: tabular-nums;
+    opacity: 0.68;
+    white-space: nowrap;
+}
+
+.fang-history-time i {
+    font-size: 0.9em;
 }
 
 .fang-history-day {
@@ -4222,6 +4616,8 @@ body:has(.actors-sidebar.sidebar-popout:has(.window-content > *)) #fang-so-actor
 }
 
 .fang-history-editor input[type="text"],
+.fang-history-editor input[type="number"],
+.fang-history-editor input[type="date"],
 .fang-history-editor textarea,
 .fang-history-editor select {
     width: 100%;
@@ -4235,6 +4631,8 @@ body:has(.actors-sidebar.sidebar-popout:has(.window-content > *)) #fang-so-actor
 }
 
 .fang-history-editor input[type="text"],
+.fang-history-editor input[type="number"],
+.fang-history-editor input[type="date"],
 .fang-history-editor select {
     min-height: 44px;
     padding: 8px 12px;
@@ -4247,6 +4645,8 @@ body:has(.actors-sidebar.sidebar-popout:has(.window-content > *)) #fang-so-actor
 }
 
 .fang-history-editor input[type="text"]:focus,
+.fang-history-editor input[type="number"]:focus,
+.fang-history-editor input[type="date"]:focus,
 .fang-history-editor textarea:focus,
 .fang-history-editor select:focus {
     border-color: var(--fang-accent-gold);
@@ -4318,6 +4718,8 @@ body:has(.actors-sidebar.sidebar-popout:has(.window-content > *)) #fang-so-actor
 }
 
 .fang-app-container.fang-theme-cyberpunk .fang-history-editor input[type="text"],
+.fang-app-container.fang-theme-cyberpunk .fang-history-editor input[type="number"],
+.fang-app-container.fang-theme-cyberpunk .fang-history-editor input[type="date"],
 .fang-app-container.fang-theme-cyberpunk .fang-history-editor textarea,
 .fang-app-container.fang-theme-cyberpunk .fang-history-editor select {
     background: rgba(8, 18, 31, 0.82);
@@ -4420,6 +4822,8 @@ body:has(.actors-sidebar.sidebar-popout:has(.window-content > *)) #fang-so-actor
     font-weight: 800;
 }
 
+.fang-app-container .fang-canvas-prompt-fields input[type="number"],
+.fang-app-container .fang-canvas-prompt-fields input[type="date"],
 .fang-app-container .fang-canvas-prompt-fields input[type="text"] {
     width: 100%;
     min-height: 42px;
@@ -4478,6 +4882,8 @@ body:has(.actors-sidebar.sidebar-popout:has(.window-content > *)) #fang-so-actor
     border-bottom-color: #33d9ff;
 }
 
+.fang-app-container.fang-theme-cyberpunk .fang-canvas-prompt-fields input[type="number"],
+.fang-app-container.fang-theme-cyberpunk .fang-canvas-prompt-fields input[type="date"],
 .fang-app-container.fang-theme-cyberpunk .fang-canvas-prompt-fields input[type="text"] {
     background: rgba(8, 18, 31, 0.82);
     border-color: rgba(51, 217, 255, 0.42);

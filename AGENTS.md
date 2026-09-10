@@ -102,3 +102,114 @@ Saved Journal content can then stay simple and stable:
 ```
 
 This approach keeps existing Journals compatible because it changes only client-side click handling, not the saved Journal content.
+
+## Translations: Weblate owns eight of the ten languages
+
+Since 06.09.2026 FANG is registered on [Foundry Hub Weblate](https://weblate.foundryvtt-hub.com).
+The loop runs by itself, and the point of the setup is that **no step of it is
+repeated by hand after a change**:
+
+```
+you edit lang/en.json + lang/de.json
+   → push
+      → webhook tells Weblate            (repo hook, push events)
+         → the eight other languages show the new strings as untranslated
+            → volunteers translate
+               → Weblate opens a pull request
+                  → Validate runs        (.github/workflows/validate.yml)
+                     → auto-merge        (.github/workflows/weblate-automerge.yml)
+                        → the next release ships it
+```
+
+**Write `en.json` and `de.json`. Nothing else.** The other eight are no longer
+ours to fill: overwriting them throws away work someone donated, and it is the
+one action that turns this from automation back into a chore.
+
+**Never run `translate_i18n_vertex.py` with `--overwrite`.** Without that flag it
+only fills keys that are missing (`pending = [... if k not in translated]`) and
+leaves every existing translation alone — which is exactly what makes it
+compatible with Weblate. It stays useful as the stopgap that keeps a new string
+from shipping untranslated before a volunteer gets to it. With `--overwrite` it
+becomes a wrecking ball.
+
+**German and English are never auto-merged.** They are written here, so a
+stranger changing them is a content decision and gets read by a person. The
+auto-merge workflow excludes both files by name.
+
+**The bot's login is a guess until the first pull request arrives.** The
+condition in `weblate-automerge.yml` matches bot accounts and anything
+containing "weblate". When the first one lands, check the author and tighten
+the condition to the exact login.
+
+**Both workflow files must live on `main`.** `workflow_run` only triggers for
+workflows on the default branch — a copy that exists only on `beta` never fires.
+
+## Visibility is a display filter, and that is on purpose
+
+`_canUserSeeNode`, `_isNodeHiddenForUser`, `_canUserSeeQuest` and `_canUserSeeLink`
+decide what a client *draws*. They do not decide what a client *receives*. Every
+player already holds the whole dataset:
+
+- the graph is a flag on the **FANG Graph** journal, created with
+  `ownership: { default: OBSERVER }`, and `loadData` copies that flag whole
+- the chronicle is a `scope: "world"` setting, which Foundry hands to every client
+- a hidden contact's real name sits in `node.name`, right next to the facade in
+  `node.displayName`; a `gmOnly` node is not absent, only undrawn
+
+So `game.settings.get("fang", "history")` in a player's console prints every GM
+note, and the journal flag prints every secret name. **That is accepted.** FANG is
+built for private tables, where the same trust already covers not reading the GM's
+notebook. A module cannot beat a player who wants to cheat - whatever the client
+shows had to reach the client first - and buying a little more resistance would
+cost a rewrite in which players are sent a scrubbed subset and then save against
+it. The decision was taken on 07.09.2026; do not reopen it as a bug.
+
+Two things follow for anyone working here:
+
+- **Do not claim more than this.** A comment promising a player "must never receive"
+  something is wrong, and worse than saying nothing, because the next person
+  believes it.
+- **The line worth defending is the accident, not the cheat.** A player who clicks
+  something in Foundry's own interface and sees GM content is a real defect; a
+  player who opens the console or hand-crafts a socket call is not. When in doubt,
+  ask which of the two a change protects against.
+
+Recaps are deliberately not secret. Their pages sit in the **FANG Chronik** journal
+at `OBSERVER` for everyone, with `OWNER` for the author, and nothing confidential
+is meant to hang off them.
+
+
+## Oberfläche: die acht Regeln
+
+Sie stehen vollständig in der [CLAUDE.md des Workspace](../../CLAUDE.md),
+Abschnitt „Regelgrundsätze für die Oberfläche der Foundry-Module", und gelten
+für jedes Modul: Fenster passen ins Bild · die Marke steht in einer Datei · die
+Schrift liefert Foundry · kein sichtbarer Text ohne Sprachschlüssel · die
+Rückmeldung steht dort, wo der Mensch hinschaut · jeder Knopf hat einen Namen ·
+Unwiderrufliches fragt vorher · neue Fenster sind ApplicationV2.
+
+Zwei Dateien werden dafür **kopiert, nicht geteilt** — wie `willkommen.js`:
+
+| Datei | Angepasst wird |
+|---|---|
+| `styles/ninjo-marke.css` | nichts, sie ist überall identisch |
+| `scripts/fensterpassen.js` | nur der `MODUL`-Block ganz oben |
+
+Verbessert man eine davon, gehört sie in alle Module nachgezogen.
+
+### Was hier gilt
+
+**Fensterklassen:** `fang-app-window` und `fang-dialog`. Beide stehen im
+`MODUL`-Block von `fensterpassen.js`; ein neues Fenster braucht eine davon,
+sonst wird es nicht geklemmt.
+
+**Das Cyberpunk-Thema bleibt unberührt.** Es setzt eigene Werte (`#ff2e88`,
+`#33d9ff`, `Rajdhani`) und überschreibt die Modultokens — das ist der Zweck
+eines Themas. Nur der helle Grundzustand zeigt auf `--ninjo-*`.
+
+**Offen:** 116 verschiedene Rohfarben stehen neben 16 Tokens. Das Token-System
+ist da und wird umgangen; die Farben auf die Tokens zurückzuführen ist die eine
+Aufgabe hier, die kein Wochenende ist. Dazu: die Knotennamen im Graphen sind aus
+zwei Metern nicht lesbar (Schriftgröße an die Fenstergröße koppeln, wie
+`.shops-schau` es mit `clamp()` macht), die Legende ist dunkel auf
+Pergament, und der Charaktertext im Dialog steht sechs Absätze lang kursiv.

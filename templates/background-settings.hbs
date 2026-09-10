@@ -20,7 +20,7 @@
                  style="background-color: {{this.hex}};" 
                  data-color="{{this.hex}}"
                  title="{{this.name}}">
-                {{#if (eq ../background.color this.hex)}}<i class="fas fa-check"></i>{{/if}}
+                {{#if (eq ../background.color this.hex)}}<i class="fas fa-check" aria-hidden="true"></i>{{/if}}
             </div>
             {{/each}}
         </div>
@@ -32,8 +32,8 @@
         <label>{{localize "FANG.UI.Background.ImageTitle"}}</label>
         <div class="flexrow gap-5">
             <input type="text" name="bgImage" value="{{background.image}}" placeholder="path/to/image.webp">
-            <button type="button" class="file-picker small-btn" data-type="image" data-target="bgImage" title="Browse">
-                <i class="fas fa-file-import"></i>
+            <button type="button" class="file-picker small-btn" data-type="image" data-target="bgImage" title="Browse" aria-label="Browse">
+                <i class="fas fa-file-import" aria-hidden="true"></i>
             </button>
         </div>
 

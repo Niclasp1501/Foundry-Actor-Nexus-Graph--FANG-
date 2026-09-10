@@ -136,10 +136,13 @@
             "FactionsHint": "Factions are shown as lines between members, and as a coloured ring on the token.",
             "SectionPermissions": "Permissions",
             "ShowFactionLines": "Show faction display",
-            "PinnedHint": "Position held. Right-click → Release position."
+            "PinnedHint": "Position held. Right-click → Release position.",
+            "RailLabel": "FANG tools",
+            "Close": "Close"
         },
         "Journal": {
             "FolderName": "FANG - Do Not Delete",
+            "ChronicleName": "FANG Chronicle",
             "Title": "About FANG",
             "WarningTitle": "WARNING",
             "WarningText": "DO NOT DELETE THIS JOURNAL!<br>This journal stores all FANG graph relationships and player lore notes. Deleting it will irrevocably destroy your graph and all associated notes.",
@@ -247,6 +250,9 @@
             "RoleContent": "Enter a role or faction for {actor} (optional):",
             "RoleInput": "Role",
             "FactionInput": "Faction",
+            "FactionPrimary": "Primary faction",
+            "FactionPrimaryHint": "Decides where this character sits while grouping is on",
+            "FactionMultiHint": "A character can belong to several factions. The starred one decides where they sit while grouping is on.",
             "FactionNamePlaceholder": "Faction name",
             "FactionDescriptionPlaceholder": "Short faction description",
             "FactionVisibleToPlayers": "Visible to players",
@@ -330,6 +336,7 @@
         },
         "History": {
             "Timeline": "Chronicle",
+            "JumpToDay": "Jump to game day",
             "NodeChronicle": "Event Chronicle",
             "Events": "Events",
             "Add": "Add Insight",
@@ -341,6 +348,26 @@
             "LinkedTo": "Linked to",
             "GameDate": "Game Date",
             "GameDatePlaceholder": "e.g. 12th of Praios",
+            "When": "When did it happen?",
+            "WhenToday": "Today",
+            "WhenEarlier": "On an earlier day",
+            "PickDay": "Game day",
+            "CustomDate": "Own date...",
+            "KnownDays": "Days in the chronicle",
+            "LearnedToday": "We only found out about this today",
+            "LearnedTodayHint": "The entry stays on the day it happened; when you found out is noted underneath.",
+            "LearnedOn": "Found out on {date}",
+            "DeleteConfirmBody": "“{title}” will be removed from the chronicle for good.",
+            "RecapOpen": "Open recap",
+            "RecapCreate": "Write recap",
+            "RecapWhose": "Whose recap?",
+            "RecapBy": "Recap by {name}",
+            "RecapNote": "The recap itself opens as a journal page once you save - that is where you write.",
+            "RecapRequested": "Asking the GM to create the page...",
+            "RecapDeleteTitle": "Delete the recap too?",
+            "RecapDeleteBody": "This entry has a recap page. Keep it, or delete it with the entry?",
+            "RecapKeep": "Keep the page",
+            "RecapDeleteBoth": "Delete both",
             "Category": "Category",
             "FilterCategory": "Category Filter",
             "Title": "Title",
@@ -348,6 +375,9 @@
             "PlayerTextHint": "Safe text players may see if published.",
             "GMText": "GM Notes",
             "GMTextHint": "Private GM context.",
+            "GMTextPrivate": "GM notes stay private - players never see them, released or not.",
+            "ReleaseEntry": "Release the whole entry to players",
+            "ReleaseEntryHint": "Unticked, the entry stays visible to the GM alone.",
             "VisibleToPlayers": "Visible to players",
             "UnknownDate": "Unscheduled",
             "Untitled": "Untitled insight",
@@ -359,6 +389,7 @@
                 "All": "All",
                 "Encounter": "Encounter",
                 "Insight": "Insight",
+                "Flashback": "Flashback",
                 "Quest": "Quest",
                 "Relationship": "Relationship",
                 "Faction": "Faction",
@@ -418,10 +449,6 @@
             "MonitorDisplayName": {
                 "Name": "Monitor Display Name",
                 "Hint": "The name of the user or display (e.g., 'Monitor') used for the public viewing view."
-            },
-            "ReplaceOnlySheetActor": {
-                "Name": "Only-Sheet: Replace Actor Button",
-                "Hint": "If the 'Only-Sheet' module is active, FANG will hide the original actor open button and replace it with a custom button that opens the standard Foundry Actor Directory."
             },
             "DiploGlassOneWaySync": {
                 "Name": "DiploGlass One-Way Faction Sync",
@@ -512,6 +539,25 @@
         "Merge": {
             "ConflictResolved": "{names} was also being edited — your version was kept.",
             "DeletedElsewhere": "{names} was deleted by someone else — your change to it was dropped."
+        },
+        "Willkommen": {
+            "Setting": "Welcome window",
+            "Untertitel": "Foundry Actor Nexus Graph",
+            "Einleitung": "FANG draws your campaign's web of relationships as an interactive graph — inside Foundry, with no external tool and no second screen full of notes.",
+            "Punkt1": "<strong>Relationships</strong> — who owes whom money, who hates whom, which faction pulls the strings. Right-click a connection to rename it, flip the arrow or trigger a dual portrait.",
+            "Punkt2": "<strong>Roles and factions</strong> — a second layer of order above the bare connections, plus zones by place or theme and boss nodes that hang magnetically in the centre.",
+            "Punkt3": "<strong>Safe for players</strong> — hidden contacts keep your secrets while players may still keep their own aliases and notes.",
+            "Start": "To begin: <strong>Shift+G</strong> opens the graph. Drag actors in — it arranges itself.",
+            "ForgeZeile": "Every module, its documentation and the German translations in one place — open the module page",
+            "Nie": "Don't show again",
+            "Spaeter": "Later"
+        },
+        "Notify": {
+            "DropOnNode": "Please drop the journal onto a specific node in the graph.",
+            "GmNoteLinked": "GM note linked to {name}.",
+            "QuestLogLinked": "Quest log linked to {name}.",
+            "LoreAutoLinked": "Linked the existing player lore journal for {name}.",
+            "QuestJournalMissing": "Quest journal not found — or the permissions are missing."
         }
     }
 }
