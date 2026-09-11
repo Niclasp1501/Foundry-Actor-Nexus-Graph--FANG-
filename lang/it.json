@@ -136,7 +136,9 @@
             "FactionsHint": "Le fazioni sono mostrate come linee tra i membri e come anello colorato sul token.",
             "SectionPermissions": "Permessi",
             "ShowFactionLines": "Mostra fazioni",
-            "PinnedHint": "Posizione bloccata. Clic destro → Rilascia posizione."
+            "PinnedHint": "Posizione bloccata. Clic destro → Rilascia posizione.",
+            "RailLabel": "Strumenti FANG",
+            "Close": "Chiudi"
         },
         "Journal": {
             "FolderName": "FANG - Non Eliminare",
@@ -163,6 +165,7 @@
             "WarnNoGMOnline": "Un Game Master deve essere online per salvare le modifiche al grafico.",
             "JournalInitSuccess": "Journal FANG Graph inizializzato con successo.",
             "JournalMissing": "Nessun Journal FANG Graph trovato. Un GM deve aprire questo strumento per primo.",
+            "SaveRefusedUnloaded": "FANG non ha salvato: questa finestra non ha mai caricato il grafo. Riapri FANG e riprova.",
             "SaveNoPermission": "Nessun permesso per salvare il grafico FANG.",
             "WarningSelfLink": "Un token non può essere collegato a se stesso!",
             "WarningNoSourceTarget": "Seleziona sorgente e destinazione.",
@@ -231,6 +234,7 @@
             "DeleteNode": "Elimina Attore dal Grafo",
             "EditConnection": "Modifica",
             "DeleteConnection": "Elimina Connessione",
+            "NeedsEditMode": "modalità modifica",
             "UnpinNode": "Rilascia posizione"
         },
         "Dropdowns": {
@@ -248,6 +252,9 @@
             "RoleContent": "Inserisci un ruolo o una fazione per {actor} (opzionale):",
             "RoleInput": "Ruolo",
             "FactionInput": "Fazione",
+            "FactionPrimary": "Fazione principale",
+            "FactionPrimaryHint": "Decide dove si trova questo personaggio mentre il raggruppamento è attivo",
+            "FactionMultiHint": "Un personaggio può appartenere a più fazioni. Quella con la stella decide dove si trova mentre il raggruppamento è attivo.",
             "FactionNamePlaceholder": "Nome fazione",
             "FactionDescriptionPlaceholder": "Breve descrizione della fazione",
             "FactionVisibleToPlayers": "Visibile ai giocatori",
@@ -279,6 +286,10 @@
             "DeleteConfirmTitle": "Conferma Eliminazione",
             "DeleteNodeContent": "Sei sicuro di voler eliminare questo token dal grafo? Le tue note sulla lore dei giocatori verranno conservate.",
             "DeleteLinkContent": "Sei sicuro di voler eliminare questa connessione?",
+            "ConnectionsReadOnlyHint": "Modificare ed eliminare richiedono la modalità modifica (il lucchetto in alto a sinistra).",
+            "ConnectionsEmpty": "Ancora nessuna connessione.",
+            "ConnectionsTitle": "Connessioni di {name}",
+            "ConnectionsButton": "Connessioni",
             "IdentityTitle": "Identità",
             "IdentityName": "Nome Visualizzato",
             "IdentityOriginal": "Originale: {name}",
@@ -546,6 +557,13 @@
             "ForgeZeile": "Tutti i moduli, la documentazione e le traduzioni in tedesco in un unico posto — apri la pagina del modulo",
             "Nie": "Non mostrare più",
             "Spaeter": "Più tardi"
+        },
+        "Notify": {
+            "DropOnNode": "Rilascia il diario su un nodo specifico del grafo.",
+            "GmNoteLinked": "Nota del GM collegata a {name}.",
+            "QuestLogLinked": "Registro delle missioni collegato a {name}.",
+            "LoreAutoLinked": "Collegato il diario della lore dei giocatori già esistente per {name}.",
+            "QuestJournalMissing": "Diario della missione non trovato, oppure mancano i permessi."
         }
     }
 }

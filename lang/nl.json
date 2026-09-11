@@ -136,7 +136,9 @@
             "FactionsHint": "Facties verschijnen als lijnen tussen leden en als gekleurde ring op de token.",
             "SectionPermissions": "Rechten",
             "ShowFactionLines": "Facties tonen",
-            "PinnedHint": "Positie vastgezet. Rechtsklik → Positie vrijgeven."
+            "PinnedHint": "Positie vastgezet. Rechtsklik → Positie vrijgeven.",
+            "RailLabel": "FANG-hulpmiddelen",
+            "Close": "Sluiten"
         },
         "Journal": {
             "FolderName": "FANG - Niet Verwijderen",
@@ -163,6 +165,7 @@
             "WarnNoGMOnline": "Een Spelleider moet online zijn om wijzigingen aan de grafiek op te slaan.",
             "JournalInitSuccess": "FANG Graph Journal succesvol geïnitialiseerd.",
             "JournalMissing": "Geen FANG Graph Journal gevonden. Een Spelleider moet dit hulpmiddel eerst openen.",
+            "SaveRefusedUnloaded": "FANG heeft niet opgeslagen: dit venster heeft de graaf nooit geladen. Open FANG opnieuw en probeer het nog eens.",
             "SaveNoPermission": "Geen toestemming om de FANG-grafiek op te slaan.",
             "WarningSelfLink": "Een token kan niet aan zichzelf worden gekoppeld!",
             "WarningNoSourceTarget": "Selecteer bron en doel.",
@@ -231,6 +234,7 @@
             "DeleteNode": "Acteur uit grafiek verwijderen",
             "EditConnection": "Bewerken",
             "DeleteConnection": "Verbinding verwijderen",
+            "NeedsEditMode": "bewerkmodus",
             "UnpinNode": "Positie vrijgeven"
         },
         "Dropdowns": {
@@ -248,6 +252,9 @@
             "RoleContent": "Voer een rol of factie in voor {actor} (optioneel):",
             "RoleInput": "Rol",
             "FactionInput": "Factie",
+            "FactionPrimary": "Hoofdfactie",
+            "FactionPrimaryHint": "Bepaalt waar dit personage staat zolang groeperen aan staat",
+            "FactionMultiHint": "Een personage kan tot meerdere facties behoren. De factie met de ster bepaalt waar het staat zolang groeperen aan staat.",
             "FactionNamePlaceholder": "Factienaam",
             "FactionDescriptionPlaceholder": "Korte factiebeschrijving",
             "FactionVisibleToPlayers": "Zichtbaar voor spelers",
@@ -279,6 +286,10 @@
             "DeleteConfirmTitle": "Verwijdering bevestigen",
             "DeleteNodeContent": "Weet u zeker dat u dit token uit de graaf wilt verwijderen? Uw Player Lore-notities blijven veilig.",
             "DeleteLinkContent": "Weet u zeker dat u deze verbinding wilt verwijderen?",
+            "ConnectionsReadOnlyHint": "Bewerken en verwijderen vereisen de bewerkmodus (het slot linksboven).",
+            "ConnectionsEmpty": "Nog geen verbindingen.",
+            "ConnectionsTitle": "Verbindingen van {name}",
+            "ConnectionsButton": "Verbindingen",
             "IdentityTitle": "Identiteit",
             "IdentityName": "Weergegeven naam",
             "IdentityOriginal": "Origineel: {name}",
@@ -546,6 +557,13 @@
             "ForgeZeile": "Alle modules, hun documentatie en de Duitse vertalingen op één plek — modulepagina openen",
             "Nie": "Niet meer tonen",
             "Spaeter": "Later"
+        },
+        "Notify": {
+            "DropOnNode": "Sleep het journal naar een specifiek knooppunt in de graaf.",
+            "GmNoteLinked": "GM-notitie gekoppeld aan {name}.",
+            "QuestLogLinked": "Questlogboek gekoppeld aan {name}.",
+            "LoreAutoLinked": "Bestaand spelerlore-journal voor {name} gekoppeld.",
+            "QuestJournalMissing": "Questjournal niet gevonden, of de rechten ontbreken."
         }
     }
 }

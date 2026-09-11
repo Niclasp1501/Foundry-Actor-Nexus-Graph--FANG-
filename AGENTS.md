@@ -109,46 +109,22 @@ Saved Journal content can then stay simple and stable:
 
 This approach keeps existing Journals compatible because it changes only client-side click handling, not the saved Journal content.
 
-## Translations: Weblate owns eight of the ten languages
+## Translations: all ten languages are written here
 
-Since 06.09.2026 FANG is registered on [Foundry Hub Weblate](https://weblate.foundryvtt-hub.com).
-The loop runs by itself, and the point of the setup is that **no step of it is
-repeated by hand after a change**:
+**A new string goes into all ten files in `lang/`.** `tools/fang-validate.mjs`
+fails on a missing key in any of them, and the Validate workflow runs it on
+every push to `main` and `beta`.
 
-```
-you edit lang/en.json + lang/de.json
-   → push
-      → webhook tells Weblate            (repo hook, push events)
-         → the eight other languages show the new strings as untranslated
-            → volunteers translate
-               → Weblate opens a pull request
-                  → Validate runs        (.github/workflows/validate.yml)
-                     → auto-merge        (.github/workflows/weblate-automerge.yml)
-                        → the next release ships it
-```
+From 06.09. to 11.09.2026 FANG was registered on Foundry Hub Weblate, and the
+validator only warned about the eight languages other than English and German,
+so volunteers could fill them. Not a single translation arrived. What did
+happen: 16 keys per language went missing without anyone noticing. Weblate was
+removed on 11.09.2026 (webhook, auto-merge workflow, the relaxed check), and
+from the next version on FANG no longer uses an open licence.
 
-**Write `en.json` and `de.json`. Nothing else.** The other eight are no longer
-ours to fill: overwriting them throws away work someone donated, and it is the
-one action that turns this from automation back into a chore.
-
-**Never run `translate_i18n_vertex.py` with `--overwrite`.** Without that flag it
-only fills keys that are missing (`pending = [... if k not in translated]`) and
-leaves every existing translation alone — which is exactly what makes it
-compatible with Weblate. It stays useful as the stopgap that keeps a new string
-from shipping untranslated before a volunteer gets to it. With `--overwrite` it
-becomes a wrecking ball.
-
-**German and English are never auto-merged.** They are written here, so a
-stranger changing them is a content decision and gets read by a person. The
-auto-merge workflow excludes both files by name.
-
-**The bot's login is a guess until the first pull request arrives.** The
-condition in `weblate-automerge.yml` matches bot accounts and anything
-containing "weblate". When the first one lands, check the author and tighten
-the condition to the exact login.
-
-**Both workflow files must live on `main`.** `workflow_run` only triggers for
-workflows on the default branch — a copy that exists only on `beta` never fires.
+`translate_i18n_vertex.py` fills missing keys and leaves existing ones alone.
+Never run it with `--overwrite`: that replaces translations that were checked
+by hand.
 
 ## Visibility is a display filter, and that is on purpose
 

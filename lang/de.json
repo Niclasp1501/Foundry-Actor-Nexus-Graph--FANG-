@@ -563,7 +563,7 @@
             "GmNoteLinked": "Spielleiter-Notiz mit {name} verknüpft.",
             "QuestLogLinked": "Auftragsbuch mit {name} verknüpft.",
             "LoreAutoLinked": "Vorhandenes Spielerwissen für {name} automatisch verknüpft.",
-            "QuestJournalMissing": "Auftragsjournal nicht gefunden — oder die Rechte fehlen."
+            "QuestJournalMissing": "Auftragsjournal nicht gefunden, oder die Rechte fehlen."
         }
     }
 }

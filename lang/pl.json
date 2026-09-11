@@ -136,7 +136,9 @@
             "FactionsHint": "Frakcje pokazywane są jako linie między członkami i kolorowy pierścień na tokenie.",
             "SectionPermissions": "Uprawnienia",
             "ShowFactionLines": "Pokaż frakcje",
-            "PinnedHint": "Pozycja przypięta. Prawy przycisk → Zwolnij pozycję."
+            "PinnedHint": "Pozycja przypięta. Prawy przycisk → Zwolnij pozycję.",
+            "RailLabel": "Narzędzia FANG",
+            "Close": "Zamknij"
         },
         "Journal": {
             "FolderName": "FANG - Nie usuwaj",
@@ -163,6 +165,7 @@
             "WarnNoGMOnline": "Mistrz Gry musi być online, aby zapisać zmiany w grafie.",
             "JournalInitSuccess": "Dziennik grafu FANG został pomyślnie zainicjowany.",
             "JournalMissing": "Nie znaleziono dziennika grafu FANG. Mistrz Gry musi najpierw otworzyć to narzędzie.",
+            "SaveRefusedUnloaded": "FANG nie zapisał: to okno nigdy nie wczytało grafu. Otwórz FANG ponownie i spróbuj jeszcze raz.",
             "SaveNoPermission": "Brak uprawnień do zapisania grafu FANG.",
             "WarningSelfLink": "Żeton nie może być połączony sam ze sobą!",
             "WarningNoSourceTarget": "Proszę wybrać źródło i cel.",
@@ -231,6 +234,7 @@
             "DeleteNode": "Usuń aktora z grafu",
             "EditConnection": "Edytuj",
             "DeleteConnection": "Usuń połączenie",
+            "NeedsEditMode": "tryb edycji",
             "UnpinNode": "Zwolnij pozycję"
         },
         "Dropdowns": {
@@ -248,6 +252,9 @@
             "RoleContent": "Wprowadź rolę lub frakcję dla {actor} (opcjonalnie):",
             "RoleInput": "Rola",
             "FactionInput": "Frakcja",
+            "FactionPrimary": "Frakcja główna",
+            "FactionPrimaryHint": "Określa, gdzie stoi ta postać, gdy grupowanie jest włączone",
+            "FactionMultiHint": "Postać może należeć do kilku frakcji. Ta oznaczona gwiazdką określa jej miejsce, gdy grupowanie jest włączone.",
             "FactionNamePlaceholder": "Nazwa frakcji",
             "FactionDescriptionPlaceholder": "Krótki opis frakcji",
             "FactionVisibleToPlayers": "Widoczne dla graczy",
@@ -279,6 +286,10 @@
             "DeleteConfirmTitle": "Potwierdź Usunięcie",
             "DeleteNodeContent": "Czy na pewno chcesz usun\u0005\u0007 ten token z grafu? Twoje notatki Gracza dotycz\u0005ce wiedzy zostan\u0005 zachowane.",
             "DeleteLinkContent": "Czy na pewno chcesz usun\u0005\u0007 to poB\u0005czenie?",
+            "ConnectionsReadOnlyHint": "Edycja i usuwanie wymagają trybu edycji (kłódka w lewym górnym rogu).",
+            "ConnectionsEmpty": "Brak połączeń.",
+            "ConnectionsTitle": "Połączenia: {name}",
+            "ConnectionsButton": "Połączenia",
             "IdentityTitle": "Tożsamość",
             "IdentityName": "Wyświetlana Nazwa",
             "IdentityOriginal": "Oryginał: {name}",
@@ -546,6 +557,13 @@
             "ForgeZeile": "Wszystkie moduły, ich dokumentacja i niemieckie tłumaczenia w jednym miejscu — otwórz stronę modułu",
             "Nie": "Nie pokazuj ponownie",
             "Spaeter": "Później"
+        },
+        "Notify": {
+            "DropOnNode": "Upuść dziennik na konkretny węzeł grafu.",
+            "GmNoteLinked": "Notatka MG powiązana z postacią {name}.",
+            "QuestLogLinked": "Dziennik zadań powiązany z postacią {name}.",
+            "LoreAutoLinked": "Powiązano istniejący dziennik wiedzy graczy dla {name}.",
+            "QuestJournalMissing": "Nie znaleziono dziennika zadania albo brakuje uprawnień."
         }
     }
 }

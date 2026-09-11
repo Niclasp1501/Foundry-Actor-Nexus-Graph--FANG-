@@ -136,7 +136,9 @@
             "FactionsHint": "Фракции показаны линиями между участниками и цветным кольцом на токене.",
             "SectionPermissions": "Права",
             "ShowFactionLines": "Показать фракции",
-            "PinnedHint": "Позиция закреплена. Правый клик → Освободить позицию."
+            "PinnedHint": "Позиция закреплена. Правый клик → Освободить позицию.",
+            "RailLabel": "Инструменты FANG",
+            "Close": "Закрыть"
         },
         "Journal": {
             "FolderName": "FANG - Не удалять",
@@ -163,6 +165,7 @@
             "WarnNoGMOnline": "Мастер игры должен быть онлайн, чтобы сохранить изменения в графике.",
             "JournalInitSuccess": "Журнал графа FANG успешно инициализирован.",
             "JournalMissing": "Журнал графа FANG не найден. Мастер игры должен сначала открыть этот инструмент.",
+            "SaveRefusedUnloaded": "FANG не сохранил: это окно так и не загрузило граф. Откройте FANG заново и попробуйте ещё раз.",
             "SaveNoPermission": "Нет прав для сохранения графа FANG.",
             "WarningSelfLink": "Токен не может быть связан сам с собой!",
             "WarningNoSourceTarget": "Пожалуйста, выберите источник и цель.",
@@ -231,6 +234,7 @@
             "DeleteNode": "Удалить актера из графа",
             "EditConnection": "Изменить",
             "DeleteConnection": "Удалить связь",
+            "NeedsEditMode": "режим редактирования",
             "UnpinNode": "Освободить позицию"
         },
         "Dropdowns": {
@@ -248,6 +252,9 @@
             "RoleContent": "Введите роль или фракцию для {actor} (необязательно):",
             "RoleInput": "Роль",
             "FactionInput": "Фракция",
+            "FactionPrimary": "Основная фракция",
+            "FactionPrimaryHint": "Определяет, где стоит этот персонаж, пока включена группировка",
+            "FactionMultiHint": "Персонаж может состоять в нескольких фракциях. Фракция со звёздочкой определяет его место, пока включена группировка.",
             "FactionNamePlaceholder": "Название фракции",
             "FactionDescriptionPlaceholder": "Краткое описание фракции",
             "FactionVisibleToPlayers": "Видно игрокам",
@@ -279,6 +286,10 @@
             "DeleteConfirmTitle": "Подтвердить удаление",
             "DeleteNodeContent": "\u0012K C25@5=K, GB> E>B8B5 C40;8BL MB>B B>:5= 87 3@0D0? \u00120H8 70<5B:8 Player Lore 1C4CB A>E@0=5=K.",
             "DeleteLinkContent": "\u0012K C25@5=K, GB> E>B8B5 C40;8BL MBC A2O7L?",
+            "ConnectionsReadOnlyHint": "Для изменения и удаления нужен режим редактирования (замок слева вверху).",
+            "ConnectionsEmpty": "Связей пока нет.",
+            "ConnectionsTitle": "Связи: {name}",
+            "ConnectionsButton": "Связи",
             "IdentityTitle": "Личность",
             "IdentityName": "Отображаемое имя",
             "IdentityOriginal": "Оригинал: {name}",
@@ -546,6 +557,13 @@
             "ForgeZeile": "Все модули, документация и немецкие переводы в одном месте — открыть страницу модуля",
             "Nie": "Больше не показывать",
             "Spaeter": "Позже"
+        },
+        "Notify": {
+            "DropOnNode": "Перетащите журнал на конкретный узел графа.",
+            "GmNoteLinked": "Заметка Мастера связана с персонажем {name}.",
+            "QuestLogLinked": "Журнал квестов связан с персонажем {name}.",
+            "LoreAutoLinked": "Существующий журнал lore игроков для {name} привязан.",
+            "QuestJournalMissing": "Журнал квеста не найден, или не хватает прав."
         }
     }
 }

@@ -563,7 +563,7 @@
             "GmNoteLinked": "GM note linked to {name}.",
             "QuestLogLinked": "Quest log linked to {name}.",
             "LoreAutoLinked": "Linked the existing player lore journal for {name}.",
-            "QuestJournalMissing": "Quest journal not found — or the permissions are missing."
+            "QuestJournalMissing": "Quest journal not found, or the permissions are missing."
         }
     }
 }

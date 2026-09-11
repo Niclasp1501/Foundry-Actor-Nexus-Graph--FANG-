@@ -36,33 +36,18 @@ for (const file of localeFiles) {
 const english = locales.get("en.json");
 if (!english) errors.push("Missing lang/en.json");
 
-/**
- * Die Sprachen, die hier geschrieben werden.
- *
- * Alles andere gehoert seit dem 06.09.2026 Weblate. Dort fuellen Freiwillige
- * die Luecken — eine fehlende Uebersetzung ist dann kein Fehler, sondern
- * genau der Zustand, den Weblate anzeigt und der jemanden zum Mitmachen
- * bringt. Wuerde der Validator sie weiter als Fehler fuehren, waere jede neue
- * Zeichenkette ein roter Bau, bis acht Fremde reagiert haben — und der
- * naheliegende Ausweg waere, die acht Dateien selbst zu fuellen und damit
- * gespendete Arbeit zu ueberschreiben.
- *
- * `en` ist die Quelle und muss vollstaendig sein; `de` schreiben wir mit, weil
- * es die Sprache des Tisches ist. Beide bleiben Fehler.
- */
-const EIGENE_SPRACHEN = new Set(["en.json", "de.json"]);
-
+// Ein fehlender Schluessel ist in jeder Sprache ein Fehler. Vom 06.09. bis
+// 11.09.2026 war er ausserhalb von en und de nur eine Warnung, weil Weblate
+// die acht uebrigen Sprachen fuellen sollte. Es kam keine einzige Uebersetzung,
+// und in der Zeit liefen 16 Luecken je Sprache auf, die niemand bemerkte.
+// Wer einen Text anlegt, legt ihn in allen zehn Dateien an.
 if (english) {
   const baseKeys = new Set(flattenKeys(english).filter(Boolean));
   for (const [file, json] of locales.entries()) {
     const keys = new Set(flattenKeys(json).filter(Boolean));
     const missing = [...baseKeys].filter((key) => !keys.has(key));
     const extra = [...keys].filter((key) => !baseKeys.has(key));
-    if (missing.length) {
-      const zeile = `${file}: missing keys: ${missing.join(", ")}`;
-      if (EIGENE_SPRACHEN.has(file)) errors.push(zeile);
-      else warnings.push(`${zeile} (Weblate)`);
-    }
+    if (missing.length) errors.push(`${file}: missing keys: ${missing.join(", ")}`);
     // Ueberzaehlige Schluessel bleiben ueberall eine Warnung: Sie deuten auf
     // eine Umbenennung, die in einer Sprache nicht nachgezogen wurde.
     if (extra.length) warnings.push(`${file}: extra keys: ${extra.join(", ")}`);

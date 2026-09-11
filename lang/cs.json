@@ -136,7 +136,9 @@
             "FactionsHint": "Frakce se zobrazují jako čáry mezi členy a barevný prstenec na tokenu.",
             "SectionPermissions": "Oprávnění",
             "ShowFactionLines": "Zobrazit frakce",
-            "PinnedHint": "Pozice ukotvena. Pravý klik → Uvolnit pozici."
+            "PinnedHint": "Pozice ukotvena. Pravý klik → Uvolnit pozici.",
+            "RailLabel": "Nástroje FANG",
+            "Close": "Zavřít"
         },
         "Journal": {
             "FolderName": "FANG - Nesmazat",
@@ -163,6 +165,7 @@
             "WarnNoGMOnline": "Mistr hry musí být online, aby bylo možné uložit změny v grafu.",
             "JournalInitSuccess": "Journal grafu FANG byl úspěšně inicializován.",
             "JournalMissing": "Nebyl nalezen Journal grafu FANG. Mistr hry musí tento nástroj nejprve otevřít.",
+            "SaveRefusedUnloaded": "FANG neuložil: toto okno graf nikdy nenačetlo. Otevřete FANG znovu a zkuste to ještě jednou.",
             "SaveNoPermission": "Nemáte oprávnění uložit graf FANG.",
             "WarningSelfLink": "Token se nemůže spojit sám se sebou!",
             "WarningNoSourceTarget": "Vyberte zdroj a cíl.",
@@ -231,6 +234,7 @@
             "DeleteNode": "Odstranit aktora z grafu",
             "EditConnection": "Upravit",
             "DeleteConnection": "Odstranit spojení",
+            "NeedsEditMode": "režim úprav",
             "UnpinNode": "Uvolnit pozici"
         },
         "Dropdowns": {
@@ -248,6 +252,9 @@
             "RoleContent": "Zadejte roli nebo frakci pro {actor} (volitelné):",
             "RoleInput": "Role",
             "FactionInput": "Frakce",
+            "FactionPrimary": "Hlavní frakce",
+            "FactionPrimaryHint": "Určuje, kde tato postava stojí, když je zapnuté seskupení",
+            "FactionMultiHint": "Postava může patřit k více frakcím. Ta s hvězdičkou určuje její místo, když je zapnuté seskupení.",
             "FactionNamePlaceholder": "Název frakce",
             "FactionDescriptionPlaceholder": "Krátký popis frakce",
             "FactionVisibleToPlayers": "Viditelné pro hráče",
@@ -279,6 +286,10 @@
             "DeleteConfirmTitle": "Potvrdit smazání",
             "DeleteNodeContent": "Jste si jisti, že chcete tento token z grafu smazat? Vaše poznámky o postavě zůstanou v bezpečí.",
             "DeleteLinkContent": "Jste si jisti, že chcete toto spojení smazat?",
+            "ConnectionsReadOnlyHint": "Úpravy a mazání vyžadují režim úprav (zámek vlevo nahoře).",
+            "ConnectionsEmpty": "Zatím žádná spojení.",
+            "ConnectionsTitle": "Spojení: {name}",
+            "ConnectionsButton": "Spojení",
             "IdentityTitle": "Identita",
             "IdentityName": "Zobrazované jméno",
             "IdentityOriginal": "Původní: {name}",
@@ -546,6 +557,13 @@
             "ForgeZeile": "Všechny moduly, dokumentace a německé překlady na jednom místě — otevřít stránku modulu",
             "Nie": "Už nezobrazovat",
             "Spaeter": "Později"
+        },
+        "Notify": {
+            "DropOnNode": "Přetáhněte prosím deník na konkrétní uzel v grafu.",
+            "GmNoteLinked": "Poznámka PJ byla propojena s postavou {name}.",
+            "QuestLogLinked": "Deník úkolů byl propojen s postavou {name}.",
+            "LoreAutoLinked": "Existující deník hráčského lore pro {name} byl propojen.",
+            "QuestJournalMissing": "Deník úkolu nebyl nalezen, nebo chybí oprávnění."
         }
     }
 }

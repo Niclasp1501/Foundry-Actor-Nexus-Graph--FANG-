@@ -136,7 +136,9 @@
             "FactionsHint": "Les factions apparaissent en lignes entre les membres et en anneau coloré sur le pion.",
             "SectionPermissions": "Autorisations",
             "ShowFactionLines": "Afficher les factions",
-            "PinnedHint": "Position figée. Clic droit → Libérer la position."
+            "PinnedHint": "Position figée. Clic droit → Libérer la position.",
+            "RailLabel": "Outils FANG",
+            "Close": "Fermer"
         },
         "Journal": {
             "FolderName": "FANG - Ne pas supprimer",
@@ -163,6 +165,7 @@
             "WarnNoGMOnline": "Un Maître du Jeu doit être en ligne pour sauvegarder les modifications du graphique.",
             "JournalInitSuccess": "Journal FANG Graph initialisé avec succès.",
             "JournalMissing": "Aucun journal FANG Graph trouvé. Un MJ doit ouvrir cet outil en premier.",
+            "SaveRefusedUnloaded": "FANG n'a pas enregistré : cette fenêtre n'a jamais chargé le graphe. Rouvrez FANG et réessayez.",
             "SaveNoPermission": "Permission insuffisante pour sauvegarder le graphique FANG.",
             "WarningSelfLink": "Un jeton ne peut pas être connecté à lui-même !",
             "WarningNoSourceTarget": "Veuillez sélectionner la source et la cible.",
@@ -231,6 +234,7 @@
             "DeleteNode": "Supprimer l'acteur du graphe",
             "EditConnection": "Modifier",
             "DeleteConnection": "Supprimer la connexion",
+            "NeedsEditMode": "mode édition",
             "UnpinNode": "Libérer la position"
         },
         "Dropdowns": {
@@ -248,6 +252,9 @@
             "RoleContent": "Entrez un rôle ou une faction pour {actor} (facultatif) :",
             "RoleInput": "Rôle",
             "FactionInput": "Faction",
+            "FactionPrimary": "Faction principale",
+            "FactionPrimaryHint": "Détermine la place de ce personnage tant que le regroupement est actif",
+            "FactionMultiHint": "Un personnage peut appartenir à plusieurs factions. Celle marquée d'une étoile détermine sa place tant que le regroupement est actif.",
             "FactionNamePlaceholder": "Nom de la faction",
             "FactionDescriptionPlaceholder": "Brève description de la faction",
             "FactionVisibleToPlayers": "Visible par les joueurs",
@@ -279,6 +286,10 @@
             "DeleteConfirmTitle": "Confirmer la suppression",
             "DeleteNodeContent": "Êtes-vous sûr de vouloir supprimer ce jeton du graphe ? Vos notes de lore pour les joueurs seront conservées.",
             "DeleteLinkContent": "Êtes-vous sûr de vouloir supprimer cette connexion ?",
+            "ConnectionsReadOnlyHint": "Modifier et supprimer nécessitent le mode édition (le cadenas en haut à gauche).",
+            "ConnectionsEmpty": "Aucune connexion pour l'instant.",
+            "ConnectionsTitle": "Connexions de {name}",
+            "ConnectionsButton": "Connexions",
             "IdentityTitle": "Identité",
             "IdentityName": "Nom affiché",
             "IdentityOriginal": "Original : {name}",
@@ -546,6 +557,13 @@
             "ForgeZeile": "Tous les modules, leur documentation et les traductions allemandes au même endroit — ouvrir la page du module",
             "Nie": "Ne plus afficher",
             "Spaeter": "Plus tard"
+        },
+        "Notify": {
+            "DropOnNode": "Déposez le journal sur un nœud précis du graphe.",
+            "GmNoteLinked": "Note du MJ liée à {name}.",
+            "QuestLogLinked": "Journal des quêtes lié à {name}.",
+            "LoreAutoLinked": "Le journal de lore des joueurs existant pour {name} a été lié.",
+            "QuestJournalMissing": "Journal de quête introuvable, ou les autorisations manquent."
         }
     }
 }

@@ -2,11 +2,10 @@ name: Validate
 
 # Runs on every pull request and on pushes to the working branches.
 #
-# It exists for Weblate. Translations arrive as pull requests from people we
-# cannot ask questions, in languages nobody here reads. A green check that says
-# "the JSON parses, every locale has the same keys as en.json, and no
-# placeholder was lost" is the only review that scales — and it is the gate the
-# auto-merge workflow waits for.
+# The check says: the JSON parses, all ten locales have the same keys as
+# en.json, no placeholder was lost, every script parses as an ES module and
+# every stylesheet has balanced braces. Each of these broke once before anyone
+# noticed.
 
 on:
   pull_request:
