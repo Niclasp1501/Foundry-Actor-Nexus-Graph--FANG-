@@ -1,6 +1,8 @@
 # Konzept: Gemeinsames Bearbeiten in FANG
 
-Stand 11.09.2026. Nur Konzept, nichts davon ist gebaut. Zielbild zuerst, dann der heutige
+Stand 11.09.2026. Auf `beta` ist nichts davon gebaut. Eine vollständige Umsetzung aller sechs
+Bausteine liegt auf dem Zweig `gemeinsames-bearbeiten` (Stand edbe403), getestet mit 32 eigenen
+Tests, aber nie an einem Tisch. Sie wartet auf diesen Test, bevor etwas davon auf beta kommt. Zielbild zuerst, dann der heutige
 Stand, dann die Bausteine in der Reihenfolge, in der sie sich lohnen.
 
 ## 1. Zielbild
