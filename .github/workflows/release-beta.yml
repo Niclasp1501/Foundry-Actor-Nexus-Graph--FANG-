@@ -59,7 +59,10 @@ jobs:
             --exclude "module-beta.json" \
             --exclude "module-beta.zip" \
             --exclude "README.md" \
-            --exclude "CHANGELOG.md"
+            --exclude "CHANGELOG.md" \
+            --exclude "tools" \
+            --exclude ".gitignore" \
+            --exclude "*.md"
 
           cp module-beta.json .beta-dist/module.json
 

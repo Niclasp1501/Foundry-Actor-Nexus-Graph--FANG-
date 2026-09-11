@@ -20,3 +20,14 @@ module-beta.json
 module-beta.zip
 dist-beta/
 .beta-dist/
+
+# Not part of the published module: internal notes, concepts and helper scripts
+AGENTS.md
+TODO.md
+DEVELOPER_GUIDE.md
+KONZEPT-*.md
+tools/deploy-fang.ps1
+tools/deploy-config.json
+tools/translate_i18n_vertex.py
+tools/vertex_endpoint_client.py
+tools/fang-smoke-test.mjs
