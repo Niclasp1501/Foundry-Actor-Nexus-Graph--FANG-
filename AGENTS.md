@@ -37,6 +37,8 @@ The persistent beta install link remains the `beta-latest` GitHub prerelease man
 
 `CHANGELOG.md` is written in **English**, like the commits. Foundry's package page and GitHub show one text to every reader; there is no per-language changelog. Eight versions had drifted into German and were translated on 2026-09-11. No `—` or `–` as a dash between clauses (workspace rule 4a).
 
+**Every GitHub release carries the changelog section of its version as its text.** Until 2026-09-11 every FANG release body was empty: whoever was offered an update and clicked the release saw nothing. `release.yml` still creates the release without a body. Fix it with the next release: copy `.github/scripts/release_notes.py` from `Ninjos-DnD5e5.5-Uebersetzung` (it cuts out the `## [<version>]` section, which matches FANG's headings), run it as a step before the release action, and give the action `body_path: release-notes.md`. The beta prerelease can stay as it is. Do not edit bodies of releases that are already out.
+
 ## Player-Facing Hidden Tokens
 
 Hidden/verdeckte tokens are not "disabled" for players. FANG is a shared player management tool, so players must still be able to interact with the safe player-facing version of a hidden contact.
