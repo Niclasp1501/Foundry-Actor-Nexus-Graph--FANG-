@@ -375,5 +375,25 @@ section("16. Mehrere Fraktionen");
         "eine andere Reihenfolge ist eine Aenderung - sonst waere der Sternklick verloren");
 }
 
+// 17. A GM instance that was never loaded holds an empty graph. Merging a player's edit
+// against it reads every node as deleted on the GM's side, and deletion wins. This pins
+// down why the relay handler in main.js has to load before it applies anything.
+section("17. Relay gegen ungeladenen GM-Stand");
+{
+    const server = baseGraph();
+    server.schemaVersion = 2;
+    const spielerBaseline = clone(server);
+    const spielerStand = clone(server);
+    spielerStand.links.push({ id: "l2", source: "garrek", target: "elara", label: "neu", directional: false });
+    const ungeladen = { schemaVersion: 2, nodes: [], links: [], factions: [], zones: [] };
+
+    const leer = mergeGraphData(spielerBaseline, spielerStand, ungeladen).merged;
+    ok(leer.nodes.length === 0, "gegen einen ungeladenen Stand gehen alle Knoten verloren");
+
+    const geladen = mergeGraphData(spielerBaseline, spielerStand, clone(server)).merged;
+    ok(geladen.nodes.length === server.nodes.length, "gegen den geladenen Stand bleiben alle Knoten");
+    ok(geladen.links.some(l => l.id === "l2"), "und die neue Verbindung des Spielers kommt an");
+}
+
 console.log(`\n${failed === 0 ? "=== ALLE TESTS BESTANDEN ===" : `=== ${failed} FEHLER ===`}  (${passed} ok, ${failed} fail)\n`);
 process.exit(failed ? 1 : 0);

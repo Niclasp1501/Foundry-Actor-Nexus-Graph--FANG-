@@ -3,6 +3,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Module versions follow the Foundry-targeted `<foundry-major>.<YYMM>.<patch>` release scheme documented in `AGENTS.md`.
 
+## [14.2609.3] - 2026-09-11
+
+### Fixed
+- **Eine Spieler-Änderung konnte den ganzen Graphen leeren.** Spieler dürfen das Journal nicht beschreiben, deshalb wendet der Client der Spielleitung ihre Änderung an und speichert. Hatte die Spielleitung FANG in dieser Sitzung noch nicht geöffnet, lag dort eine nie geladene Instanz: leerer Graph, keine Grundlage für den Abgleich. Der Abgleich las jeden vorhandenen Knoten als von der Spielleitung gelöscht, das Löschen gewinnt, und das anschließende Speichern schrieb das leere Ergebnis ins Journal. Die Instanz lädt jetzt zuerst; ein zweiter Relay, der während des Ladens eintrifft, wartet auf dasselbe Laden.
+
+  Betroffen sind nur Welten mit eingeschalteter Spielerbearbeitung. Der Weg bestand seit Einführung des Abgleichs, also auch in 14.2608.1. Gefunden beim Nachgehen einer Meldung von @taylor-nightingale (#7). Szenario 17 in `tools/fang-merge-test.mjs` hält den Grund fest: Gegen einen ungeladenen Stand gehen alle Knoten verloren, gegen den geladenen bleiben sie, und die neue Verbindung des Spielers kommt an.
+
+- **Speichern aus einer nie geladenen Instanz wird verweigert.** Hat ein Fenster den Graphen nie geladen, fehlt ihm die Grundlage für den Abgleich, und das Speichern hätte seinen Stand ungeprüft über den gespeicherten geschrieben. Nach der Reparatur oben sollte das nicht mehr vorkommen. Führt künftig ein neuer Weg dorthin, bricht FANG mit einer Meldung ab, statt still zu überschreiben: Eine verlorene Änderung lässt sich wiederholen, ein gelöschter Graph nicht.
+
 ## [14.2609.2] - 2026-09-05
 
 ### Added

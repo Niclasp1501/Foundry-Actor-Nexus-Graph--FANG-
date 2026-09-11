@@ -168,6 +168,7 @@
             "FactionGroupingInsufficient": "Mindestens zwei Fraktionen mit zugewiesenen Knoten sind nötig.",
             "JournalInitSuccess": "FANG Graph Journal erfolgreich initialisiert.",
             "JournalMissing": "Kein FANG Graph Journal gefunden. Ein GM muss dieses Tool zuerst öffnen.",
+            "SaveRefusedUnloaded": "FANG hat nicht gespeichert: Dieses Fenster hat den Graphen nie geladen. Öffne FANG neu und versuche es noch einmal.",
             "SaveNoPermission": "Keine Berechtigung zum Speichern des FANG Graphen.",
             "WarningSelfLink": "Ein Token kann nicht mit sich selbst verbunden werden!",
             "WarningNoSourceTarget": "Bitte Quelle und Ziel auswählen.",

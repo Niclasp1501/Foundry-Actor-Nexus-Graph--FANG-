@@ -168,6 +168,7 @@
             "FactionGroupingInsufficient": "Need at least two factions with assigned nodes to group.",
             "JournalInitSuccess": "FANG Graph Journal successfully initialized.",
             "JournalMissing": "No FANG Graph Journal found. A GM must open this tool first.",
+            "SaveRefusedUnloaded": "FANG did not save: this window never loaded the graph. Reopen FANG and try again.",
             "SaveNoPermission": "No permission to save the FANG Graph.",
             "WarningSelfLink": "A token cannot be connected to itself!",
             "WarningNoSourceTarget": "Please select source and target.",

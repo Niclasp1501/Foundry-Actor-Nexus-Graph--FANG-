@@ -525,6 +525,17 @@ Hooks.once("ready", async () => {
       if (!fangApp) fangApp = new FangApplication();
       setTimeout(async () => {
         const payload = data.payload || {};
+        // A GM who has not opened FANG in this session holds an instance that was never
+        // loaded: an empty graph and no baseline. Merging the player's edit against that
+        // reads every existing node as deleted on our side, deletion wins, and the save
+        // that follows has no baseline to merge against, so it writes the empty result to
+        // the journal. One relationship drawn by a player would take the whole graph with
+        // it. So the instance loads first, and a second relay arriving mid-load waits for
+        // the same load instead of starting its own.
+        if (fangApp._baseline === undefined) {
+          fangApp._relayLoad ??= fangApp.loadData().finally(() => { fangApp._relayLoad = null; });
+          await fangApp._relayLoad;
+        }
         if (payload.newGraphData) {
           // Apply the player's change on top of our own state instead of replacing it.
           // Replacing meant that anything the GM changed since the player loaded was

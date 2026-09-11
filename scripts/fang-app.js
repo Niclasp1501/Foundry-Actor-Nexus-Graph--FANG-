@@ -3640,6 +3640,19 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             // Both our baseline and the stored state must already speak schema v2 —
             // against an older state we simply write ours, which migrates it.
             const server = entry.getFlag("fang", "graphData");
+            // An instance that never loaded has no baseline. The code below would then skip the
+            // merge and write our graph over the stored one, and a fresh instance holds an empty
+            // graph: the stored one would simply be gone. The player relay loads before it
+            // applies anything, so this should be unreachable. If something new gets here
+            // without loading, refuse loudly instead of overwriting silently. One lost edit
+            // that someone can repeat beats a whole graph nobody can get back.
+            if (this._baseline === undefined && server) {
+                console.error("FANG | Refusing to save: this instance never loaded the graph, so it would overwrite the stored one unmerged.");
+                if (game.user.isGM) {
+                    ui.notifications.error(this._localize("FANG.Messages.SaveRefusedUnloaded", "FANG did not save: this window never loaded the graph. Reopen FANG and try again."));
+                }
+                return;
+            }
             const baselineBefore = this._baseline;
             let mergeChangedUs = false;
             if (this._isMergeableState(this._baseline) && this._isMergeableState(server)) {
