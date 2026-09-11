@@ -122,6 +122,12 @@ Aufwand: ein bis zwei Wochen. Betroffen sind alle rund 26 Stellen, die heute `sa
 aufrufen. Jede muss sagen, was sie geändert hat, statt nur "speichern". Das ist auch eine
 Aufräumaktion: Heute weiß niemand an diesen Stellen mehr, was genau sich geändert hat.
 
+**Nachtrag 11.09.2026, nach dem Bau:** Es wurde ein Tag, nicht zwei Wochen, und die 26 Stellen
+blieben unangetastet. Die Liste der Vorgänge lässt sich beim Speichern aus den zwei Ständen
+ableiten, die ohnehin da sind (geladener und aktueller Stand), statt an jeder Stelle von Hand
+aufgeschrieben zu werden. Der Dreifach-Abgleich hatte diese Information schon immer, nur
+nicht als Liste. `tools/fang-ops-test.mjs` beweist, dass beide Wege dasselbe Ergebnis liefern.
+
 ### Baustein 4: Ein Schreiber, der da ist
 
 Zwei Wege, die sich ergänzen:

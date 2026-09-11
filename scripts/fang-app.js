@@ -1,4 +1,5 @@
 import { mergeGraphData, valuesEqual, structurallyEqual } from "./fang-merge.mjs";
+import { diffGraph, applyOps, summarizeOps } from "./fang-ops.mjs";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
@@ -3567,6 +3568,81 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
      * as "the server deleted it" -- so a placeholder a player added in edit mode was neither
      * broadcast nor written, it just quietly vanished. See scenario 14 in the merge tests.
      */
+    /**
+     * A player's changes on their way to a GM: the list of operations between the state
+     * they loaded and the state they have now. A few small entries instead of two whole
+     * graphs, and the GM does not need our baseline to make sense of them.
+     */
+    _sendOpsToGM(baseline, exportData, draggedNodeIds) {
+        const ops = this._isMergeableState(baseline)
+            ? diffGraph(baseline, exportData, { draggedNodeIds: draggedNodeIds ?? new Set() })
+            : null;
+        if (ops && !ops.length) return;   // nothing changed, nothing to send
+        if (ops) {
+            console.log(`FANG | Sending ${ops.length} operation(s) to the GM.`);
+            game.socket.emit("module.fang", {
+                action: "playerEditOps",
+                payload: { ops, authorId: game.user.id, authorName: game.user.name }
+            });
+            return;
+        }
+        // No usable baseline (pre-v2 state): fall back to sending the whole graph, which
+        // the GM's older handler still understands.
+        game.socket.emit("module.fang", {
+            action: "playerEditGraph",
+            payload: { newGraphData: exportData, baseline: baseline ?? null, draggedNodeIds: Array.from(draggedNodeIds ?? []), authorName: game.user.name }
+        });
+    }
+
+    /**
+     * A player relayed operations to us (GM). Apply them to our live graph; the save that
+     * follows will find them as "our" change against an unchanged baseline and write
+     * them. The author travels along so the change log names the right person.
+     */
+    async applyRemoteOps(payload = {}) {
+        const ops = Array.isArray(payload.ops) ? payload.ops : [];
+        if (!ops.length) return false;
+        const mine = this._buildExportData();
+        const { state, conflicts } = applyOps(mine, ops);
+        state.schemaVersion = FANG_GRAPH_SCHEMA_VERSION;
+        this._adoptMergedState(state, this._baseline);
+        if (conflicts.length) {
+            console.log(`FANG | Applied ${ops.length} operation(s) from ${payload.authorName ?? "player"} with ${conflicts.length} conflict(s).`, conflicts);
+        }
+        this._relayAuthor = { id: payload.authorId ?? null, name: payload.authorName ?? "?" };
+        return true;
+    }
+
+    /**
+     * Who changed what, when. Written by whoever writes the graph, next to it, capped so
+     * the setting cannot grow without bound. A change that came in over the relay is
+     * attributed to the player who made it, not to the GM whose client wrote it.
+     */
+    async _logOps(ops) {
+        if (!Array.isArray(ops) || !ops.length || !game.user?.isGM) return;
+        const author = this._relayAuthor ?? { id: game.user.id, name: game.user.name };
+        this._relayAuthor = null;
+        try {
+            const log = foundry.utils.duplicate(game.settings.get("fang", "changeLog") ?? { entries: [] });
+            const entries = Array.isArray(log.entries) ? log.entries : [];
+            const MAX_OPS = 60, MAX_ENTRIES = 300;
+            entries.push({
+                id: foundry.utils.randomID(12),
+                ts: Date.now(),
+                userId: author.id,
+                userName: author.name,
+                counts: summarizeOps(ops),
+                ops: ops.length > MAX_OPS ? null : ops,
+                truncated: ops.length > MAX_OPS
+            });
+            while (entries.length > MAX_ENTRIES) entries.shift();
+            await game.settings.set("fang", "changeLog", { entries });
+        } catch (err) {
+            // The log is a convenience. A failure here must never stop the save.
+            console.warn("FANG | Could not write the change log.", err);
+        }
+    }
+
     async applyRemoteGraphEdit(payload = {}) {
         const theirState = payload.newGraphData;
         if (!theirState) return;
@@ -3668,19 +3744,23 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             }
             const baselineBefore = this._baseline;
             let mergeChangedUs = false;
+            let ops = null;
             if (this._isMergeableState(this._baseline) && this._isMergeableState(server)) {
-                const { merged, conflicts } = mergeGraphData(this._baseline, exportData, server, {
-                    draggedNodeIds: this._draggedNodeIds ?? new Set()
-                });
-                merged.schemaVersion = FANG_GRAPH_SCHEMA_VERSION;
-                // Did the merge pull in anything we did not have? Then our live graph is
-                // now out of date and must follow, or the next save would "resurrect"
-                // what someone else deleted and undo what they added.
-                // Positions are excluded on purpose: the merge always drops our physics
-                // drift, so comparing them would report a change on literally every save
-                // and rebuild the simulation each time we let go of a node.
-                mergeChangedUs = !structurallyEqual(merged, exportData);
-                exportData = merged;
+                // What did we change since we loaded? That list, applied to whatever is
+                // stored right now, is the new stored state. Same result as the three-way
+                // merge (tools/fang-ops-test.mjs proves it), but the list itself is what
+                // the relay, the change log and undo are built on.
+                ops = diffGraph(this._baseline, exportData, { draggedNodeIds: this._draggedNodeIds ?? new Set() });
+                const { state, conflicts } = applyOps(server, ops);
+                state.schemaVersion = FANG_GRAPH_SCHEMA_VERSION;
+                // Did the stored state carry anything we did not have? Then our live graph
+                // is out of date and must follow, or the next save would "resurrect" what
+                // someone else deleted and undo what they added.
+                // Positions are excluded on purpose: nobody's drift is ever written, so
+                // comparing them would report a change on literally every save and rebuild
+                // the simulation each time we let go of a node.
+                mergeChangedUs = !structurallyEqual(state, exportData);
+                exportData = state;
                 this._reportMergeConflicts(conflicts);
             } else if (server) {
                 console.log("FANG | Stored graph predates the merge schema — migrating it with this save.");
@@ -3689,6 +3769,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             await entry.setFlag("fang", "graphData", exportData);
             // What we just wrote is the new common ground for our next save.
             this._setBaseline(exportData);
+            // Only a save that happened gets a log entry.
+            if (ops) await this._logOps(ops);
 
             if (mergeChangedUs) this._adoptMergedState(exportData, baselineBefore);
 
@@ -3705,18 +3787,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             if (allowPlayerEdit) {
                 const isGMOnline = game.users.some(u => u.isGM && u.active);
                 if (isGMOnline) {
-                    console.log("FANG | Sending edit request to GM via socket.");
-                    game.socket.emit("module.fang", {
-                        action: "playerEditGraph",
-                        payload: {
-                            newGraphData: exportData,
-                            baseline: this._baseline ?? null,
-                            draggedNodeIds: Array.from(this._draggedNodeIds ?? []),
-                            authorName: game.user.name
-                        }
-                    });
+                    this._sendOpsToGM(this._baseline, exportData, this._draggedNodeIds);
                     // Our request is on its way; treat it as our new starting point so a
-                    // follow-up save does not re-send the same diff.
+                    // follow-up save does not re-send the same list.
                     this._setBaseline(exportData);
                 } else {
                     this._queueRelay(exportData);
@@ -6450,10 +6523,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         if (!isGMOnline) return false;
         const pending = this._pendingRelay;
         this._pendingRelay = null;
-        game.socket.emit("module.fang", {
-            action: "playerEditGraph",
-            payload: { ...pending, authorName: game.user.name }
-        });
+        this._sendOpsToGM(pending.baseline, pending.newGraphData, new Set(pending.draggedNodeIds ?? []));
         this._setBaseline(pending.newGraphData);
         ui.notifications.info(this._localize("FANG.Messages.RelayFlushed", "Waiting changes were sent to the GM."));
         this._updateLockUI();

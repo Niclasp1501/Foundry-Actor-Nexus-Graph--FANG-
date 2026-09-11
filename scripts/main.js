@@ -302,6 +302,16 @@ Hooks.once("init", () => {
     }
   });
 
+  // Who changed what, when: one entry per save, written by the client that wrote the
+  // graph, capped at 300 entries. Read by the change log window; players may read it,
+  // as they may read the graph itself.
+  game.settings.register("fang", "changeLog", {
+    scope: "world",
+    config: false,
+    type: Object,
+    default: { entries: [] }
+  });
+
   game.settings.register("fang", "historyLastGameDate", {
     scope: "world",
     config: false,
@@ -551,6 +561,21 @@ Hooks.once("ready", async () => {
         // was told, so everyone kept the state they had until they reopened the window --
         // including the player who just made the change. refreshFromServer keeps unsaved
         // local work, so telling everyone is safe.
+        await fangApp.saveData(true);
+      }, 100);
+    }
+
+    // The same relay, as a list of operations. Loads first for the same reason as above.
+    if (data.action === "playerEditOps" && game.user.isGM) {
+      if (!fangApp) fangApp = new FangApplication();
+      setTimeout(async () => {
+        if (fangApp._baseline === undefined) {
+          fangApp._relayLoad ??= fangApp.loadData().finally(() => { fangApp._relayLoad = null; });
+          await fangApp._relayLoad;
+        }
+        const applied = await fangApp.applyRemoteOps(data.payload || {});
+        if (!applied) return;
+        if (fangApp.rendered) fangApp._populateActors();
         await fangApp.saveData(true);
       }, 100);
     }
