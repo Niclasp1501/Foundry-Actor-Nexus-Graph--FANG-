@@ -16,13 +16,26 @@ WHAT YOU MAY DO
     for private or commercial play. Running paid games with it is fine.
   * Keep copies for backup.
   * Modify it for use at your own table.
+  * Write your own, separate module that works together with this one, for
+    example through its hooks or its API, as long as it contains none of this
+    module's code or assets.
 
 WHAT YOU MAY NOT DO WITHOUT WRITTEN PERMISSION FROM THE AUTHOR
 
   * Redistribute it, in whole or in part, modified or unmodified. Point people
     at the package listing or the releases page instead of handing out copies.
+  * Copy its code, or substantial parts of it, into another project.
   * Publish it under another name, or bundle it into another package.
   * Sell it, or include it in anything that is sold.
+  * Remove or alter the copyright and licence notices.
+
+
+FORKS ON GITHUB
+
+GitHub's terms of service let anyone fork a public repository on GitHub. A
+fork grants no rights beyond this licence. It may be used to prepare a
+contribution to this project or to modify the module for your own table, and
+for nothing else.
 
 
 CONTRIBUTIONS
@@ -33,14 +46,35 @@ the author later chooses for this project, including a more permissive or a
 commercial licence.
 
 
-NO WARRANTY
+ADD-ONS AND FUTURE VERSIONS
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHOR BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
-ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+The author may offer add-on modules for this module under separate terms,
+including paid ones. Future versions of this module may be released under
+different terms; each version is governed by the licence that ships with it.
+
+
+TERMINATION
+
+If you break these terms, the rights granted here end automatically.
+
+
+NO WARRANTY, LIMITED LIABILITY
+
+The software is provided free of charge and as is, without any warranty that
+it is free of defects or suitable for a particular purpose. The author is
+liable without limitation for intent and gross negligence, for injury to
+life, body or health, and wherever liability is mandatory by law, in
+particular under the German Product Liability Act (Produkthaftungsgesetz).
+Any further liability is excluded.
+
+
+GOVERNING LAW
+
+These terms are governed by the law of the Federal Republic of Germany,
+excluding the United Nations Convention on Contracts for the International
+Sale of Goods. If you are a consumer, the mandatory consumer protection rules
+of the country you live in remain unaffected. Should any provision of these
+terms be invalid, the remaining provisions stay in effect.
 
 
 THIRD-PARTY MATERIAL
