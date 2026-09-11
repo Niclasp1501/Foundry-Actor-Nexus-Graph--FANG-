@@ -163,6 +163,7 @@
             "PlayersCanEdit": "Spelers kunnen de grafiek nu bewerken.",
             "PlayersCannotEdit": "Spelers kunnen de grafiek niet langer bewerken.",
             "WarnNoGMOnline": "Een Spelleider moet online zijn om wijzigingen aan de grafiek op te slaan.",
+            "ExtensionTooOld": "De uitbreiding \"{id}\" heeft een nieuwere FANG nodig. Werk FANG bij.",
             "JournalInitSuccess": "FANG Graph Journal succesvol geïnitialiseerd.",
             "JournalMissing": "Geen FANG Graph Journal gevonden. Een Spelleider moet dit hulpmiddel eerst openen.",
             "SaveRefusedUnloaded": "FANG heeft niet opgeslagen: dit venster heeft de graaf nooit geladen. Open FANG opnieuw en probeer het nog eens.",

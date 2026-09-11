@@ -163,6 +163,7 @@
             "PlayersCanEdit": "Os jogadores agora podem editar o gráfico.",
             "PlayersCannotEdit": "Os jogadores não podem mais editar o gráfico.",
             "WarnNoGMOnline": "Um Mestre de Jogo deve estar online para salvar alterações no gráfico.",
+            "ExtensionTooOld": "A extensão \"{id}\" precisa de um FANG mais recente. Atualize o FANG.",
             "JournalInitSuccess": "Diário do Gráfico FANG inicializado com sucesso.",
             "JournalMissing": "Nenhum Diário do Gráfico FANG encontrado. Um GM deve abrir esta ferramenta primeiro.",
             "SaveRefusedUnloaded": "O FANG não salvou: esta janela nunca carregou o grafo. Abra o FANG de novo e tente novamente.",

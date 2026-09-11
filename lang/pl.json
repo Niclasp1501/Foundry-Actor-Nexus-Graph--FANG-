@@ -163,6 +163,7 @@
             "PlayersCanEdit": "Gracze mogą teraz edytować graf.",
             "PlayersCannotEdit": "Gracze nie mogą już edytować grafu.",
             "WarnNoGMOnline": "Mistrz Gry musi być online, aby zapisać zmiany w grafie.",
+            "ExtensionTooOld": "Rozszerzenie \"{id}\" wymaga nowszego FANG. Zaktualizuj FANG.",
             "JournalInitSuccess": "Dziennik grafu FANG został pomyślnie zainicjowany.",
             "JournalMissing": "Nie znaleziono dziennika grafu FANG. Mistrz Gry musi najpierw otworzyć to narzędzie.",
             "SaveRefusedUnloaded": "FANG nie zapisał: to okno nigdy nie wczytało grafu. Otwórz FANG ponownie i spróbuj jeszcze raz.",

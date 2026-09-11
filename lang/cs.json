@@ -163,6 +163,7 @@
             "PlayersCanEdit": "Hráči nyní mohou upravovat graf.",
             "PlayersCannotEdit": "Hráči již nemohou upravovat graf.",
             "WarnNoGMOnline": "Mistr hry musí být online, aby bylo možné uložit změny v grafu.",
+            "ExtensionTooOld": "Rozšíření \"{id}\" potřebuje novější FANG. Aktualizujte prosím FANG.",
             "JournalInitSuccess": "Journal grafu FANG byl úspěšně inicializován.",
             "JournalMissing": "Nebyl nalezen Journal grafu FANG. Mistr hry musí tento nástroj nejprve otevřít.",
             "SaveRefusedUnloaded": "FANG neuložil: toto okno graf nikdy nenačetlo. Otevřete FANG znovu a zkuste to ještě jednou.",
