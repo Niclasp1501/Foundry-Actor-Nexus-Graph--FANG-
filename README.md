@@ -143,14 +143,11 @@ Den aktuellen Stand der Entwicklung und geplante Features findest du in der Date
 ## Credits & Third-Party Libraries
 Special thanks to **GM MattCat** for bringing in the DiploGlass faction sync idea.
 
-This module leverages the following open-source libraries:
-* [D3.js](https://d3js.org/) - Licensed under the ISC License.
+FANG loads [D3.js](https://d3js.org/) (ISC License) at runtime from d3js.org. It is not bundled with the module.
 
 ---
 
 ## License / Lizenz
-This base module is licensed under the MIT License. 
-**Note:** This license applies only to the core "Foundry Actor Nexus Graph (FANG)" module. Future add-ons, premium themes, or extended feature packs may be released under separate, proprietary licenses.
+FANG is free to install and use, including for paid games, but it is **not open source**. From version 14.2609.3 on, all rights are reserved except those granted in [LICENSE](LICENSE): you may use it and modify it for your own table, but not redistribute, rebundle or sell it. Versions up to and including 14.2609.2 were released under the MIT License and stay under it. The Ninjo logo (`assets/ninjo.png`) is not covered by any licence.
 
-Dieses Basis-Modul steht unter der MIT-Lizenz. 
-**Hinweis:** Diese Lizenz gilt nur für das Kernmodul "Foundry Actor Nexus Graph (FANG)". Zukünftige Premium-Erweiterungen, Themes oder Content-Pakete können unter separaten, proprietären Lizenzen veröffentlicht werden.
+FANG ist kostenlos und darf auch für bezahlte Runden benutzt werden, ist aber **nicht Open Source**. Ab Version 14.2609.3 sind alle Rechte vorbehalten, außer denen in der [LICENSE](LICENSE): Nutzen und für den eigenen Tisch anpassen ja, weitergeben, in andere Pakete packen oder verkaufen nein. Die Versionen bis einschließlich 14.2609.2 sind unter der MIT-Lizenz erschienen und bleiben es. Das Ninjo-Logo (`assets/ninjo.png`) fällt unter keine Lizenz.

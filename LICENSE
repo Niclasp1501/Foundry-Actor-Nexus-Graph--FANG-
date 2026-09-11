@@ -1,37 +1,63 @@
-MIT License
+Ninjo's FANG (Foundry Actor Nexus Graph)
+Copyright (c) 2026 Ninjo. All rights reserved.
 
-Copyright (c) 2026 Ninjo
+This software is NOT open source. It is distributed free of charge through the
+Foundry Virtual Tabletop package listing and this project's GitHub releases,
+but the author retains all rights not granted below.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+These terms apply from version 14.2609.3 on. Versions up to and including
+14.2609.2 were released under the MIT License, and copies of those versions
+remain under it.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+
+WHAT YOU MAY DO
+
+  * Install and use this module in your own Foundry Virtual Tabletop worlds,
+    for private or commercial play. Running paid games with it is fine.
+  * Keep copies for backup.
+  * Modify it for use at your own table.
+
+WHAT YOU MAY NOT DO WITHOUT WRITTEN PERMISSION FROM THE AUTHOR
+
+  * Redistribute it, in whole or in part, modified or unmodified. Point people
+    at the package listing or the releases page instead of handing out copies.
+  * Publish it under another name, or bundle it into another package.
+  * Sell it, or include it in anything that is sold.
+
+
+CONTRIBUTIONS
+
+Bug reports and pull requests are welcome. By submitting a contribution you
+agree that the author may use it under these terms and under any other terms
+the author later chooses for this project, including a more permissive or a
+commercial licence.
+
+
+NO WARRANTY
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+AUTHOR BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
----
 
-Note: This license applies only to the core "Foundry Actor Nexus Graph (FANG)" module. Future add-ons, premium themes, or extended feature packs may be released under separate, proprietary licenses.
+THIRD-PARTY MATERIAL
 
-This software may include third-party libraries (e.g., D3.js) which are subject to their own respective licenses. The original license notices of these libraries are maintained within the source files.
+  D3.js (https://d3js.org) is loaded by the module at runtime from d3js.org.
+  It is not part of this package and not redistributed here. D3 is
+  Copyright 2010-2023 Mike Bostock and is licensed under the ISC License
+  (https://github.com/d3/d3/blob/main/LICENSE).
 
----
+  Font Awesome glyphs used through CSS classes, and actor and item images, are
+  provided by Foundry Virtual Tabletop or the game system at runtime and are
+  not redistributed here.
 
-THE NINJO LOGO IS NOT COVERED BY THIS LICENSE
 
-assets/ninjo.png is original artwork, drawn on commission for the author by the
-artist Roxy and used with the artist's permission. It is the author's brand
-mark: all rights reserved. The license above does not apply to it. It may not
-be reused, modified or redistributed on its own, and forks or derived works
-must remove or replace it.
+THE NINJO LOGO
+
+  assets/ninjo.png is original artwork, drawn on commission for the author by
+  the artist Roxy and used with the artist's permission. It is the author's
+  brand mark: all rights reserved, not covered by any licence, and not free to
+  reuse, modify or redistribute.

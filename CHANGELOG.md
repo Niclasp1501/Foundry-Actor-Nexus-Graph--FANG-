@@ -9,6 +9,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **A window with all of a character's connections.** The actor editor now has a button "Connections (n)". It opens a list of its own: per row the label, the direction and the name at the other end, plus edit and delete. Until now you had to hit the line in the graph, and with many connections the lines lie close together. Deliberately a window of its own and not a section in the editor: a character with fifteen connections would have pushed the profile off the screen. Suggested by @taylor-nightingale (#7).
 
 ### Changed
+- **New licence: free to use, but no longer open source.** From this version on FANG is released under its own licence instead of MIT. Nothing changes for using it: installing, playing, running paid games and adapting it for your own table stay allowed and free. What now needs written permission is redistributing it, bundling it into another package and selling it. Versions up to and including 14.2609.2 stay under the MIT License. The full terms are in `LICENSE`.
+
+- **Translations are maintained in this repository again.** The Weblate project set up after 14.2609.2 received no translations and is gone. All ten languages are complete again; 16 strings had been missing in the eight languages besides English and German.
+
 - **Edit and delete in the context menu stay visible when edit mode is off.** They are then greyed out and carry the hint "Edit mode" next to them. Before, they were hidden, and two people in a row concluded from that that connections could not be edited at all. This applies to connections and to nodes. A click on the locked entry names the reason (no lock or no permission).
 
 ### Fixed

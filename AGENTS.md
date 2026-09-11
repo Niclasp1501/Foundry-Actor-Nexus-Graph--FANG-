@@ -39,6 +39,14 @@ The persistent beta install link remains the `beta-latest` GitHub prerelease man
 
 **Every GitHub release carries the changelog section of its version as its text.** Until 2026-09-11 every FANG release body was empty: whoever was offered an update and clicked the release saw nothing. `release.yml` still creates the release without a body. Fix it with the next release: copy `.github/scripts/release_notes.py` from `Ninjos-DnD5e5.5-Uebersetzung` (it cuts out the `## [<version>]` section, which matches FANG's headings), run it as a step before the release action, and give the action `body_path: release-notes.md`. The beta prerelease can stay as it is. Do not edit bodies of releases that are already out.
 
+## Licence
+
+FANG is **not open source** from 14.2609.3 on: all rights reserved, free to use, same model as Ninjo's Shops. Versions up to 14.2609.2 were MIT and stay MIT. Consequences for anyone working here:
+
+- **No code under a copyleft licence** (GPL, AGPL, LGPL) goes into the module. Permissive code (MIT, ISC, BSD, Apache) is fine, but its notice goes into the THIRD-PARTY section of `LICENSE`, and a minified copy keeps its licence header.
+- **Everything that is shipped and not written here is listed in `LICENSE`**, including anything loaded at runtime from elsewhere (today: D3 from d3js.org).
+- **`assets/ninjo.png` is the author's brand mark** and is not covered by any licence. It stays excluded by name.
+
 ## Player-Facing Hidden Tokens
 
 Hidden/verdeckte tokens are not "disabled" for players. FANG is a shared player management tool, so players must still be able to interact with the safe player-facing version of a hidden contact.
