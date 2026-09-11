@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [14.2609.3] - 2026-09-11
 
 ### Added
+- **Sehen, wer gerade was bearbeitet.** Hat jemand anderes einen Charakter im Editor, bekommt der Knoten bei allen anderen einen gestrichelten Ring in der Foundry-Farbe dieser Person und ein Schild „Anna bearbeitet" darüber. Im Rechtsklickmenü steht bei diesem Knoten und bei einer geöffneten Verbindung „Bearbeiten" gesperrt, mit dem Namen als Grund. Wer trotzdem öffnet, wird gefragt: „{user} hat {name} gerade geöffnet. Wenn ihr beide speichert, gewinnt der Letzte." Das Banner beim gemeinsamen Bearbeiten nennt hinter jedem Namen, was die Person offen hat. Nichts davon wird gespeichert: Jeder Client meldet sich alle drei Sekunden, wer acht Sekunden schweigt, verschwindet von selbst. Erster Baustein aus `KONZEPT-GEMEINSAMES-BEARBEITEN.md`.
 - **Ein Fenster mit allen Verbindungen eines Charakters.** Im Akteur-Editor steht jetzt ein Knopf „Verbindungen (n)". Er öffnet eine eigene Liste: je Zeile die Bezeichnung, die Richtung und der Name am anderen Ende, dazu Bearbeiten und Löschen. Bisher musste man die Linie im Graphen treffen, und bei vielen Verbindungen liegen die Linien dicht beieinander. Bewusst ein eigenes Fenster und nicht ein Abschnitt im Editor: Ein Charakter mit fünfzehn Verbindungen hätte das Profil vom Bildschirm geschoben. Vorgeschlagen von @taylor-nightingale (#7).
 
 ### Changed

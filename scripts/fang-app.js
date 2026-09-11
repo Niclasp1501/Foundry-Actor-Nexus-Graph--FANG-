@@ -285,6 +285,11 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
     constructor(options) {
         super(options);
         this.graphData = { nodes: [], links: [] };
+        // Who else is in the graph and what they have open. Filled from "presence" socket
+        // messages, pruned by age; never persisted. See _onPresence.
+        this._presence = new Map();
+        this._myEditing = null;
+        this._presenceTimer = null;
         this.simulation = null;
         this.transform = null;
         this.zoom = null;
@@ -2410,6 +2415,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
     _onRender(context, options) {
         super._onRender(context, options);
         this._applyVisualTheme();
+        this._startPresence();
 
         const monitorName = game.settings.get("fang", "monitorDisplayName").toLowerCase();
 
@@ -3316,7 +3322,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
      * @param {object} config  same as _openDialog: { title, content, render, buttons, default }
      * @returns {Promise<any>} resolves with the pressed button's callback result (or null on close)
      */
-    _openPanelEditor({ title, content, buttons = {}, default: defaultButton, render } = {}) {
+    _openPanelEditor({ title, content, buttons = {}, default: defaultButton, render, editing = null } = {}) {
         const overlay = this.element?.querySelector("#fang-editor-overlay");
         if (!overlay) {
             // No overlay in the DOM (shouldn't happen) — fall back to the dialog so the
@@ -3335,6 +3341,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             const close = (result = null) => {
                 if (settled) return;
                 settled = true;
+                this._endEditing(editing);
                 overlay.classList.add("hidden");
                 bodyEl.innerHTML = "";
                 footerEl.innerHTML = "";
@@ -3377,6 +3384,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             document.addEventListener("keydown", onKey, true);
 
             overlay.classList.remove("hidden");
+            this._beginEditing(editing);
             if (render) render($(bodyEl), { close });
         });
     }
@@ -5277,7 +5285,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         // off. What a player may never do (edit a node they cannot view) stays hidden.
         if (newBtnEdit) {
             newBtnEdit.style.display = (game.user.isGM || canViewNode) ? "flex" : "none";
-            this._markMenuItemLocked(newBtnEdit, !hasLock);
+            const grund = hasLock ? this._presenceLockReason("node", node.id) : null;
+            this._markMenuItemLocked(newBtnEdit, !hasLock || !!grund, grund);
         }
         if (newBtnDelete) {
             newBtnDelete.style.display = "flex";
@@ -5652,6 +5661,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
     async _onEditActorProfile(node) {
         if (!this._canEditGraph()) return;
+        if (!(await this._confirmEditDespiteOther("node", node.id, this._getSafeNodeName(node)))) return;
         const isGM = game.user.isGM;
         const escapeHtml = foundry.utils.escapeHTML ?? ((value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({
             "&": "&amp;",
@@ -5731,6 +5741,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             this._openPanelEditor({
                 title: localize("FANG.ActorEditor.Title", "Edit Actor"),
                 content,
+                editing: { type: "node", id: node.id, name: this._getSafeNodeName(node) },
                 buttons: {
                     save: {
                         icon: '<i class="fas fa-save"></i>',
@@ -5860,6 +5871,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         await this._openPanelEditor({
             title: localize("FANG.ActorEditor.Title", "Edit Actor"),
             content,
+            editing: { type: "node", id: node.id, name: this._getSafeNodeName(node) },
             buttons: {
                 save: {
                     icon: '<i class="fas fa-save"></i>',
@@ -6230,8 +6242,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         // second person in a row; locked-with-a-reason says what is missing instead.
         newBtnEdit.style.display = "block";
         newBtnDelete.style.display = "block";
-        this._markMenuItemLocked(newBtnEdit, !hasLock);
-        this._markMenuItemLocked(newBtnDelete, !hasLock);
+        const grund = hasLock ? this._presenceLockReason("link", link.id) : null;
+        this._markMenuItemLocked(newBtnEdit, !hasLock || !!grund, grund);
+        this._markMenuItemLocked(newBtnDelete, !hasLock || !!grund, grund);
         newBtnSpotlight.style.display = this._canUseGraphAction("spotlightLink", link) ? "block" : "none";
 
         if (newBtnInfo) {
@@ -6266,13 +6279,134 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         this._positionFloatingMenu(menu, mouseX, mouseY);
     }
 
+    // ---------------------------------------------------------------------------------
+    // Presence: who is here, and what they have open.
+    //
+    // Two people opening the same editor is the collision the merge cannot resolve
+    // well: both save a text field, the later one wins, the first one only gets a
+    // notice. Telling everyone what everyone else has open prevents it before it
+    // happens. Nothing here is stored. Each client announces itself on a heartbeat and
+    // whenever its state changes; entries older than PRESENCE_TTL_MS are dropped, so a
+    // client that vanished without saying goodbye disappears on its own.
+    // ---------------------------------------------------------------------------------
+
+    static PRESENCE_HEARTBEAT_MS = 3000;
+    static PRESENCE_TTL_MS = 8000;
+
+    _userColorCss(userId) {
+        const color = game.users.get(userId)?.color;
+        if (!color) return "#d4af37";
+        return color.css ?? (typeof color === "string" ? color : String(color));
+    }
+
+    _sendPresence({ gone = false } = {}) {
+        if (!game.socket || !game.user) return;
+        game.socket.emit("module.fang", {
+            action: "presence",
+            payload: {
+                userId: game.user.id,
+                userName: game.user.name,
+                editing: gone ? null : this._myEditing,
+                gone
+            }
+        });
+    }
+
+    _startPresence() {
+        if (this._presenceTimer) return;
+        this._sendPresence();
+        this._presenceTimer = setInterval(() => {
+            this._sendPresence();
+            if (this._prunePresence()) this._presenceChanged();
+        }, FangApplication.PRESENCE_HEARTBEAT_MS);
+    }
+
+    _stopPresence() {
+        if (this._presenceTimer) clearInterval(this._presenceTimer);
+        this._presenceTimer = null;
+        this._myEditing = null;
+        this._sendPresence({ gone: true });
+        this._presence.clear();
+    }
+
+    /** Drop entries nobody has refreshed. Returns true when something was removed. */
+    _prunePresence() {
+        const cutoff = Date.now() - FangApplication.PRESENCE_TTL_MS;
+        let removed = false;
+        for (const [id, entry] of this._presence) {
+            if (entry.ts < cutoff) { this._presence.delete(id); removed = true; }
+        }
+        return removed;
+    }
+
+    _onPresence(payload = {}) {
+        if (!payload.userId || payload.userId === game.user?.id) return;
+        const before = JSON.stringify(this._presence.get(payload.userId)?.editing ?? null);
+        if (payload.gone) this._presence.delete(payload.userId);
+        else this._presence.set(payload.userId, { userName: payload.userName, editing: payload.editing ?? null, ts: Date.now() });
+        this._prunePresence();
+        const after = JSON.stringify(this._presence.get(payload.userId)?.editing ?? null);
+        // A heartbeat with nothing new must not redraw the canvas every three seconds
+        // per client at the table.
+        if (before !== after || payload.gone) this._presenceChanged();
+    }
+
+    _presenceChanged() {
+        if (!this.rendered) return;
+        this.ticked();
+        this._updateLockUI();
+    }
+
+    _beginEditing(editing) {
+        if (!editing) return;
+        this._myEditing = { type: editing.type, id: editing.id, name: editing.name ?? "" };
+        this._sendPresence();
+    }
+
+    _endEditing(editing) {
+        if (!editing || !this._myEditing) return;
+        if (this._myEditing.type !== editing.type || this._myEditing.id !== editing.id) return;
+        this._myEditing = null;
+        this._sendPresence();
+    }
+
+    /** The other person who has this element open right now, or null. */
+    _editedByOther(type, id) {
+        for (const [userId, entry] of this._presence) {
+            if (entry.editing?.type === type && entry.editing?.id === id) return { userId, ...entry };
+        }
+        return null;
+    }
+
+    /**
+     * Someone else has this open. Say so and ask, instead of blocking: the other person
+     * may have walked away from the table with the editor still open.
+     */
+    async _confirmEditDespiteOther(type, id, name) {
+        const other = this._editedByOther(type, id);
+        if (!other) return true;
+        const result = await this._openDialog({
+            title: this._localize("FANG.Presence.OpenAnywayTitle", "Being edited right now"),
+            content: `<p style="margin-bottom: 15px;">${this._escapeHtml(
+                this._localize("FANG.Presence.OpenAnywayContent", "{user} has {name} open right now. If you both save, the last one wins.")
+                    .replace("{user}", other.userName).replace("{name}", name || ""))}</p>`,
+            buttons: {
+                open: { icon: '<i class="fas fa-pen"></i>', label: this._localize("FANG.Presence.OpenAnyway", "Open anyway") },
+                cancel: { icon: '<i class="fas fa-times"></i>', label: this._localize("FANG.Dialogs.BtnCancel", "Cancel"), className: "cancel" }
+            },
+            default: "cancel",
+            classes: ["dialog", "fang-dialog"], width: 420
+        });
+        return result === "open";
+    }
+
     /**
      * A menu item that exists but cannot be used right now. Hidden items taught people
      * that the function does not exist; a locked one with the reason next to it teaches
      * them what to switch on. The click still goes through _canEditGraph, which says
      * exactly why (no lock, or no permission).
      */
-    _markMenuItemLocked(item, locked) {
+    _markMenuItemLocked(item, locked, reason = null) {
         if (!item) return;
         item.classList.toggle("is-locked", !!locked);
         item.setAttribute("aria-disabled", locked ? "true" : "false");
@@ -6280,9 +6414,15 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         if (locked) {
             const hint = document.createElement("span");
             hint.className = "ctx-hint";
-            hint.textContent = this._localize("FANG.ContextMenu.NeedsEditMode", "edit mode");
+            hint.textContent = reason ?? this._localize("FANG.ContextMenu.NeedsEditMode", "edit mode");
             item.appendChild(hint);
         }
+    }
+
+    /** The menu reason for an element someone else has open, or null. */
+    _presenceLockReason(type, id) {
+        const other = this._editedByOther(type, id);
+        return other ? this._localize("FANG.Presence.Editing", "{user} is editing").replace("{user}", other.userName) : null;
     }
 
     /**
@@ -6291,6 +6431,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
      */
     async _openEditLinkDialog(link) {
         if (!link) return null;
+        const linkName = `${this._getSafeNodeName(this._resolveNodeReference(link.source))} / ${this._getSafeNodeName(this._resolveNodeReference(link.target))}`;
+        if (!(await this._confirmEditDespiteOther("link", link.id, linkName))) return null;
         const title = this._localize("FANG.Dialogs.EditConnectionTitle", "Edit connection");
         const contentString = this._localize("FANG.Dialogs.EditConnectionContent", "Additional details for the connection:");
         const lblName = this._localize("FANG.Dialogs.LabelInput", "Label");
@@ -6304,6 +6446,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
         return this._openPanelEditor({
             title,
+            editing: { type: "link", id: link.id, name: linkName },
             content: `
                 <p><strong>${this._escapeHtml(contentString)}</strong></p>
                 <div class="form-group" style="margin-bottom: 10px;">
@@ -8230,6 +8373,46 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             }
         });
 
+        // --- Who has which node open right now ---
+        // A ring in the user's own Foundry colour, and their name above the token. Drawn
+        // after the labels so it sits on top; radius+5 stays clear of the search ring
+        // (+8) and the QuickConnect marker (+12).
+        if (this._presence.size) {
+            const nodeById = new Map(visibleNodes.map(n => [n.id, n]));
+            for (const [userId, entry] of this._presence) {
+                if (entry.editing?.type !== "node") continue;
+                const node = nodeById.get(entry.editing.id);
+                const pos = node && renderPos[node.id];
+                if (!pos) continue;
+                const farbe = this._userColorCss(userId);
+                this.context.save();
+                this.context.beginPath();
+                this.context.arc(pos.x, pos.y, radius + 5, 0, Math.PI * 2);
+                this.context.strokeStyle = farbe;
+                this.context.lineWidth = 3;
+                this.context.setLineDash([6, 4]);
+                this.context.stroke();
+                this.context.setLineDash([]);
+
+                const text = this._localize("FANG.Presence.Editing", "{user} is editing").replace("{user}", entry.userName);
+                this.context.font = `bold 11px 'Signika', 'Segoe UI', sans-serif`;
+                const w = this.context.measureText(text).width + 12;
+                const y = pos.y - radius - 16;
+                this.context.fillStyle = "rgba(0, 0, 0, 0.8)";
+                this.context.beginPath();
+                this.context.roundRect(pos.x - w / 2, y - 9, w, 18, 5);
+                this.context.fill();
+                this.context.strokeStyle = farbe;
+                this.context.lineWidth = 1.5;
+                this.context.stroke();
+                this.context.fillStyle = "#ffffff";
+                this.context.textAlign = "center";
+                this.context.textBaseline = "middle";
+                this.context.fillText(text, pos.x, y);
+                this.context.restore();
+            }
+        }
+
 
         // ------------------------------------------
 
@@ -9631,6 +9814,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         this._initialZoomApplied = false;
         this.transform = null;
 
+        this._stopPresence();
+
         // Release edit lock if I am the holder
         this._releaseMyLock();
     }
@@ -9768,9 +9953,14 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             if (bannerIcon) bannerIcon.className = "fas fa-users";
 
             const others = game.users.filter(u => u.active && u.id !== game.user.id && (u.isGM || game.settings.get("fang", "allowPlayerEditing")));
+            // "Anna (Baron Valmont)" when Anna has that editor open, plain "Anna" otherwise.
+            const beschreibe = (u) => {
+                const offen = this._presence.get(u.id)?.editing;
+                return offen?.name ? `${u.name} (${offen.name})` : u.name;
+            };
             lockText.textContent = others.length
-                ? this._localize("FANG.UI.CollaborativeWith", "Collaborative editing — also here: {users}")
-                      .replace("{users}", others.map(u => u.name).join(", "))
+                ? this._localize("FANG.UI.CollaborativeWith", "Collaborative editing, also here: {users}")
+                      .replace("{users}", others.map(beschreibe).join(", "))
                 : this._localize("FANG.UI.CollaborativeAlone", "Collaborative editing");
             return;
         }
