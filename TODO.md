@@ -1,7 +1,7 @@
 # FANG (Foundry Actor Nexus Graph) - TODO / Feature Requests
 
-Status synced to `14.2609.2` (beta, unreleased) / Stand synchronisiert auf `14.2609.2` (Beta, noch nicht ausgeliefert).
-Last release on main is `v14.2608.1` / Letzte Auslieferung auf main ist `v14.2608.1`.
+Status synced to `14.2609.3` (beta, unreleased) / Stand synchronisiert auf `14.2609.3` (Beta, noch nicht ausgeliefert).
+Last release on main is `v14.2609.2` / Letzte Auslieferung auf main ist `v14.2609.2`.
 
 Open items come first, because that is what this file is for. What is already built is listed in one line each further down; the reasoning behind each feature is in `CHANGELOG.md`, the description for users in `README.md` / Offene Punkte stehen oben, dafuer ist die Datei da. Was bereits gebaut ist, steht weiter unten in je einer Zeile; die Begruendung zu jeder Funktion steht im `CHANGELOG.md`, die Beschreibung fuer Nutzer im `README.md`.
 
@@ -16,7 +16,9 @@ The numbers are kept as they were, so older references still lead somewhere / Di
 
 - [ ] **3.5 Proper editor for flashbacks / Richtiger Editor fuer Rueckblicke:** Built, not yet accepted. A recap no longer carries its prose in a world setting but on a page in the journal **FANG Chronik**, opened in Foundry's own editor with formatting, images and `@UUID` references. Closes together with 6.1 / Gebaut, noch nicht abgenommen. Ein Rueckblick traegt seinen Fliesstext nicht mehr in einer Welt-Einstellung, sondern auf einer Seite im Journal **FANG Chronik**, geoeffnet in Foundrys eigenem Editor mit Formatierung, Bildern und `@UUID`-Verweisen. Schliesst zusammen mit 6.1.
 
-- [ ] **6.2 Multiple factions per character, waiting on the reporter / Mehrere Fraktionen je Charakter, wartet auf den Melder:** Built and shipped on the beta channel: a checkbox list instead of the dropdown, one arc per faction on the token ring, member lines drawn for every faction, and a starred primary that alone decides position and area. Asked for in #8; open until @Axel-of-the-Key confirms it does what he needs / Gebaut und ueber den Beta-Kanal ausgeliefert: Kaestchenliste statt Auswahlfeld, ein Ringbogen je Fraktion, Mitgliederlinien fuer jede Fraktion, und eine mit Stern markierte primaere, die allein ueber Position und Flaeche entscheidet. Gewuenscht in #8; offen, bis @Axel-of-the-Key bestaetigt, dass es taugt.
+### Collaborative editing, building block by building block / Gemeinsames Bearbeiten, Baustein fuer Baustein
+
+- [ ] **6.3 Real collaborative editing / Echtes gemeinsames Bearbeiten:** Decided 11.09.2026, concept in `KONZEPT-GEMEINSAMES-BEARBEITEN.md`. Decisions taken: soft lock per element that shows and blocks with an override; no direct writing for players (a player who could write the flag could delete the journal); the operations rewrite is wanted. Built so far: block 1 presence (who has which node or link open), block 2 live drags, block 4a saves that wait for a GM. Open: block 3 operations instead of whole-graph states, block 5 visible conflicts, block 6 undo and change log. Every block ships to beta on its own / Entschieden am 11.09.2026, Konzept in `KONZEPT-GEMEINSAMES-BEARBEITEN.md`. Entscheidungen: weiche Sperre je Element, die anzeigt und blockiert, mit Uebersteuern; kein direktes Schreiben fuer Spieler (wer das Flag schreiben kann, kann das Journal loeschen); der Vorgangs-Umbau ist gewollt. Gebaut: Baustein 1 Anwesenheit (wer hat welchen Knoten oder welche Verbindung offen), Baustein 2 Ziehen live, Baustein 4a wartende Speichervorgaenge ohne Spielleitung. Offen: Baustein 3 Vorgaenge statt ganzer Zustaende, Baustein 5 sichtbare Konflikte, Baustein 6 Rueckgaengig und Verlauf. Jeder Baustein geht einzeln auf Beta.
 
 ### Quality pass / Qualitaetspass
 
@@ -61,6 +63,9 @@ The numbers are kept as they were, so older references still lead somewhere / Di
 - [x] **3.6 Calendar support / Kalenderanbindung** - game day and time of day from a calendar module or Foundry's own calendar, with the real date as a fallback when a world has neither.
 - [x] **3.7 Time axis / Zeitachse** - one tick per game day, newest to the right, dragged or wheeled instead of carrying a scrollbar.
 - [x] **3.8 Chronological ordering / Chronologische Ordnung** - sorted by game day and time of day, not by the moment someone typed it.
+
+### 6. Requests from outside / Wuensche von aussen
+- [x] **6.2 Multiple factions per character / Mehrere Fraktionen je Charakter** - checkbox list, one arc per faction on the ring, member lines for every faction, a starred primary for position. Asked for in #8, confirmed by the reporter, shipped in v14.2609.2.
 
 ### 4. Internationalization and Misc / Internationalisierung und Sonstiges
 - [x] **4.1 Additional languages / Weitere Sprachen** - French, Spanish, Portuguese (Brazil), Italian, Polish, Russian, Czech and Dutch. Since 06.09.2026 these eight are maintained on Weblate; only `de.json` and `en.json` are edited here / Seit dem 06.09.2026 werden diese acht ueber Weblate gepflegt; hier werden nur `de.json` und `en.json` bearbeitet.
