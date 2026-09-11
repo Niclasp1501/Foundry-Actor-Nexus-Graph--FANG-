@@ -120,7 +120,7 @@
                 }
             },
             "Color": "Farbe",
-            "CollaborativeWith": "Gemeinsames Bearbeiten, ebenfalls hier: {users}",
+            "CollaborativeWith": "Gemeinsames Bearbeiten — ebenfalls hier: {users}",
             "CollaborativeAlone": "Gemeinsames Bearbeiten",
             "GroupByZone": "Nach Ort gruppieren",
             "GroupByZoneHint": "Zieht Charaktere nach Ort zusammen. Ersetzt die Fraktions-Gruppierung.",
@@ -236,12 +236,6 @@
             "DeleteConnection": "Verbindung löschen",
             "NeedsEditMode": "Bearbeitungsmodus",
             "UnpinNode": "Position freigeben"
-        },
-        "Presence": {
-            "Editing": "{user} bearbeitet",
-            "OpenAnywayTitle": "Gerade in Bearbeitung",
-            "OpenAnywayContent": "{user} hat {name} gerade geöffnet. Wenn ihr beide speichert, gewinnt der Letzte.",
-            "OpenAnyway": "Trotzdem öffnen"
         },
         "Dropdowns": {
             "Nodes": "Knoten (Tokens)",

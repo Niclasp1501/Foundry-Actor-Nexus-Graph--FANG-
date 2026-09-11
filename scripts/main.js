@@ -619,11 +619,6 @@ Hooks.once("ready", async () => {
       if (fangApp && fangApp.rendered) fangApp.render();
     }
 
-    // Who has what open. Only an open window cares; never create an instance for it.
-    if (data.action === "presence") {
-      if (fangApp?.rendered) fangApp._onPresence?.(data.payload);
-    }
-
     if (data.action === "requestLock" && game.user.isGM) {
       const entry = game.journal.getName("FANG Graph");
       if (entry) {
