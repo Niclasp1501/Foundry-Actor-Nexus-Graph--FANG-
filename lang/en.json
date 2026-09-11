@@ -163,6 +163,7 @@
             "PlayersCanEdit": "Players can now edit the graph.",
             "PlayersCannotEdit": "Players can no longer edit the graph.",
             "WarnNoGMOnline": "A Game Master must be online to save changes to the graph.",
+            "ExtensionTooOld": "The extension \"{id}\" needs a newer FANG. Please update FANG.",
             "FactionGroupingApplied": "Faction grouping applied.",
             "FactionGroupingReset": "Faction grouping reset.",
             "FactionGroupingInsufficient": "Need at least two factions with assigned nodes to group.",

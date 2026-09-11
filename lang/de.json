@@ -163,6 +163,7 @@
             "PlayersCanEdit": "Spieler können den Graphen nun bearbeiten.",
             "PlayersCannotEdit": "Spieler können den Graphen nicht mehr bearbeiten.",
             "WarnNoGMOnline": "Ein Spielleiter (GM) muss online sein, um Änderungen am Graphen zu speichern.",
+            "ExtensionTooOld": "Die Erweiterung \"{id}\" braucht ein neueres FANG. Bitte FANG aktualisieren.",
             "FactionGroupingApplied": "Fraktions-Gruppierung angewendet.",
             "FactionGroupingReset": "Fraktions-Gruppierung zurückgesetzt.",
             "FactionGroupingInsufficient": "Mindestens zwei Fraktionen mit zugewiesenen Knoten sind nötig.",

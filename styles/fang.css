@@ -2398,6 +2398,11 @@ body.fang-theme-cyberpunk .fang-dialog .faction-icon-preview {
     color: var(--fang-primary-red);
 }
 
+/* Rail buttons an extension adds: same look, same spacing as the built-in ones. */
+.fang-rail-extensions {
+    display: contents;
+}
+
 /* A menu item that needs edit mode. Muted rather than hidden, with the reason in
    small type next to it, so the function is visible even while it cannot be used. */
 .fang-app-container .ctx-item.is-locked {

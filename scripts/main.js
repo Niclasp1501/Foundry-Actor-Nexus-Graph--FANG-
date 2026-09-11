@@ -1,4 +1,4 @@
-import { FangApplication } from "./fang-app.js";
+import { FangApplication, FANG_EXTENSION_VERSION } from "./fang-app.js";
 import { willkommenEinrichten, willkommenZeigen } from "./willkommen.js";
 import { fensterPassenEinrichten } from "./fensterpassen.js";
 
@@ -375,8 +375,49 @@ Hooks.once("ready", async () => {
       } else {
         fangApp.render({ force: true });
       }
+    },
+
+    // Extension interface. Another module registers here and gets the hooks
+    // (fang.appCreated, fang.appRendered, fang.appClosed, fang.draw, fang.nodeMenu,
+    // fang.linkMenu, fang.editorOpened, fang.editorClosed, fang.nodeDragged,
+    // fang.nodeDropped, fang.lockUI, fang.saved), may add rail buttons and edit guards,
+    // and may install save and relay strategies on the application instance.
+    extension: {
+      version: FANG_EXTENSION_VERSION,
+      FangApplication,
+      _railButtons: [],
+      _editGuards: [],
+      _registered: new Map(),
+      getApp: () => fangApp ?? null,
+      register({ id, requires = 1, setup } = {}) {
+        if (!id || typeof setup !== "function") return false;
+        if (requires > FANG_EXTENSION_VERSION) {
+          console.warn(`FANG | Extension "${id}" needs interface version ${requires}, this FANG offers ${FANG_EXTENSION_VERSION}. Not loaded.`);
+          if (game.user?.isGM) ui.notifications.warn(game.i18n.format("FANG.Messages.ExtensionTooOld", { id }));
+          return false;
+        }
+        if (this._registered.has(id)) return true;
+        try {
+          setup(this);
+          this._registered.set(id, { requires });
+          console.log(`FANG | Extension "${id}" registered.`);
+          return true;
+        } catch (err) {
+          console.error(`FANG | Extension "${id}" failed to set up.`, err);
+          return false;
+        }
+      },
+      registerRailButton(def) {
+        if (!def?.id) return;
+        this._railButtons = this._railButtons.filter(b => b.id !== def.id).concat([def]);
+        if (fangApp?.rendered) fangApp._renderExtensionRailButtons();
+      },
+      registerEditGuard(fn) {
+        if (typeof fn === "function") this._editGuards.push(fn);
+      }
     }
   };
+  Hooks.callAll("fang.ready", module.api.extension);
 
   // Ninjo's In-Person Tools has a sheet view of its own with a proper doorway for other
   // modules' buttons: register once, and its bar draws the button whenever it draws

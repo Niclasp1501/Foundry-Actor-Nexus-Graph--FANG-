@@ -30,6 +30,13 @@ const FANG_RUNTIME_FACTION_FIELDS = ["imgElement", "index", "vx", "vy", "fx", "f
  */
 const FANG_GRAPH_SCHEMA_VERSION = 2;
 
+/**
+ * Version of the extension interface (hooks, strategies, rail buttons). An extension
+ * states the version it needs; the core refuses one that needs more than it offers.
+ * Bump when a hook's arguments or a strategy's contract change, never for additions.
+ */
+export const FANG_EXTENSION_VERSION = 1;
+
 /** Which rail button belongs to which sidebar panel. Add a panel -> add a line here. */
 const FANG_RAIL_BY_PANEL = {
     affiliation: "#fangRailAffiliation",
@@ -286,6 +293,11 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         super(options);
         this.graphData = { nodes: [], links: [] };
         this.simulation = null;
+        // Optional strategies an extension may install. Both default to the built-in
+        // three-way merge and the whole-graph relay; see _saveDataNow.
+        this._saveStrategy = null;
+        this._relayStrategy = null;
+        Hooks.callAll("fang.appCreated", this);
         this.transform = null;
         this.zoom = null;
         this._initialZoomApplied = false;
@@ -2410,6 +2422,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
     _onRender(context, options) {
         super._onRender(context, options);
         this._applyVisualTheme();
+        this._renderExtensionRailButtons();
+        Hooks.callAll("fang.appRendered", this);
 
         const monitorName = game.settings.get("fang", "monitorDisplayName").toLowerCase();
 
@@ -3316,7 +3330,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
      * @param {object} config  same as _openDialog: { title, content, render, buttons, default }
      * @returns {Promise<any>} resolves with the pressed button's callback result (or null on close)
      */
-    _openPanelEditor({ title, content, buttons = {}, default: defaultButton, render } = {}) {
+    _openPanelEditor({ title, content, buttons = {}, default: defaultButton, render, editing = null } = {}) {
         const overlay = this.element?.querySelector("#fang-editor-overlay");
         if (!overlay) {
             // No overlay in the DOM (shouldn't happen) — fall back to the dialog so the
@@ -3335,6 +3349,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             const close = (result = null) => {
                 if (settled) return;
                 settled = true;
+                if (editing) Hooks.callAll("fang.editorClosed", this, editing);
                 overlay.classList.add("hidden");
                 bodyEl.innerHTML = "";
                 footerEl.innerHTML = "";
@@ -3377,6 +3392,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             document.addEventListener("keydown", onKey, true);
 
             overlay.classList.remove("hidden");
+            if (editing) Hooks.callAll("fang.editorOpened", this, editing);
             if (render) render($(bodyEl), { close });
         });
     }
@@ -3655,10 +3671,17 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             }
             const baselineBefore = this._baseline;
             let mergeChangedUs = false;
+            let strategyResult = null;
             if (this._isMergeableState(this._baseline) && this._isMergeableState(server)) {
-                const { merged, conflicts } = mergeGraphData(this._baseline, exportData, server, {
-                    draggedNodeIds: this._draggedNodeIds ?? new Set()
-                });
+                const draggedNodeIds = this._draggedNodeIds ?? new Set();
+                // An extension may replace how the stored state is brought together. The
+                // default is the three-way merge; whatever it returns has to look the same.
+                strategyResult = this._saveStrategy?.merge
+                    ? await this._saveStrategy.merge(this, { baseline: this._baseline, mine: exportData, server, draggedNodeIds })
+                    : null;
+                const { merged, conflicts } = strategyResult
+                    ? { merged: strategyResult.state, conflicts: strategyResult.conflicts ?? [] }
+                    : mergeGraphData(this._baseline, exportData, server, { draggedNodeIds });
                 merged.schemaVersion = FANG_GRAPH_SCHEMA_VERSION;
                 // Did the merge pull in anything we did not have? Then our live graph is
                 // now out of date and must follow, or the next save would "resurrect"
@@ -3668,7 +3691,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 // and rebuild the simulation each time we let go of a node.
                 mergeChangedUs = !structurallyEqual(merged, exportData);
                 exportData = merged;
-                this._reportMergeConflicts(conflicts);
+                if (this._saveStrategy?.reportConflicts) this._saveStrategy.reportConflicts(this, conflicts);
+                else this._reportMergeConflicts(conflicts);
             } else if (server) {
                 console.log("FANG | Stored graph predates the merge schema — migrating it with this save.");
             }
@@ -3676,6 +3700,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             await entry.setFlag("fang", "graphData", exportData);
             // What we just wrote is the new common ground for our next save.
             this._setBaseline(exportData);
+            if (strategyResult && this._saveStrategy?.afterWrite) await this._saveStrategy.afterWrite(this, strategyResult);
+            Hooks.callAll("fang.saved", this, { data: exportData });
 
             if (mergeChangedUs) this._adoptMergedState(exportData, baselineBefore);
 
@@ -3692,20 +3718,26 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             if (allowPlayerEdit) {
                 const isGMOnline = game.users.some(u => u.isGM && u.active);
                 if (isGMOnline) {
-                    console.log("FANG | Sending edit request to GM via socket.");
-                    game.socket.emit("module.fang", {
-                        action: "playerEditGraph",
-                        payload: {
-                            newGraphData: exportData,
-                            baseline: this._baseline ?? null,
-                            draggedNodeIds: Array.from(this._draggedNodeIds ?? []),
-                            authorName: game.user.name
-                        }
-                    });
+                    // An extension may carry the change to the GM in its own shape.
+                    const sent = this._relayStrategy?.send
+                        ? await this._relayStrategy.send(this, { baseline: this._baseline, exportData, draggedNodeIds: this._draggedNodeIds ?? new Set() })
+                        : false;
+                    if (!sent) {
+                        console.log("FANG | Sending edit request to GM via socket.");
+                        game.socket.emit("module.fang", {
+                            action: "playerEditGraph",
+                            payload: {
+                                newGraphData: exportData,
+                                baseline: this._baseline ?? null,
+                                draggedNodeIds: Array.from(this._draggedNodeIds ?? []),
+                                authorName: game.user.name
+                            }
+                        });
+                    }
                     // Our request is on its way; treat it as our new starting point so a
                     // follow-up save does not re-send the same diff.
                     this._setBaseline(exportData);
-                } else {
+                } else if (!(this._relayStrategy?.queue && await this._relayStrategy.queue(this, exportData))) {
                     ui.notifications.warn(game.i18n.localize("FANG.Messages.WarnNoGMOnline"));
                 }
             } else {
@@ -5283,6 +5315,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             newBtnDelete.style.display = "flex";
             this._markMenuItemLocked(newBtnDelete, !hasLock);
         }
+        Hooks.callAll("fang.nodeMenu", this, { node, hasLock, items: { edit: newBtnEdit, delete: newBtnDelete } });
         // Only worth showing on a node that is actually pinned.
         if (newBtnUnpin) newBtnUnpin.style.display = (hasLock && node?.pinned) ? "flex" : "none";
 
@@ -5652,6 +5685,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
     async _onEditActorProfile(node) {
         if (!this._canEditGraph()) return;
+        if (!(await this._extensionsAllowEdit({ type: "node", id: node.id, name: this._getSafeNodeName(node) }))) return;
         const isGM = game.user.isGM;
         const escapeHtml = foundry.utils.escapeHTML ?? ((value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({
             "&": "&amp;",
@@ -5731,6 +5765,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             this._openPanelEditor({
                 title: localize("FANG.ActorEditor.Title", "Edit Actor"),
                 content,
+                editing: { type: "node", id: node.id, name: this._getSafeNodeName(node) },
                 buttons: {
                     save: {
                         icon: '<i class="fas fa-save"></i>',
@@ -5860,6 +5895,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         await this._openPanelEditor({
             title: localize("FANG.ActorEditor.Title", "Edit Actor"),
             content,
+            editing: { type: "node", id: node.id, name: this._getSafeNodeName(node) },
             buttons: {
                 save: {
                     icon: '<i class="fas fa-save"></i>',
@@ -6232,6 +6268,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         newBtnDelete.style.display = "block";
         this._markMenuItemLocked(newBtnEdit, !hasLock);
         this._markMenuItemLocked(newBtnDelete, !hasLock);
+        Hooks.callAll("fang.linkMenu", this, { link, hasLock, items: { edit: newBtnEdit, delete: newBtnDelete } });
         newBtnSpotlight.style.display = this._canUseGraphAction("spotlightLink", link) ? "block" : "none";
 
         if (newBtnInfo) {
@@ -6267,12 +6304,25 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     /**
+     * Before an editor opens, every registered guard may veto or ask. Guards are async
+     * so one can put a question to the person; the first "false" wins.
+     */
+    async _extensionsAllowEdit(editing) {
+        const guards = game.modules.get("fang")?.api?.extension?._editGuards ?? [];
+        for (const guard of guards) {
+            try { if ((await guard(this, editing)) === false) return false; }
+            catch (err) { console.warn("FANG | An edit guard failed; ignoring it.", err); }
+        }
+        return true;
+    }
+
+    /**
      * A menu item that exists but cannot be used right now. Hidden items taught people
      * that the function does not exist; a locked one with the reason next to it teaches
      * them what to switch on. The click still goes through _canEditGraph, which says
      * exactly why (no lock, or no permission).
      */
-    _markMenuItemLocked(item, locked) {
+    _markMenuItemLocked(item, locked, reason = null) {
         if (!item) return;
         item.classList.toggle("is-locked", !!locked);
         item.setAttribute("aria-disabled", locked ? "true" : "false");
@@ -6280,7 +6330,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         if (locked) {
             const hint = document.createElement("span");
             hint.className = "ctx-hint";
-            hint.textContent = this._localize("FANG.ContextMenu.NeedsEditMode", "edit mode");
+            hint.textContent = reason ?? this._localize("FANG.ContextMenu.NeedsEditMode", "edit mode");
             item.appendChild(hint);
         }
     }
@@ -6291,6 +6341,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
      */
     async _openEditLinkDialog(link) {
         if (!link) return null;
+        if (!(await this._extensionsAllowEdit({ type: "link", id: link.id, name: `${this._getSafeNodeName(this._resolveNodeReference(link.source))} / ${this._getSafeNodeName(this._resolveNodeReference(link.target))}` }))) return null;
         const title = this._localize("FANG.Dialogs.EditConnectionTitle", "Edit connection");
         const contentString = this._localize("FANG.Dialogs.EditConnectionContent", "Additional details for the connection:");
         const lblName = this._localize("FANG.Dialogs.LabelInput", "Label");
@@ -6304,6 +6355,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
         return this._openPanelEditor({
             title,
+            editing: { type: "link", id: link.id, name: `${this._getSafeNodeName(this._resolveNodeReference(link.source))} / ${this._getSafeNodeName(this._resolveNodeReference(link.target))}` },
             content: `
                 <p><strong>${this._escapeHtml(contentString)}</strong></p>
                 <div class="form-group" style="margin-bottom: 10px;">
@@ -8334,6 +8386,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         } else {
             this._legendHitAreas = [];
         }
+
+        // Extensions draw last, on top of everything, in canvas coordinates.
+        Hooks.callAll("fang.draw", this, { visibleNodes, renderPos, isGM, radius });
     }
 
     /**
@@ -8417,6 +8472,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             event.subject.data.fx = this.transform.invertX(event.x);
             event.subject.data.fy = this.transform.invertY(event.y);
             this._hasDragged = true;
+            Hooks.callAll("fang.nodeDragged", this, event.subject.data);
         }
     }
 
@@ -8446,6 +8502,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             // moved is drift, not intent, and must not overwrite other clients.
             if (event.subject.data.id && this._hasDragged) {
                 (this._draggedNodeIds ??= new Set()).add(event.subject.data.id);
+                Hooks.callAll("fang.nodeDropped", this, event.subject.data);
             }
         }
         if (this._hasDragged) {
@@ -9631,8 +9688,30 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         this._initialZoomApplied = false;
         this.transform = null;
 
+        Hooks.callAll("fang.appClosed", this);
+
         // Release edit lock if I am the holder
         this._releaseMyLock();
+    }
+
+    /** Buttons extensions registered through the module api, drawn into the rail. */
+    _renderExtensionRailButtons() {
+        const host = this.element?.querySelector("#fangRailExtensions");
+        if (!host) return;
+        host.innerHTML = "";
+        const buttons = game.modules.get("fang")?.api?.extension?._railButtons ?? [];
+        for (const def of buttons) {
+            if (def.gmOnly && !game.user.isGM) continue;
+            const btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = "fang-rail-btn";
+            btn.id = `fangRailExt-${def.id}`;
+            const label = typeof def.label === "function" ? def.label() : def.label;
+            btn.title = label; btn.dataset.tooltip = label; btn.setAttribute("aria-label", label);
+            btn.innerHTML = `<i class="fas ${this._escapeHtml(def.icon || "fa-puzzle-piece")}" aria-hidden="true"></i>`;
+            btn.addEventListener("click", (event) => { event.preventDefault(); this._closeSidebarPanel(); def.onClick?.(this); });
+            host.appendChild(btn);
+        }
     }
 
     async _releaseMyLock() {
@@ -9736,6 +9815,15 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     _updateLockUI() {
+        this._updateLockUICore();
+        Hooks.callAll("fang.lockUI", this, {
+            banner: this.element?.querySelector("#fang-lock-banner") ?? null,
+            lockText: this.element?.querySelector("#lock-text") ?? null,
+            collaborative: this._isCollaborativeMode()
+        });
+    }
+
+    _updateLockUICore() {
         const entry = game.journal.getName("FANG Graph");
         const lock = entry?.getFlag("fang", "editLock");
 
