@@ -5273,8 +5273,16 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         if (newBtnSpotlight) newBtnSpotlight.style.display = canSpotlightNode ? "flex" : "none";
         if (newBtnQuests) newBtnQuests.style.display = this._canUseGraphAction("manageQuests", node) ? "flex" : "none";
         if (newBtnHistory) newBtnHistory.style.display = canViewNode ? "flex" : "none";
-        if (newBtnEdit) newBtnEdit.style.display = (hasLock && (game.user.isGM || canViewNode)) ? "flex" : "none";
-        if (newBtnDelete) newBtnDelete.style.display = hasLock ? "flex" : "none";
+        // Same rule as on a connection: shown, and locked with the reason when editing is
+        // off. What a player may never do (edit a node they cannot view) stays hidden.
+        if (newBtnEdit) {
+            newBtnEdit.style.display = (game.user.isGM || canViewNode) ? "flex" : "none";
+            this._markMenuItemLocked(newBtnEdit, !hasLock);
+        }
+        if (newBtnDelete) {
+            newBtnDelete.style.display = "flex";
+            this._markMenuItemLocked(newBtnDelete, !hasLock);
+        }
         // Only worth showing on a node that is actually pinned.
         if (newBtnUnpin) newBtnUnpin.style.display = (hasLock && node?.pinned) ? "flex" : "none";
 
@@ -5806,6 +5814,10 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             node.journalUuid ? `<button type="button" id="fang-profile-gm-journal" class="btn action-btn fang-btn-block"><i class="fas fa-book"></i> ${gmJournalLabel}</button>` : "",
             node.isPlaceholder ? `<button type="button" id="fang-profile-replace" class="btn action-btn fang-btn-block"><i class="fas fa-random"></i> ${localize("FANG.ContextMenu.ReplacePlaceholder", "Replace with Actor")}</button>` : ""
         ].filter(Boolean).join("");
+        const anzahlVerbindungen = (this.graphData.links || []).filter(link => {
+            const q = this._getLinkEndpointId(link.source), z = this._getLinkEndpointId(link.target);
+            return (q === node.id || z === node.id) && this._canUserSeeLink(link);
+        }).length;
         const actionSection = (isGM && bodyActions) ? `
                 <section class="fang-editor-actions">${bodyActions}</section>` : "";
 
@@ -5834,6 +5846,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 <section class="fang-editor-section fang-editor-notes">
                     <h3><i class="fas fa-feather"></i> ${localize("FANG.ActorEditor.Notes", "Notes")}</h3>
                     <textarea id="fang-profile-lore" placeholder="${localize("FANG.Dialogs.InfoInput", "Notes")}">${escapeHtml(node.lore || "")}</textarea>
+                </section>
+                <section class="fang-editor-actions">
+                    <button type="button" id="fang-profile-connections" class="btn action-btn fang-btn-block"><i class="fas fa-link" aria-hidden="true"></i> ${localize("FANG.Dialogs.ConnectionsButton", "Connections")} (${anzahlVerbindungen})</button>
                 </section>
                 ${actionSection}
             </div>`;
@@ -5960,6 +5975,15 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 });
 
                 zeichneFraktionen();
+
+                // One overlay for all editors, so this one steps aside and comes back
+                // afterwards. Unsaved changes in the form are lost on the way; the window
+                // is offered as a separate step for exactly that reason.
+                html.find("#fang-profile-connections").on("click", async () => {
+                    dialog.close();
+                    await this._openNodeConnectionsWindow(node);
+                    this._onEditActorProfile(node);
+                });
 
                 if (!isGM) return;
                 html.find("#fang-profile-gm-journal").on("click", async () => this._openNodeJournal(node));
@@ -6202,8 +6226,12 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const hasLock = this._canEditGraph(true);
         const hiddenEndpoint = !!(link.source?.hidden || link.target?.hidden);
         if (newBtnInfo) newBtnInfo.style.display = this._canUseGraphAction("viewLink", link) ? "block" : "none";
-        newBtnEdit.style.display = hasLock ? "block" : "none";
-        newBtnDelete.style.display = hasLock ? "block" : "none";
+        // Shown either way. Hidden, the menu read as "connections cannot be edited" to the
+        // second person in a row; locked-with-a-reason says what is missing instead.
+        newBtnEdit.style.display = "block";
+        newBtnDelete.style.display = "block";
+        this._markMenuItemLocked(newBtnEdit, !hasLock);
+        this._markMenuItemLocked(newBtnDelete, !hasLock);
         newBtnSpotlight.style.display = this._canUseGraphAction("spotlightLink", link) ? "block" : "none";
 
         if (newBtnInfo) {
@@ -6218,114 +6246,14 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         newBtnEdit.addEventListener("click", () => {
             menu.classList.add("hidden");
             if (!this._canEditGraph()) return;
-
-            const title = game.i18n.localize("FANG.Dialogs.EditConnectionTitle") || "Informationen bearbeiten";
-            const contentString = game.i18n.localize("FANG.Dialogs.EditConnectionContent") || "ZusÃ¤tzliche Details fÃ¼r die Verbindung:";
-            const lblName = game.i18n.localize("FANG.Dialogs.LabelInput") || "Bezeichnung (Label)";
-            const lblInfo = game.i18n.localize("FANG.Dialogs.InfoInput") || "Notizen";
-            const lblDirectional = game.i18n.localize("FANG.Dialogs.DirectionalInput") || "Gerichtet (Pfeil)";
-            const lblReverseDirection = game.i18n.localize("FANG.Dialogs.ReverseDirectionInput") || "Richtung umkehren";
-            const relationshipOptions = (this.graphData.relationshipTypes || this._getDefaultRelationshipTypes())
-                .map(t => this._normalizeRelationshipType(t))
-                .map(t => `<option value="${this._escapeHtml(t.id)}" ${link.relationshipType === t.id ? "selected" : ""}>${this._escapeHtml(t.label)}</option>`)
-                .join("");
-
-            this._openPanelEditor({
-                title: title,
-                content: `
-                    <p><strong>${contentString}</strong></p>
-                    <div class="form-group" style="margin-bottom: 10px;">
-                        <div class="form-fields">
-                            <input type="text" id="fang-edit-link-name" value="${link.label || ""}" placeholder="${lblName}" style="width: 100%; font-family: var(--fang-font-main); padding: 5px;">
-                        </div>
-                    </div>
-                    <div class="form-group" style="height: 150px;">
-                        <textarea id="fang-edit-link-info" placeholder="${lblInfo}" style="width: 100%; height: 100%; resize: none; font-family: var(--fang-font-main); padding: 5px;">${link.info || ""}</textarea>
-                    </div>
-                    <div class="form-group" style="margin-top: 10px;">
-                        <label for="fang-edit-link-type">${this._escapeHtml(this._localize("FANG.RelationshipTypes.Label", "Relationship type"))}</label>
-                        <select id="fang-edit-link-type" style="width: 100%;">
-                            <option value="">-- ${this._escapeHtml(this._localize("FANG.RelationshipTypes.Default", "Default"))} --</option>
-                            ${relationshipOptions}
-                        </select>
-                    </div>
-                    <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; margin-top: 8px;">
-                        <label for="fang-edit-link-gm-only" style="cursor: pointer;">${this._escapeHtml(this._localize("FANG.Dialogs.IdentityGMOnly", "GM only - hide completely"))}</label>
-                        <input type="checkbox" id="fang-edit-link-gm-only" ${link.gmOnly ? "checked" : ""} style="width: auto; margin: 0; cursor: pointer;">
-                    </div>
-                    <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; margin-top: 10px;">
-                        <label for="fang-edit-link-directional" style="cursor: pointer;">${lblDirectional}</label>
-                        <input type="checkbox" id="fang-edit-link-directional" ${link.directional ? "checked" : ""} style="width: auto; margin: 0; cursor: pointer;">
-                    </div>
-                    <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; margin-top: 8px;">
-                        <label for="fang-edit-link-reverse" style="cursor: pointer;">${lblReverseDirection}</label>
-                        <input type="checkbox" id="fang-edit-link-reverse" style="width: auto; margin: 0; cursor: pointer;">
-                    </div>
-                `,
-                buttons: {
-                    save: {
-                        icon: '<i class="fas fa-save"></i>',
-                        label: game.i18n.localize("FANG.Dialogs.BtnSave") || "Save",
-                        callback: async (html) => {
-                            const newLabel = html.find("#fang-edit-link-name").val().trim();
-                            const newInfo = html.find("#fang-edit-link-info").val().trim();
-                            const newDirectional = html.find("#fang-edit-link-directional").is(":checked");
-                            const reverseDirection = html.find("#fang-edit-link-reverse").is(":checked");
-                            if (newLabel) link.label = newLabel;
-                            link.info = newInfo !== "" ? newInfo : null;
-                            link.relationshipType = html.find("#fang-edit-link-type").val() || "";
-                            link.gmOnly = html.find("#fang-edit-link-gm-only").is(":checked");
-                            link.directional = reverseDirection ? true : newDirectional;
-                            if (reverseDirection) {
-                                const oldSource = link.source;
-                                link.source = link.target;
-                                link.target = oldSource;
-                            }
-
-                            this.initSimulation();
-                            this.simulation.alpha(0.05).restart();
-                            await this.saveData();
-                        }
-                    },
-                    cancel: { icon: '<i class="fas fa-times"></i>', label: game.i18n.localize("FANG.Dialogs.BtnCancel") || "Cancel" }
-                },
-                default: "save",
-            classes: ["dialog", "fang-dialog"], width: 450
-        });
+            this._openEditLinkDialog(link);
         });
 
         // Action: Delete
         newBtnDelete.addEventListener("click", async () => {
             menu.classList.add("hidden");
             if (!this._canEditGraph()) return;
-
-            const dialogTitle = game.i18n.localize("FANG.Dialogs.DeleteConfirmTitle") || "Confirm Deletion";
-            const dialogContent = game.i18n.localize("FANG.Dialogs.DeleteLinkContent") || "Are you sure you want to delete this connection?";
-
-            this._openDialog({
-                title: dialogTitle,
-                content: `<p style="margin-bottom: 15px;">${dialogContent}</p>`,
-                buttons: {
-                    yes: {
-                        icon: '<i class="fas fa-check"></i>',
-                        label: game.i18n.localize("Yes"),
-                        callback: async () => {
-                            this.graphData.links.splice(linkIndex, 1);
-                            ui.notifications.info(game.i18n.localize("FANG.Messages.DeletedLink") || "Connection deleted.");
-                            this.initSimulation();
-                            this.simulation.alpha(0.3).restart();
-                            await this.saveData();
-                        }
-                    },
-                    no: {
-                        icon: '<i class="fas fa-times"></i>',
-                        label: game.i18n.localize("No"),
-                        className: "cancel"
-                    }
-                },
-                default: "no",
-            classes: ["dialog", "fang-dialog"], width: 400
-        });
+            this._confirmDeleteLink(link);
         });
 
         // Action: Edge Spotlight
@@ -6336,6 +6264,231 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         });
 
         this._positionFloatingMenu(menu, mouseX, mouseY);
+    }
+
+    /**
+     * A menu item that exists but cannot be used right now. Hidden items taught people
+     * that the function does not exist; a locked one with the reason next to it teaches
+     * them what to switch on. The click still goes through _canEditGraph, which says
+     * exactly why (no lock, or no permission).
+     */
+    _markMenuItemLocked(item, locked) {
+        if (!item) return;
+        item.classList.toggle("is-locked", !!locked);
+        item.setAttribute("aria-disabled", locked ? "true" : "false");
+        item.querySelector(".ctx-hint")?.remove();
+        if (locked) {
+            const hint = document.createElement("span");
+            hint.className = "ctx-hint";
+            hint.textContent = this._localize("FANG.ContextMenu.NeedsEditMode", "edit mode");
+            item.appendChild(hint);
+        }
+    }
+
+    /**
+     * Edit one connection. Resolves with "save" when saved, null when cancelled, so a
+     * caller that listed the connection can redraw its list afterwards.
+     */
+    async _openEditLinkDialog(link) {
+        if (!link) return null;
+        const title = this._localize("FANG.Dialogs.EditConnectionTitle", "Edit connection");
+        const contentString = this._localize("FANG.Dialogs.EditConnectionContent", "Additional details for the connection:");
+        const lblName = this._localize("FANG.Dialogs.LabelInput", "Label");
+        const lblInfo = this._localize("FANG.Dialogs.InfoInput", "Notes");
+        const lblDirectional = this._localize("FANG.Dialogs.DirectionalInput", "Directional (arrow)");
+        const lblReverseDirection = this._localize("FANG.Dialogs.ReverseDirectionInput", "Reverse direction");
+        const relationshipOptions = (this.graphData.relationshipTypes || this._getDefaultRelationshipTypes())
+            .map(t => this._normalizeRelationshipType(t))
+            .map(t => `<option value="${this._escapeHtml(t.id)}" ${link.relationshipType === t.id ? "selected" : ""}>${this._escapeHtml(t.label)}</option>`)
+            .join("");
+
+        return this._openPanelEditor({
+            title,
+            content: `
+                <p><strong>${this._escapeHtml(contentString)}</strong></p>
+                <div class="form-group" style="margin-bottom: 10px;">
+                    <div class="form-fields">
+                        <input type="text" id="fang-edit-link-name" value="${this._escapeHtml(link.label || "")}" placeholder="${this._escapeHtml(lblName)}" style="width: 100%; font-family: var(--fang-font-main); padding: 5px;">
+                    </div>
+                </div>
+                <div class="form-group" style="height: 150px;">
+                    <textarea id="fang-edit-link-info" placeholder="${this._escapeHtml(lblInfo)}" style="width: 100%; height: 100%; resize: none; font-family: var(--fang-font-main); padding: 5px;">${this._escapeHtml(link.info || "")}</textarea>
+                </div>
+                <div class="form-group" style="margin-top: 10px;">
+                    <label for="fang-edit-link-type">${this._escapeHtml(this._localize("FANG.RelationshipTypes.Label", "Relationship type"))}</label>
+                    <select id="fang-edit-link-type" style="width: 100%;">
+                        <option value="">-- ${this._escapeHtml(this._localize("FANG.RelationshipTypes.Default", "Default"))} --</option>
+                        ${relationshipOptions}
+                    </select>
+                </div>
+                <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; margin-top: 8px;">
+                    <label for="fang-edit-link-gm-only" style="cursor: pointer;">${this._escapeHtml(this._localize("FANG.Dialogs.IdentityGMOnly", "GM only - hide completely"))}</label>
+                    <input type="checkbox" id="fang-edit-link-gm-only" ${link.gmOnly ? "checked" : ""} style="width: auto; margin: 0; cursor: pointer;">
+                </div>
+                <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; margin-top: 10px;">
+                    <label for="fang-edit-link-directional" style="cursor: pointer;">${this._escapeHtml(lblDirectional)}</label>
+                    <input type="checkbox" id="fang-edit-link-directional" ${link.directional ? "checked" : ""} style="width: auto; margin: 0; cursor: pointer;">
+                </div>
+                <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; margin-top: 8px;">
+                    <label for="fang-edit-link-reverse" style="cursor: pointer;">${this._escapeHtml(lblReverseDirection)}</label>
+                    <input type="checkbox" id="fang-edit-link-reverse" style="width: auto; margin: 0; cursor: pointer;">
+                </div>
+            `,
+            buttons: {
+                save: {
+                    icon: '<i class="fas fa-save"></i>',
+                    label: this._localize("FANG.Dialogs.BtnSave", "Save"),
+                    callback: async (html) => {
+                        const newLabel = html.find("#fang-edit-link-name").val().trim();
+                        const newInfo = html.find("#fang-edit-link-info").val().trim();
+                        const newDirectional = html.find("#fang-edit-link-directional").is(":checked");
+                        const reverseDirection = html.find("#fang-edit-link-reverse").is(":checked");
+                        if (newLabel) link.label = newLabel;
+                        link.info = newInfo !== "" ? newInfo : null;
+                        link.relationshipType = html.find("#fang-edit-link-type").val() || "";
+                        link.gmOnly = html.find("#fang-edit-link-gm-only").is(":checked");
+                        link.directional = reverseDirection ? true : newDirectional;
+                        if (reverseDirection) {
+                            const oldSource = link.source;
+                            link.source = link.target;
+                            link.target = oldSource;
+                        }
+                        this.initSimulation();
+                        this.simulation.alpha(0.05).restart();
+                        await this.saveData();
+                    }
+                },
+                cancel: { icon: '<i class="fas fa-times"></i>', label: this._localize("FANG.Dialogs.BtnCancel", "Cancel") }
+            },
+            default: "save",
+            classes: ["dialog", "fang-dialog"], width: 450
+        });
+    }
+
+    /** Ask, then remove one connection. Resolves true when it was deleted. */
+    async _confirmDeleteLink(link) {
+        if (!link) return false;
+        let geloescht = false;
+        await this._openDialog({
+            title: this._localize("FANG.Dialogs.DeleteConfirmTitle", "Confirm deletion"),
+            content: `<p style="margin-bottom: 15px;">${this._escapeHtml(this._localize("FANG.Dialogs.DeleteLinkContent", "Are you sure you want to delete this connection?"))}</p>`,
+            buttons: {
+                yes: {
+                    icon: '<i class="fas fa-unlink"></i>',
+                    label: this._localize("FANG.ContextMenu.DeleteConnection", "Delete connection"),
+                    className: "danger-btn",
+                    callback: async () => {
+                        // By identity, not by a remembered index: the list may have changed
+                        // since the menu or the window that offered this was drawn.
+                        const index = this.graphData.links.indexOf(link);
+                        if (index < 0) return;
+                        this.graphData.links.splice(index, 1);
+                        geloescht = true;
+                        ui.notifications.info(this._localize("FANG.Messages.DeletedLink", "Connection deleted."));
+                        this.initSimulation();
+                        this.simulation.alpha(0.3).restart();
+                        await this.saveData();
+                    }
+                },
+                no: { icon: '<i class="fas fa-times"></i>', label: this._localize("FANG.Dialogs.BtnCancel", "Cancel"), className: "cancel" }
+            },
+            default: "no",
+            classes: ["dialog", "fang-dialog"], width: 400
+        });
+        return geloescht;
+    }
+
+    /**
+     * Every connection of one node in a list of its own, reached from the actor editor.
+     *
+     * Not inside the editor: a character with fifteen connections would push the profile
+     * off the screen, and the editor is for the character, not for the people around them.
+     * A separate window keeps both readable. Edit and Delete only appear while editing is
+     * allowed; the list itself is for anyone who may see the node.
+     */
+    async _openNodeConnectionsWindow(node) {
+        if (!node) return;
+        const esc = (v) => this._escapeHtml(v);
+        const typen = new Map((this.graphData.relationshipTypes || this._getDefaultRelationshipTypes())
+            .map(t => this._normalizeRelationshipType(t)).map(t => [t.id, t]));
+
+        // The window redraws itself after every edit or deletion, so the loop stays until
+        // the person closes it rather than after the first action.
+        for (;;) {
+            const darfBearbeiten = this._canEditGraph(true);
+            const eintraege = (this.graphData.links || [])
+                .filter(link => {
+                    const q = this._getLinkEndpointId(link.source), z = this._getLinkEndpointId(link.target);
+                    return (q === node.id || z === node.id) && this._canUserSeeLink(link);
+                })
+                .map(link => {
+                    const q = this._getLinkEndpointId(link.source), z = this._getLinkEndpointId(link.target);
+                    const ausgehend = q === node.id;
+                    const anderer = this._resolveNodeReference(ausgehend ? z : q);
+                    const typ = typen.get(link.relationshipType);
+                    return {
+                        link,
+                        richtung: link.directional ? (ausgehend ? "\u2192" : "\u2190") : "\u2194",
+                        andererName: this._getSafeNodeName(anderer),
+                        label: link.label || typ?.label || this._localize("FANG.Dropdowns.Links", "Connection"),
+                        farbe: typ?.color || "",
+                        gmOnly: link.gmOnly === true
+                    };
+                })
+                .sort((a, b) => a.andererName.localeCompare(b.andererName, game.i18n.lang));
+
+            const zeilen = eintraege.map((e, i) => `
+                <li class="fang-connection-row" data-index="${i}">
+                    <span class="fang-connection-swatch" style="background:${esc(e.farbe || "transparent")}"></span>
+                    <span class="fang-connection-text">
+                        <span class="fang-connection-label">${esc(e.label)}</span>
+                        <span class="fang-connection-dir" aria-hidden="true">${e.richtung}</span>
+                        <span class="fang-connection-other">${esc(e.andererName)}</span>
+                        ${e.gmOnly ? `<span class="fang-connection-badge">${esc(this._localize("FANG.Dialogs.QuestHiddenFromPlayers", "Hidden from players"))}</span>` : ""}
+                    </span>
+                    ${darfBearbeiten ? `
+                    <span class="fang-connection-actions">
+                        <button type="button" class="btn action-btn fang-connection-edit" aria-label="${esc(this._localize("FANG.ContextMenu.EditConnection", "Edit"))}" title="${esc(this._localize("FANG.ContextMenu.EditConnection", "Edit"))}"><i class="fas fa-edit" aria-hidden="true"></i></button>
+                        <button type="button" class="btn action-btn danger-btn fang-connection-delete" aria-label="${esc(this._localize("FANG.ContextMenu.DeleteConnection", "Delete connection"))}" title="${esc(this._localize("FANG.ContextMenu.DeleteConnection", "Delete connection"))}"><i class="fas fa-unlink" aria-hidden="true"></i></button>
+                    </span>` : ""}
+                </li>`).join("");
+
+            const content = `
+                <div class="fang-connections">
+                    ${eintraege.length
+                        ? `<ul class="fang-connection-list">${zeilen}</ul>`
+                        : `<p class="fang-hint">${esc(this._localize("FANG.Dialogs.ConnectionsEmpty", "No connections yet."))}</p>`}
+                    ${!darfBearbeiten && eintraege.length
+                        ? `<p class="fang-hint">${esc(this._localize("FANG.Dialogs.ConnectionsReadOnlyHint", "Editing and deleting need edit mode."))}</p>`
+                        : ""}
+                </div>`;
+
+            const ergebnis = await this._openPanelEditor({
+                title: this._localize("FANG.Dialogs.ConnectionsTitle", "Connections of {name}").replace("{name}", this._getSafeNodeName(node)),
+                content,
+                buttons: {
+                    close: { icon: '<i class="fas fa-times"></i>', label: this._localize("FANG.UI.Close", "Close") }
+                },
+                default: "close",
+                render: (html, dialog) => {
+                    html.find(".fang-connection-edit").on("click", (e) => {
+                        const i = Number(e.currentTarget.closest(".fang-connection-row")?.dataset.index);
+                        dialog.close(`edit:${i}`);
+                    });
+                    html.find(".fang-connection-delete").on("click", (e) => {
+                        const i = Number(e.currentTarget.closest(".fang-connection-row")?.dataset.index);
+                        dialog.close(`delete:${i}`);
+                    });
+                },
+                classes: ["dialog", "fang-dialog"], width: 520
+            });
+
+            const [aktion, indexText] = String(ergebnis || "").split(":");
+            const eintrag = eintraege[Number(indexText)];
+            if (aktion === "edit" && eintrag) { await this._openEditLinkDialog(eintrag.link); continue; }
+            if (aktion === "delete" && eintrag) { await this._confirmDeleteLink(eintrag.link); continue; }
+            return;
+        }
     }
 
     async _onCanvasClick(event) {

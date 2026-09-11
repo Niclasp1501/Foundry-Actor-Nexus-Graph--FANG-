@@ -5,7 +5,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [14.2609.3] - 2026-09-11
 
+### Added
+- **Ein Fenster mit allen Verbindungen eines Charakters.** Im Akteur-Editor steht jetzt ein Knopf „Verbindungen (n)". Er öffnet eine eigene Liste: je Zeile die Bezeichnung, die Richtung und der Name am anderen Ende, dazu Bearbeiten und Löschen. Bisher musste man die Linie im Graphen treffen, und bei vielen Verbindungen liegen die Linien dicht beieinander. Bewusst ein eigenes Fenster und nicht ein Abschnitt im Editor: Ein Charakter mit fünfzehn Verbindungen hätte das Profil vom Bildschirm geschoben. Vorgeschlagen von @taylor-nightingale (#7).
+
+### Changed
+- **Bearbeiten und Löschen im Rechtsklickmenü bleiben sichtbar, wenn der Bearbeitungsmodus aus ist.** Sie sind dann ausgegraut und tragen den Hinweis „Bearbeitungsmodus" daneben. Vorher waren sie ausgeblendet, und zwei Leute hintereinander haben daraus geschlossen, dass man Verbindungen gar nicht bearbeiten kann. Gilt für Verbindungen und für Knoten. Ein Klick auf den gesperrten Eintrag nennt den Grund (keine Sperre oder keine Berechtigung).
+
 ### Fixed
+- **Zwei deutsche Ersatztexte mit kaputter Kodierung** („ZusÃ¤tzliche Details fÃ¼r die Verbindung") im Verbindungsdialog sind durch englische ersetzt; sie erschienen nur, wenn ein Sprachschlüssel fehlte.
 - **Eine Spieler-Änderung konnte den ganzen Graphen leeren.** Spieler dürfen das Journal nicht beschreiben, deshalb wendet der Client der Spielleitung ihre Änderung an und speichert. Hatte die Spielleitung FANG in dieser Sitzung noch nicht geöffnet, lag dort eine nie geladene Instanz: leerer Graph, keine Grundlage für den Abgleich. Der Abgleich las jeden vorhandenen Knoten als von der Spielleitung gelöscht, das Löschen gewinnt, und das anschließende Speichern schrieb das leere Ergebnis ins Journal. Die Instanz lädt jetzt zuerst; ein zweiter Relay, der während des Ladens eintrifft, wartet auf dasselbe Laden.
 
   Betroffen sind nur Welten mit eingeschalteter Spielerbearbeitung. Der Weg bestand seit Einführung des Abgleichs, also auch in 14.2608.1. Gefunden beim Nachgehen einer Meldung von @taylor-nightingale (#7). Szenario 17 in `tools/fang-merge-test.mjs` hält den Grund fest: Gegen einen ungeladenen Stand gehen alle Knoten verloren, gegen den geladenen bleiben sie, und die neue Verbindung des Spielers kommt an.

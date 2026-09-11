@@ -2398,6 +2398,99 @@ body.fang-theme-cyberpunk .fang-dialog .faction-icon-preview {
     color: var(--fang-primary-red);
 }
 
+/* A menu item that needs edit mode. Muted rather than hidden, with the reason in
+   small type next to it, so the function is visible even while it cannot be used. */
+.fang-app-container .ctx-item.is-locked {
+    opacity: 0.55;
+    cursor: default;
+}
+
+.fang-app-container .ctx-item.is-locked:hover {
+    background: transparent;
+    border-left-color: transparent;
+    color: inherit;
+}
+
+.fang-app-container .ctx-item .ctx-hint {
+    margin-left: auto;
+    padding-left: 10px;
+    font-size: 0.72rem;
+    font-weight: 400;
+    opacity: 0.85;
+    white-space: nowrap;
+}
+
+/* The connections window: one row per connection, the other end's name carrying the
+   weight, the relationship label and the direction glyph quieter beside it. */
+.fang-connection-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+.fang-connection-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 6px;
+    border-bottom: 1px solid rgba(212, 175, 55, 0.18);
+}
+
+.fang-connection-row:last-child {
+    border-bottom: none;
+}
+
+.fang-connection-swatch {
+    flex: 0 0 auto;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 1px solid rgba(0, 0, 0, 0.25);
+}
+
+.fang-connection-text {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 6px;
+}
+
+.fang-connection-label {
+    opacity: 0.8;
+}
+
+.fang-connection-dir {
+    opacity: 0.6;
+}
+
+.fang-connection-other {
+    font-weight: 700;
+}
+
+.fang-connection-badge {
+    font-size: 0.72rem;
+    padding: 1px 6px;
+    border-radius: 999px;
+    border: 1px solid rgba(212, 175, 55, 0.5);
+    opacity: 0.85;
+}
+
+.fang-connection-actions {
+    flex: 0 0 auto;
+    display: flex;
+    gap: 4px;
+}
+
+.fang-connection-actions .btn {
+    min-width: var(--ninjo-tippziel, 32px);
+    min-height: var(--ninjo-tippziel, 32px);
+    padding: 4px 8px;
+}
+
 .fang-app-container .ctx-item.danger i {
     color: #ff4d4d;
 }

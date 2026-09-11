@@ -234,6 +234,7 @@
             "DeleteNode": "Akteur vom Graphen löschen",
             "EditConnection": "Bearbeiten",
             "DeleteConnection": "Verbindung löschen",
+            "NeedsEditMode": "Bearbeitungsmodus",
             "UnpinNode": "Position freigeben"
         },
         "Dropdowns": {
@@ -285,6 +286,10 @@
             "DeleteConfirmTitle": "Löschen bestätigen",
             "DeleteNodeContent": "Möchtest du diesen Token wirklich aus dem Graphen entfernen? Keine Sorge, deine Spieler-Notizen bleiben sicher im Hintergrund erhalten.",
             "DeleteLinkContent": "Möchtest du diese Verbindung wirklich löschen?",
+            "ConnectionsReadOnlyHint": "Bearbeiten und Löschen brauchen den Bearbeitungsmodus (Schloss oben links).",
+            "ConnectionsEmpty": "Noch keine Verbindungen.",
+            "ConnectionsTitle": "Verbindungen von {name}",
+            "ConnectionsButton": "Verbindungen",
             "IdentityTitle": "Identität",
             "IdentityName": "Angezeigter Name",
             "IdentityOriginal": "Ursprünglich: {name}",

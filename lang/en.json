@@ -234,6 +234,7 @@
             "DeleteNode": "Delete Actor from Graph",
             "EditConnection": "Edit",
             "DeleteConnection": "Delete Connection",
+            "NeedsEditMode": "edit mode",
             "UnpinNode": "Release position"
         },
         "Dropdowns": {
@@ -285,6 +286,10 @@
             "DeleteConfirmTitle": "Confirm Deletion",
             "DeleteNodeContent": "Are you sure you want to delete this token from the graph? Your Player Lore notes will be kept safe.",
             "DeleteLinkContent": "Are you sure you want to delete this connection?",
+            "ConnectionsReadOnlyHint": "Editing and deleting need edit mode (the lock at the top left).",
+            "ConnectionsEmpty": "No connections yet.",
+            "ConnectionsTitle": "Connections of {name}",
+            "ConnectionsButton": "Connections",
             "IdentityTitle": "Identity",
             "IdentityName": "Displayed Name",
             "IdentityOriginal": "Original: {name}",
