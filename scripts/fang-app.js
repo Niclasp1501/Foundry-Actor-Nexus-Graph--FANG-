@@ -1,5 +1,5 @@
 import { mergeGraphData, valuesEqual, structurallyEqual } from "./fang-merge.mjs";
-import { diffGraph, applyOps, invertOps, summarizeOps } from "./fang-ops.mjs";
+import { diffGraph, applyOps, summarizeOps } from "./fang-ops.mjs";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
@@ -2618,13 +2618,6 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const railManage = this.element.querySelector("#fangRailManage");
         if (railManage) railManage.addEventListener("click", () => this._openSidebarPanel("advanced"));
 
-        const railChanges = this.element.querySelector("#fangRailChanges");
-        if (railChanges) railChanges.addEventListener("click", (event) => {
-            event.preventDefault();
-            this._closeSidebarPanel();
-            this._openChangeLogWindow();
-        });
-
         // 4. GM-specific or Player-specific Logic
         if (game.user.isGM) {
             // GM-only Event Listeners
@@ -3633,8 +3626,6 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             const log = foundry.utils.duplicate(game.settings.get("fang", "changeLog") ?? { entries: [] });
             const entries = Array.isArray(log.entries) ? log.entries : [];
             const MAX_OPS = 60, MAX_ENTRIES = 300;
-            const undoOf = this._undoOf ?? null;
-            this._undoOf = null;
             entries.push({
                 id: foundry.utils.randomID(12),
                 ts: Date.now(),
@@ -3642,8 +3633,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 userName: author.name,
                 counts: summarizeOps(ops),
                 ops: ops.length > MAX_OPS ? null : ops,
-                truncated: ops.length > MAX_OPS,
-                undoOf
+                truncated: ops.length > MAX_OPS
             });
             while (entries.length > MAX_ENTRIES) entries.shift();
             await game.settings.set("fang", "changeLog", { entries });
@@ -3771,10 +3761,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 // the simulation each time we let go of a node.
                 mergeChangedUs = !structurallyEqual(state, exportData);
                 exportData = state;
-                // Whoever wrote the stored state last is the other side of any conflict.
-                // Read before our own log entry is appended below.
-                const lastWriter = game.settings.get("fang", "changeLog")?.entries?.at(-1)?.userName ?? null;
-                this._handleSaveConflicts(conflicts, lastWriter);
+                this._reportMergeConflicts(conflicts);
             } else if (server) {
                 console.log("FANG | Stored graph predates the merge schema — migrating it with this save.");
             }
@@ -3811,226 +3798,6 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 ui.notifications.warn(game.i18n.localize("FANG.Messages.SaveNoPermission"));
             }
         }
-    }
-
-    // --- Conflicts you can see ------------------------------------------------------------
-    // "Last writer wins" is right for a checkbox and for a position. For a text someone
-    // typed it is a silent loss. When a text field collided, the person whose save won
-    // gets to see both versions and pick, instead of only being told.
-
-    _handleSaveConflicts(conflicts, lastWriter = null) {
-        if (!conflicts?.length) return;
-        const istText = (c) => c.type?.endsWith(".field") && typeof c.mine === "string" && typeof c.theirs === "string";
-        const texte = conflicts.filter(istText);
-        const rest = conflicts.filter(c => !istText(c));
-        this._reportMergeConflicts(rest);
-        if (texte.length) this._offerConflictChoice(texte, lastWriter);   // not awaited: the save queue must not wait for a person
-    }
-
-    _fieldLabel(field) {
-        const map = {
-            name: ["FANG.Dialogs.IdentityName", "Name"],
-            role: ["FANG.Dialogs.RoleInput", "Role"],
-            lore: ["FANG.ActorEditor.Notes", "Notes"],
-            displayName: ["FANG.Dialogs.IdentityAlias", "Alias"],
-            playerNotes: ["FANG.ActorEditor.PlayerNotesTitle", "Player notes"],
-            hidden: ["FANG.Dialogs.IdentityHidden", "Hidden for players"],
-            gmOnly: ["FANG.Dialogs.IdentityGMOnly", "GM only"],
-            factionIds: ["FANG.Dialogs.FactionInput", "Faction"],
-            factionId: ["FANG.Dialogs.FactionInput", "Faction"],
-            zoneId: ["FANG.Zones.Zone", "Zone"],
-            conditions: ["FANG.ActorEditor.Conditions", "Conditions"],
-            label: ["FANG.Dialogs.LabelInput", "Label"],
-            info: ["FANG.Dialogs.InfoInput", "Notes"],
-            directional: ["FANG.Dialogs.DirectionalInput", "Directional"],
-            relationshipType: ["FANG.RelationshipTypes.Label", "Relationship type"],
-            color: ["FANG.Changes.Colour", "Colour"],
-            pinned: ["FANG.ContextMenu.UnpinNode", "Position"],
-            x: ["FANG.Changes.Position", "Position"],
-            y: ["FANG.Changes.Position", "Position"]
-        };
-        const [key, fallback] = map[field] ?? [null, field];
-        return key ? this._localize(key, fallback) : field;
-    }
-
-    _formatValue(value) {
-        if (value === undefined || value === null || value === "") return this._localize("FANG.Changes.Empty", "(empty)");
-        if (typeof value === "boolean") return value ? game.i18n.localize("Yes") : game.i18n.localize("No");
-        if (Array.isArray(value)) {
-            const namen = value.map(v => this.graphData?.factions?.find(f => f.id === v)?.name ?? this.graphData?.zones?.find(z => z.id === v)?.name ?? String(v));
-            return namen.join(", ") || this._localize("FANG.Changes.Empty", "(empty)");
-        }
-        if (typeof value === "object") return JSON.stringify(value).slice(0, 60);
-        const text = String(value);
-        return text.length > 70 ? text.slice(0, 67) + "..." : text;
-    }
-
-    async _offerConflictChoice(texte, lastWriter) {
-        const esc = (v) => this._escapeHtml(v);
-        const wer = lastWriter || this._localize("FANG.Changes.Someone", "someone else");
-        const zeilen = texte.map((c, i) => `
-            <li class="fang-conflict">
-                <div class="fang-conflict-head">${esc(c.name)} <span class="fang-conflict-field">${esc(this._fieldLabel(c.field))}</span></div>
-                <label class="fang-editor-check"><input type="radio" name="fang-conflict-${i}" value="mine" checked> <strong>${esc(this._localize("FANG.Changes.Yours", "Yours"))}:</strong> ${esc(this._formatValue(c.mine))}</label>
-                <label class="fang-editor-check"><input type="radio" name="fang-conflict-${i}" value="theirs"> <strong>${esc(wer)}:</strong> ${esc(this._formatValue(c.theirs))}</label>
-            </li>`).join("");
-
-        const result = await this._openPanelEditor({
-            title: this._localize("FANG.Changes.ConflictTitle", "Edited at the same time"),
-            content: `
-                <p class="fang-hint">${esc(this._localize("FANG.Changes.ConflictHint", "{user} changed the same field while you were editing. Your version is stored right now. Pick what should stay.").replace("{user}", wer))}</p>
-                <ul class="fang-conflict-list">${zeilen}</ul>`,
-            buttons: {
-                apply: { icon: '<i class="fas fa-check"></i>', label: this._localize("FANG.Changes.ConflictApply", "Keep the selection"),
-                    callback: (html) => texte.map((_, i) => html.find(`input[name="fang-conflict-${i}"]:checked`).val()) },
-                cancel: { icon: '<i class="fas fa-times"></i>', label: this._localize("FANG.Dialogs.BtnCancel", "Cancel") }
-            },
-            default: "apply",
-            classes: ["dialog", "fang-dialog"], width: 560
-        });
-        if (!Array.isArray(result)) return;
-
-        let geaendert = false;
-        texte.forEach((c, i) => {
-            if (result[i] !== "theirs") return;
-            const coll = c.type.startsWith("link") ? "links" : c.type.startsWith("faction") ? "factions" : c.type.startsWith("graph") ? null : "nodes";
-            if (!coll) { this.graphData[c.field] = c.theirs; geaendert = true; return; }
-            const element = (this.graphData[coll] || []).find(e => e.id === c.id);
-            if (!element) return;
-            element[c.field] = c.theirs;
-            geaendert = true;
-        });
-        if (geaendert) {
-            this.ticked();
-            await this.saveData();
-        }
-    }
-
-    // --- Change log and undo ----------------------------------------------------------------
-
-    _elementLabelForOp(op) {
-        const coll = op.coll;
-        const live = (this.graphData?.[coll] || []).find(e => e.id === op.id);
-        const snapshot = op.value ?? op.prev;
-        if (coll === "links") {
-            const src = live?.source ?? snapshot?.source, tgt = live?.target ?? snapshot?.target;
-            const a = this._getSafeNodeName(this._resolveNodeReference(src)), b = this._getSafeNodeName(this._resolveNodeReference(tgt));
-            const label = live?.label ?? snapshot?.label ?? "";
-            return `${label ? label + " " : ""}${a} / ${b}`;
-        }
-        if (coll === "nodes") return live ? this._getSafeNodeName(live) : (snapshot?.name ?? op.id);
-        return live?.name ?? snapshot?.name ?? op.id;
-    }
-
-    _describeOp(op) {
-        const kindLabel = {
-            node: this._localize("FANG.Changes.KindNode", "Character"),
-            link: this._localize("FANG.Changes.KindLink", "Connection"),
-            faction: this._localize("FANG.Changes.KindFaction", "Faction")
-        }[op.kind ?? (op.coll ? op.coll.slice(0, -1) : "")] ?? "";
-        if (op.op === "add") return `${kindLabel} ${this._elementLabelForOp(op)}: ${this._localize("FANG.Changes.Added", "added")}`;
-        if (op.op === "remove") return `${kindLabel} ${this._elementLabelForOp(op)}: ${this._localize("FANG.Changes.Removed", "removed")}`;
-        if (op.op === "set") return `${this._elementLabelForOp(op)}, ${this._fieldLabel(op.field)}: ${this._formatValue(op.prev)} \u2192 ${this._formatValue(op.value)}`;
-        if (op.op === "setTop") return `${this._localize("FANG.Changes.Setting", "Setting")} ${op.field}: ${this._formatValue(op.prev)} \u2192 ${this._formatValue(op.value)}`;
-        return "";
-    }
-
-    _onChangeLogUpdated() {
-        // The window redraws itself through its loop; tell it to go round once more.
-        this._changeLogRefresh?.();
-    }
-
-    /**
-     * Who changed what, when, newest first, with a way back. GM only: the entries name
-     * nodes a player may not see, and undo writes the graph.
-     */
-    async _openChangeLogWindow() {
-        if (!game.user?.isGM) return;
-        const esc = (v) => this._escapeHtml(v);
-
-        for (;;) {
-            const alle = (game.settings.get("fang", "changeLog")?.entries ?? []).slice().reverse();
-            const rueckgenommen = new Set(alle.map(e => e.undoOf).filter(Boolean));
-            const eintraege = alle.slice(0, 100);
-
-            const zeilen = eintraege.map(e => {
-                const zeit = new Date(e.ts).toLocaleString(game.i18n.lang, { dateStyle: "short", timeStyle: "short" });
-                const c = e.counts ?? {};
-                const teile = [];
-                if (c.set) teile.push(`${c.set} ${this._localize("FANG.Changes.CountSet", "changed")}`);
-                if (c.add) teile.push(`${c.add} ${this._localize("FANG.Changes.CountAdd", "added")}`);
-                if (c.remove) teile.push(`${c.remove} ${this._localize("FANG.Changes.CountRemove", "removed")}`);
-                if (c.setTop) teile.push(`${c.setTop} ${this._localize("FANG.Changes.CountSetting", "settings")}`);
-                const ops = Array.isArray(e.ops) ? e.ops : [];
-                const beschreibungen = ops.slice(0, 20).map(op => `<li>${esc(this._describeOp(op))}</li>`).join("");
-                const mehr = ops.length > 20 ? `<li class="fang-hint">+${ops.length - 20}</li>` : "";
-                const istRueckgenommen = rueckgenommen.has(e.id);
-                const istUndo = !!e.undoOf;
-                const kannZurueck = ops.length > 0 && !e.truncated && !istRueckgenommen;
-                return `
-                <li class="fang-change${istRueckgenommen ? " is-undone" : ""}" data-id="${esc(e.id)}">
-                    <div class="fang-change-head">
-                        <span class="fang-change-when">${esc(zeit)}</span>
-                        <span class="fang-change-who">${esc(e.userName ?? "?")}</span>
-                        <span class="fang-change-what">${istUndo ? esc(this._localize("FANG.Changes.UndoEntry", "Undo")) + ": " : ""}${esc(teile.join(", "))}${e.truncated ? " " + esc(this._localize("FANG.Changes.TooLarge", "(too large to list)")) : ""}</span>
-                        ${istRueckgenommen ? `<span class="fang-change-badge">${esc(this._localize("FANG.Changes.Undone", "undone"))}</span>` : ""}
-                        ${kannZurueck ? `<button type="button" class="btn action-btn fang-change-undo" title="${esc(this._localize("FANG.Changes.Undo", "Undo"))}" aria-label="${esc(this._localize("FANG.Changes.Undo", "Undo"))}"><i class="fas fa-rotate-left" aria-hidden="true"></i> ${esc(this._localize("FANG.Changes.Undo", "Undo"))}</button>` : ""}
-                    </div>
-                    ${beschreibungen ? `<ul class="fang-change-ops">${beschreibungen}${mehr}</ul>` : ""}
-                </li>`;
-            }).join("");
-
-            const content = `
-                <div class="fang-changes">
-                    ${eintraege.length
-                        ? `<ul class="fang-change-list">${zeilen}</ul>`
-                        : `<p class="fang-hint">${esc(this._localize("FANG.Changes.NothingRecorded", "Nothing recorded yet."))}</p>`}
-                    <p class="fang-hint">${esc(this._localize("FANG.Changes.UndoHint", "Undo takes back an entry's changes. A field someone changed again since is left as it is."))}</p>
-                </div>`;
-
-            const ergebnis = await this._openPanelEditor({
-                title: this._localize("FANG.Changes.Title", "Change log"),
-                content,
-                buttons: { close: { icon: '<i class="fas fa-times"></i>', label: this._localize("FANG.UI.Close", "Close") } },
-                default: "close",
-                render: (html, dialog) => {
-                    this._changeLogRefresh = () => dialog.close("refresh");
-                    html.find(".fang-change-undo").on("click", (e) => {
-                        const id = e.currentTarget.closest(".fang-change")?.dataset.id;
-                        dialog.close(`undo:${id}`);
-                    });
-                },
-                classes: ["dialog", "fang-dialog"], width: 640
-            });
-            this._changeLogRefresh = null;
-
-            if (ergebnis === "refresh") continue;
-            const [aktion, id] = String(ergebnis || "").split(":");
-            if (aktion === "undo" && id) {
-                const eintrag = eintraege.find(e => e.id === id);
-                if (eintrag) await this._undoLogEntry(eintrag);
-                continue;
-            }
-            return;
-        }
-    }
-
-    async _undoLogEntry(entry) {
-        if (!game.user?.isGM || !Array.isArray(entry?.ops) || !entry.ops.length) return;
-        const inverse = invertOps(entry.ops);
-        const { state, applied, skipped } = applyOps(this._buildExportData(), inverse, { strict: true });
-        if (!applied) {
-            ui.notifications.info(this._localize("FANG.Changes.NothingToUndo", "Nothing to take back: every field has been changed again since."));
-            return;
-        }
-        state.schemaVersion = FANG_GRAPH_SCHEMA_VERSION;
-        this._adoptMergedState(state, this._baseline);
-        this._undoOf = entry.id;
-        await this.saveData();
-        const msg = skipped
-            ? this._localize("FANG.Changes.UndonePartly", "{applied} taken back, {skipped} left as changed since.").replace("{applied}", applied).replace("{skipped}", skipped)
-            : this._localize("FANG.Changes.UndoneAll", "{applied} change(s) taken back.").replace("{applied}", applied);
-        ui.notifications.info(msg);
     }
 
     /**

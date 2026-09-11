@@ -247,36 +247,6 @@
             "OpenAnyway": "Open anyway",
             "Dragging": "{user} is moving"
         },
-        "Changes": {
-            "Title": "Change log",
-            "Position": "Position",
-            "Colour": "Colour",
-            "Empty": "(empty)",
-            "Someone": "someone else",
-            "Yours": "You",
-            "ConflictTitle": "Edited at the same time",
-            "ConflictHint": "{user} changed the same field while you were editing. Your version is stored right now. Pick what should stay.",
-            "ConflictApply": "Keep the selection",
-            "KindNode": "Character",
-            "KindLink": "Connection",
-            "KindFaction": "Faction",
-            "Added": "added",
-            "Removed": "removed",
-            "Setting": "Setting",
-            "CountSet": "changed",
-            "CountAdd": "added",
-            "CountRemove": "removed",
-            "CountSetting": "settings",
-            "UndoEntry": "Undo",
-            "TooLarge": "(too large to list)",
-            "Undone": "undone",
-            "Undo": "Undo",
-            "NothingRecorded": "Nothing recorded yet.",
-            "UndoHint": "Undo takes back an entry's changes. A field someone changed again since is left as it is.",
-            "NothingToUndo": "Nothing to take back: every field has been changed again since.",
-            "UndonePartly": "{applied} taken back, {skipped} left as changed since.",
-            "UndoneAll": "{applied} change(s) taken back."
-        },
         "Dropdowns": {
             "Nodes": "Nodes (Tokens)",
             "Links": "Connections",
@@ -583,8 +553,8 @@
             "rumor": "Rumor"
         },
         "Merge": {
-            "ConflictResolved": "{names} was also being edited. Your version was kept.",
-            "DeletedElsewhere": "{names} was deleted by someone else. Your change to it was dropped."
+            "ConflictResolved": "{names} was also being edited — your version was kept.",
+            "DeletedElsewhere": "{names} was deleted by someone else — your change to it was dropped."
         },
         "Willkommen": {
             "Setting": "Welcome window",

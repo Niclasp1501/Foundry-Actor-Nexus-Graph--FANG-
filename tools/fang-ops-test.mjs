@@ -188,17 +188,6 @@ section("B. Was nur Vorgaenge koennen");
     ok(diffGraph(base, mine).length === 0, "Simulationsfelder erzeugen keine Vorgaenge");
 }
 {
-    // Undo in strict mode: a change that was overtaken stays, the rest goes back.
-    const base = baseGraph(); const mine = clone(base);
-    mine.nodes[0].lore = "Von mir"; mine.nodes[1].role = "Von mir";
-    const ops = diffGraph(base, mine);
-    const later = clone(mine); later.nodes[0].lore = "Von Anna, spaeter";
-    const { state, applied, skipped } = applyOps(later, invertOps(ops), { strict: true });
-    ok(state.nodes.find(n => n.id === "elara").lore === "Von Anna, spaeter", "strict: das inzwischen geaenderte Feld bleibt");
-    ok(state.nodes.find(n => n.id === "garrek").role === "Söldner", "strict: das unberuehrte Feld geht zurueck");
-    ok(applied === 1 && skipped === 1, "strict: eins angewandt, eins uebersprungen");
-}
-{
     // The stored state is never modified.
     const base = baseGraph(); const mine = clone(base); mine.nodes[0].lore = "Neu";
     const stored = clone(base); const before = JSON.stringify(stored);

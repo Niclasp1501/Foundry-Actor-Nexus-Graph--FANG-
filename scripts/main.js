@@ -805,9 +805,6 @@ Hooks.once("ready", async () => {
     if (setting?.key === "fang.themeVariant") {
       _fangApplyVisualThemeToOpenApps();
     }
-    if (setting?.key === "fang.changeLog") {
-      fangApp?._onChangeLogUpdated?.();
-    }
 
     if (!game.user.isGM) return;
     if (!game.settings.get("fang", "diploglassOneWaySync")) return;

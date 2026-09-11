@@ -130,21 +130,15 @@ export function diffGraph(base, mine, { draggedNodeIds = new Set() } = {}) {
  *
  * A link whose endpoint is gone after all operations is dropped, as the merge does.
  *
- * With `strict`, an operation whose expectation no longer holds (the field moved on, an
- * element with that id exists) is skipped and counted instead of applied. That is the
- * mode for undo: taking one change back must never overwrite a newer one.
- *
  * @param {object} stored
  * @param {Array<object>} ops
- * @param {{ strict?: boolean }} [options]
- * @returns {{ state: object, conflicts: Array<object>, applied: number, skipped: number }}
+ * @returns {{ state: object, conflicts: Array<object>, applied: number }}
  */
-export function applyOps(stored, ops, { strict = false } = {}) {
+export function applyOps(stored, ops) {
     const state = clone(stored ?? {});
     for (const coll of COLLECTIONS) state[coll] = Array.isArray(state[coll]) ? state[coll] : [];
     const conflicts = [];
     let applied = 0;
-    let skipped = 0;
 
     const maps = Object.fromEntries(COLLECTIONS.map(coll => [coll, byId(state[coll])]));
 
@@ -155,9 +149,6 @@ export function applyOps(stored, ops, { strict = false } = {}) {
             const current = state[op.field];
             if (valuesEqual(current, op.value)) continue;
             if (!valuesEqual(current, op.prev)) {
-                // In strict mode a value that moved on since is left alone: this is what
-                // undo needs, so taking back one change never wipes out a newer one.
-                if (strict) { skipped++; continue; }
                 conflicts.push({ type: "graph.field", id: null, name: op.field, field: op.field, theirs: clone(current), mine: clone(op.value) });
             }
             if (op.value === undefined) delete state[op.field]; else state[op.field] = clone(op.value);
@@ -180,8 +171,6 @@ export function applyOps(stored, ops, { strict = false } = {}) {
             const existing = map.get(op.id);
             if (existing && valuesEqual(existing, op.value)) continue;
             if (existing) {
-                // Strict: something with that id lives there now; do not replace it.
-                if (strict) { skipped++; continue; }
                 conflicts.push({ type: `${kind}.created`, id: op.id, name: elementName(op.value, op.id), field: null });
             }
             map.set(op.id, clone(op.value));
@@ -199,7 +188,6 @@ export function applyOps(stored, ops, { strict = false } = {}) {
             if (valuesEqual(current, op.value)) continue;
             const isPosition = op.coll !== "links" && POSITION_FIELDS.includes(op.field);
             if (!isPosition && !valuesEqual(current, op.prev)) {
-                if (strict) { skipped++; continue; }
                 conflicts.push({ type: `${kind}.field`, id: op.id, name: elementName(element, op.id), field: op.field, theirs: clone(current), mine: clone(op.value) });
             }
             if (op.value === undefined) delete element[op.field]; else element[op.field] = clone(op.value);
@@ -212,7 +200,7 @@ export function applyOps(stored, ops, { strict = false } = {}) {
     const nodeIds = new Set(state.nodes.map(n => n.id));
     state.links = state.links.filter(l => nodeIds.has(l.source) && nodeIds.has(l.target));
 
-    return { state, conflicts, applied, skipped };
+    return { state, conflicts, applied };
 }
 
 /**
