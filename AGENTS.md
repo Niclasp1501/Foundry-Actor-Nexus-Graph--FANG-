@@ -33,6 +33,10 @@ Beta releases should derive from the current stable base version:
 
 The persistent beta install link remains the `beta-latest` GitHub prerelease manifest.
 
+## Changelog
+
+`CHANGELOG.md` is written in **English**, like the commits. Foundry's package page and GitHub show one text to every reader; there is no per-language changelog. Eight versions had drifted into German and were translated on 2026-09-11. No `—` or `–` as a dash between clauses (workspace rule 4a).
+
 ## Player-Facing Hidden Tokens
 
 Hidden/verdeckte tokens are not "disabled" for players. FANG is a shared player management tool, so players must still be able to interact with the safe player-facing version of a hidden contact.
