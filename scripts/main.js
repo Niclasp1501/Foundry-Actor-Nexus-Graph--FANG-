@@ -624,14 +624,6 @@ Hooks.once("ready", async () => {
       if (fangApp?.rendered) fangApp._onPresence?.(data.payload);
     }
 
-    // Someone is dragging a node; the others follow it live.
-    if (data.action === "nodeDrag") {
-      if (fangApp?.rendered) fangApp._onRemoteDrag?.(data.payload);
-    }
-    if (data.action === "nodeDragEnd") {
-      if (fangApp?.rendered) fangApp._onRemoteDrag?.(data.payload, { final: true });
-    }
-
     if (data.action === "requestLock" && game.user.isGM) {
       const entry = game.journal.getName("FANG Graph");
       if (entry) {
@@ -854,11 +846,9 @@ Hooks.on("updateActor", async (actor, changes) => {
 
 // Auto-Release lock on Disconnect
 Hooks.on("userConnected", async (user, connected) => {
-  // In collaborative mode the banner lists who else is in the graph. Keep it honest
+  // In collaborative mode the banner lists who else is in the graph — keep it honest
   // when someone joins or leaves.
   if (fangApp?.rendered) fangApp._updateLockUI();
-  // A GM arriving is what a waiting player save has been waiting for.
-  if (connected && user.isGM) fangApp?._flushPendingRelay?.();
 
   if (!connected && game.user.isGM) {
     const entry = game.journal.getName("FANG Graph");

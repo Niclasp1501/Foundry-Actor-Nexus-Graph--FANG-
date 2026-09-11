@@ -122,7 +122,6 @@
             "Color": "Farbe",
             "CollaborativeWith": "Gemeinsames Bearbeiten, ebenfalls hier: {users}",
             "CollaborativeAlone": "Gemeinsames Bearbeiten",
-            "PendingRelay": "Änderungen warten auf die Spielleitung",
             "GroupByZone": "Nach Ort gruppieren",
             "GroupByZoneHint": "Zieht Charaktere nach Ort zusammen. Ersetzt die Fraktions-Gruppierung.",
             "ResetZoneGrouping": "Gruppierung zurücksetzen",
@@ -164,8 +163,6 @@
             "PlayersCanEdit": "Spieler können den Graphen nun bearbeiten.",
             "PlayersCannotEdit": "Spieler können den Graphen nicht mehr bearbeiten.",
             "WarnNoGMOnline": "Ein Spielleiter (GM) muss online sein, um Änderungen am Graphen zu speichern.",
-            "RelayFlushed": "Wartende Änderungen an die Spielleitung gesendet.",
-            "RelayQueued": "Keine Spielleitung online. Deine Änderung wird gesendet, sobald sie da ist.",
             "FactionGroupingApplied": "Fraktions-Gruppierung angewendet.",
             "FactionGroupingReset": "Fraktions-Gruppierung zurückgesetzt.",
             "FactionGroupingInsufficient": "Mindestens zwei Fraktionen mit zugewiesenen Knoten sind nötig.",
@@ -244,8 +241,7 @@
             "Editing": "{user} bearbeitet",
             "OpenAnywayTitle": "Gerade in Bearbeitung",
             "OpenAnywayContent": "{user} hat {name} gerade geöffnet. Wenn ihr beide speichert, gewinnt der Letzte.",
-            "OpenAnyway": "Trotzdem öffnen",
-            "Dragging": "{user} verschiebt"
+            "OpenAnyway": "Trotzdem öffnen"
         },
         "Dropdowns": {
             "Nodes": "Knoten (Tokens)",
