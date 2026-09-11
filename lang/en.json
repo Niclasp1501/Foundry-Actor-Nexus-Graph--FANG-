@@ -122,6 +122,7 @@
             "Color": "Color",
             "CollaborativeWith": "Collaborative editing, also here: {users}",
             "CollaborativeAlone": "Collaborative editing",
+            "PendingRelay": "Changes are waiting for the GM",
             "GroupByZone": "Group by location",
             "GroupByZoneHint": "Pull characters together by location. Replaces faction grouping.",
             "ResetZoneGrouping": "Reset grouping",
@@ -163,6 +164,8 @@
             "PlayersCanEdit": "Players can now edit the graph.",
             "PlayersCannotEdit": "Players can no longer edit the graph.",
             "WarnNoGMOnline": "A Game Master must be online to save changes to the graph.",
+            "RelayFlushed": "Waiting changes were sent to the GM.",
+            "RelayQueued": "No GM is online. Your change will be sent as soon as one is.",
             "FactionGroupingApplied": "Faction grouping applied.",
             "FactionGroupingReset": "Faction grouping reset.",
             "FactionGroupingInsufficient": "Need at least two factions with assigned nodes to group.",
@@ -241,7 +244,8 @@
             "Editing": "{user} is editing",
             "OpenAnywayTitle": "Being edited right now",
             "OpenAnywayContent": "{user} has {name} open right now. If you both save, the last one wins.",
-            "OpenAnyway": "Open anyway"
+            "OpenAnyway": "Open anyway",
+            "Dragging": "{user} is moving"
         },
         "Dropdowns": {
             "Nodes": "Nodes (Tokens)",

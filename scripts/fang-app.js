@@ -290,6 +290,11 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         this._presence = new Map();
         this._myEditing = null;
         this._presenceTimer = null;
+        // Nodes someone else is dragging right now: nodeId -> { userId, userName, ts }.
+        this._remoteDragging = new Map();
+        this._lastDragBroadcast = 0;
+        // A save nobody could take because no GM was online. Sent when one appears.
+        this._pendingRelay = null;
         this.simulation = null;
         this.transform = null;
         this.zoom = null;
@@ -3714,7 +3719,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     // follow-up save does not re-send the same diff.
                     this._setBaseline(exportData);
                 } else {
-                    ui.notifications.warn(game.i18n.localize("FANG.Messages.WarnNoGMOnline"));
+                    this._queueRelay(exportData);
                 }
             } else {
                 ui.notifications.warn(game.i18n.localize("FANG.Messages.SaveNoPermission"));
@@ -6318,6 +6323,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         this._presenceTimer = setInterval(() => {
             this._sendPresence();
             if (this._prunePresence()) this._presenceChanged();
+            this._pruneRemoteDrags();
+            this._flushPendingRelay();
         }, FangApplication.PRESENCE_HEARTBEAT_MS);
     }
 
@@ -6355,6 +6362,116 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         if (!this.rendered) return;
         this.ticked();
         this._updateLockUI();
+    }
+
+    // --- Live drags -------------------------------------------------------------------
+    // While someone drags a node, the others see it move. Positions go out at most every
+    // DRAG_BROADCAST_MS while the pointer moves, and once more, unthrottled, on release,
+    // so the final spot always lands. Receivers pin the node for the duration and hand it
+    // back to their own physics on release. Nothing here is saved; the drag's own save
+    // does that as before.
+
+    static DRAG_BROADCAST_MS = 80;
+    static DRAG_STALE_MS = 2500;
+
+    _broadcastDrag(node, { final = false, pinned = false } = {}) {
+        if (!node?.id || !game.socket) return;
+        const now = Date.now();
+        if (!final && now - this._lastDragBroadcast < FangApplication.DRAG_BROADCAST_MS) return;
+        this._lastDragBroadcast = now;
+        game.socket.emit("module.fang", {
+            action: final ? "nodeDragEnd" : "nodeDrag",
+            payload: { userId: game.user.id, userName: game.user.name, nodeId: node.id, x: node.x, y: node.y, pinned }
+        });
+    }
+
+    _onRemoteDrag(payload = {}, { final = false } = {}) {
+        if (!payload?.nodeId || payload.userId === game.user?.id) return;
+        if (!this.rendered || !this.simulation) return;
+        // In the grouping view positions are read-only for everyone, including remote hands.
+        if (this._isNodeDragBlocked?.()) return;
+
+        const live = this.simulation.nodes().find(n => n.id === payload.nodeId);
+        const stored = this.graphData?.nodes?.find(n => n.id === payload.nodeId);
+        if (!live) return;
+
+        if (final) {
+            live.x = payload.x; live.y = payload.y;
+            if (payload.pinned) { live.fx = payload.x; live.fy = payload.y; live.pinned = true; }
+            else { live.fx = null; live.fy = null; }
+            if (stored && stored !== live) {
+                stored.x = payload.x; stored.y = payload.y;
+                if (payload.pinned) { stored.fx = payload.x; stored.fy = payload.y; stored.pinned = true; }
+                else { stored.fx = null; stored.fy = null; }
+            }
+            this._remoteDragging.delete(payload.nodeId);
+            if (!this._remoteDragging.size) this.simulation.alphaTarget(0);
+            this.ticked();
+            return;
+        }
+
+        const first = !this._remoteDragging.has(payload.nodeId);
+        this._remoteDragging.set(payload.nodeId, { userId: payload.userId, userName: payload.userName, ts: Date.now() });
+        live.fx = payload.x; live.fy = payload.y;
+        if (first) this.simulation.alphaTarget(0.3).restart();
+    }
+
+    /** A drag whose end never arrived (the dragger's tab died) must not pin the node forever. */
+    _pruneRemoteDrags() {
+        const cutoff = Date.now() - FangApplication.DRAG_STALE_MS;
+        for (const [nodeId, entry] of this._remoteDragging) {
+            if (entry.ts >= cutoff) continue;
+            this._remoteDragging.delete(nodeId);
+            const live = this.simulation?.nodes().find(n => n.id === nodeId);
+            if (live && !live.pinned) { live.fx = null; live.fy = null; }
+        }
+        if (!this._remoteDragging.size && this.simulation) this.simulation.alphaTarget(0);
+    }
+
+    // --- Saves that wait for a GM -------------------------------------------------------
+    // A player's save is relayed to a GM. With none online it used to be dropped with a
+    // warning, in the middle of play. Now it waits. The baseline must stay where it was
+    // when the first waiting save was made, or the GM could not tell what changed.
+
+    _queueRelay(exportData) {
+        const erste = !this._pendingRelay;
+        this._pendingRelay = {
+            newGraphData: exportData,
+            baseline: this._pendingRelay?.baseline ?? this._baseline ?? null,
+            draggedNodeIds: Array.from(new Set([...(this._pendingRelay?.draggedNodeIds ?? []), ...(this._draggedNodeIds ?? [])]))
+        };
+        if (erste) ui.notifications.info(this._localize("FANG.Messages.RelayQueued", "No GM is online. Your change will be sent as soon as one is."));
+        this._updateLockUI();
+    }
+
+    _flushPendingRelay() {
+        if (!this._pendingRelay) return false;
+        const isGMOnline = game.users.some(u => u.isGM && u.active);
+        if (!isGMOnline) return false;
+        const pending = this._pendingRelay;
+        this._pendingRelay = null;
+        game.socket.emit("module.fang", {
+            action: "playerEditGraph",
+            payload: { ...pending, authorName: game.user.name }
+        });
+        this._setBaseline(pending.newGraphData);
+        ui.notifications.info(this._localize("FANG.Messages.RelayFlushed", "Waiting changes were sent to the GM."));
+        this._updateLockUI();
+        return true;
+    }
+
+    _updatePendingHint() {
+        const info = this.element?.querySelector("#fang-lock-banner .lock-info");
+        if (!info) return;
+        let hint = info.querySelector("#fang-pending-hint");
+        if (!this._pendingRelay) { hint?.remove(); return; }
+        if (!hint) {
+            hint = document.createElement("span");
+            hint.id = "fang-pending-hint";
+            hint.className = "fang-pending-hint";
+            info.appendChild(hint);
+        }
+        hint.textContent = this._localize("FANG.UI.PendingRelay", "Changes are waiting for the GM");
     }
 
     _beginEditing(editing) {
@@ -8377,11 +8494,19 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         // A ring in the user's own Foundry colour, and their name above the token. Drawn
         // after the labels so it sits on top; radius+5 stays clear of the search ring
         // (+8) and the QuickConnect marker (+12).
-        if (this._presence.size) {
+        if (this._presence.size || this._remoteDragging.size) {
             const nodeById = new Map(visibleNodes.map(n => [n.id, n]));
+            const markierungen = [];
             for (const [userId, entry] of this._presence) {
-                if (entry.editing?.type !== "node") continue;
-                const node = nodeById.get(entry.editing.id);
+                if (entry.editing?.type === "node") markierungen.push({ userId, userName: entry.userName, nodeId: entry.editing.id, key: "FANG.Presence.Editing", fallback: "{user} is editing" });
+            }
+            for (const [nodeId, entry] of this._remoteDragging) {
+                markierungen.push({ userId: entry.userId, userName: entry.userName, nodeId, key: "FANG.Presence.Dragging", fallback: "{user} is moving" });
+            }
+            for (const m of markierungen) {
+                const userId = m.userId;
+                const entry = { userName: m.userName };
+                const node = nodeById.get(m.nodeId);
                 const pos = node && renderPos[node.id];
                 if (!pos) continue;
                 const farbe = this._userColorCss(userId);
@@ -8394,7 +8519,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 this.context.stroke();
                 this.context.setLineDash([]);
 
-                const text = this._localize("FANG.Presence.Editing", "{user} is editing").replace("{user}", entry.userName);
+                const text = this._localize(m.key, m.fallback).replace("{user}", entry.userName);
                 this.context.font = `bold 11px 'Signika', 'Segoe UI', sans-serif`;
                 const w = this.context.measureText(text).width + 12;
                 const y = pos.y - radius - 16;
@@ -8600,6 +8725,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             event.subject.data.fx = this.transform.invertX(event.x);
             event.subject.data.fy = this.transform.invertY(event.y);
             this._hasDragged = true;
+            this._broadcastDrag(event.subject.data);
         }
     }
 
@@ -8629,6 +8755,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             // moved is drift, not intent, and must not overwrite other clients.
             if (event.subject.data.id && this._hasDragged) {
                 (this._draggedNodeIds ??= new Set()).add(event.subject.data.id);
+                this._broadcastDrag(event.subject.data, { final: true, pinned: !!event.subject.data.pinned });
             }
         }
         if (this._hasDragged) {
@@ -9939,6 +10066,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const canvasEditTools = this.element.querySelector("#fang-canvas-edit-tools");
 
         if (!banner || !lockText || !btnToggleLock) return;
+        this._updatePendingHint();
 
         // Collaborative mode: there is no lock to show. Everyone who may edit, edits;
         // the merge sorts out who changed what. Show who else is in the graph instead.
