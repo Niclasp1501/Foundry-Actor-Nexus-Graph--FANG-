@@ -23,7 +23,6 @@ dist-beta/
 
 # Not part of the published module: internal notes, concepts and helper scripts
 AGENTS.md
-TODO.md
 DEVELOPER_GUIDE.md
 KONZEPT-*.md
 tools/deploy-fang.ps1
