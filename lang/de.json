@@ -247,6 +247,36 @@
             "OpenAnyway": "Trotzdem öffnen",
             "Dragging": "{user} verschiebt"
         },
+        "Changes": {
+            "Title": "Verlauf",
+            "Position": "Position",
+            "Colour": "Farbe",
+            "Empty": "(leer)",
+            "Someone": "jemand anderes",
+            "Yours": "Du",
+            "ConflictTitle": "Gleichzeitig bearbeitet",
+            "ConflictHint": "{user} hat dasselbe Feld geändert, während du bearbeitet hast. Deine Fassung ist gerade gespeichert. Wähle, was bleiben soll.",
+            "ConflictApply": "Auswahl behalten",
+            "KindNode": "Charakter",
+            "KindLink": "Verbindung",
+            "KindFaction": "Fraktion",
+            "Added": "hinzugefügt",
+            "Removed": "entfernt",
+            "Setting": "Einstellung",
+            "CountSet": "geändert",
+            "CountAdd": "hinzugefügt",
+            "CountRemove": "entfernt",
+            "CountSetting": "Einstellungen",
+            "UndoEntry": "Rückgängig",
+            "TooLarge": "(zu groß zum Auflisten)",
+            "Undone": "rückgängig gemacht",
+            "Undo": "Rückgängig",
+            "NothingRecorded": "Noch nichts aufgezeichnet.",
+            "UndoHint": "Rückgängig nimmt die Änderungen eines Eintrags zurück. Ein Feld, das seitdem erneut geändert wurde, bleibt wie es ist.",
+            "NothingToUndo": "Nichts zurückzunehmen: Jedes Feld wurde seitdem erneut geändert.",
+            "UndonePartly": "{applied} zurückgenommen, {skipped} seitdem geändert und belassen.",
+            "UndoneAll": "{applied} Änderung(en) zurückgenommen."
+        },
         "Dropdowns": {
             "Nodes": "Knoten (Tokens)",
             "Links": "Verbindungen",
@@ -553,8 +583,8 @@
             "rumor": "Gerücht"
         },
         "Merge": {
-            "ConflictResolved": "{names} wurde gleichzeitig bearbeitet — deine Version wurde übernommen.",
-            "DeletedElsewhere": "{names} wurde von jemand anderem gelöscht — deine Änderung ist verfallen."
+            "ConflictResolved": "{names} wurde gleichzeitig bearbeitet. Deine Version wurde übernommen.",
+            "DeletedElsewhere": "{names} wurde von jemand anderem gelöscht. Deine Änderung ist verfallen."
         },
         "Willkommen": {
             "Setting": "Willkommensfenster",
