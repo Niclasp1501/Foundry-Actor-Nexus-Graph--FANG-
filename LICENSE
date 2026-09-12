@@ -5,6 +5,9 @@ This software is NOT open source. It is distributed free of charge through the
 Foundry Virtual Tabletop package listing and this project's GitHub releases,
 but the author retains all rights not granted below.
 
+A German version of these terms follows at the end of this file. In case of
+a discrepancy, the German version applies.
+
 These terms apply from version 14.2609.3 on. Versions up to and including
 14.2609.2 were released under the MIT License, and copies of those versions
 remain under it.
@@ -95,3 +98,113 @@ THE NINJO LOGO
   the artist Roxy and used with the artist's permission. It is the author's
   brand mark: all rights reserved, not covered by any licence, and not free to
   reuse, modify or redistribute.
+
+
+====================================================================
+DEUTSCHE FASSUNG
+
+Die englische Fassung oben und diese deutsche Fassung haben denselben Inhalt.
+Bei Abweichungen gilt die deutsche Fassung.
+
+Ninjo's FANG (Foundry Actor Nexus Graph)
+Copyright (c) 2026 Ninjo. Alle Rechte vorbehalten.
+
+Diese Software ist NICHT Open Source. Sie wird kostenlos über den Paketkatalog
+von Foundry Virtual Tabletop und über die GitHub-Releases dieses Projekts
+verbreitet. Alle Rechte, die unten nicht eingeräumt werden, behält der
+Urheber.
+
+Diese Bedingungen gelten ab Version 14.2609.3. Die Versionen bis
+einschließlich 14.2609.2 sind unter der MIT-Lizenz erschienen; Kopien dieser
+Versionen bleiben unter ihr.
+
+WAS ERLAUBT IST
+
+  * Das Modul in eigenen Welten von Foundry Virtual Tabletop installieren und
+    benutzen, privat wie gewerblich. Bezahlte Runden damit zu leiten ist
+    ausdrücklich erlaubt.
+  * Sicherungskopien behalten.
+  * Es für den eigenen Spieltisch anpassen.
+  * Ein eigenes, getrenntes Modul schreiben, das mit diesem zusammenarbeitet,
+    etwa über dessen Hooks oder API, solange es keinen Code und keine Dateien
+    dieses Moduls enthält.
+
+WAS OHNE SCHRIFTLICHE ERLAUBNIS DES URHEBERS NICHT ERLAUBT IST
+
+  * Es weitergeben, ganz oder in Teilen, verändert oder unverändert. Verweise
+    stattdessen auf den Paketkatalog oder auf die Releases-Seite.
+  * Seinen Code oder wesentliche Teile davon in ein anderes Projekt
+    übernehmen.
+  * Es unter einem anderen Namen veröffentlichen oder in ein anderes Paket
+    einbauen.
+  * Es verkaufen oder Teil von etwas Verkauftem sein lassen.
+  * Urheber- und Lizenzhinweise entfernen oder ändern.
+
+
+FORKS AUF GITHUB
+
+Die Nutzungsbedingungen von GitHub erlauben jedem, ein öffentliches
+Repository auf GitHub zu forken. Ein Fork räumt keine Rechte ein, die über
+diese Lizenz hinausgehen. Er darf benutzt werden, um einen Beitrag für dieses
+Projekt vorzubereiten oder das Modul für den eigenen Tisch anzupassen, und
+sonst für nichts.
+
+
+BEITRÄGE
+
+Fehlermeldungen und Pull Requests sind willkommen. Wer einen Beitrag
+einreicht, stimmt zu, dass der Urheber ihn unter diesen Bedingungen nutzen
+darf und unter allen weiteren Bedingungen, die der Urheber später für dieses
+Projekt wählt, auch unter freieren oder kommerziellen.
+
+
+ZUSATZMODULE UND KÜNFTIGE VERSIONEN
+
+Der Urheber darf Zusatzmodule für dieses Modul zu eigenen Bedingungen
+anbieten, auch gegen Bezahlung. Künftige Versionen dieses Moduls dürfen unter
+anderen Bedingungen erscheinen; für jede Version gilt die Lizenz, die mit ihr
+ausgeliefert wird.
+
+
+ENDE DER RECHTE
+
+Wer gegen diese Bedingungen verstößt, verliert die hier eingeräumten Rechte
+automatisch.
+
+
+KEINE GEWÄHRLEISTUNG, BESCHRÄNKTE HAFTUNG
+
+Die Software wird kostenlos und wie besehen überlassen, ohne Gewähr dafür,
+dass sie fehlerfrei oder für einen bestimmten Zweck geeignet ist. Der Urheber
+haftet unbeschränkt für Vorsatz und grobe Fahrlässigkeit, für Schäden aus der
+Verletzung des Lebens, des Körpers oder der Gesundheit sowie überall dort, wo
+das Gesetz die Haftung zwingend vorschreibt, insbesondere nach dem
+Produkthaftungsgesetz. Eine weitergehende Haftung ist ausgeschlossen.
+
+
+ANWENDBARES RECHT
+
+Es gilt das Recht der Bundesrepublik Deutschland unter Ausschluss des
+UN-Kaufrechts. Für Verbraucher bleiben die zwingenden Verbraucherschutzregeln
+ihres Wohnsitzlandes unberührt. Sollte eine Bestimmung dieser Bedingungen
+unwirksam sein, bleiben die übrigen wirksam.
+
+
+FREMDES MATERIAL
+
+  D3.js (https://d3js.org) wird vom Modul zur Laufzeit von d3js.org geladen.
+  Es ist nicht Teil dieses Pakets und wird hier nicht mitverbreitet. D3 steht
+  unter dem Copyright 2010-2023 von Mike Bostock und unter der ISC-Lizenz
+  (https://github.com/d3/d3/blob/main/LICENSE).
+
+  Die über CSS-Klassen benutzten Font-Awesome-Zeichen sowie Akteurs- und
+  Gegenstandsbilder stellt Foundry Virtual Tabletop oder das Spielsystem zur
+  Laufzeit bereit; sie werden hier nicht mitverbreitet.
+
+
+DAS NINJO-LOGO
+
+  assets/ninjo.png ist eine eigens für den Urheber angefertigte Zeichnung von
+  Roxy, genutzt mit Roxys Erlaubnis. Es ist das Markenzeichen des Urhebers:
+  alle Rechte vorbehalten, von keiner Lizenz erfasst und nicht frei nutzbar,
+  veränderbar oder weiterzugeben.
