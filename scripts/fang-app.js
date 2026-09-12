@@ -1411,6 +1411,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 game.socket.emit("module.fang", { action: "recapPageReady", payload: { entryId: neueId, userId: verfasser, pageId } });
             }
         }
+        Hooks.callAll("fang.historyEntryCreated", this, this._getHistoryStore().entries.find(e => e.id === neueId) ?? { id: neueId });
         return neueId;
     }
 
@@ -4371,6 +4372,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         }
 
         this.graphData.links.push({ source: sourceId, target: targetId, label: result.label, directional: !!result.directional });
+        Hooks.callAll("fang.linkChanged", this, this.graphData.links.at(-1), "created");
         this._quickConnectSourceId = null;
         this._quickConnectMode = false;
         this._updateQuickConnectButtonState();
@@ -4994,6 +4996,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                                     questStatus: "",
                                     gmOnly: sourceNode.gmOnly === true || targetNode.gmOnly === true
                                 });
+                                Hooks.callAll("fang.linkChanged", this, this.graphData.links.at(-1), "created");
 
                                 this.initSimulation();
                                 this.simulation.alpha(0.3).restart();
@@ -5323,6 +5326,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             this._markMenuItemLocked(newBtnDelete, !hasLock);
         }
         Hooks.callAll("fang.nodeMenu", this, { node, hasLock, items: { edit: newBtnEdit, delete: newBtnDelete } });
+        this._renderExtensionMenuItems(menu, "node", node);
         // Only worth showing on a node that is actually pinned.
         if (newBtnUnpin) newBtnUnpin.style.display = (hasLock && node?.pinned) ? "flex" : "none";
 
@@ -6276,6 +6280,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         this._markMenuItemLocked(newBtnEdit, !hasLock);
         this._markMenuItemLocked(newBtnDelete, !hasLock);
         Hooks.callAll("fang.linkMenu", this, { link, hasLock, items: { edit: newBtnEdit, delete: newBtnDelete } });
+        this._renderExtensionMenuItems(menu, "link", link);
         newBtnSpotlight.style.display = this._canUseGraphAction("spotlightLink", link) ? "block" : "none";
 
         if (newBtnInfo) {
@@ -6308,6 +6313,28 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         });
 
         this._positionFloatingMenu(menu, mouseX, mouseY);
+    }
+
+    /**
+     * Entries other modules registered for this menu. Drawn fresh on every open, after
+     * the built-in items, so an add-on can never displace one of them.
+     */
+    _renderExtensionMenuItems(menu, target, subject) {
+        const list = menu?.querySelector("ul");
+        if (!list) return;
+        list.querySelectorAll(".ctx-ext").forEach(el => el.remove());
+        const items = game.modules.get("fang")?.api?.extension?._menuItems ?? [];
+        for (const def of items) {
+            if (def.target !== target) continue;
+            if (def.gmOnly && !game.user.isGM) continue;
+            try { if (typeof def.when === "function" && !def.when(subject)) continue; } catch { continue; }
+            const li = document.createElement("li");
+            li.className = "ctx-item ctx-ext";
+            const label = typeof def.label === "function" ? def.label(subject) : def.label;
+            li.innerHTML = `<i class="fas ${this._escapeHtml(def.icon || "fa-puzzle-piece")}" aria-hidden="true"></i> ${this._escapeHtml(label ?? def.id)}`;
+            li.addEventListener("click", () => { menu.classList.add("hidden"); def.onClick(subject); });
+            list.appendChild(li);
+        }
     }
 
     /**
@@ -6412,6 +6439,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                             link.source = link.target;
                             link.target = oldSource;
                         }
+                        Hooks.callAll("fang.linkChanged", this, link, "updated");
                         this.initSimulation();
                         this.simulation.alpha(0.05).restart();
                         await this.saveData();
@@ -6443,6 +6471,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                         if (index < 0) return;
                         this.graphData.links.splice(index, 1);
                         geloescht = true;
+                        Hooks.callAll("fang.linkChanged", this, link, "deleted");
                         ui.notifications.info(this._localize("FANG.Messages.DeletedLink", "Connection deleted."));
                         this.initSimulation();
                         this.simulation.alpha(0.3).restart();

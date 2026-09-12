@@ -43,6 +43,103 @@ function _fangApplyVisualThemeToOpenApps() {
 }
 
 Hooks.once("init", () => {
+  // ---------------------------------------------------------------------------
+  // The api for other modules. Built here, in init, so an add-on finds it in its
+  // own init or setup. What API.md documents stays stable; a change to a documented
+  // signature bumps FANG_EXTENSION_VERSION.
+  // ---------------------------------------------------------------------------
+  const extension = {
+      version: FANG_EXTENSION_VERSION,
+      FangApplication,
+      _railButtons: [],
+      _editGuards: [],
+      _registered: new Map(),
+      // Named capabilities an add-on provides. Where the core has a built-in version of
+      // the same thing, the add-on's takes over as soon as it is registered.
+      _features: new Set(),
+      registerFeature(id) { if (id) this._features.add(String(id)); },
+      hasFeature(id) { return this._features.has(String(id)); },
+      getApp: () => fangApp ?? null,
+      register({ id, requires = 1, setup } = {}) {
+        if (!id || typeof setup !== "function") return false;
+        if (requires > FANG_EXTENSION_VERSION) {
+          console.warn(`FANG | Extension "${id}" needs interface version ${requires}, this FANG offers ${FANG_EXTENSION_VERSION}. Not loaded.`);
+          if (game.user?.isGM) ui.notifications.warn(game.i18n.format("FANG.Messages.ExtensionTooOld", { id }));
+          return false;
+        }
+        if (this._registered.has(id)) return true;
+        try {
+          setup(this);
+          this._registered.set(id, { requires });
+          console.log(`FANG | Extension "${id}" registered.`);
+          return true;
+        } catch (err) {
+          console.error(`FANG | Extension "${id}" failed to set up.`, err);
+          return false;
+        }
+      },
+      registerRailButton(def) {
+        if (!def?.id) return;
+        this._railButtons = this._railButtons.filter(b => b.id !== def.id).concat([def]);
+        if (fangApp?.rendered) fangApp._renderExtensionRailButtons();
+      },
+      registerEditGuard(fn) {
+        if (typeof fn === "function") this._editGuards.push(fn);
+      },
+      _menuItems: [],
+      registerMenuItem(def) {
+        if (!def?.id || !def.target || typeof def.onClick !== "function") return;
+        this._menuItems = this._menuItems.filter(m => !(m.id === def.id && m.target === def.target)).concat([def]);
+      }
+  };
+
+  const clone = (v) => (v === undefined || v === null) ? v : foundry.utils.deepClone(v);
+  const storedGraph = () => game.journal?.getName("FANG Graph")?.getFlag("fang", "graphData") ?? null;
+  const ensureApp = async () => {
+    if (!fangApp) fangApp = new FangApplication();
+    if (fangApp._baseline === undefined) await fangApp.loadData();
+    return fangApp;
+  };
+
+  const api = {
+    version: game.modules.get("fang").version,
+    interface: FANG_EXTENSION_VERSION,
+    atLeast: (version) => !foundry.utils.isNewerVersion(version, game.modules.get("fang").version),
+
+    toggleGraph: () => {
+      if (!fangApp) fangApp = new FangApplication();
+      if (fangApp.rendered) fangApp.bringToFront();
+      else fangApp.render({ force: true });
+    },
+
+    graph: {
+      get: () => clone(fangApp?._baseline !== undefined ? fangApp._buildExportData() : storedGraph())
+    },
+    factions: { list: () => clone((fangApp?.graphData?.factions ?? storedGraph()?.factions ?? [])) },
+    zones: { list: () => clone((fangApp?.graphData?.zones ?? storedGraph()?.zones ?? [])) },
+    history: {
+      list: () => {
+        if (fangApp?._baseline !== undefined) return clone(fangApp._getHistoryEntriesForUser());
+        const entries = game.settings.get("fang", "history")?.entries ?? [];
+        return clone(game.user.isGM ? entries : entries.filter(e => e?.visibility === "players"));
+      },
+      add: async ({ title, playerText = "", gmText = "", nodeId = null, visibility = "gm", kind = "event" } = {}) => {
+        const app = await ensureApp();
+        const node = nodeId ? app.graphData?.nodes?.find(n => n.id === nodeId) ?? null : null;
+        return app._createHistoryEntry({ node, title, playerText, gmText, kind, visibility, origin: "api" });
+      }
+    },
+
+    registerRailButton: (def) => extension.registerRailButton(def),
+    registerEditGuard: (fn) => extension.registerEditGuard(fn),
+    register: (def) => extension.register(def),
+    registerMenuItem: (def) => extension.registerMenuItem(def),
+
+    extension
+  };
+  game.modules.get("fang").api = api;
+  Hooks.callAll("fangReady", api);
+
   console.log("FANG | Initializing Foundry Actor Nexus Graph module");
   willkommenEinrichten();
 
@@ -365,63 +462,7 @@ Hooks.once("ready", async () => {
     window._fangJournalOpenButtonFixInstalled = true;
   }
 
-  // Expose API for Macros
   const module = game.modules.get("fang");
-  module.api = {
-    toggleGraph: () => {
-      if (!fangApp) fangApp = new FangApplication();
-      if (fangApp.rendered) {
-        fangApp.bringToFront();
-      } else {
-        fangApp.render({ force: true });
-      }
-    },
-
-    // Extension interface. Another module registers here and gets the hooks
-    // (fang.appCreated, fang.appRendered, fang.appClosed, fang.draw, fang.nodeMenu,
-    // fang.linkMenu, fang.editorOpened, fang.editorClosed, fang.nodeDragged,
-    // fang.nodeDropped, fang.lockUI, fang.saved), may add rail buttons and edit guards,
-    // and may install save and relay strategies on the application instance.
-    extension: {
-      version: FANG_EXTENSION_VERSION,
-      FangApplication,
-      _railButtons: [],
-      _editGuards: [],
-      _registered: new Map(),
-      // Named capabilities an add-on provides. Where the core has a built-in version of
-      // the same thing, the add-on's takes over as soon as it is registered.
-      _features: new Set(),
-      registerFeature(id) { if (id) this._features.add(String(id)); },
-      hasFeature(id) { return this._features.has(String(id)); },
-      getApp: () => fangApp ?? null,
-      register({ id, requires = 1, setup } = {}) {
-        if (!id || typeof setup !== "function") return false;
-        if (requires > FANG_EXTENSION_VERSION) {
-          console.warn(`FANG | Extension "${id}" needs interface version ${requires}, this FANG offers ${FANG_EXTENSION_VERSION}. Not loaded.`);
-          if (game.user?.isGM) ui.notifications.warn(game.i18n.format("FANG.Messages.ExtensionTooOld", { id }));
-          return false;
-        }
-        if (this._registered.has(id)) return true;
-        try {
-          setup(this);
-          this._registered.set(id, { requires });
-          console.log(`FANG | Extension "${id}" registered.`);
-          return true;
-        } catch (err) {
-          console.error(`FANG | Extension "${id}" failed to set up.`, err);
-          return false;
-        }
-      },
-      registerRailButton(def) {
-        if (!def?.id) return;
-        this._railButtons = this._railButtons.filter(b => b.id !== def.id).concat([def]);
-        if (fangApp?.rendered) fangApp._renderExtensionRailButtons();
-      },
-      registerEditGuard(fn) {
-        if (typeof fn === "function") this._editGuards.push(fn);
-      }
-    }
-  };
   Hooks.callAll("fang.ready", module.api.extension);
 
   // Ninjo's In-Person Tools has a sheet view of its own with a proper doorway for other
