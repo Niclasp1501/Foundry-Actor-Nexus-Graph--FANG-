@@ -99,6 +99,8 @@ class FangBackgroundConfig extends HandlebarsApplicationMixin(ApplicationV2) {
                 opacityPercent: Math.round(opacity * 100),
                 preset: game.settings.get("fang", "canvasBackgroundPreset")
             },
+            // An add-on may take over the custom image; then it also brings the controls.
+            imageByAddon: !!game.modules.get("fang")?.api?.extension?.hasFeature?.("backgroundImage"),
             colors: [
                 { hex: "#fdfbf7", name: game.i18n.localize("FANG.UI.Background.Palette.Parchment") },
                 { hex: "#f4ece1", name: game.i18n.localize("FANG.UI.Background.Palette.Linen") },
@@ -244,6 +246,9 @@ class FangBackgroundConfig extends HandlebarsApplicationMixin(ApplicationV2) {
                 this.render();
             });
         });
+
+        // An add-on that took over the image puts its controls into #fang-bg-extension.
+        Hooks.callAll("fang.backgroundConfigRender", this, html);
     }
 
     #previewImageLayer({ blur, opacity, path }) {
@@ -3836,6 +3841,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         if (mode === "palette") {
             const color = game.settings.get("fang", "canvasBackgroundColor");
             layer.style.backgroundColor = color;
+        } else if (mode === "image" && game.modules.get("fang")?.api?.extension?.hasFeature?.("backgroundImage")) {
+            Hooks.callAll("fang.applyBackground", this, { layer, mode });
         } else if (mode === "image") {
             const path = game.settings.get("fang", "canvasBackgroundImage");
             const blur = game.settings.get("fang", "canvasBackgroundBlur");

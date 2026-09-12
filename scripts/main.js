@@ -388,6 +388,11 @@ Hooks.once("ready", async () => {
       _railButtons: [],
       _editGuards: [],
       _registered: new Map(),
+      // Named capabilities an add-on provides. Where the core has a built-in version of
+      // the same thing, the add-on's takes over as soon as it is registered.
+      _features: new Set(),
+      registerFeature(id) { if (id) this._features.add(String(id)); },
+      hasFeature(id) { return this._features.has(String(id)); },
       getApp: () => fangApp ?? null,
       register({ id, requires = 1, setup } = {}) {
         if (!id || typeof setup !== "function") return false;
