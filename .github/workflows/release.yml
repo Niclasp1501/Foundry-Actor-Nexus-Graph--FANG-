@@ -16,6 +16,18 @@ jobs:
       - name: Create Module Archive
         run: zip -r ./module.zip . -x ".git/*" ".github/*" "README.md" "CHANGELOG.md" "tools/*" ".gitignore" "*.md"
 
+      - name: Read version
+        id: version
+        shell: bash
+        run: echo "version=$(jq -r '.version' module.json)" >> "$GITHUB_OUTPUT"
+
+      # The release text is the changelog section of this version: what changed, for
+      # the person who was just offered the update. Not the whole file, not nothing.
+      - name: Extract release notes from CHANGELOG
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: python .github/scripts/release_notes.py
+
       - name: Create GitHub Release
         id: create_release
         uses: softprops/action-gh-release@v1
@@ -25,6 +37,7 @@ jobs:
             module.zip
           tag_name: ${{ github.ref_name }}
           name: Release ${{ github.ref_name }} (FVTT 13-14)
+          body_path: release-notes.md
           draft: false
           prerelease: false
         env:
