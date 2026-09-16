@@ -3,6 +3,7 @@
         "Name": "Ninjo's FANG",
         "Subtitle": "Karakterrelaties (PC/NPC)",
         "ButtonOpen": "Ninjo's FANG",
+        "ButtonShort": "FANG",
         "KeybindingHint": "Opent de interactieve FANG-actorrelatiegraaf.",
         "UI": {
             "TabEditor": "Bewerken",

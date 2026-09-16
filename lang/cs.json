@@ -3,6 +3,7 @@
         "Name": "Ninjo's FANG",
         "Subtitle": "Vztahy postav (PC/NPC)",
         "ButtonOpen": "Ninjo's FANG",
+        "ButtonShort": "FANG",
         "KeybindingHint": "Otevře interaktivní graf vztahů postav FANG.",
         "UI": {
             "TabEditor": "Upravit",

@@ -3,6 +3,7 @@
         "Name": "Ninjo's FANG",
         "Subtitle": "Отношения персонажей (PC/NPC)",
         "ButtonOpen": "Ninjo's FANG",
+        "ButtonShort": "FANG",
         "KeybindingHint": "Открывает интерактивный граф отношений актеров FANG.",
         "UI": {
             "TabEditor": "Правка",

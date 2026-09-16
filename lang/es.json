@@ -3,6 +3,7 @@
         "Name": "FANG de Ninjo",
         "Subtitle": "Relaciones de Personajes (PJ/PNJ)",
         "ButtonOpen": "FANG de Ninjo",
+        "ButtonShort": "FANG",
         "KeybindingHint": "Abre el gráfico interactivo de relaciones de actores de FANG.",
         "UI": {
             "TabEditor": "Editar",

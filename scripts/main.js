@@ -1,6 +1,7 @@
 import { FangApplication, FANG_EXTENSION_VERSION } from "./fang-app.js";
 import { willkommenEinrichten, willkommenZeigen } from "./willkommen.js";
 import { fensterPassenEinrichten } from "./fensterpassen.js";
+import { verzeichnisKnopfEinrichten } from "./verzeichnisknopf.js";
 
 // Singleton instance
 let fangApp = null;
@@ -882,21 +883,14 @@ Hooks.once("ready", async () => {
   await willkommenZeigen();
 });
 
-Hooks.on("renderActorDirectory", (app, html, data) => {
-  const $html = $(html);
-  // Check if button already exists to prevent duplicates
-  if ($html.find("#fang-btn").length > 0) return;
-
-  // Create the header button
-  const buttonTitle = game.i18n.localize("FANG.ButtonOpen");
-  const button = $(`
-    <button id="fang-btn">
-      <i class="fas fa-project-diagram"></i> ${buttonTitle}
-    </button>
-  `);
-
-  button.on("click", (e) => {
-    e.preventDefault();
+// The button in the actor directory. scripts/verzeichnisknopf.js places it the same way in
+// every Ninjo module: one shared row under Foundry's own buttons, Foundry's button style, a
+// short label and the full name as tooltip.
+verzeichnisKnopfEinrichten("fang", () => ({
+  symbol: "fas fa-project-diagram",
+  text: "FANG.ButtonShort",
+  tipp: "FANG.ButtonOpen",
+  aktion: () => {
     if (!fangApp) {
       fangApp = new FangApplication();
     }
@@ -905,11 +899,8 @@ Hooks.on("renderActorDirectory", (app, html, data) => {
     } else {
       fangApp.render({ force: true });
     }
-  });
-
-  // Append to the directory header
-  $(html).find(".directory-header .header-actions").append(button);
-});
+  }
+}));
 
 
 Hooks.on("renderJournalTextPageSheet", (app, html, data) => {

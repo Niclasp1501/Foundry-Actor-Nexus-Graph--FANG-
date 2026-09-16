@@ -3,6 +3,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Module versions follow the Foundry-targeted `<foundry-major>.<YYMM>.<patch>` release scheme documented in `AGENTS.md`.
 
+## [Unreleased]
+
+### Changed
+- **The button in the actor directory looks like its neighbours.** FANG, NDRS and Ninjo's Shops each put a button there, and each had designed it on its own: FANG's label wrapped onto two lines, next to it stood a red bar with a cut-off label and a light parchment button. They now share one row below Foundry's own buttons, in Foundry's button style, equally wide and always in the same order. The label is short ("FANG"); the full name shows as a tooltip.
+
 ## [14.2609.3] - 2026-09-11
 
 ### Added
