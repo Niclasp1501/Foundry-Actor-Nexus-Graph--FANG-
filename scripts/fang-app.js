@@ -4284,8 +4284,20 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
         // Collaborative mode: no exclusive lock. Saves are merged field by field, so two
         // people working on different things no longer overwrite each other — the reason
-        // the lock existed in the first place.
-        if (this._isCollaborativeMode()) return true;
+        // the lock existed in the first place. Two things still gate it: a player's edits
+        // travel through a GM, so without one online nothing can be written; and edit mode
+        // is a switch of your own, so a plain look at the graph cannot move anything.
+        if (this._isCollaborativeMode()) {
+            if (!game.user.isGM && !game.users.some(u => u.isGM && u.active)) {
+                if (!silent) ui.notifications.warn(game.i18n.localize("FANG.Messages.NoGMOnline"));
+                return false;
+            }
+            if (!this._localEditMode) {
+                if (!silent) ui.notifications.warn(game.i18n.localize("FANG.Messages.EditModeRequired"));
+                return false;
+            }
+            return true;
+        }
 
         // Classic mode: whoever holds the lock may edit.
         const entry = game.journal.getName("FANG Graph");
@@ -9852,6 +9864,17 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
     // --- Edit Lock System ---
 
     async _onToggleEditLock() {
+        // Collaborative mode: the button is a switch of your own, nobody else is affected.
+        if (this._isCollaborativeMode()) {
+            this._localEditMode = !this._localEditMode;
+            if (!this._localEditMode) {
+                this._quickConnectMode = false;
+                this._quickConnectSourceId = null;
+                this._updateQuickConnectButtonState();
+            }
+            this._updateLockUI();
+            return;
+        }
         const entry = await this.getJournalEntry();
         if (!entry) return;
 
@@ -9970,18 +9993,32 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         if (this._isCollaborativeMode()) {
             banner.classList.remove("no-editor", "i-am-editor", "someone-else-editing", "hidden");
             banner.classList.add("collaborative");
-            btnToggleLock.classList.add("hidden");
             btnForce?.classList.add("hidden");
             canvasIndicator?.classList.add("hidden");
-            sidebar?.classList.remove("sidebar-locked");
-            canvasEditTools?.classList.remove("hidden");
             if (bannerIcon) bannerIcon.className = "fas fa-users";
 
+            const mayEdit = game.user.isGM || game.settings.get("fang", "allowPlayerEditing");
+            const gmOnline = game.user.isGM || game.users.some(u => u.isGM && u.active);
+            if (!gmOnline) this._localEditMode = false;
+            const editing = mayEdit && gmOnline && !!this._localEditMode;
+
+            // The button is a switch of your own in this mode; it locks nobody out.
+            btnToggleLock.classList.toggle("hidden", !mayEdit || !gmOnline);
+            btnToggleLock.style.display = mayEdit && gmOnline ? "flex" : "none";
+            btnToggleLock.classList.toggle("active", editing);
+            btnText.textContent = game.i18n.localize(editing ? "FANG.UI.EditModeOff" : "FANG.UI.EditMode");
+            if (btnIcon) btnIcon.className = editing ? "fas fa-eye" : "fas fa-pen-to-square";
+            this._setButtonTooltip(btnToggleLock, game.i18n.localize(editing ? "FANG.UI.EditModeOff" : "FANG.UI.EditMode"));
+            canvasEditTools?.classList.toggle("hidden", !editing);
+            sidebar?.classList.toggle("sidebar-locked", !editing && !game.user.isGM);
+
             const others = game.users.filter(u => u.active && u.id !== game.user.id && (u.isGM || game.settings.get("fang", "allowPlayerEditing")));
-            lockText.textContent = others.length
-                ? this._localize("FANG.UI.CollaborativeWith", "Collaborative editing — also here: {users}")
-                      .replace("{users}", others.map(u => u.name).join(", "))
-                : this._localize("FANG.UI.CollaborativeAlone", "Collaborative editing");
+            lockText.textContent = !gmOnline
+                ? game.i18n.localize("FANG.Messages.NoGMOnline")
+                : others.length
+                    ? this._localize("FANG.UI.CollaborativeWith", "Collaborative editing — also here: {users}")
+                          .replace("{users}", others.map(u => u.name).join(", "))
+                    : this._localize("FANG.UI.CollaborativeAlone", "Collaborative editing");
             return;
         }
 

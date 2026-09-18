@@ -8,6 +8,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Added
 - **Add-on api: new hook for drops.** Add-on modules can now handle other things dropped on the graph (`fang.drop`, see `API.md`).
 
+### Changed
+- **Collaborative editing keeps an edit switch.** The button now switches your own edit mode on and off; it locks nobody out. Off, the graph is a view, as in the classic mode. A player is also told when no GM is online, because edits travel through one.
+
 ### Fixed
 - **Everyone sees the same layout.** Each client used to arrange the graph around the centre of its own window, so two people looking at the same graph saw two different pictures. Now one client lays it out, the active GM, and stores the result; everyone else shows exactly that. Grouping by faction or zone stays a view of your own.
 - **Right message when you drop something outside edit mode.** It said someone was editing the graph, without a name. It now asks you to turn on edit mode, and names the other person only when someone really is editing.

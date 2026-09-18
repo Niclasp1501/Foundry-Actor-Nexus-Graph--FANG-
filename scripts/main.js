@@ -917,6 +917,11 @@ Hooks.on("renderJournalTextPageSheet", (app, html, data) => {
 // client only has to let go of its cached image; the GM additionally keeps the node's own
 // copy of picture and name in step, because that copy is what a player who may not see the
 // actor gets to see. Optional call: a client can hold a cached older fang-app.js.
+// A GM arriving or leaving changes what a player may do in collaborative mode.
+Hooks.on("userConnected", (user) => {
+  if (user?.isGM && fangApp?.rendered) fangApp._updateLockUI();
+});
+
 Hooks.on("updateActor", async (actor, changes) => {
   if (fangApp) await fangApp._onActorUpdated?.(actor, changes);
 });
