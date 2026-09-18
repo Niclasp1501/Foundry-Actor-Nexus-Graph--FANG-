@@ -50,6 +50,8 @@ Named `fang.*` and called with Foundry's `Hooks.on`. The first argument is alway
 | `fang.historyEntryCreated` | `app, entry` | a chronicle entry was stored |
 | `fang.saved` | `app, { data }` | the graph was written |
 
+`fang.drop` fires with `app, { data, x, y, targetNode }` when something other than an actor or a journal is dropped on the graph: `data` is Foundry's drag data, `x`/`y` the drop point in graph coordinates, `targetNode` the node it landed on or `null`.
+
 Further hooks exist for deeper integration (`fang.draw`, `fang.nodeMenu`, `fang.linkMenu`, `fang.nodeDragged`, `fang.nodeDropped`, `fang.lockUI`, `fang.backgroundConfigRender`, `fang.applyBackground`). They pass more of FANG's internals and may change between versions; use them through `api.register` and state the interface version you tested against.
 
 ## Minimal add-on

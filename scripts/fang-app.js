@@ -4817,7 +4817,14 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const isActorDrop = data.type === "Actor";
         const isJournalDrop = data.type === "JournalEntry" || data.type === "JournalEntryPage";
 
-        if (!isActorDrop && !isJournalDrop) return;
+        // Anything else is offered to add-ons, with the drop point in graph coordinates
+        // and the node it landed on, if any.
+        if (!isActorDrop && !isJournalDrop) {
+            const pos = this._getCanvasPointerPosition(event);
+            if (!pos) return;
+            Hooks.callAll("fang.drop", this, { data, x: pos.x, y: pos.y, targetNode: this._findNodeAt(pos.x, pos.y) });
+            return;
+        }
         if (!data.uuid) return;
 
         const droppedDoc = await fromUuid(data.uuid);
@@ -5028,7 +5035,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 n.id !== targetNode.id && (n.id === actor.id || n.actorId === actor.id)
             );
 
-            if (targetNode.isPlaceholder && game.user.isGM && !actorAlreadyOnCanvas) {
+            if (targetNode.isPlaceholder && targetNode.placeholderType !== "item" && game.user.isGM && !actorAlreadyOnCanvas) {
                 const title = game.i18n.localize("FANG.Placeholder.DropTitle") || "Actor dropped on placeholder";
                 const content = (game.i18n.localize("FANG.Placeholder.DropContent") || "Do you want to replace <strong>{target}</strong> with <strong>{actor}</strong>, or create a relationship?")
                     .replace("{target}", targetNode.name)
@@ -5125,6 +5132,17 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         }
     }
 
+
+    /** The visible node under a point in graph coordinates, or null. */
+    _findNodeAt(x, y, radius = 30) {
+        let found = null;
+        let best = radius * radius;
+        for (const node of this._getVisibleNodesForUser()) {
+            const d2 = (x - node.x) ** 2 + (y - node.y) ** 2;
+            if (d2 < best) { found = node; best = d2; }
+        }
+        return found;
+    }
 
     _getCanvasPointerPosition(event) {
         if (!this.transform || !this.canvas) return null;
