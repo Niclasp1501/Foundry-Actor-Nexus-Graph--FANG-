@@ -7192,6 +7192,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             this._restoreLayoutSnapshot();
             this._clusterTargets = null;
             this._groupingMode = "none";
+            this._applyStaticLayout();
             this._applyAxisForces();
             this.simulation.alpha(0.35).restart();           // settle gently, don't fling
             this._updateGroupingButtonStates();
@@ -7212,7 +7213,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         // forces entirely and would just sit there while its group forms elsewhere.
         // _restoreLayoutSnapshot puts both the position and the pin back.
         for (const node of this.simulation.nodes()) {
-            if (node.pinned) { node.fx = null; node.fy = null; }
+            if (node.pinned || !this._isLayoutAuthority()) { node.fx = null; node.fy = null; }
         }
         this._clusterTargets = targets;
         this._groupingMode = mode;
@@ -7233,6 +7234,44 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
     _onToggleGroupByZone() {
         this._setGroupingMode("zone");
+    }
+
+    /**
+     * One layout for everyone. Only one client runs the physics, the active GM; when its
+     * simulation comes to rest it stores every position, and every other client shows
+     * exactly those. Before this each client settled its own layout around the centre of
+     * its own window, so two people looking at the same graph saw two arrangements.
+     */
+    _isLayoutAuthority() {
+        return !!game.user?.isGM && game.users?.activeGM?.id === game.user.id;
+    }
+
+    /** On a client that is not the authority, hold every node where the store put it. */
+    _applyStaticLayout() {
+        if (this._isLayoutAuthority() || this._groupingMode !== "none") return;
+        for (const node of this.simulation?.nodes() ?? []) {
+            if (node.x === undefined || node.y === undefined) continue;
+            node.fx = node.x;
+            node.fy = node.y;
+            node.vx = 0;
+            node.vy = 0;
+        }
+    }
+
+    /** The authority's simulation came to rest: store the layout if it moved. */
+    _onSimulationSettled() {
+        if (!this._isLayoutAuthority() || !this.rendered || this._groupingMode !== "none") return;
+        if (this._settleSaveInFlight || this._baseline === undefined) return;
+        const stored = new Map((this._baseline?.nodes ?? []).map(n => [n.id, n]));
+        const live = this.simulation?.nodes() ?? [];
+        const moved = live.some(n => {
+            const s = stored.get(n.id);
+            return !s || Math.abs((s.x ?? 0) - n.x) > 1 || Math.abs((s.y ?? 0) - n.y) > 1;
+        });
+        if (!moved) return;
+        for (const n of live) (this._draggedNodeIds ??= new Set()).add(n.id);
+        this._settleSaveInFlight = true;
+        this.saveData().finally(() => { this._settleSaveInFlight = false; });
     }
 
     initSimulation() {
@@ -7347,7 +7386,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             .force("y", d3.forceY(node => this._getNodeTargetY(node)).strength(node => this._getNodeAxisStrength(node)))
             .force("collide", d3.forceCollide().radius(collideRadius))
             .force("link-avoidance", this._createLinkRepulsionForce())
-            .on("tick", this.ticked.bind(this));
+            .on("tick", this.ticked.bind(this))
+            .on("end", () => this._onSimulationSettled());
+        this._applyStaticLayout();
 
         // Link strength depends on the mode — full when showing relationships, almost off
         // while grouping so the cluster forces can win.
@@ -8554,6 +8595,10 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 event.subject.data.fx = event.subject.data.x;
                 event.subject.data.fy = event.subject.data.y;
                 event.subject.data.pinned = true;
+            } else if (!this._isLayoutAuthority()) {
+                // Not pinned, but nothing here may drift either: the authority lays it out.
+                event.subject.data.fx = event.subject.data.x;
+                event.subject.data.fy = event.subject.data.y;
             } else {
                 event.subject.data.fx = null;
                 event.subject.data.fy = null;
