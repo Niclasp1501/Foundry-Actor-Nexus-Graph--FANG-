@@ -6878,9 +6878,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         // 0.9 pins members close enough to their cell that the areas stop overlapping
         // (measured: 57px drift, 0 overlaps, down from 214px / 2 overlaps).
         if (this._groupingMode !== "none" && this._clusterTargets?.has(node?.id)) return 0.9;
-        // Anchored to the shared layout: firm enough to land there, soft enough to yield
-        // to a drag passing by.
-        if (this._getLayoutAnchor(node)) return 0.3;
+        // Anchored to the shared layout. Firm: the picture must not drift away from the
+        // GM's while someone drags; whatever the drag changes comes back as new anchors.
+        if (this._getLayoutAnchor(node)) return 0.9;
         if (node?.isCenter) return 0.4;
         return 0.025;
     }
@@ -8796,7 +8796,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         // still the only place that can explain the pin marker, so the pin note is allowed
         // through while lore stays off.
         const nurPinHinweis = !this._hoverLoreTooltipEnabled;
-        if (nurPinHinweis && !(hoveredNode?.pinned && game.user.isGM)) {
+        if (nurPinHinweis) {
             if (this._hoverTimeout) {
                 clearTimeout(this._hoverTimeout);
                 this._hoverTimeout = null;
@@ -8894,8 +8894,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             // Start the timer if there is anything to say: lore, or — for the GM — the fact
             // that this character is pinned. Without the pin case a pinned character with no
             // lore would show the marker and never explain it.
-            const hatPinHinweis = hoveredNode?.pinned && game.user.isGM;
-            if (hoveredNode && (hoveredNode.lore || hoveredNode.playerLorePageId || hatPinHinweis)) {
+            if (hoveredNode && (hoveredNode.lore || hoveredNode.playerLorePageId)) {
                 // Protection: Don't show lore tooltip to players for hidden or
                 // GM-only tokens. _canUserSeeNode already filters gmOnly nodes from
                 // the render, but a stale hover reference could still slip through —
@@ -8933,14 +8932,6 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     }
 
                     if (this._hoveredNodeId !== currentNodeId) return;
-
-                    // Say what the pin means, in words. The marker alone only tells you
-                    // that *something* is true about this character — the first person to
-                    // see one asked what it was.
-                    if (hoveredNode.pinned && game.user.isGM) {
-                        tooltipHtml += `<p class="fang-tooltip-pin"><i class="fas fa-thumbtack"></i> ${
-                            this._localize("FANG.UI.PinnedHint", "Position held. Right-click → Release position.")}</p>`;
-                    }
 
                     this._tooltipVisibleForNode = currentNodeId;
 
