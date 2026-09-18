@@ -565,13 +565,17 @@ Hooks.once("ready", async () => {
 
     if (data.action === "refreshGraph") {
       if (fangApp && fangApp.rendered) {
-        setTimeout(async () => {
+        const refresh = () => setTimeout(async () => {
           // Pulls the new server state but keeps our own unsaved changes, instead of
           // dropping them the way a plain loadData() did.
           await fangApp.refreshFromServer();
           fangApp.initSimulation();
           fangApp._populateActors();
         }, 100);
+        // Not while a node is on the pointer: the rebuild would take it away. The drop
+        // runs whatever waited here.
+        if (fangApp._isDragging) fangApp._refreshAfterDrag = refresh;
+        else refresh();
       }
     }
 

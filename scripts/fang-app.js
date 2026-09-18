@@ -6852,12 +6852,16 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
     _getNodeTargetX(node) {
         const groupedTarget = this._clusterTargets?.get(node?.id);
         if (groupedTarget) return groupedTarget.x;
+        const anchor = this._getLayoutAnchor(node);
+        if (anchor) return anchor.x;
         return this.width / 2;
     }
 
     _getNodeTargetY(node) {
         const groupedTarget = this._clusterTargets?.get(node?.id);
         if (groupedTarget) return groupedTarget.y;
+        const anchor = this._getLayoutAnchor(node);
+        if (anchor) return anchor.y;
         return this.height / 2;
     }
 
@@ -6869,6 +6873,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         // 0.9 pins members close enough to their cell that the areas stop overlapping
         // (measured: 57px drift, 0 overlaps, down from 214px / 2 overlaps).
         if (this._groupingMode !== "none" && this._clusterTargets?.has(node?.id)) return 0.9;
+        // Anchored to the shared layout: firm enough to land there, soft enough to yield
+        // to a drag passing by.
+        if (this._getLayoutAnchor(node)) return 0.3;
         if (node?.isCenter) return 0.4;
         return 0.025;
     }
@@ -7192,7 +7199,6 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             this._restoreLayoutSnapshot();
             this._clusterTargets = null;
             this._groupingMode = "none";
-            this._applyStaticLayout();
             this._applyAxisForces();
             this.simulation.alpha(0.35).restart();           // settle gently, don't fling
             this._updateGroupingButtonStates();
@@ -7246,15 +7252,24 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         return !!game.user?.isGM && game.users?.activeGM?.id === game.user.id;
     }
 
-    /** On a client that is not the authority, hold every node where the store put it. */
-    _applyStaticLayout() {
-        if (this._isLayoutAuthority() || this._groupingMode !== "none") return;
+    /**
+     * On a client that is not the authority, every node is pulled towards the position
+     * the store has for it: the physics stays visible (a dragged node pushes the others
+     * aside, the wind still blows), but the layout always comes back to the one everyone
+     * shares. A node dropped here is held until the authority's layout arrives, so it
+     * does not spring back and forth in between.
+     */
+    _getLayoutAnchor(node) {
+        if (this._isLayoutAuthority() || this._groupingMode !== "none") return null;
+        const stored = this._baseline?.nodes?.find(n => n.id === node?.id);
+        return stored && stored.x !== undefined && stored.y !== undefined ? stored : null;
+    }
+
+    /** A rebuild brings fresh anchors, so a node held since a drop can let go. */
+    _releaseHeldNodes() {
+        if (this._isLayoutAuthority()) return;
         for (const node of this.simulation?.nodes() ?? []) {
-            if (node.x === undefined || node.y === undefined) continue;
-            node.fx = node.x;
-            node.fy = node.y;
-            node.vx = 0;
-            node.vy = 0;
+            if (!node.pinned) { node.fx = null; node.fy = null; }
         }
     }
 
@@ -7388,7 +7403,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             .force("link-avoidance", this._createLinkRepulsionForce())
             .on("tick", this.ticked.bind(this))
             .on("end", () => this._onSimulationSettled());
-        this._applyStaticLayout();
+        this._releaseHeldNodes();
 
         // Link strength depends on the mode — full when showing relationships, almost off
         // while grouping so the cluster forces can win.
@@ -8549,6 +8564,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             return;
         }
         if (!event.active) this.simulation.alphaTarget(0.3).restart();
+        this._isDragging = true;
         if (event.subject.type === 'node') {
             event.subject.data.fx = event.subject.data.x;
             event.subject.data.fy = event.subject.data.y;
@@ -8614,8 +8630,12 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         if (this._hasDragged) {
             this._lastDragTime = Date.now();
         }
+        this._isDragging = false;
         // Save position data after drag
         this.saveData();
+        const deferred = this._refreshAfterDrag;
+        this._refreshAfterDrag = null;
+        deferred?.();
     }
 
     zoomed(event) {
