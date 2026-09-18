@@ -547,7 +547,7 @@ Hooks.once("ready", async () => {
   // Listen for GM share events natively on ready
   console.log("FANG | Registering socket listener for module.fang");
   game.socket.on("module.fang", async (data) => {
-    console.log("FANG | Socket event received:", data);
+    console.debug("FANG | Socket event received:", data);
 
     // Initial show/close actions
     if (data.action === "showGraph") {
