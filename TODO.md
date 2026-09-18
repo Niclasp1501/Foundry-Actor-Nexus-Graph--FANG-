@@ -1,7 +1,7 @@
 # FANG (Foundry Actor Nexus Graph) - TODO / Feature Requests
 
-Status synced to `14.2609.3` (beta, unreleased) / Stand synchronisiert auf `14.2609.3` (Beta, noch nicht ausgeliefert).
-Last release on main is `v14.2609.2` / Letzte Auslieferung auf main ist `v14.2609.2`.
+Status synced to `14.2609.4` / Stand synchronisiert auf `14.2609.4`.
+Last release on main is `v14.2609.4` / Letzte Auslieferung auf main ist `v14.2609.4`.
 
 Open items come first, because that is what this file is for. What is already built is listed in one line each further down; the reasoning behind each feature is in `CHANGELOG.md`, the description for users in `README.md` / Offene Punkte stehen oben, dafuer ist die Datei da. Was bereits gebaut ist, steht weiter unten in je einer Zeile; die Begruendung zu jeder Funktion steht im `CHANGELOG.md`, die Beschreibung fuer Nutzer im `README.md`.
 
