@@ -5306,6 +5306,11 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         menu.style.top = `${mouseY}px`;
         menu.classList.remove("hidden");
 
+        // The hover tooltip (the pin note) would sit on top of the menu otherwise.
+        if (this._hoverTimeout) { clearTimeout(this._hoverTimeout); this._hoverTimeout = null; }
+        this._tooltipVisibleForNode = null;
+        this.element.querySelector("#fang-tooltip")?.classList.add("hidden");
+
         const btnInfo = menu.querySelector("#ctxInfo");
         const btnEdit = menu.querySelector("#ctxEditActor");
         const btnSpotlight = menu.querySelector("#ctxSpotlight");
