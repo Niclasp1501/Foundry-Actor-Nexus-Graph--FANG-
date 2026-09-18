@@ -186,6 +186,7 @@
             "LockAcquired": "przejął blokadę edycji.",
             "LockReleased": "Blokada edycji zwolniona.",
             "AlreadyEditing": "aktualnie edytuje graf.",
+            "EditModeRequired": "Najpierw włącz tryb edycji.",
             "SpotlightHiddenBlocked": "Najpierw odkryj postać, zanim użyjesz reflektora!",
             "HiddenEditBlocked": "Gracze nie mogą edytować ukrytych postaci.",
             "FactionGroupingApplied": "Zastosowano grupowanie według frakcji.",

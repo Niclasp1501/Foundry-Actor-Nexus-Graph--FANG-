@@ -3,6 +3,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Module versions follow the Foundry-targeted `<foundry-major>.<YYMM>.<patch>` release scheme documented in `AGENTS.md`.
 
+## [Unreleased]
+
+### Fixed
+- **Right message when you drop something outside edit mode.** It said someone was editing the graph, without a name. It now asks you to turn on edit mode, and names the other person only when someone really is editing.
+
 ## [14.2609.4] - 2026-09-19
 
 ### Changed

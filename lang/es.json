@@ -186,6 +186,7 @@
             "LockAcquired": "ha adquirido el bloqueo de edición.",
             "LockReleased": "Bloqueo de edición liberado.",
             "AlreadyEditing": "está editando el gráfico actualmente.",
+            "EditModeRequired": "Activa primero el modo de edición.",
             "SpotlightHiddenBlocked": "¡Revela primero al personaje antes de usar el foco narrativo!",
             "HiddenEditBlocked": "Los jugadores no pueden editar actores ocultos.",
             "FactionGroupingApplied": "Agrupación por facción aplicada.",

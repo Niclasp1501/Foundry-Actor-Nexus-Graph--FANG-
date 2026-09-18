@@ -186,6 +186,7 @@
             "LockAcquired": "a acquis le verrou d'édition.",
             "LockReleased": "Verrou d'édition libéré.",
             "AlreadyEditing": "est actuellement en train de modifier le graphique.",
+            "EditModeRequired": "Active d'abord le mode édition.",
             "SpotlightHiddenBlocked": "Révélez d'abord le personnage avant d'utiliser la mise en lumière !",
             "HiddenEditBlocked": "Les joueurs ne peuvent pas modifier un acteur caché.",
             "FactionGroupingApplied": "Regroupement par faction appliqué.",

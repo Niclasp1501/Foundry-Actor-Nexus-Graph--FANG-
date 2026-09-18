@@ -189,6 +189,7 @@
             "LockAcquired": "hat die Bearbeitungsrechte übernommen.",
             "LockReleased": "Bearbeitung freigegeben.",
             "AlreadyEditing": "bearbeitet den Graphen gerade.",
+            "EditModeRequired": "Schalte zuerst den Bearbeitungsmodus ein.",
             "SpotlightHiddenBlocked": "Decke den Charakter zuerst auf, bevor du das Spotlight nutzt!",
             "HiddenEditBlocked": "Spieler können verdeckte Akteure nicht bearbeiten.",
             "MonitorViewClosed": "Monitor Ansicht geschlossen.",

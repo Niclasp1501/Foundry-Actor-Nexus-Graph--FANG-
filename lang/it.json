@@ -186,6 +186,7 @@
             "LockAcquired": "ha acquisito il blocco di modifica.",
             "LockReleased": "Blocco di modifica rilasciato.",
             "AlreadyEditing": "sta attualmente modificando il grafico.",
+            "EditModeRequired": "Attiva prima la modalità di modifica.",
             "SpotlightHiddenBlocked": "Mostra prima il personaggio prima di usare lo Spotlight!",
             "HiddenEditBlocked": "I giocatori non possono modificare attori nascosti.",
             "FactionGroupingApplied": "Nodi raggruppati per fazione.",

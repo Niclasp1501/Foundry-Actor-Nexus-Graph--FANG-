@@ -189,6 +189,7 @@
             "LockAcquired": "has acquired the edit lock.",
             "LockReleased": "Edit lock released.",
             "AlreadyEditing": "is currently editing the graph.",
+            "EditModeRequired": "Turn on edit mode first.",
             "SpotlightHiddenBlocked": "Reveal the character first before using Spotlight!",
             "HiddenEditBlocked": "Players cannot edit hidden actors.",
             "MonitorViewClosed": "Monitor view closed.",

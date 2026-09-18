@@ -186,6 +186,7 @@
             "LockAcquired": "heeft de bewerkingslock verkregen.",
             "LockReleased": "Bewerkingslock vrijgegeven.",
             "AlreadyEditing": "is momenteel bezig met het bewerken van de grafiek.",
+            "EditModeRequired": "Zet eerst de bewerkingsmodus aan.",
             "SpotlightHiddenBlocked": "Maak het personage eerst zichtbaar voordat je Spotlight gebruikt!",
             "HiddenEditBlocked": "Spelers kunnen verborgen acteurs niet bewerken.",
             "FactionGroupingApplied": "Knopen gegroepeerd op factie.",

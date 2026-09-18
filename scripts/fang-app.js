@@ -4291,7 +4291,14 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const entry = game.journal.getName("FANG Graph");
         const lock = entry?.getFlag("fang", "editLock");
         if (!lock || lock.userId !== game.user.id) {
-            if (!silent) ui.notifications.warn(game.i18n.localize("FANG.Messages.AlreadyEditing"));
+            if (!silent) {
+                // Nobody holds the lock: the user simply is not in edit mode. Only name
+                // someone when another person really is editing.
+                const msg = lock
+                    ? `${this._getLockDisplayName(lock)} ${game.i18n.localize("FANG.Messages.AlreadyEditing")}`
+                    : game.i18n.localize("FANG.Messages.EditModeRequired");
+                ui.notifications.warn(msg);
+            }
             return false;
         }
 

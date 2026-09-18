@@ -186,6 +186,7 @@
             "LockAcquired": "získal zámek úprav.",
             "LockReleased": "Zámek úprav uvolněn.",
             "AlreadyEditing": "aktuálně upravuje graf.",
+            "EditModeRequired": "Nejprve zapni režim úprav.",
             "SpotlightHiddenBlocked": "Nejprve odhalte postavu, než použijete Reflektor!",
             "HiddenEditBlocked": "Hráči nemohou upravovat skryté postavy.",
             "FactionGroupingApplied": "Uzly byly seskupeny podle frakce.",
