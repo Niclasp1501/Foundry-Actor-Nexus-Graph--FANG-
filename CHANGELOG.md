@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [Unreleased]
 
 ### Added
-- **Add-on api: `fang.drop`.** Add-on modules can now handle other things dropped on the graph. See `API.md`.
+- **Add-on api: new hook for drops.** Add-on modules can now handle other things dropped on the graph (`fang.drop`, see `API.md`).
 
 ### Fixed
 - **Right message when you drop something outside edit mode.** It said someone was editing the graph, without a name. It now asks you to turn on edit mode, and names the other person only when someone really is editing.
