@@ -689,7 +689,9 @@ Hooks.once("ready", async () => {
         type: payload.type,
         editableByPlayers: payload.editableByPlayers,
         authorUserId: payload.authorUserId,
-        authorName: payload.authorName
+        authorName: payload.authorName,
+        // The entry's own free-form bag, e.g. an add-on's location tag.
+        payload: (payload.entryPayload && typeof payload.entryPayload === "object") ? payload.entryPayload : null
       });
     }
 

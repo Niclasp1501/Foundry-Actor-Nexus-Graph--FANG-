@@ -54,6 +54,13 @@ Named `fang.*` and called with Foundry's `Hooks.on`. The first argument is alway
 
 `fang.drop` fires with `app, { data, x, y, targetNode }` when something other than an actor or a journal is dropped on the graph: `data` is Foundry's drag data, `x`/`y` the drop point in graph coordinates, `targetNode` the node it landed on or `null`.
 
+Two pairs of hooks give an add-on a slot in FANG's own forms, and a way to collect what it put there:
+
+- `fang.actorEditorRender` (`app, html, node`) fires when a node's editor renders; `html` is the same jQuery-wrapped element the editor's own fields use. An empty `<div id="fang-actor-location-extension">` sits in the form for exactly this.
+- `fang.actorEditorSaving` (`app, node, html`) fires right before the editor's own fields are written and the graph is saved. Read the slot's fields from `html` and write the result onto `node` yourself.
+- `fang.historyEntryFormRender` (`app, panel, { node, editingEntry }`) fires when the chronicle entry form renders; `panel` is a plain DOM element. `<div id="fang-history-location-extension">` sits in the form.
+- `fang.historyEntrySaving` (`app, payload, panel, { node, editingEntry }`) fires when Save is pressed, before the entry is built. Write into `payload`; it ends up as the entry's own `payload` field (merged with what a save already there holds, never replaced outright).
+
 Further hooks exist for deeper integration (`fang.draw`, `fang.nodeMenu`, `fang.linkMenu`, `fang.nodeDragged`, `fang.nodeDropped`, `fang.lockUI`, `fang.backgroundConfigRender`, `fang.applyBackground`). They pass more of FANG's internals and may change between versions; use them through `api.register` and state the interface version you tested against.
 
 ## Minimal add-on

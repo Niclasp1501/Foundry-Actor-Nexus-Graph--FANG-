@@ -1339,7 +1339,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         return true;
     }
 
-    async _createHistoryEntry({ node = null, refs = null, title, playerText, gmText, gameDate, knownSince = null, kind, visibility, origin = "manual", type = "manual", editableByPlayers = true, authorUserId = null, authorName = "", recapPageId = null }) {
+    async _createHistoryEntry({ node = null, refs = null, title, playerText, gmText, gameDate, knownSince = null, kind, visibility, origin = "manual", type = "manual", editableByPlayers = true, authorUserId = null, authorName = "", recapPageId = null, payload = null }) {
         if (!game.user?.isGM) {
             if (!this._canCreateHistoryEntry(false)) return false;
             game.socket.emit("module.fang", {
@@ -1356,7 +1356,10 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     type,
                     editableByPlayers,
                     authorUserId: game.user.id,
-                    authorName: game.user.name
+                    authorName: game.user.name,
+                    // The entry's own free-form bag (add-ons use it, e.g. a location tag),
+                    // riding along inside the socket message's own payload wrapper.
+                    entryPayload: payload
                 }
             });
             ui.notifications.info(this._localize("FANG.History.PlayerSubmitted", "Event submitted."));
@@ -1395,7 +1398,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             gmText,
             editableByPlayers,
             refs: entryRefs,
-            payload: {}
+            payload: (payload && typeof payload === "object") ? payload : {}
         }));
         if (!await this._saveHistoryStore(store)) return false;
 
@@ -1453,7 +1456,11 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             authorUserId: current.authorUserId,
             authorName: current.authorName,
             createdAt: current.createdAt,
-            payload: current.payload
+            // Merged, not replaced: more than one add-on may keep a key in here, and a save
+            // that does not touch payload at all must not wipe out what another one wrote.
+            payload: (patch.payload && typeof patch.payload === "object")
+                ? { ...current.payload, ...patch.payload }
+                : current.payload
         });
         store.entries[index] = next;
         return this._saveHistoryStore(store);
@@ -1925,6 +1932,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     <p class="fang-hint fang-history-recap-note" hidden>${this._escapeHtml(this._localize("FANG.History.RecapNote", "Only a short line for the log here - the recap itself opens as a journal page once you save."))}</p>
                     <textarea id="fang-history-player-text" placeholder="${this._escapeHtml(this._localize("FANG.History.PlayerTextHint", "Safe text players may see if published."))}">${this._escapeHtml(editingEntry?.playerText || "")}</textarea>
                     ${gmFields}
+                    <div id="fang-history-location-extension"></div>
                     ${editingEntry ? `<button type="button" class="btn secondary-btn fang-history-recap-open"><i class="fas fa-book-open"></i> ${this._escapeHtml(editingEntry.recapPageId ? this._localize("FANG.History.RecapOpen", "Open recap") : this._localize("FANG.History.RecapCreate", "Write recap"))}</button>` : ""}
                     <div class="fang-history-editor-actions">
                         <button type="button" class="btn action-btn fang-history-save"><i class="fas fa-save"></i> ${this._escapeHtml(this._localize("FANG.Dialogs.BtnSave", "Save"))}</button>
@@ -1933,6 +1941,10 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 </div>
             </div>`;
         panelHost?.appendChild(panel);
+
+        // An add-on that wants to tag the entry (with a location, say) puts its own fields
+        // into #fang-history-location-extension.
+        Hooks.callAll("fang.historyEntryFormRender", this, panel, { node, editingEntry });
 
         // The player text means something different for a recap: there it is the teaser in the
         // log, not the text itself. Say so, instead of leaving an empty box that looks like the
@@ -2067,12 +2079,17 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 knownSince: gameDate.knownSince,
                 visibility: isGM && panel.querySelector("#fang-history-visible")?.checked ? "players" : (isGM ? "gm" : "players")
             };
+            // An add-on collects whatever it put into the slot above into this bag.
+            const extraPayload = {};
+            Hooks.callAll("fang.historyEntrySaving", this, extraPayload, panel, { node, editingEntry });
+            if (Object.keys(extraPayload).length) patch.payload = extraPayload;
             if (!isGM && editingEntry) {
                 delete patch.kind;
                 delete patch.gmText;
                 delete patch.gameDate;
                 delete patch.knownSince;
                 delete patch.visibility;
+                delete patch.payload;
             }
             let neueId = null;
             if (editingEntry) await this._updateHistoryEntry(editingEntry.id, patch);
@@ -5943,6 +5960,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                         <option value="">-- None --</option>
                         ${zoneOptions}
                     </select>
+                    <div id="fang-actor-location-extension"></div>
                 </section>
                 ${playerViewSection}
                 <section class="fang-editor-section">
@@ -6008,6 +6026,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                         }
                         node.lore = newLore || null;
                         node.conditions = newConditions;
+                        // An add-on reads its own field from the form and writes it onto the
+                        // node here, the same moment every other field is taken from the form.
+                        Hooks.callAll("fang.actorEditorSaving", this, node, html);
 
                         this.ticked();
                         this._rebuildSearchMatches();
@@ -6082,6 +6103,10 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 });
 
                 zeichneFraktionen();
+
+                // An add-on that tracks locations puts its own field into
+                // #fang-actor-location-extension.
+                Hooks.callAll("fang.actorEditorRender", this, html, node);
 
                 // One overlay for all editors, so this one steps aside and comes back
                 // afterwards. Unsaved changes in the form are lost on the way; the window
