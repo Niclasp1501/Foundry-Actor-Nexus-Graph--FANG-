@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 - **Add-on api: new hook for drops.** Add-on modules can now handle other things dropped on the graph (`fang.drop`, see `API.md`).
+- **Add-on api: node shapes and a drag veto.** A node may be drawn as a rounded square (`shape`), and an add-on may refuse a drag (`fang.nodeDragStart`).
 
 ### Changed
 - **A drop no longer pins.** Since July every character you let go of was pinned in place, and over time a graph ended up with most of its characters pinned, with no physics and no wind left. A dropped character is free again; the shared layout keeps where it settles. Pinning is a choice: the context menu now offers "Hold position" and "Release position".
@@ -14,6 +15,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 - **Everyone sees the same layout.** Each client used to arrange the graph around the centre of its own window, so two people looking at the same graph saw two different pictures. Now one client lays it out, the active GM, and stores the result; everyone else shows exactly that. Grouping by faction or zone stays a view of your own.
+- **A spotlight on a hidden character no longer gives it away.** The name, the quests and, on a connection, the portraits were composed from the GM's view and sent to every player. They now show what a player may see.
+- **No red flash under portraits after a save.** Loaded portraits are kept when the graph is rebuilt.
 - **Right message when you drop something outside edit mode.** It said someone was editing the graph, without a name. It now asks you to turn on edit mode, and names the other person only when someone really is editing.
 
 ## [14.2609.4] - 2026-09-19

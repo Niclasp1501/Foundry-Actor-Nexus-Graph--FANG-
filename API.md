@@ -21,6 +21,7 @@ if (fang.interface < 1) return;             // interface version of this documen
 
 All readers return copies. Writing to a copy changes nothing.
 
+- A node with `shape: "square"` is drawn as a rounded square instead of a circle, rings included.
 - `api.graph.get()` the whole stored graph: `{ nodes, links, factions, zones, ... }`, or `null` when no graph exists yet.
 - `api.factions.list()` factions.
 - `api.zones.list()` zones.
@@ -46,6 +47,7 @@ Named `fang.*` and called with Foundry's `Hooks.on`. The first argument is alway
 | `fang.appClosed` | `app` | the window was closed |
 | `fang.editorOpened` | `app, editing` | a node or connection editor opened; `editing = { type, id, name }` |
 | `fang.editorClosed` | `app, editing` | that editor closed |
+| `fang.nodeDragStart` | `app, node` | someone starts dragging a node; return `false` to refuse the drag |
 | `fang.linkChanged` | `app, link, change` | a connection was created, edited or deleted; `change = "created" \| "updated" \| "deleted"` |
 | `fang.historyEntryCreated` | `app, entry` | a chronicle entry was stored |
 | `fang.saved` | `app, { data }` | the graph was written |

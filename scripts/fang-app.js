@@ -5145,6 +5145,16 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
 
+    /**
+     * The outline of a token. Characters are round; a node with shape "square" (an item,
+     * placed by an add-on) gets a rounded square, and every ring around it follows.
+     */
+    _tokenPath(node, x, y, r) {
+        this.context.beginPath();
+        if (node?.shape === "square") this.context.roundRect(x - r, y - r, r * 2, r * 2, r * 0.22);
+        else this.context.arc(x, y, r, 0, Math.PI * 2);
+    }
+
     /** The visible node under a point in graph coordinates, or null. */
     _findNodeAt(x, y, radius = 30) {
         let found = null;
@@ -6877,17 +6887,13 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
     _getNodeTargetX(node) {
         const groupedTarget = this._clusterTargets?.get(node?.id);
         if (groupedTarget) return groupedTarget.x;
-        const anchor = this._getLayoutAnchor(node);
-        if (anchor) return anchor.x;
-        return this.width / 2;
+        return this._getLayoutCenter().x;
     }
 
     _getNodeTargetY(node) {
         const groupedTarget = this._clusterTargets?.get(node?.id);
         if (groupedTarget) return groupedTarget.y;
-        const anchor = this._getLayoutAnchor(node);
-        if (anchor) return anchor.y;
-        return this.height / 2;
+        return this._getLayoutCenter().y;
     }
 
     _getNodeAxisStrength(node) {
@@ -6898,9 +6904,6 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         // 0.9 pins members close enough to their cell that the areas stop overlapping
         // (measured: 57px drift, 0 overlaps, down from 214px / 2 overlaps).
         if (this._groupingMode !== "none" && this._clusterTargets?.has(node?.id)) return 0.9;
-        // Anchored to the shared layout. Firm: the picture must not drift away from the
-        // GM's while someone drags; whatever the drag changes comes back as new anchors.
-        if (this._getLayoutAnchor(node)) return 0.9;
         if (node?.isCenter) return 0.4;
         return 0.025;
     }
@@ -7224,6 +7227,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             this._restoreLayoutSnapshot();
             this._clusterTargets = null;
             this._groupingMode = "none";
+            if (!this._isLayoutAuthority()) this._applyFollowerHold();
             this._applyAxisForces();
             this.simulation.alpha(0.35).restart();           // settle gently, don't fling
             this._updateGroupingButtonStates();
@@ -7244,8 +7248,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         // forces entirely and would just sit there while its group forms elsewhere.
         // _restoreLayoutSnapshot puts both the position and the pin back.
         for (const node of this.simulation.nodes()) {
-            if (node.pinned || !this._isLayoutAuthority()) { node.fx = null; node.fy = null; }
+            if (node.pinned || !this._wasLayoutAuthority) { node.fx = null; node.fy = null; }
         }
+        this._glideTargets = null;
         this._clusterTargets = targets;
         this._groupingMode = mode;
         this._applyAxisForces();
@@ -7273,29 +7278,158 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
      * exactly those. Before this each client settled its own layout around the centre of
      * its own window, so two people looking at the same graph saw two arrangements.
      */
+    /** Tells two windows of the same user apart. */
+    _getSessionId() {
+        return this._sessionId ??= foundry.utils.randomID();
+    }
+
     _isLayoutAuthority() {
-        return !!game.user?.isGM && game.users?.activeGM?.id === game.user.id;
+        if (!game.user) return false;
+        if (this._groupingMode !== "none") return true;          // a view of your own
+        return this._isTrueAuthority();
+    }
+
+    /** The one whose simulation everyone follows, grouping view or not. */
+    _isTrueAuthority() {
+        if (!game.user) return false;
+        // The same user with the graph open twice (a second tab, a tablet) would be two
+        // simulations. An add-on that can see the other window sets this; that window yields.
+        if (this._authorityYield) return false;
+        const activeGM = !!game.user.isGM && game.users?.activeGM?.id === game.user.id;
+        if (this._isCollaborativeMode()) return activeGM;
+        // Classic mode: the editor's simulation counts while someone holds the lock. The
+        // lock governs editing, not the layout, so without one the active GM lays out, as
+        // it always did; a fresh world would otherwise sit in a random pile.
+        const lock = game.journal?.getName("FANG Graph")?.getFlag("fang", "editLock");
+        return lock ? lock.userId === game.user.id : activeGM;
     }
 
     /**
-     * On a client that is not the authority, every node is pulled towards the position
-     * the store has for it: the physics stays visible (a dragged node pushes the others
-     * aside, the wind still blows), but the layout always comes back to the one everyone
-     * shares. A node dropped here is held until the authority's layout arrives, so it
-     * does not spring back and forth in between.
+     * A follower runs no physics: every node is held where the store, or the authority's
+     * stream, put it. Positions arrive through applyLayoutPositions and glide into place.
      */
-    _getLayoutAnchor(node) {
-        if (this._isLayoutAuthority() || this._groupingMode !== "none") return null;
-        const stored = this._baseline?.nodes?.find(n => n.id === node?.id);
-        return stored && stored.x !== undefined && stored.y !== undefined ? stored : null;
+    _applyFollowerHold() {
+        for (const node of this.simulation?.nodes() ?? []) {
+            if (!Number.isFinite(node.x) || !Number.isFinite(node.y)) continue;
+            node.fx = node.x;
+            node.fy = node.y;
+            node.vx = 0;
+            node.vy = 0;
+        }
     }
 
-    /** A rebuild brings fresh anchors, so a node held since a drop can let go. */
-    _releaseHeldNodes() {
-        if (this._isLayoutAuthority()) return;
-        for (const node of this.simulation?.nodes() ?? []) {
-            if (!node.pinned) { node.fx = null; node.fy = null; }
+    /** The role can change with the lock, the mode or a GM leaving. */
+    _syncLayoutRole() {
+        if (!this.simulation) return;
+        const authority = this._isLayoutAuthority();
+        if (authority === this._wasLayoutAuthority) return;
+        this._wasLayoutAuthority = authority;
+        if (authority) {
+            this._glideTargets = null;
+            this._remoteGroupingMode = "none";
+            for (const node of this.simulation.nodes()) {
+                if (!node.pinned) { node.fx = null; node.fy = null; }
+            }
+            this.simulation.alpha(0.1).restart();
+        } else {
+            this._applyFollowerHold();
         }
+    }
+
+    /**
+     * New positions for a follower, from a save or from an add-on's stream. Nodes glide
+     * there over a few frames instead of jumping. The node on the pointer is left alone.
+     */
+    applyLayoutPositions(positions, { glide = true, source = "store", grouping = null } = {}) {
+        if (!this.simulation || this._isLayoutAuthority() || this._groupingMode !== "none") return;
+        if (source === "stream") {
+            this._streamSeenAt = Date.now();
+            // The authority's grouping view travels with its positions: the boxes are drawn
+            // here too, and nothing can be dragged while the picture is a view.
+            const remote = grouping === "faction" || grouping === "zone" ? grouping : "none";
+            if (remote !== (this._remoteGroupingMode ?? "none")) { this._remoteGroupingMode = remote; this.ticked(); }
+        }
+        const targets = this._glideTargets ??= new Map();
+        for (const p of positions ?? []) {
+            if (!p?.id || !Number.isFinite(p.x) || !Number.isFinite(p.y)) continue;
+            targets.set(p.id, { x: p.x, y: p.y });
+        }
+        if (!glide) { this._glideStep(1); return; }
+        if (this._glideFrame) return;
+        const step = () => {
+            this._glideFrame = null;
+            if (!this._glideTargets?.size || !this.rendered) return;
+            this._glideStep(0.35);
+            if (this._glideTargets.size) this._glideFrame = requestAnimationFrame(step);
+        };
+        this._glideFrame = requestAnimationFrame(step);
+    }
+
+    _glideStep(factor) {
+        const targets = this._glideTargets;
+        if (!targets?.size) return;
+        const stored = new Map((this.graphData?.nodes ?? []).map(n => [n.id, n]));
+        for (const node of this.simulation?.nodes() ?? []) {
+            const t = targets.get(node.id);
+            if (!t) continue;
+            if (this._isDragging && node.id === this._dragNodeId) { targets.delete(node.id); continue; }
+            const dx = t.x - node.x, dy = t.y - node.y;
+            const done = factor >= 1 || Math.hypot(dx, dy) < 0.5;
+            node.x = done ? t.x : node.x + dx * factor;
+            node.y = done ? t.y : node.y + dy * factor;
+            node.fx = node.x; node.fy = node.y; node.vx = 0; node.vy = 0;
+            const s = stored.get(node.id);
+            if (s && s !== node) { s.x = node.x; s.y = node.y; }
+            if (done) targets.delete(node.id);
+        }
+        const known = new Set((this.simulation?.nodes() ?? []).map(n => n.id));
+        for (const id of [...targets.keys()]) if (!known.has(id)) targets.delete(id);
+        this.ticked();
+    }
+
+    /**
+     * A refresh from the store. A follower keeps its picture and glides to the stored
+     * positions. The authority keeps its positions outright: its simulation is the truth,
+     * and reloading the stored ones would throw it back to the state before the last
+     * movement and make it settle all over again, for everyone to see.
+     */
+    async refreshAndGlide() {
+        const before = new Map((this.simulation?.nodes() ?? []).map(n => [n.id, { x: n.x, y: n.y, vx: n.vx, vy: n.vy }]));
+        await this.refreshFromServer();
+        const targets = this.graphData.nodes.map(n => ({ id: n.id, x: n.x, y: n.y }));
+        for (const node of this.graphData.nodes) {
+            const b = before.get(node.id);
+            if (b) { node.x = b.x; node.y = b.y; }
+        }
+        this.initSimulation();
+        if (this._isLayoutAuthority()) {
+            for (const node of this.simulation?.nodes() ?? []) {
+                const b = before.get(node.id);
+                if (b) { node.vx = b.vx ?? 0; node.vy = b.vy ?? 0; }
+            }
+            return;
+        }
+        // A live stream from the authority is fresher than the store; the store lags
+        // behind it until the next save and would pull the picture back in between.
+        if (Date.now() - (this._streamSeenAt ?? 0) < 3000) return;
+        this.applyLayoutPositions(targets);
+    }
+
+    /**
+     * Every client runs the same physics from the same stored positions, so all of them
+     * compute the same layout; the authority merely stores what everyone already sees.
+     * The one input that used to differ was the centre the graph is pulled towards: it
+     * was the middle of each client's own window. It is now a point in graph space, the
+     * centre of the stored layout, the same on every client.
+     */
+    _getLayoutCenter() {
+        if (!this._layoutCenter) {
+            const placed = (this.graphData?.nodes ?? []).filter(n => Number.isFinite(n.x) && Number.isFinite(n.y));
+            this._layoutCenter = placed.length
+                ? { x: placed.reduce((s, n) => s + n.x, 0) / placed.length, y: placed.reduce((s, n) => s + n.y, 0) / placed.length }
+                : { x: this.width / 2, y: this.height / 2 };
+        }
+        return this._layoutCenter;
     }
 
     /** The authority's simulation came to rest: store the layout if it moved. */
@@ -7316,6 +7450,10 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
     initSimulation() {
         const hadSimulation = !!this.simulation;
+        // Portraits already loaded by the previous build. A rebuild after a refresh gets
+        // fresh node objects; loading every portrait again painted a red disc under each
+        // token for a frame, visible through transparent portraits.
+        const previousImages = new Map((this.simulation?.nodes() ?? []).filter(n => n.imgElement).map(n => [n.id, n.imgElement]));
         const previousAlpha = this.simulation?.alpha() ?? 1;
         if (this.simulation) this.simulation.stop();
 
@@ -7349,6 +7487,10 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 };
             }
 
+            // A hold from a previous build (follower, drop) must not survive the rebuild:
+            // the role may have changed. Followers are held again below.
+            nInfo.fx = null;
+            nInfo.fy = null;
             // A pinned node was placed by hand. fx/fy are runtime-only (never stored), so
             // they have to be restored from the stored `pinned` flag on every rebuild —
             // otherwise the physics reclaims the node the next time the window opens.
@@ -7358,9 +7500,13 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             }
 
             // Cache token image
-            if (!nInfo.imgElement) {
+            const kept = nInfo.imgElement ? null : previousImages.get(d.id);
+            if (kept && kept._fangSrc === this._getNodeImageSource(nInfo)) {
+                nInfo.imgElement = kept;
+            } else if (!nInfo.imgElement) {
                 const imgSrc = this._getNodeImageSource(nInfo);
                 const img = new Image();
+                img._fangSrc = imgSrc;
                 img.onerror = () => {
                     // Placeholder default image may not exist yet; keep a hard fallback.
                     if (nInfo?.isPlaceholder && img.src !== FANG_FALLBACK_PLACEHOLDER_IMG) {
@@ -7428,7 +7574,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             .force("link-avoidance", this._createLinkRepulsionForce())
             .on("tick", this.ticked.bind(this))
             .on("end", () => this._onSimulationSettled());
-        this._releaseHeldNodes();
+        this._wasLayoutAuthority = this._isLayoutAuthority();
+        if (!this._wasLayoutAuthority) this._applyFollowerHold();
 
         // Link strength depends on the mode — full when showing relationships, almost off
         // while grouping so the cluster forces can win.
@@ -7599,7 +7746,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             let rx = node.x;
             let ry = node.y;
 
-            if (cosmicWindEnabled && (node.fx === undefined || node.fx === null)) {
+            const windFree = !node.pinned && node.id !== this._dragNodeId
+                && (!this._isLayoutAuthority() || node.fx === undefined || node.fx === null);
+            if (cosmicWindEnabled && windFree) {
                 let hash = 0;
                 for (let i = 0; i < node.id.length; i++) {
                     hash = node.id.charCodeAt(i) + ((hash << 5) - hash);
@@ -7664,12 +7813,13 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         // would claim an order that does not exist outside the view.
         // Inside the grouping view the members are pulled together, so the area around
         // them is honest — and separate groups no longer overlap.
-        const gruppenBereiche = this._groupingMode === "zone"
+        const shownGrouping = this._effectiveGroupingMode();
+        const gruppenBereiche = shownGrouping === "zone"
             ? (this.graphData.zones || [])
                 .map(z => this._normalizeZone(z))
                 .filter(z => game.user?.isGM || z.playerVisible !== false)
                 .map(z => ({ gruppe: z, mitglieder: visibleNodes.filter(n => n.zoneId === z.id) }))
-            : this._groupingMode === "faction"
+            : shownGrouping === "faction"
                 ? (this.graphData.factions || [])
                     .map(f => this._normalizeFaction(f))
                     .filter(f => this._isFactionVisibleToCurrentUser(f))
@@ -8131,8 +8281,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
             // --- Draw Center (Boss) Aura ---
             if (node.isCenter) {
-                this.context.beginPath();
-                this.context.arc(pos.x, pos.y, radius + 2, 0, Math.PI * 2);
+                this._tokenPath(node, pos.x, pos.y, radius + 2);
                 this.context.strokeStyle = `rgba(${auraR}, ${auraG}, ${auraB}, 0.8)`;
                 this.context.lineWidth = 4;
                 this.context.shadowBlur = 15;
@@ -8143,8 +8292,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
             // Search highlight ring for exact node matches
             if (searchActive && exactNodeMatches.has(node.id)) {
-                this.context.beginPath();
-                this.context.arc(pos.x, pos.y, radius + 8, 0, Math.PI * 2);
+                this._tokenPath(node, pos.x, pos.y, radius + 8);
                 this.context.strokeStyle = "rgba(212, 175, 55, 0.95)";
                 this.context.lineWidth = 3;
                 this.context.shadowBlur = 14;
@@ -8155,8 +8303,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
             // QuickConnect source marker: keep the workflow visible without notification spam.
             if (this._quickConnectMode && this._quickConnectSourceId === node.id) {
-                this.context.beginPath();
-                this.context.arc(pos.x, pos.y, radius + 12, 0, Math.PI * 2);
+                this._tokenPath(node, pos.x, pos.y, radius + 12);
                 this.context.strokeStyle = "rgba(36, 83, 143, 0.95)";
                 this.context.lineWidth = 4;
                 this.context.setLineDash([8, 5]);
@@ -8184,14 +8331,12 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 // but portraits are whatever the actor happens to use, and a square one
                 // pokes its corners out from under every one of those rings.
                 this.context.save();
-                this.context.beginPath();
-                this.context.arc(pos.x, pos.y, radius, 0, Math.PI * 2);
+                this._tokenPath(node, pos.x, pos.y, radius);
                 this.context.clip();
                 this.context.drawImage(node.imgElement, pos.x - radius, pos.y - radius, radius * 2, radius * 2);
                 this.context.restore();
             } else {
-                this.context.beginPath();
-                this.context.arc(pos.x, pos.y, radius, 0, Math.PI * 2, true);
+                this._tokenPath(node, pos.x, pos.y, radius);
                 this.context.fillStyle = "#b91c1c";
                 this.context.fill();
                 this.context.lineWidth = 3;
@@ -8223,8 +8368,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 this.context.save();
                 this.context.lineWidth = 3;
                 if (visibleFactions.length === 1) {
-                    this.context.beginPath();
-                    this.context.arc(pos.x, pos.y, ringRadius, 0, Math.PI * 2);
+                    this._tokenPath(node, pos.x, pos.y, ringRadius);
                     this.context.strokeStyle = visibleFactions[0].color || "#d4af37";
                     this.context.stroke();
                 } else {
@@ -8301,8 +8445,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
             // Soft dark overlay for hidden tokens (obscure but keep silhouette)
             if (isHidden) {
-                this.context.beginPath();
-                this.context.arc(pos.x, pos.y, radius, 0, Math.PI * 2);
+                this._tokenPath(node, pos.x, pos.y, radius);
                 this.context.fillStyle = "rgba(10, 12, 18, 0.72)";
                 this.context.fill();
                 this.context.lineWidth = 2;
@@ -8579,17 +8722,31 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
      * Only node dragging is blocked; panning and zooming stay available.
      */
     _isNodeDragBlocked() {
-        return this._groupingMode !== "none";
+        return this._effectiveGroupingMode() !== "none";
+    }
+
+    /** Your own grouping view, or the authority's while its stream shows one. */
+    _effectiveGroupingMode() {
+        if (this._groupingMode !== "none") return this._groupingMode;
+        if (this._isTrueAuthority() || Date.now() - (this._streamSeenAt ?? 0) > 5000) return "none";
+        return this._remoteGroupingMode ?? "none";
     }
 
     dragstarted(event) {
+        this._dragVetoed = false;
         if (!this._canEditGraph(true)) return;
         if (event.subject.type === 'node' && this._isNodeDragBlocked()) {
             ui.notifications.info(this._localize("FANG.Messages.GroupingPositionsLocked", "Grouping view — positions are locked. Reset grouping to move characters."));
             return;
         }
+        // An add-on may refuse the drag, for instance because someone else holds this node.
+        if (event.subject.type === 'node' && Hooks.call("fang.nodeDragStart", this, event.subject.data) === false) {
+            this._dragVetoed = true;
+            return;
+        }
         if (!event.active) this.simulation.alphaTarget(0.3).restart();
         this._isDragging = true;
+        this._dragNodeId = event.subject.type === 'node' ? event.subject.data.id : null;
         if (event.subject.type === 'node') {
             event.subject.data.fx = event.subject.data.x;
             event.subject.data.fy = event.subject.data.y;
@@ -8607,36 +8764,47 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         if (tooltip) tooltip.classList.add("hidden");
     }
 
+    /**
+     * The node under the pointer, as the simulation holds it now. A rebuild during the
+     * drag (a relay, a refresh) replaces the node objects; d3 still hands us the old one.
+     */
+    _liveDragNode(event) {
+        const id = event.subject.data?.id;
+        const live = id ? this.simulation?.nodes().find(n => n.id === id) : null;
+        if (live && live !== event.subject.data) event.subject.data = live;
+        return event.subject.data;
+    }
+
     dragged(event) {
+        if (this._dragVetoed) return;
         if (event.subject.type === 'node') {
             if (!this._canEditGraph(true)) return; // Silent during rapid drag events
             if (this._isNodeDragBlocked()) return; // Grouping view: positions are read-only
+            const node = this._liveDragNode(event);
             // Invert coordinates to account for zoom/pan
-            event.subject.data.fx = this.transform.invertX(event.x);
-            event.subject.data.fy = this.transform.invertY(event.y);
+            node.fx = this.transform.invertX(event.x);
+            node.fy = this.transform.invertY(event.y);
             this._hasDragged = true;
-            Hooks.callAll("fang.nodeDragged", this, event.subject.data);
+            Hooks.callAll("fang.nodeDragged", this, node);
         }
     }
 
     dragended(event) {
+        if (this._dragVetoed) { this._dragVetoed = false; return; }
         if (!this._canEditGraph(true)) return; // Silent at end
         // Grouping view: nothing was moved, so there is nothing to store. Saving here
         // would write cluster positions into the one real layout.
         if (event.subject.type === 'node' && this._isNodeDragBlocked()) return;
         if (!event.active) this.simulation.alphaTarget(0);
         if (event.subject.type === 'node') {
+            this._liveDragNode(event);
             // Keep the node where it was dropped instead of releasing it back to the forces.
             // Placing someone is a statement — you put the family together on purpose — and
             // the physics cannot honour that: the relationship links pull a released node
             // straight back. Measured: dropped 300px away, it settled 214px off target.
             // Pinned it stays exactly put. "Position freigeben" in the right-click menu
             // hands it back to the simulation.
-            if (event.subject.data.pinned) {
-                event.subject.data.fx = event.subject.data.x;
-                event.subject.data.fy = event.subject.data.y;
-            } else if (!this._isLayoutAuthority()) {
-                // Not pinned, but nothing here may drift either: the authority lays it out.
+            if (event.subject.data.pinned || !this._isLayoutAuthority()) {
                 event.subject.data.fx = event.subject.data.x;
                 event.subject.data.fy = event.subject.data.y;
             } else {
@@ -8648,6 +8816,10 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             // moved is drift, not intent, and must not overwrite other clients.
             if (event.subject.data.id && this._hasDragged) {
                 (this._draggedNodeIds ??= new Set()).add(event.subject.data.id);
+                // The authority stores the whole picture as it is at the drop, not only
+                // the node that moved: everything it pushed aside has moved as well, and a
+                // store that still holds their old places would pull followers back.
+                if (this._isLayoutAuthority()) for (const n of this.simulation?.nodes() ?? []) this._draggedNodeIds.add(n.id);
                 Hooks.callAll("fang.nodeDropped", this, event.subject.data);
             }
         }
@@ -8655,6 +8827,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             this._lastDragTime = Date.now();
         }
         this._isDragging = false;
+        this._dragNodeId = null;
         // Save position data after drag
         this.saveData();
         const deferred = this._refreshAfterDrag;
@@ -9222,6 +9395,10 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
                 // Update internal state
                 this.graphData = importedData;
+                // The file's positions are the point of an import: count every node as
+                // moved, or the merge keeps the stored layout. The centre moves with it.
+                this._draggedNodeIds = new Set(importedData.nodes.map(n => n.id));
+                this._layoutCenter = null;
 
                 // Save to Journal
                 await this.saveData();
@@ -9299,10 +9476,12 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         if (!this._canUserSeeLink(link)) return null;
         const sourceNode = link.source;
         const targetNode = link.target;
-        const sourceImg = this._isNodeHiddenForUser(sourceNode)
+        // The payload goes to every player: compose it from their perspective, never the GM one.
+        const player = { isGM: false };
+        const sourceImg = this._isNodeHiddenForUser(sourceNode, player)
             ? FANG_DEFAULT_PLACEHOLDER_IMG
             : this._getNodeImageSource(sourceNode) || sourceNode.imgElement?.src || "icons/svg/mystery-man.svg";
-        const targetImg = this._isNodeHiddenForUser(targetNode)
+        const targetImg = this._isNodeHiddenForUser(targetNode, player)
             ? FANG_DEFAULT_PLACEHOLDER_IMG
             : this._getNodeImageSource(targetNode) || targetNode.imgElement?.src || "icons/svg/mystery-man.svg";
 
@@ -9423,13 +9602,18 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             }
         }
 
+        // Name and quests from the same perspective as everything else in the payload. The
+        // GM composing a spotlight on a hidden node must not ship its real name or its
+        // GM-only quests to every player.
+        const unknown = game.i18n.localize("FANG.Dropdowns.Unknown");
+        const asPlayer = forceAsPlayer ? { isGM: false } : game.user;
         return {
             nodeId: node.id,
-            name: this._getSafeNodeName(node),
+            name: hiddenForUser ? (node.displayName || unknown) : (node.name || unknown),
             subtitle: subtitle,
             lore: loreText,
             portrait: imgSrc,
-            quests: this._getNodeQuestsForCurrentUser(node)
+            quests: this._getNodeQuestsForUser(node, asPlayer)
         };
     }
 
@@ -9967,6 +10151,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     _updateLockUI() {
+        this._syncLayoutRole();
         this._updateLockUICore();
         Hooks.callAll("fang.lockUI", this, {
             banner: this.element?.querySelector("#fang-lock-banner") ?? null,

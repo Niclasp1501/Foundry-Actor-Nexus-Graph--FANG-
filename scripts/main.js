@@ -567,9 +567,9 @@ Hooks.once("ready", async () => {
       if (fangApp && fangApp.rendered) {
         const refresh = () => setTimeout(async () => {
           // Pulls the new server state but keeps our own unsaved changes, instead of
-          // dropping them the way a plain loadData() did.
-          await fangApp.refreshFromServer();
-          fangApp.initSimulation();
+          // dropping them the way a plain loadData() did. A follower glides to the new
+          // positions instead of jumping.
+          await fangApp.refreshAndGlide();
           fangApp._populateActors();
         }, 100);
         // Not while a node is on the pointer: the rebuild would take it away. The drop
@@ -634,7 +634,10 @@ Hooks.once("ready", async () => {
           // silently thrown away — including data the player never even saw.
           await fangApp.applyRemoteGraphEdit(payload);
         }
-        if (fangApp.rendered) {
+        // The save only writes positions of nodes counted as moved on purpose. The
+        // player's moves are; without this the merge wrote the old positions back.
+        for (const id of payload.draggedNodeIds ?? []) (fangApp._draggedNodeIds ??= new Set()).add(id);
+        if (fangApp.rendered && !fangApp._isDragging) {
           fangApp.initSimulation();
           fangApp.simulation.alpha(0.05).restart();
           fangApp._populateActors();
