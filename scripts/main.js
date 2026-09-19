@@ -79,6 +79,12 @@ Hooks.once("init", () => {
           return false;
         }
       },
+      _views: [],
+      registerView(def) {
+        if (!def?.id || def.id === "graph") return;
+        this._views = this._views.filter(v => v.id !== def.id).concat([def]);
+        if (fangApp?.rendered) fangApp._renderExtensionRailButtons();
+      },
       registerRailButton(def) {
         if (!def?.id) return;
         this._railButtons = this._railButtons.filter(b => b.id !== def.id).concat([def]);
@@ -132,6 +138,7 @@ Hooks.once("init", () => {
     },
 
     registerRailButton: (def) => extension.registerRailButton(def),
+    registerView: (def) => extension.registerView(def),
     registerEditGuard: (fn) => extension.registerEditGuard(fn),
     register: (def) => extension.register(def),
     registerMenuItem: (def) => extension.registerMenuItem(def),
@@ -167,6 +174,15 @@ Hooks.once("init", () => {
   });
 
   // Register Module Settings
+  // Which guides this device has been through. Per device, like the welcome window: a
+  // guide is about finding your way on this screen.
+  game.settings.register("fang", "guidesSeen", {
+    scope: "client",
+    config: false,
+    type: Object,
+    default: {}
+  });
+
   game.settings.register("fang", "tokenSize", {
     name: "FANG.Settings.TokenSize.Name",
     hint: "FANG.Settings.TokenSize.Hint",

@@ -5,6 +5,27 @@
         "ButtonOpen": "Ninjo's FANG",
         "ButtonShort": "FANG",
         "KeybindingHint": "Otwiera interaktywny graf relacji postaci FANG.",
+        "Guide": {
+            "Button": "Przewodnik po tym widoku",
+            "Done": "Rozumiem",
+            "Later": "Później",
+            "GraphTitle": "Graf postaci",
+            "GraphIntro": "Kto kogo zna i w jaki sposób. Postacie to żetony, relacje to linie.",
+            "MoveTitle": "Poruszanie się",
+            "MoveText": "Przeciągnij tło, aby przesunąć widok, użyj kółka myszy lub dwóch palców, aby przybliżyć.",
+            "ClickTitle": "Kliknięcie i prawy przycisk",
+            "ClickText": "Kliknięcie pokazuje, co wiadomo o postaci. Prawy przycisk lub długie przytrzymanie otwiera menu ze wszystkim, co można tam zrobić. Linie też je mają.",
+            "EditTitle": "Tryb edycji",
+            "EditText": "Nic się nie zmienia, dopóki tryb edycji jest wyłączony. Włącza go ołówek w lewym górnym rogu. Wtedy można przeciągać postacie, a u góry grafu pojawiają się narzędzia.",
+            "AddTitle": "Nowe postacie",
+            "AddText": "W trybie edycji przeciągnij aktora z panelu bocznego na graf. „Dodaj zastępnik” służy dla kogoś bez aktora, „Połącz bezpośrednio” łączy dwie postacie dwoma kliknięciami.",
+            "ChronicleTitle": "Kronika",
+            "ChronicleText": "Zegar na pasku to zapis tego, co się wydarzyło. Menu postaci otwiera jej część, a wpisy możesz dodawać samodzielnie.",
+            "RailTitle": "Pasek po lewej",
+            "RailText": "U góry są widoki, poniżej narzędzia. Znak zapytania w każdej chwili przywraca ten przewodnik.",
+            "EmptyGM": "Nikogo tu jeszcze nie ma. Włącz tryb edycji ołówkiem w lewym górnym rogu, a potem przeciągnij aktorów z panelu bocznego na graf.",
+            "EmptyPlayer": "Nikogo tu jeszcze nie ma. Twój MG nie dodał jeszcze żadnych postaci."
+        },
         "UI": {
             "TabEditor": "Edycja",
             "TabView": "Gra",
@@ -140,6 +161,7 @@
             "ShowFactionLines": "Pokaż frakcje",
             "PinnedHint": "Pozycja przypięta. Prawy przycisk → Zwolnij pozycję.",
             "RailLabel": "Narzędzia FANG",
+            "ViewGraph": "Graf postaci",
             "Close": "Zamknij"
         },
         "Journal": {

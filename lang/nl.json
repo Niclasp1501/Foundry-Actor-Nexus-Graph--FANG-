@@ -5,6 +5,27 @@
         "ButtonOpen": "Ninjo's FANG",
         "ButtonShort": "FANG",
         "KeybindingHint": "Opent de interactieve FANG-actorrelatiegraaf.",
+        "Guide": {
+            "Button": "Uitleg bij deze weergave",
+            "Done": "Begrepen",
+            "Later": "Later",
+            "GraphTitle": "De personagegraaf",
+            "GraphIntro": "Wie kent wie, en hoe. Personages zijn tokens, relaties zijn lijnen.",
+            "MoveTitle": "Rondkijken",
+            "MoveText": "Sleep de achtergrond om te verschuiven, scrol of gebruik twee vingers om te zoomen.",
+            "ClickTitle": "Klik en rechtsklik",
+            "ClickText": "Een klik toont wat er over een personage bekend is. Rechtsklikken of lang indrukken opent het menu met alles wat daar kan. Lijnen hebben er ook een.",
+            "EditTitle": "Bewerkmodus",
+            "EditText": "Er verandert niets zolang de bewerkmodus uit staat. Het potlood linksboven zet hem aan. Dan kun je personages slepen, en bovenaan de graaf verschijnen de hulpmiddelen.",
+            "AddTitle": "Nieuwe personages",
+            "AddText": "Sleep in de bewerkmodus een actor uit de zijbalk naar de graaf. \"Plaatshouder toevoegen\" is voor iemand zonder actor, \"Direct verbinden\" koppelt twee personages met twee klikken.",
+            "ChronicleTitle": "Kroniek",
+            "ChronicleText": "De klok in de balk is het logboek van wat er gebeurde. Het menu van een personage opent diens deel ervan, en je kunt zelf items toevoegen.",
+            "RailTitle": "De balk links",
+            "RailText": "Bovenaan staan de weergaven, daaronder de hulpmiddelen. Het vraagteken haalt deze uitleg altijd terug.",
+            "EmptyGM": "Nog niemand hier. Zet met het potlood linksboven de bewerkmodus aan en sleep dan actors uit de zijbalk naar de graaf.",
+            "EmptyPlayer": "Nog niemand hier. Je spelleider heeft nog geen personages toegevoegd."
+        },
         "UI": {
             "TabEditor": "Bewerken",
             "TabView": "Spelen",
@@ -140,6 +161,7 @@
             "ShowFactionLines": "Facties tonen",
             "PinnedHint": "Positie vastgezet. Rechtsklik → Positie vrijgeven.",
             "RailLabel": "FANG-hulpmiddelen",
+            "ViewGraph": "Personagegraaf",
             "Close": "Sluiten"
         },
         "Journal": {

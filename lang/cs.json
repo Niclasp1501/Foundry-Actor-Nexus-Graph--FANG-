@@ -5,6 +5,27 @@
         "ButtonOpen": "Ninjo's FANG",
         "ButtonShort": "FANG",
         "KeybindingHint": "Otevře interaktivní graf vztahů postav FANG.",
+        "Guide": {
+            "Button": "Průvodce tímto zobrazením",
+            "Done": "Rozumím",
+            "Later": "Později",
+            "GraphTitle": "Graf postav",
+            "GraphIntro": "Kdo koho zná a jak. Postavy jsou žetony, vztahy jsou čáry.",
+            "MoveTitle": "Pohyb",
+            "MoveText": "Tažením pozadí posouváte, kolečkem nebo dvěma prsty přibližujete.",
+            "ClickTitle": "Kliknutí a pravé tlačítko",
+            "ClickText": "Kliknutí ukáže, co je o postavě známo. Pravé tlačítko nebo dlouhé podržení otevře nabídku se vším, co se tam dá dělat. Čáry ji mají také.",
+            "EditTitle": "Režim úprav",
+            "EditText": "Nic se nemění, dokud je režim úprav vypnutý. Zapíná ho tužka vlevo nahoře. Pak lze postavy přetahovat a nahoře v grafu se objeví nástroje.",
+            "AddTitle": "Nové postavy",
+            "AddText": "V režimu úprav přetáhněte aktéra z postranního panelu do grafu. „Přidat zástupce“ je pro někoho bez aktéra, „Přímo spojit“ propojí dvě postavy dvěma kliknutími.",
+            "ChronicleTitle": "Kronika",
+            "ChronicleText": "Hodiny v liště jsou záznam toho, co se stalo. Nabídka postavy otevře její část a záznamy můžete přidávat sami.",
+            "RailTitle": "Lišta vlevo",
+            "RailText": "Nahoře jsou zobrazení, pod nimi nástroje. Otazník tohoto průvodce kdykoli vrátí.",
+            "EmptyGM": "Zatím tu nikdo není. Zapněte režim úprav tužkou vlevo nahoře a pak přetáhněte aktéry z postranního panelu do grafu.",
+            "EmptyPlayer": "Zatím tu nikdo není. Váš PJ ještě nepřidal žádné postavy."
+        },
         "UI": {
             "TabEditor": "Upravit",
             "TabView": "Hrát",
@@ -140,6 +161,7 @@
             "ShowFactionLines": "Zobrazit frakce",
             "PinnedHint": "Pozice ukotvena. Pravý klik → Uvolnit pozici.",
             "RailLabel": "Nástroje FANG",
+            "ViewGraph": "Graf postav",
             "Close": "Zavřít"
         },
         "Journal": {

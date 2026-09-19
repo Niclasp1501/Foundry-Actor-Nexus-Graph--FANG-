@@ -5,6 +5,27 @@
         "ButtonOpen": "Ninjo's FANG",
         "ButtonShort": "FANG",
         "KeybindingHint": "Ouvre le graphe interactif des relations d'acteurs de FANG.",
+        "Guide": {
+            "Button": "Guide de cette vue",
+            "Done": "Compris",
+            "Later": "Plus tard",
+            "GraphTitle": "Le graphe des personnages",
+            "GraphIntro": "Qui connaît qui, et comment. Les personnages sont des jetons, les relations sont des lignes.",
+            "MoveTitle": "Se déplacer",
+            "MoveText": "Faites glisser le fond pour vous déplacer, la molette ou deux doigts pour zoomer.",
+            "ClickTitle": "Clic et clic droit",
+            "ClickText": "Un clic montre ce que l'on sait d'un personnage. Un clic droit ou un appui long ouvre le menu avec tout ce qui est possible. Les lignes en ont un aussi.",
+            "EditTitle": "Mode édition",
+            "EditText": "Rien ne change tant que le mode édition est éteint. Le crayon en haut à gauche l'active. Vous pouvez alors déplacer les personnages, et les outils apparaissent en haut du graphe.",
+            "AddTitle": "Nouveaux personnages",
+            "AddText": "En mode édition, faites glisser un acteur de la barre latérale dans le graphe. « Ajouter un substitut » sert pour quelqu'un sans acteur, « Relier directement » relie deux personnages en deux clics.",
+            "ChronicleTitle": "Chronique",
+            "ChronicleText": "L'horloge dans la barre est le journal de ce qui s'est passé. Le menu d'un personnage ouvre sa partie, et vous pouvez écrire vos propres entrées.",
+            "RailTitle": "La barre de gauche",
+            "RailText": "Les vues sont en haut, les outils en dessous. Le point d'interrogation rappelle ce guide à tout moment.",
+            "EmptyGM": "Personne ici pour l'instant. Activez le mode édition avec le crayon en haut à gauche, puis faites glisser des acteurs de la barre latérale dans le graphe.",
+            "EmptyPlayer": "Personne ici pour l'instant. Votre MJ n'a pas encore ajouté de personnages."
+        },
         "UI": {
             "TabEditor": "Modifier",
             "TabView": "Jouer",
@@ -140,6 +161,7 @@
             "ShowFactionLines": "Afficher les factions",
             "PinnedHint": "Position figée. Clic droit → Libérer la position.",
             "RailLabel": "Outils FANG",
+            "ViewGraph": "Graphe des personnages",
             "Close": "Fermer"
         },
         "Journal": {

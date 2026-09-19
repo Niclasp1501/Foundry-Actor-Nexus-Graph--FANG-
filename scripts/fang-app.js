@@ -1452,7 +1452,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             ...patch,
             id: current.id,
             updatedAt: new Date().toISOString(),
-            refs: current.refs,
+            refs: Array.isArray(patch.refs) ? patch.refs : current.refs,
             authorUserId: current.authorUserId,
             authorName: current.authorName,
             createdAt: current.createdAt,
@@ -2081,8 +2081,14 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             };
             // An add-on collects whatever it put into the slot above into this bag.
             const extraPayload = {};
-            Hooks.callAll("fang.historyEntrySaving", this, extraPayload, panel, { node, editingEntry });
+            // `refs` is what the entry is attached to. An add-on may change the list in
+            // place, so that everyone it names finds the entry in their own chronicle.
+            const baseNode = recapNode ?? node;
+            const refs = editingEntry ? (editingEntry.refs ?? []).map(ref => ({ ...ref })) : (baseNode?.id ? [{ type: "node", id: baseNode.id }] : []);
+            const refsBefore = JSON.stringify(refs);
+            Hooks.callAll("fang.historyEntrySaving", this, extraPayload, panel, { node, editingEntry, refs });
             if (Object.keys(extraPayload).length) patch.payload = extraPayload;
+            if (JSON.stringify(refs) !== refsBefore) patch.refs = refs;
             if (!isGM && editingEntry) {
                 delete patch.kind;
                 delete patch.gmText;
@@ -2090,6 +2096,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 delete patch.knownSince;
                 delete patch.visibility;
                 delete patch.payload;
+                delete patch.refs;
             }
             let neueId = null;
             if (editingEntry) await this._updateHistoryEntry(editingEntry.id, patch);
@@ -2335,6 +2342,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             });
         });
         this._wireHistoryTimeline(panel);
+        // An add-on may decorate the entries; each <li> carries data-entry-id.
+        Hooks.callAll("fang.historyLogRendered", this, panel, { node });
         panel.querySelectorAll(".fang-history-focus").forEach(button => {
             button.addEventListener("click", (event) => {
                 const nodeId = event.currentTarget?.dataset?.nodeId;
@@ -2446,6 +2455,13 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         super._onRender(context, options);
         this._applyVisualTheme();
         this._renderExtensionRailButtons();
+        this.element.querySelector("#fangRailGuide")?.addEventListener("click", (event) => {
+            event.preventDefault();
+            this._closeSidebarPanel();
+            this.showGuide(this._activeGuide(), { force: true });
+        });
+        this._updateEmptyHint();
+        if (!this._guideOffered) { this._guideOffered = true; this.showGuide(this._activeGuide()); }
         Hooks.callAll("fang.appRendered", this);
 
         const monitorName = game.settings.get("fang", "monitorDisplayName").toLowerCase();
@@ -7474,6 +7490,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     initSimulation() {
+        this._updateEmptyHint();
         const hadSimulation = !!this.simulation;
         // Portraits already loaded by the previous build. A rebuild after a refresh gets
         // fresh node objects; loading every portrait again painted a red disc under each
@@ -10038,14 +10055,162 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         this._initialZoomApplied = false;
         this.transform = null;
 
+        this._activeView = "graph";
+        this._guideOffered = false;
         Hooks.callAll("fang.appClosed", this);
 
         // Release edit lock if I am the holder
         this._releaseMyLock();
     }
 
+    /**
+     * The views at the top of the rail: the character graph, plus whatever an add-on
+     * registered. They switch what the canvas area shows, and the current one stays marked,
+     * so the rail always says where you are.
+     */
+    _renderViewRailButtons() {
+        const host = this.element?.querySelector("#fangRailViews");
+        if (!host) return;
+        host.innerHTML = "";
+        const own = { id: "graph", icon: "fa-people-group", label: this._localize("FANG.UI.ViewGraph", "Character graph") };
+        const views = [own, ...(game.modules.get("fang")?.api?.extension?._views ?? []).filter(v => !v.gmOnly || game.user.isGM)];
+        if (!views.some(v => v.id === this._activeView)) this._activeView = "graph";
+        for (const def of views) {
+            const btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = "fang-rail-btn fang-rail-view";
+            btn.id = `fangRailView-${def.id}`;
+            const label = typeof def.label === "function" ? def.label() : def.label;
+            btn.title = label; btn.dataset.tooltip = label; btn.setAttribute("aria-label", label);
+            btn.innerHTML = `<i class="fas ${this._escapeHtml(def.icon || "fa-puzzle-piece")}" aria-hidden="true"></i>`;
+            btn.addEventListener("click", (event) => { event.preventDefault(); this.showView(def.id); });
+            host.appendChild(btn);
+        }
+        this._markActiveView();
+    }
+
+    _markActiveView() {
+        const container = this.element?.querySelector(".fang-app-container") || this.element;
+        container?.setAttribute("data-active-view", this._activeView || "graph");
+        this.element?.querySelectorAll(".fang-rail-view").forEach(btn => {
+            const current = btn.id === `fangRailView-${this._activeView || "graph"}`;
+            btn.classList.toggle("is-current", current);
+            if (current) btn.setAttribute("aria-current", "page"); else btn.removeAttribute("aria-current");
+        });
+    }
+
+    // --- Guides: what a view is for and what is not obvious in it ---
+
+    /** The character graph's own guide. An add-on's view brings its own through registerView. */
+    _graphGuide() {
+        const t = (key, fallback) => this._localize(`FANG.Guide.${key}`, fallback);
+        return {
+            id: "graph",
+            icon: "fa-people-group",
+            title: t("GraphTitle", "The character graph"),
+            intro: t("GraphIntro", "Who knows whom, and how. Characters are tokens, relationships are lines."),
+            points: [
+                { icon: "fa-up-down-left-right", title: t("MoveTitle", "Getting around"), text: t("MoveText", "Drag the background to move, scroll or pinch to zoom.") },
+                { icon: "fa-hand-pointer", title: t("ClickTitle", "Click and right-click"), text: t("ClickText", "A click shows what is known about a character. Right-click or a long press opens the menu with everything you can do there; lines have one too.") },
+                { icon: "fa-pen-to-square", title: t("EditTitle", "Edit mode"), text: t("EditText", "Nothing changes until you switch on edit mode with the pen at the top left. Then you can drag characters and use the tools that appear at the top of the graph.") },
+                { icon: "fa-user-plus", title: t("AddTitle", "New characters"), text: t("AddText", "In edit mode, drag an actor from the sidebar into the graph. \"Add placeholder\" is for someone who has no actor yet, \"Connect directly\" links two characters with two clicks."), gmOnly: true },
+                { icon: "fa-clock-rotate-left", title: t("ChronicleTitle", "Chronicle"), text: t("ChronicleText", "The clock in the rail is the log of what happened. A character's menu opens their own part of it, and you can add entries yourself.") },
+                { icon: "fa-circle-question", title: t("RailTitle", "The rail on the left"), text: t("RailText", "Views are on top, tools below. The question mark brings this guide back at any time.") }
+            ]
+        };
+    }
+
+    _activeGuide() {
+        if ((this._activeView || "graph") === "graph") return this._graphGuide();
+        const view = (game.modules.get("fang")?.api?.extension?._views ?? []).find(v => v.id === this._activeView);
+        const guide = typeof view?.guide === "function" ? view.guide(this) : view?.guide;
+        return guide ? { id: view.id, ...guide } : null;
+    }
+
+    /**
+     * Show a guide in the canvas area. Without `force` it only comes while this device has
+     * not confirmed it; closing it any other way than with the button means "later".
+     */
+    showGuide(guide, { force = false } = {}) {
+        if (!guide?.id || !this.element) return;
+        const seen = game.settings.get("fang", "guidesSeen") ?? {};
+        if (!force && seen[guide.id]) return;
+        const host = this.element.querySelector(".canvas-container");
+        if (!host) return;
+        host.querySelector(".fang-guide-panel")?.remove();
+        const esc = (value) => this._escapeHtml(String(value ?? ""));
+        const points = (guide.points ?? []).filter(p => !p.gmOnly || game.user.isGM);
+        const closeLabel = this._localize("FANG.UI.ClosePanel", "Close");
+        const panel = document.createElement("div");
+        panel.className = "fang-canvas-prompt-panel fang-guide-panel";
+        panel.setAttribute("role", "dialog");
+        panel.setAttribute("aria-modal", "true");
+        panel.setAttribute("aria-label", guide.title ?? "");
+        panel.tabIndex = -1;
+        panel.innerHTML = `
+            <div class="fang-canvas-prompt-card">
+                <header class="fang-canvas-prompt-header">
+                    <h3><i class="fas ${esc(guide.icon || "fa-circle-question")}" aria-hidden="true"></i> ${esc(guide.title)}</h3>
+                    <button type="button" class="fang-canvas-prompt-close" title="${esc(closeLabel)}" aria-label="${esc(closeLabel)}"><i class="fas fa-times" aria-hidden="true"></i></button>
+                </header>
+                <div class="fang-canvas-prompt-body fang-guide-body">
+                    ${guide.intro ? `<p class="fang-guide-intro">${esc(guide.intro)}</p>` : ""}
+                    <ul class="fang-guide-points">${points.map(p => `
+                        <li><span class="fang-guide-icon"><i class="fas ${esc(p.icon || "fa-circle")}" aria-hidden="true"></i></span>
+                            <div><strong>${esc(p.title)}</strong><p>${esc(p.text)}</p></div></li>`).join("")}</ul>
+                </div>
+                <div class="fang-canvas-prompt-actions">
+                    <button type="button" class="fang-canvas-prompt-action primary fang-guide-done"><i class="fas fa-check" aria-hidden="true"></i> <span>${esc(this._localize("FANG.Guide.Done", "Got it"))}</span></button>
+                    <button type="button" class="fang-canvas-prompt-action fang-guide-later"><i class="fas fa-clock" aria-hidden="true"></i> <span>${esc(this._localize("FANG.Guide.Later", "Later"))}</span></button>
+                </div>
+            </div>`;
+        host.appendChild(panel);
+        const close = () => panel.remove();
+        panel.addEventListener("mousedown", (event) => { if (event.target === panel) close(); });
+        panel.addEventListener("keydown", (event) => { if (event.key === "Escape") { event.stopPropagation(); close(); } });
+        panel.querySelector(".fang-canvas-prompt-close").addEventListener("click", close);
+        panel.querySelector(".fang-guide-later").addEventListener("click", close);
+        panel.querySelector(".fang-guide-done").addEventListener("click", async () => {
+            close();
+            await game.settings.set("fang", "guidesSeen", { ...(game.settings.get("fang", "guidesSeen") ?? {}), [guide.id]: true });
+        });
+        panel.focus();
+    }
+
+    /** An empty graph says what to do with it instead of showing a blank sheet. */
+    _updateEmptyHint() {
+        const host = this.element?.querySelector(".canvas-container");
+        if (!host) return;
+        const empty = !(this.graphData?.nodes?.length);
+        let hint = host.querySelector(".fang-empty-hint");
+        if (!empty) { hint?.remove(); return; }
+        if (!hint) {
+            hint = document.createElement("p");
+            hint.className = "fang-empty-hint";
+            host.appendChild(hint);
+        }
+        hint.textContent = game.user.isGM
+            ? this._localize("FANG.Guide.EmptyGM", "Nobody here yet. Switch on edit mode with the pen at the top left, then drag actors from the sidebar into the graph.")
+            : this._localize("FANG.Guide.EmptyPlayer", "Nobody here yet. Your GM has not added any characters.");
+    }
+
+    /** Switch the canvas area to a view. `options` go to the view's own `open`. */
+    showView(id, options = {}) {
+        const views = game.modules.get("fang")?.api?.extension?._views ?? [];
+        const next = id === "graph" ? null : views.find(v => v.id === id);
+        if (id !== "graph" && !next) return;
+        this._closeSidebarPanel();
+        const current = views.find(v => v.id === this._activeView);
+        if (current && current !== next) current.close?.(this);
+        this._activeView = id;
+        this._markActiveView();
+        next?.open?.(this, options);
+        this.showGuide(this._activeGuide());
+    }
+
     /** Buttons extensions registered through the module api, drawn into the rail. */
     _renderExtensionRailButtons() {
+        this._renderViewRailButtons();
         const host = this.element?.querySelector("#fangRailExtensions");
         if (!host) return;
         host.innerHTML = "";

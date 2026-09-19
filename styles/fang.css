@@ -2398,6 +2398,114 @@ body.fang-theme-cyberpunk .fang-dialog .faction-icon-preview {
     color: var(--fang-primary-red);
 }
 
+/* --- Guides and the hint on an empty graph --- */
+
+.fang-app-container .fang-guide-panel {
+    z-index: 2000;
+    padding: 16px;
+    outline: none;
+}
+
+.fang-app-container .fang-guide-panel .fang-canvas-prompt-card {
+    display: flex;
+    flex-direction: column;
+    width: min(600px, 100%);
+    max-height: 100%;
+}
+
+.fang-app-container .fang-guide-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+.fang-app-container .fang-guide-intro {
+    margin: 0 0 12px;
+    color: var(--ninjo-text, #3a2a12);
+    line-height: 1.5;
+}
+
+.fang-app-container .fang-guide-points {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 10px;
+}
+
+.fang-app-container .fang-guide-points li {
+    display: grid;
+    grid-template-columns: 36px 1fr;
+    gap: 12px;
+    align-items: start;
+}
+
+.fang-app-container .fang-guide-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: grid;
+    place-items: center;
+    background: var(--fang-primary-red);
+    color: #fff;
+}
+
+.fang-app-container .fang-guide-points p {
+    margin: 2px 0 0;
+    line-height: 1.45;
+}
+
+.fang-app-container .fang-guide-panel .fang-canvas-prompt-actions {
+    flex: 0 0 auto;
+    padding: 12px 24px 16px;
+    border-top: 1px solid rgba(58, 42, 18, 0.14);
+}
+
+.fang-app-container .fang-empty-hint {
+    position: absolute;
+    top: 38%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: min(440px, 80%);
+    margin: 0;
+    padding: 16px 20px;
+    border: 1px dashed rgba(var(--fang-primary-red-rgb), 0.4);
+    border-radius: 12px;
+    background: rgba(253, 251, 247, 0.85);
+    color: #3a2a12;
+    text-align: center;
+    line-height: 1.5;
+    pointer-events: none;
+    z-index: 5;
+}
+
+.fang-app-container:not([data-active-view="graph"]) .fang-empty-hint {
+    display: none;
+}
+
+/* The views sit on top of the rail, set off from the tools below them. */
+.fang-app-container .fang-rail-views {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-bottom: 10px;
+    margin-bottom: 2px;
+    border-bottom: 1px solid var(--fang-border-color);
+}
+
+.fang-app-container .fang-rail-btn.fang-rail-view.is-current {
+    background: var(--fang-primary-red);
+    border-color: var(--fang-accent-gold);
+    color: #fff;
+}
+
+/* Tools that only make sense for the character graph step aside in another view. */
+/* !important and the body prefix: the GM-only rule reverts display with both. */
+.fang-app-container:not([data-active-view="graph"]) .fang-rail-btn[data-view="graph"],
+body.role-gm .fang-app-container:not([data-active-view="graph"]) .fang-rail-btn.gm-only[data-view="graph"] {
+    display: none !important;
+}
+
 /* Rail buttons an extension adds: same look, same spacing as the built-in ones. */
 .fang-rail-extensions {
     display: contents;

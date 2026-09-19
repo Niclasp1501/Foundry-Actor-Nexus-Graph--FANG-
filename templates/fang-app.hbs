@@ -27,16 +27,17 @@
         </div>
 
         <nav class="fang-rail" aria-label="{{localize 'FANG.UI.RailLabel'}}">
-            <button type="button" id="fangRailSearch" class="fang-rail-btn" title="{{localize 'FANG.UI.SearchToggle'}}"
+            <span id="fangRailViews" class="fang-rail-views"></span>
+            <button type="button" id="fangRailSearch" class="fang-rail-btn" data-view="graph" title="{{localize 'FANG.UI.SearchToggle'}}"
                 data-tooltip="{{localize 'FANG.UI.SearchToggle'}}" aria-label="{{localize 'FANG.UI.SearchToggle'}}">
                 <i class="fas fa-magnifying-glass" aria-hidden="true"></i>
             </button>
-            <button type="button" id="fangRailAffiliation" class="fang-rail-btn gm-only"
+            <button type="button" id="fangRailAffiliation" class="fang-rail-btn gm-only" data-view="graph"
                 title="{{localize 'FANG.UI.RailAffiliation'}}" data-tooltip="{{localize 'FANG.UI.RailAffiliation'}}"
                 aria-label="{{localize 'FANG.UI.RailAffiliation'}}">
                 <i class="fas fa-sitemap" aria-hidden="true"></i>
             </button>
-            <button type="button" id="fangRailPresentation" class="fang-rail-btn gm-only"
+            <button type="button" id="fangRailPresentation" class="fang-rail-btn gm-only" data-view="graph"
                 title="{{localize 'FANG.UI.Presentation'}}" data-tooltip="{{localize 'FANG.UI.Presentation'}}"
                 aria-label="{{localize 'FANG.UI.Presentation'}}">
                 <i class="fas fa-display" aria-hidden="true"></i>
@@ -47,6 +48,10 @@
                 <i class="fas fa-clock-rotate-left" aria-hidden="true"></i>
             </button>
             <span id="fangRailExtensions" class="fang-rail-extensions"></span>
+            <button type="button" id="fangRailGuide" class="fang-rail-btn" title="{{localize 'FANG.Guide.Button'}}"
+                data-tooltip="{{localize 'FANG.Guide.Button'}}" aria-label="{{localize 'FANG.Guide.Button'}}">
+                <i class="fas fa-circle-question" aria-hidden="true"></i>
+            </button>
             <button type="button" id="fangRailManage" class="fang-rail-btn gm-only"
                 title="{{localize 'FANG.UI.RailSettings'}}" data-tooltip="{{localize 'FANG.UI.RailSettings'}}"
                 aria-label="{{localize 'FANG.UI.RailSettings'}}">

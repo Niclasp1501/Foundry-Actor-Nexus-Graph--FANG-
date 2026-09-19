@@ -5,6 +5,27 @@
         "ButtonOpen": "Ninjo's FANG",
         "ButtonShort": "FANG",
         "KeybindingHint": "Opens the interactive FANG Actor relationship graph.",
+        "Guide": {
+            "Button": "Guide to this view",
+            "Done": "Got it",
+            "Later": "Later",
+            "GraphTitle": "The character graph",
+            "GraphIntro": "Who knows whom, and how. Characters are tokens, relationships are lines.",
+            "MoveTitle": "Getting around",
+            "MoveText": "Drag the background to move, scroll or pinch to zoom.",
+            "ClickTitle": "Click and right-click",
+            "ClickText": "A click shows what is known about a character. Right-click or a long press opens the menu with everything you can do there; lines have one too.",
+            "EditTitle": "Edit mode",
+            "EditText": "Nothing changes until you switch on edit mode with the pen at the top left. Then you can drag characters and use the tools that appear at the top of the graph.",
+            "AddTitle": "New characters",
+            "AddText": "In edit mode, drag an actor from the sidebar into the graph. \"Add placeholder\" is for someone who has no actor yet, \"Connect directly\" links two characters with two clicks.",
+            "ChronicleTitle": "Chronicle",
+            "ChronicleText": "The clock in the rail is the log of what happened. A character's menu opens their own part of it, and you can add entries yourself.",
+            "RailTitle": "The rail on the left",
+            "RailText": "Views are on top, tools below. The question mark brings this guide back at any time.",
+            "EmptyGM": "Nobody here yet. Switch on edit mode with the pen at the top left, then drag actors from the sidebar into the graph.",
+            "EmptyPlayer": "Nobody here yet. Your GM has not added any characters."
+        },
         "UI": {
             "TabEditor": "Edit",
             "TabView": "Play",
@@ -140,6 +161,7 @@
             "ShowFactionLines": "Show faction display",
             "PinnedHint": "Position held. Right-click → Release position.",
             "RailLabel": "FANG tools",
+            "ViewGraph": "Character graph",
             "Close": "Close"
         },
         "Journal": {

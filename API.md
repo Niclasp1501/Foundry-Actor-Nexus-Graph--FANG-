@@ -30,6 +30,7 @@ All readers return copies. Writing to a copy changes nothing.
 
 ## Adding to the interface
 
+- `api.registerView({ id, icon, label, gmOnly?, open(app, options), close(app) })` a view of its own in the canvas area. An optional `guide` (`{ icon, title, intro, points: [{ icon, title, text, gmOnly? }] }`, or a function returning that) is shown the first time someone opens the view and again from the question mark in the rail; `app.showGuide(guide, { force })` shows one from code. It gets a button on top of the rail, next to the character graph, and the rail marks the current one. Switch from code with `app.showView(id, options)`; `"graph"` is the character graph.
 - `api.registerRailButton({ id, icon, label, gmOnly?, onClick(app) })` a button in FANG's rail. `label` may be a string or a function (for localisation). `icon` is a Font Awesome class such as `"fa-star"`.
 - `api.registerMenuItem({ id, target: "node" | "link", icon?, label, gmOnly?, when?(target), onClick(target) })` an entry in the right-click menu of a node or a connection. `when` decides per element whether the entry shows; omit it to always show.
 - `api.registerEditGuard(async (app, editing) => boolean)` runs before an editor opens; returning `false` keeps it closed. `editing` is `{ type: "node" | "link", id, name }`.
@@ -59,7 +60,8 @@ Two pairs of hooks give an add-on a slot in FANG's own forms, and a way to colle
 - `fang.actorEditorRender` (`app, html, node`) fires when a node's editor renders; `html` is the same jQuery-wrapped element the editor's own fields use. An empty `<div id="fang-actor-location-extension">` sits in the form for exactly this.
 - `fang.actorEditorSaving` (`app, node, html`) fires right before the editor's own fields are written and the graph is saved. Read the slot's fields from `html` and write the result onto `node` yourself.
 - `fang.historyEntryFormRender` (`app, panel, { node, editingEntry }`) fires when the chronicle entry form renders; `panel` is a plain DOM element. `<div id="fang-history-location-extension">` sits in the form.
-- `fang.historyEntrySaving` (`app, payload, panel, { node, editingEntry }`) fires when Save is pressed, before the entry is built. Write into `payload`; it ends up as the entry's own `payload` field (merged with what a save already there holds, never replaced outright).
+- `fang.historyLogRendered` (`app, panel, { node }`) fires when the chronicle log was drawn. Every entry is an `<li class="fang-history-entry" data-entry-id="...">`.
+- `fang.historyEntrySaving` (`app, payload, panel, { node, editingEntry, refs }`) fires when Save is pressed, before the entry is built. Write into `payload`; it ends up as the entry's own `payload` field (merged with what a save already there holds, never replaced outright). `refs` is the list of `{ type, id }` the entry is attached to; change it in place to attach the entry to more nodes.
 
 Further hooks exist for deeper integration (`fang.draw`, `fang.nodeMenu`, `fang.linkMenu`, `fang.nodeDragged`, `fang.nodeDropped`, `fang.lockUI`, `fang.backgroundConfigRender`, `fang.applyBackground`). They pass more of FANG's internals and may change between versions; use them through `api.register` and state the interface version you tested against.
 

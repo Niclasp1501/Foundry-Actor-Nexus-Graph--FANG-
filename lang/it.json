@@ -5,6 +5,27 @@
         "ButtonOpen": "FANG di Ninjo",
         "ButtonShort": "FANG",
         "KeybindingHint": "Apre il grafo interattivo delle relazioni degli Attori di FANG.",
+        "Guide": {
+            "Button": "Guida a questa vista",
+            "Done": "Capito",
+            "Later": "Più tardi",
+            "GraphTitle": "Il grafo dei personaggi",
+            "GraphIntro": "Chi conosce chi, e come. I personaggi sono segnalini, le relazioni sono linee.",
+            "MoveTitle": "Muoversi",
+            "MoveText": "Trascina lo sfondo per spostarti, usa la rotella o due dita per lo zoom.",
+            "ClickTitle": "Clic e clic destro",
+            "ClickText": "Un clic mostra ciò che si sa di un personaggio. Il clic destro o una pressione lunga apre il menu con tutto ciò che si può fare. Anche le linee ne hanno uno.",
+            "EditTitle": "Modalità modifica",
+            "EditText": "Nulla cambia finché la modalità modifica è spenta. La matita in alto a sinistra la attiva. Allora puoi trascinare i personaggi, e gli strumenti compaiono in cima al grafo.",
+            "AddTitle": "Nuovi personaggi",
+            "AddText": "In modalità modifica, trascina un attore dalla barra laterale nel grafo. «Aggiungi segnaposto» serve per chi non ha un attore, «Collega direttamente» unisce due personaggi con due clic.",
+            "ChronicleTitle": "Cronaca",
+            "ChronicleText": "L'orologio nella barra è il registro di ciò che è accaduto. Il menu di un personaggio apre la sua parte, e puoi scrivere voci tue.",
+            "RailTitle": "La barra a sinistra",
+            "RailText": "In alto ci sono le viste, sotto gli strumenti. Il punto interrogativo richiama questa guida in qualsiasi momento.",
+            "EmptyGM": "Ancora nessuno. Attiva la modalità modifica con la matita in alto a sinistra, poi trascina gli attori dalla barra laterale nel grafo.",
+            "EmptyPlayer": "Ancora nessuno. Il tuo GM non ha ancora aggiunto personaggi."
+        },
         "UI": {
             "TabEditor": "Modifica",
             "TabView": "Gioca",
@@ -140,6 +161,7 @@
             "ShowFactionLines": "Mostra fazioni",
             "PinnedHint": "Posizione bloccata. Clic destro → Rilascia posizione.",
             "RailLabel": "Strumenti FANG",
+            "ViewGraph": "Grafo dei personaggi",
             "Close": "Chiudi"
         },
         "Journal": {

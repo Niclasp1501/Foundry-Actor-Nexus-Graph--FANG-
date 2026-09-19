@@ -5,6 +5,27 @@
         "ButtonOpen": "Ninjo's FANG",
         "ButtonShort": "FANG",
         "KeybindingHint": "Öffnet den interaktiven FANG Akteur Beziehungs-Graphen.",
+        "Guide": {
+            "Button": "Anleitung zu dieser Ansicht",
+            "Done": "Verstanden",
+            "Later": "Später",
+            "GraphTitle": "Der Charaktergraph",
+            "GraphIntro": "Wer kennt wen, und wie. Charaktere sind Tokens, Beziehungen sind Linien.",
+            "MoveTitle": "Bewegen",
+            "MoveText": "Den Hintergrund ziehen verschiebt, Mausrad oder zwei Finger zoomen.",
+            "ClickTitle": "Klick und Rechtsklick",
+            "ClickText": "Ein Klick zeigt, was über einen Charakter bekannt ist. Rechtsklick oder langes Drücken öffnet das Menü mit allem, was dort geht. Linien haben auch eins.",
+            "EditTitle": "Bearbeitungsmodus",
+            "EditText": "Nichts ändert sich, solange der Bearbeitungsmodus aus ist. Der Stift oben links schaltet ihn ein. Dann lassen sich Charaktere ziehen, und oben im Graphen erscheinen die Werkzeuge.",
+            "AddTitle": "Neue Charaktere",
+            "AddText": "Im Bearbeitungsmodus einen Akteur aus der Seitenleiste in den Graphen ziehen. „Platzhalter hinzufügen“ ist für jemanden ohne Akteur, „Direkt verbinden“ verknüpft zwei Charaktere mit zwei Klicks.",
+            "ChronicleTitle": "Chronik",
+            "ChronicleText": "Die Uhr in der Leiste ist das Protokoll dessen, was geschah. Das Menü eines Charakters öffnet seinen Teil davon, und du kannst selbst Einträge schreiben.",
+            "RailTitle": "Die Leiste links",
+            "RailText": "Oben stehen die Ansichten, darunter die Werkzeuge. Das Fragezeichen holt diese Anleitung jederzeit zurück.",
+            "EmptyGM": "Noch niemand hier. Schalte mit dem Stift oben links den Bearbeitungsmodus ein und ziehe dann Akteure aus der Seitenleiste in den Graphen.",
+            "EmptyPlayer": "Noch niemand hier. Deine Spielleitung hat noch keine Charaktere hinzugefügt."
+        },
         "UI": {
             "TabEditor": "Bearbeiten",
             "TabView": "Spielen",
@@ -140,6 +161,7 @@
             "ShowFactionLines": "Fraktionsanzeige einblenden",
             "PinnedHint": "Position festgehalten. Rechtsklick → Position freigeben.",
             "RailLabel": "FANG-Werkzeuge",
+            "ViewGraph": "Charaktergraph",
             "Close": "Schließen"
         },
         "Journal": {
