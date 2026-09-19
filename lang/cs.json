@@ -213,7 +213,8 @@
             "ZoneGroupingApplied": "Seskupeno podle místa.",
             "GroupingPositionsLocked": "Zobrazení seskupení — pozice jsou zamčené. Pro přesun postav zruš seskupení.",
             "GroupingIsAView": "Toto je zobrazení — pozice zůstanou zamčené, dokud ho nezrušíš.",
-            "NodeUnpinned": "pozice uvolněna."
+            "NodeUnpinned": "pozice uvolněna.",
+            "NodePinned": "pozice podržena."
         },
         "ActorEditor": {
             "Title": "Upravit postavu",
@@ -240,7 +241,8 @@
             "EditConnection": "Upravit",
             "DeleteConnection": "Odstranit spojení",
             "NeedsEditMode": "režim úprav",
-            "UnpinNode": "Uvolnit pozici"
+            "UnpinNode": "Uvolnit pozici",
+            "PinNode": "Podržet pozici"
         },
         "Dropdowns": {
             "Nodes": "Uzly (Tokeny)",

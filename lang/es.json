@@ -213,7 +213,8 @@
             "ZoneGroupingApplied": "Agrupado por lugar.",
             "GroupingPositionsLocked": "Vista de agrupación — las posiciones están bloqueadas. Restablece la agrupación para mover personajes.",
             "GroupingIsAView": "Esto es una vista — las posiciones siguen bloqueadas hasta que la restablezcas.",
-            "NodeUnpinned": "posición liberada."
+            "NodeUnpinned": "posición liberada.",
+            "NodePinned": "posición fijada."
         },
         "ActorEditor": {
             "Title": "Editar actor",
@@ -240,7 +241,8 @@
             "EditConnection": "Editar",
             "DeleteConnection": "Eliminar Conexión",
             "NeedsEditMode": "modo de edición",
-            "UnpinNode": "Liberar posición"
+            "UnpinNode": "Liberar posición",
+            "PinNode": "Fijar posición"
         },
         "Dropdowns": {
             "Nodes": "Nodos (Tokens)",

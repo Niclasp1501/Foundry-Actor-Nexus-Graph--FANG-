@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **Add-on api: new hook for drops.** Add-on modules can now handle other things dropped on the graph (`fang.drop`, see `API.md`).
 
 ### Changed
+- **A drop no longer pins.** Since July every character you let go of was pinned in place, and over time a graph ended up with most of its characters pinned, with no physics and no wind left. A dropped character is free again; the shared layout keeps where it settles. Pinning is a choice: the context menu now offers "Hold position" and "Release position".
 - **Collaborative editing keeps an edit switch.** The button now switches your own edit mode on and off; it locks nobody out. Off, the graph is a view, as in the classic mode. A player is also told when no GM is online, because edits travel through one.
 
 ### Fixed

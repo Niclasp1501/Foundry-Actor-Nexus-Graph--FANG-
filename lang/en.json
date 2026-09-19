@@ -213,7 +213,8 @@
             "ZoneGroupingApplied": "Grouped by location.",
             "GroupingPositionsLocked": "Grouping view — positions are locked. Reset grouping to move characters.",
             "GroupingIsAView": "This is a view — positions stay locked until you reset it.",
-            "NodeUnpinned": "position released."
+            "NodeUnpinned": "position released.",
+            "NodePinned": "position held."
         },
         "ActorEditor": {
             "Title": "Edit Actor",
@@ -240,7 +241,8 @@
             "EditConnection": "Edit",
             "DeleteConnection": "Delete Connection",
             "NeedsEditMode": "edit mode",
-            "UnpinNode": "Release position"
+            "UnpinNode": "Release position",
+            "PinNode": "Hold position"
         },
         "Dropdowns": {
             "Nodes": "Nodes (Tokens)",

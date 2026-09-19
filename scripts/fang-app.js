@@ -5369,21 +5369,29 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         }
         Hooks.callAll("fang.nodeMenu", this, { node, hasLock, items: { edit: newBtnEdit, delete: newBtnDelete } });
         this._renderExtensionMenuItems(menu, "node", node);
-        // Only worth showing on a node that is actually pinned.
-        if (newBtnUnpin) newBtnUnpin.style.display = (hasLock && node?.pinned) ? "flex" : "none";
+        if (newBtnUnpin) {
+            newBtnUnpin.style.display = "flex";
+            this._markMenuItemLocked(newBtnUnpin, !hasLock);
+            const pinIcon = newBtnUnpin.querySelector("i");
+            if (pinIcon) pinIcon.className = node?.pinned ? "fas fa-thumbtack-slash" : "fas fa-thumbtack";
+            const pinLabel = newBtnUnpin.querySelector("span");
+            if (pinLabel) pinLabel.textContent = game.i18n.localize(node?.pinned ? "FANG.ContextMenu.UnpinNode" : "FANG.ContextMenu.PinNode");
+        }
 
         newBtnUnpin?.addEventListener("click", async () => {
             menu.classList.add("hidden");
             if (!this._canEditGraph()) return;
             const live = this.simulation?.nodes().find(n => n.id === node.id) ?? node;
-            live.pinned = false;
-            live.fx = null;
-            live.fy = null;
             const stored = this.graphData.nodes.find(n => n.id === node.id);
-            if (stored) { stored.pinned = false; stored.fx = null; stored.fy = null; }
+            const pin = !live.pinned;
+            for (const target of [live, stored].filter(Boolean)) {
+                target.pinned = pin;
+                target.fx = pin ? live.x : null;
+                target.fy = pin ? live.y : null;
+            }
             this._draggedNodeIds?.add(node.id);   // we changed this node's position on purpose
             this.simulation?.alpha(0.3).restart();
-            ui.notifications.info(`${this._getSafeNodeName(node)} — ${this._localize("FANG.Messages.NodeUnpinned", "position released.")}`);
+            ui.notifications.info(`${this._getSafeNodeName(node)}: ${this._localize(pin ? "FANG.Messages.NodePinned" : "FANG.Messages.NodeUnpinned", pin ? "position held." : "position released.")}`);
             await this.saveData();
         });
 
@@ -8624,10 +8632,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             // straight back. Measured: dropped 300px away, it settled 214px off target.
             // Pinned it stays exactly put. "Position freigeben" in the right-click menu
             // hands it back to the simulation.
-            if (this._hasDragged) {
+            if (event.subject.data.pinned) {
                 event.subject.data.fx = event.subject.data.x;
                 event.subject.data.fy = event.subject.data.y;
-                event.subject.data.pinned = true;
             } else if (!this._isLayoutAuthority()) {
                 // Not pinned, but nothing here may drift either: the authority lays it out.
                 event.subject.data.fx = event.subject.data.x;

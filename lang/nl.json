@@ -213,7 +213,8 @@
             "ZoneGroupingApplied": "Gegroepeerd op locatie.",
             "GroupingPositionsLocked": "Groeperingsweergave — posities zijn vergrendeld. Reset de groepering om personages te verplaatsen.",
             "GroupingIsAView": "Dit is een weergave — posities blijven vergrendeld tot je reset.",
-            "NodeUnpinned": "positie vrijgegeven."
+            "NodeUnpinned": "positie vrijgegeven.",
+            "NodePinned": "positie vastgehouden."
         },
         "ActorEditor": {
             "Title": "Actor bewerken",
@@ -240,7 +241,8 @@
             "EditConnection": "Bewerken",
             "DeleteConnection": "Verbinding verwijderen",
             "NeedsEditMode": "bewerkmodus",
-            "UnpinNode": "Positie vrijgeven"
+            "UnpinNode": "Positie vrijgeven",
+            "PinNode": "Positie vasthouden"
         },
         "Dropdowns": {
             "Nodes": "Knooppunten (Tokens)",
