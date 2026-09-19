@@ -7293,7 +7293,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
     /** The authority's simulation came to rest: store the layout if it moved. */
     _onSimulationSettled() {
         if (!this._isLayoutAuthority() || !this.rendered || this._groupingMode !== "none") return;
-        if (this._settleSaveInFlight || this._baseline === undefined) return;
+        if (this._isDragging || this._settleSaveInFlight || this._baseline === undefined) return;
         const stored = new Map((this._baseline?.nodes ?? []).map(n => [n.id, n]));
         const live = this.simulation?.nodes() ?? [];
         const moved = live.some(n => {
