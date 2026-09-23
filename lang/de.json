@@ -546,6 +546,10 @@
             "DropConnect": "Beziehung erstellen"
         },
         "Zones": {
+            "CropLabel": "Sichtbarer Ausschnitt",
+            "CropHint": "Bild ziehen zum Verschieben, Mausrad oder Regler zum Zoomen.",
+            "CropZoom": "Zoom",
+            "CropReset": "Ganzes Bild",
             "RevealVisited": "Sobald sie dort waren",
             "RevealOpen": "Von Anfang an bekannt",
             "RevealHint": "Spieler sehen einen Ort erst, wenn sie dort waren, einer ihrer Charaktere dort hingehört oder sie ihn selbst angelegt haben. \"Von Anfang an bekannt\" ist für Orte, die jeder kennt.",

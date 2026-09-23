@@ -546,6 +546,10 @@
             "DropConnect": "Create relationship"
         },
         "Zones": {
+            "CropLabel": "Part of the picture shown",
+            "CropHint": "Drag the picture to move it, scroll or use the slider to zoom.",
+            "CropZoom": "Zoom",
+            "CropReset": "Whole picture",
             "RevealVisited": "Once they have been there",
             "RevealOpen": "Known from the start",
             "RevealHint": "Players see a place once they have been there, a character of theirs belongs there, or they created it. Choose \"Known from the start\" for a place everybody knows.",

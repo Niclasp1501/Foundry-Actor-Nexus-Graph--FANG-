@@ -546,6 +546,10 @@
             "DropConnect": "Vytvořit vztah"
         },
         "Zones": {
+            "CropLabel": "Viditelná část obrázku",
+            "CropHint": "Tažením obrázek posunete, kolečkem nebo posuvníkem přiblížíte.",
+            "CropZoom": "Přiblížení",
+            "CropReset": "Celý obrázek",
             "RevealVisited": "Až tam budou",
             "RevealOpen": "Známé od začátku",
             "RevealHint": "Hráči uvidí místo, až tam budou, až k němu bude patřit některá jejich postava nebo až ho sami vytvoří. „Známé od začátku“ je pro místa, která zná každý.",

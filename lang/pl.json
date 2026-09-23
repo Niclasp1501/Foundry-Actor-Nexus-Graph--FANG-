@@ -546,6 +546,10 @@
             "DropConnect": "Utwórz relację"
         },
         "Zones": {
+            "CropLabel": "Widoczny fragment obrazu",
+            "CropHint": "Przeciągnij obraz, aby go przesunąć, kółkiem lub suwakiem przybliż.",
+            "CropZoom": "Powiększenie",
+            "CropReset": "Cały obraz",
             "RevealVisited": "Gdy tam byli",
             "RevealOpen": "Znane od początku",
             "RevealHint": "Gracze widzą miejsce, gdy tam byli, gdy należy do niego ich postać lub gdy sami je utworzyli. „Znane od początku” jest dla miejsc, które zna każdy.",

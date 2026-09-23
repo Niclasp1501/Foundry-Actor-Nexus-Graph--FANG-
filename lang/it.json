@@ -546,6 +546,10 @@
             "DropConnect": "Crea relazione"
         },
         "Zones": {
+            "CropLabel": "Parte visibile dell'immagine",
+            "CropHint": "Trascina l'immagine per spostarla, usa la rotella o il cursore per lo zoom.",
+            "CropZoom": "Zoom",
+            "CropReset": "Immagine intera",
             "RevealVisited": "Quando ci sono stati",
             "RevealOpen": "Noto fin dall'inizio",
             "RevealHint": "I giocatori vedono un luogo quando ci sono stati, un loro personaggio vi appartiene o l'hanno creato. «Noto fin dall'inizio» è per i luoghi che tutti conoscono.",

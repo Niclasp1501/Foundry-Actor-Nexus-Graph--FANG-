@@ -2493,6 +2493,66 @@ body.fang-theme-cyberpunk .fang-dialog .faction-icon-preview {
     font-family: var(--ninjo-schrift);
 }
 
+/* The picture of a place inside any round box: cut as its editor set it. */
+.fang-zone-crop {
+    position: absolute;
+    inset: 0;
+    background-repeat: no-repeat;
+    background-size: cover;
+    pointer-events: none;
+}
+
+.fang-app-container .fang-zone-cropper {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    margin: 4px 0 8px;
+}
+
+.fang-app-container .fang-zone-cropper[hidden] {
+    display: none;
+}
+
+.fang-app-container .fang-zone-crop-frame {
+    position: relative;
+    flex: 0 0 auto;
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    border: 3px solid var(--fang-accent-gold);
+    overflow: hidden;
+    background: #2b2118;
+    cursor: grab;
+    touch-action: none;
+}
+
+.fang-app-container .fang-zone-crop-frame:active {
+    cursor: grabbing;
+}
+
+.fang-app-container .fang-zone-crop-tools {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.fang-app-container .fang-zone-crop-reset {
+    align-self: flex-start;
+    width: auto;
+    padding: 4px 10px;
+    border: 1px solid rgba(58, 42, 18, 0.25);
+    border-radius: 8px;
+    background: #fffaf0;
+    color: var(--fang-primary-red);
+    cursor: pointer;
+}
+
+.fang-app-container .fang-zone-crop-reset:hover {
+    background: var(--fang-primary-red);
+    color: #fff;
+}
+
 /* --- Guides and the hint on an empty graph --- */
 
 .fang-app-container .fang-canvas-prompt-panel.fang-guide-panel {

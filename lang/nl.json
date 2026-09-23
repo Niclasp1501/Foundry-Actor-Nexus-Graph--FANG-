@@ -546,6 +546,10 @@
             "DropConnect": "Relatie creëren"
         },
         "Zones": {
+            "CropLabel": "Zichtbaar deel van de afbeelding",
+            "CropHint": "Sleep de afbeelding om te verschuiven, scrol of gebruik de schuif om te zoomen.",
+            "CropZoom": "Zoom",
+            "CropReset": "Hele afbeelding",
             "RevealVisited": "Zodra ze er geweest zijn",
             "RevealOpen": "Vanaf het begin bekend",
             "RevealHint": "Spelers zien een plaats zodra ze er geweest zijn, een van hun personages er thuishoort of ze hem zelf hebben aangemaakt. \"Vanaf het begin bekend\" is voor plaatsen die iedereen kent.",

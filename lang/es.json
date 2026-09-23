@@ -546,6 +546,10 @@
             "DropConnect": "Crear relación"
         },
         "Zones": {
+            "CropLabel": "Parte visible de la imagen",
+            "CropHint": "Arrastra la imagen para moverla, usa la rueda o el control para hacer zoom.",
+            "CropZoom": "Zoom",
+            "CropReset": "Imagen completa",
             "RevealVisited": "Cuando hayan estado allí",
             "RevealOpen": "Conocido desde el principio",
             "RevealHint": "Los jugadores ven un lugar cuando han estado allí, uno de sus personajes pertenece a él o lo han creado. «Conocido desde el principio» es para lugares que todos conocen.",

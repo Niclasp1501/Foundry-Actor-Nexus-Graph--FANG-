@@ -399,8 +399,26 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             // themselves, or one of their characters belongs there. "open": everyone knows
             // it from the start. Older places count as "visited" too: the grouping by place
             // only ever showed places with a visible member, and those are known anyway.
-            reveal: zone.reveal === "open" ? "open" : "visited"
+            reveal: zone.reveal === "open" ? "open" : "visited",
+            // Which part of the picture a round token shows: the point in the middle, in
+            // percent of the picture, and how far it is zoomed in.
+            imgView: {
+                x: Number.isFinite(zone.imgView?.x) ? Math.min(100, Math.max(0, zone.imgView.x)) : 50,
+                y: Number.isFinite(zone.imgView?.y) ? Math.min(100, Math.max(0, zone.imgView.y)) : 50,
+                zoom: Number.isFinite(zone.imgView?.zoom) ? Math.min(5, Math.max(1, zone.imgView.zoom)) : 1
+            }
         };
+    }
+
+    /**
+     * The picture of a place, cut the way its editor set it, as the inside of a round (or
+     * any) box with overflow hidden. Used for every token of a place, here and in add-ons.
+     */
+    zoneImageHtml(zone, { src = null } = {}) {
+        const img = src ?? zone?.img;
+        if (!img) return "";
+        const v = this._normalizeZone(zone ?? {}).imgView;
+        return `<span class="fang-zone-crop" style="background-image:url('${this._escapeHtml(img)}'); background-position:${v.x}% ${v.y}%; transform-origin:${v.x}% ${v.y}%; transform:scale(${v.zoom});"></span>`;
     }
 
     // --- Places: one list for the whole module, and one way to pick and edit them ---
@@ -549,6 +567,15 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                             <button type="button" class="fang-zone-browse" data-tooltip="${esc(t("FILES.BrowseTooltip", "Browse"))}" aria-label="${esc(t("FILES.BrowseTooltip", "Browse"))}"><i class="fas fa-folder-open" aria-hidden="true"></i></button>
                             <input type="color" class="fang-zone-f-color" value="${esc(zone.color)}" data-tooltip="${esc(t("FANG.Zones.ColorLabel", "Colour when grouping"))}" aria-label="${esc(t("FANG.Zones.ColorLabel", "Colour when grouping"))}">
                         </div>
+                        <div class="fang-zone-cropper" ${zone.img ? "" : "hidden"}>
+                            <div class="fang-zone-crop-frame" tabindex="0" data-tooltip="${esc(t("FANG.Zones.CropHint", "Drag the picture to move it, scroll or use the slider to zoom."))}" aria-label="${esc(t("FANG.Zones.CropLabel", "Part of the picture shown"))}"></div>
+                            <div class="fang-zone-crop-tools">
+                                <label>${esc(t("FANG.Zones.CropLabel", "Part of the picture shown"))}</label>
+                                <input type="range" class="fang-zone-crop-zoom" min="1" max="5" step="0.05" value="${zone.imgView.zoom}" aria-label="${esc(t("FANG.Zones.CropZoom", "Zoom"))}">
+                                <p class="hint">${esc(t("FANG.Zones.CropHint", "Drag the picture to move it, scroll or use the slider to zoom."))}</p>
+                                <button type="button" class="fang-zone-crop-reset"><i class="fas fa-rotate-left" aria-hidden="true"></i> ${esc(t("FANG.Zones.CropReset", "Whole picture"))}</button>
+                            </div>
+                        </div>
                         <label for="fang-zone-f-desc">${esc(t("FANG.Zones.DescriptionLabel", "Description"))}</label>
                         <textarea id="fang-zone-f-desc" class="fang-zone-f-desc" placeholder="${esc(t("FANG.Zones.DescriptionPlaceholder", "Short description"))}">${esc(zone.description)}</textarea>
                         <div class="fang-zone-extension"></div>
@@ -589,8 +616,53 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             vis?.addEventListener("change", showAlias);
             showAlias();
             const img = panel.querySelector(".fang-zone-f-img");
+            // The cut of the picture: drag to move, wheel or slider to zoom, seen in a circle
+            // the way the token will show it.
+            const view = { ...zone.imgView };
+            const cropper = panel.querySelector(".fang-zone-cropper");
+            const frame = panel.querySelector(".fang-zone-crop-frame");
+            const zoomInput = panel.querySelector(".fang-zone-crop-zoom");
+            const paint = () => {
+                const src = img.value.trim();
+                cropper.hidden = !src;
+                frame.innerHTML = src ? this.zoneImageHtml({ imgView: view }, { src }) : "";
+                zoomInput.value = String(view.zoom);
+            };
+            img.addEventListener("input", paint);
+            img.addEventListener("change", paint);
+            zoomInput.addEventListener("input", () => { view.zoom = Number(zoomInput.value); paint(); });
+            frame.addEventListener("wheel", (event) => {
+                event.preventDefault();
+                view.zoom = Math.min(5, Math.max(1, view.zoom * (event.deltaY < 0 ? 1.08 : 1 / 1.08)));
+                paint();
+            }, { passive: false });
+            frame.addEventListener("pointerdown", (event) => {
+                event.preventDefault();
+                frame.setPointerCapture(event.pointerId);
+                const start = { px: event.clientX, py: event.clientY, x: view.x, y: view.y };
+                const size = frame.clientWidth || 140;
+                const move = (e) => {
+                    // Dragging the picture right shows more of its left side.
+                    view.x = Math.min(100, Math.max(0, start.x - (e.clientX - start.px) * 100 / (size * view.zoom)));
+                    view.y = Math.min(100, Math.max(0, start.y - (e.clientY - start.py) * 100 / (size * view.zoom)));
+                    paint();
+                };
+                const up = () => { frame.removeEventListener("pointermove", move); frame.removeEventListener("pointerup", up); };
+                frame.addEventListener("pointermove", move);
+                frame.addEventListener("pointerup", up);
+            });
+            frame.addEventListener("keydown", (event) => {
+                const step = { ArrowLeft: [-2, 0], ArrowRight: [2, 0], ArrowUp: [0, -2], ArrowDown: [0, 2] }[event.key];
+                if (!step) return;
+                event.preventDefault();
+                view.x = Math.min(100, Math.max(0, view.x + step[0]));
+                view.y = Math.min(100, Math.max(0, view.y + step[1]));
+                paint();
+            });
+            panel.querySelector(".fang-zone-crop-reset").addEventListener("click", () => { Object.assign(view, { x: 50, y: 50, zoom: 1 }); paint(); });
+            paint();
             panel.querySelector(".fang-zone-browse").addEventListener("click", () => {
-                new foundry.applications.apps.FilePicker.implementation({ type: "image", current: img.value || "", callback: (path) => { img.value = path; } }).render(true);
+                new foundry.applications.apps.FilePicker.implementation({ type: "image", current: img.value || "", callback: (path) => { img.value = path; paint(); } }).render(true);
             });
             panel.querySelector(".fang-zone-save").addEventListener("click", async () => {
                 const name = panel.querySelector(".fang-zone-f-name").value.trim();
@@ -606,6 +678,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     parentId: panel.querySelector(".fang-zone-f-parent").value
                         || (zone.parentId && !this._canUserSeeZone(this._zoneById(zone.parentId)) ? zone.parentId : null),
                     img: img.value.trim(),
+                    imgView: { ...view },
                     color: panel.querySelector(".fang-zone-f-color").value,
                     description: panel.querySelector(".fang-zone-f-desc").value.trim(),
                     ...(vis ? {
