@@ -23,10 +23,28 @@ All readers return copies. Writing to a copy changes nothing.
 
 - A node with `shape: "square"` is drawn as a rounded square instead of a circle, rings included.
 - `api.graph.get()` the whole stored graph: `{ nodes, links, factions, zones, ... }`, or `null` when no graph exists yet.
+- `api.nodes.list()`, `api.nodes.get(id)` characters and items.
+- `api.links.list()` connections, with `source` and `target` as node ids.
 - `api.factions.list()` factions.
-- `api.zones.list()` zones.
+- `api.zones.list()`, `api.zones.get(id)` places. A place has `id, name, type, color, description, playerVisible, parentId, img, hidden, displayName`; `parentId` is the place it lies in.
 - `api.history.list()` chronicle entries the current user may see.
-- `api.history.add(entry)` creates a chronicle entry. `entry`: `{ title, playerText?, gmText?, nodeId?, visibility?: "gm" | "players", kind? }`. Returns the new entry's id, or `false`. A player's entry is relayed to a GM as with entries made in FANG itself.
+
+## Changing the graph
+
+Everything the interface does with characters, connections, factions and places can be done here, under the same rights: a GM always, a player only while player editing is allowed in FANG's settings (a player's change is relayed to a GM, so one has to be online). Every write loads the graph if needed, saves and merges like a change made by hand, redraws an open window and resolves with a copy of what it changed. A write that is not allowed, or names something that does not exist, rejects with an error.
+
+- `api.nodes.add({ actorUuid } | { name, type?: "item" })` an actor, or a placeholder (an item with `type: "item"`). Also takes the fields of `update`. An actor already in the graph is returned as it is.
+- `api.nodes.update(id, { name?, role?, img?, hidden?, gmOnly?, displayName?, playerNotes?, lore?, conditions?, zoneId?, factionIds? })`
+- `api.nodes.remove(id)` removes the node and its connections.
+- `api.links.add({ source, target, label?, directional?, type?, hidden?, gmOnly? })`, `api.links.update(id, patch)`, `api.links.remove(id)`
+- `api.factions.add(faction)`, `api.factions.update(id, patch)`, `api.factions.remove(id)` (members lose the faction).
+- `api.zones.add({ name, type?, parentId?, img?, description?, playerVisible?, hidden?, displayName?, color? })`, `api.zones.update(id, patch)`. A place cannot lie inside itself.
+- `api.zones.remove(id)` what lay in it moves up one level; characters there move with it.
+- `api.zones.assign(nodeId, zoneId | null)` puts a character or item at a place.
+- `api.history.add({ title, playerText?, gmText?, nodeId?, nodeIds?, visibility?: "gm" | "players", kind?, gameDate?, payload? })` creates a chronicle entry and returns its id, or `false`. `nodeIds` attaches it to several characters, `gameDate` (`{ label, sort, time }`) dates it, today when left out, `payload` carries an add-on's data. A player's entry is relayed to a GM as with entries made in FANG itself.
+- `api.history.update(id, { title?, playerText?, gmText?, kind?, visibility?, gameDate?, payload?, nodeIds? })` (a player may change title and text of their own entries only), `api.history.remove(id)` (GM only).
+
+With FANG Premium, `game.modules.get("fang-premium").api.places` adds what happens between places: `travel({ to, travellers, title?, gameDate? })` records a journey, `whereIs(nodeId)` says where the chronicle puts someone (`{ placeId, seen, home, entryId }`, `seen` meaning only sighted there), `whoIsAt(placeId)` lists who is at a place or inside it, and `followed.list()` / `followed.set(nodeId, true | false)` (GM) decide whose whereabouts are followed.
 
 ## Adding to the interface
 

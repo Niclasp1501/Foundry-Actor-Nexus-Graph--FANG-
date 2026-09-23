@@ -107,6 +107,31 @@ Hooks.once("init", () => {
     if (fangApp._baseline === undefined) await fangApp.loadData();
     return fangApp;
   };
+  const mayWrite = () => game.user.isGM || game.settings.get("fang", "allowPlayerEditing");
+  /** One write through the api: load, change, save and merge, redraw an open window. */
+  const write = async (change) => {
+    if (!mayWrite()) throw new Error("FANG | This user may not edit the graph.");
+    const app = await ensureApp();
+    const result = await change(app);
+    await app.saveData();
+    if (app.rendered) { app.initSimulation(); app.ticked?.(); }
+    return clone(result);
+  };
+  /** The fields of a node the api may set, checked against what exists. */
+  const applyNodeFields = (app, node, data) => {
+    for (const key of ["name", "role", "img", "displayName", "playerNotes", "lore"]) if (key in data) node[key] = data[key];
+    if ("hidden" in data) node.hidden = !!data.hidden;
+    if ("gmOnly" in data) { node.gmOnly = !!data.gmOnly; if (node.gmOnly) node.hidden = true; }
+    if ("conditions" in data && Array.isArray(data.conditions)) node.conditions = [...data.conditions];
+    if ("zoneId" in data) {
+      if (data.zoneId && !(app.graphData.zones ?? []).some(z => z.id === data.zoneId)) throw new Error(`FANG | No place ${data.zoneId}.`);
+      node.zoneId = data.zoneId || null;
+    }
+    if (Array.isArray(data.factionIds)) {
+      const known = new Set((app.graphData.factions ?? []).map(f => f.id));
+      app._setNodeFactionIds(node, data.factionIds.filter(id => known.has(id)));
+    }
+  };
 
   const api = {
     version: game.modules.get("fang").version,
@@ -122,18 +147,138 @@ Hooks.once("init", () => {
     graph: {
       get: () => clone(fangApp?._baseline !== undefined ? fangApp._buildExportData() : storedGraph())
     },
-    factions: { list: () => clone((fangApp?.graphData?.factions ?? storedGraph()?.factions ?? [])) },
-    zones: { list: () => clone((fangApp?.graphData?.zones ?? storedGraph()?.zones ?? [])) },
+    // Everything the interface can do with characters, connections, factions and places,
+    // a macro or a tool can do here as well, under the same rights: a GM always, a player
+    // when player editing is on. Writes go through the same save and merge as a click.
+    nodes: {
+      list: () => clone(fangApp?.graphData?.nodes ?? storedGraph()?.nodes ?? []),
+      get: (id) => clone((fangApp?.graphData?.nodes ?? storedGraph()?.nodes ?? []).find(n => n.id === id) ?? null),
+      /** `{ actorUuid }` adds an actor, otherwise a placeholder with `name` (type "item" for an item). */
+      add: (data = {}) => write(async (app) => {
+        const actor = data.actorUuid ? await fromUuid(data.actorUuid) : (data.actorId ? game.actors.get(data.actorId) : null);
+        if (actor && app.graphData.nodes.some(n => n.actorId === actor.id)) return app.graphData.nodes.find(n => n.actorId === actor.id);
+        const node = actor
+          ? { id: actor.id, actorId: actor.id, isPlaceholder: false, placeholderType: null, img: actor.prototypeToken?.texture?.src || actor.img || null,
+              name: actor.name, originalName: actor.name, playerNotes: "", showHiddenQuestsToPlayers: true, conditions: [] }
+          : app._buildPlaceholderNode({ name: String(data.name || "?"), img: data.img || undefined, placeholderType: data.type === "item" ? "item" : "default" });
+        applyNodeFields(app, node, data);
+        app.graphData.nodes.push(node);
+        return node;
+      }),
+      update: (id, patch = {}) => write((app) => {
+        const node = app.graphData.nodes.find(n => n.id === id);
+        if (!node) throw new Error(`FANG | No node ${id}.`);
+        applyNodeFields(app, node, patch);
+        return node;
+      }),
+      remove: (id) => write((app) => {
+        app.graphData.nodes = app.graphData.nodes.filter(n => n.id !== id);
+        app.graphData.links = app.graphData.links.filter(l => app._getLinkEndpointId(l.source) !== id && app._getLinkEndpointId(l.target) !== id);
+        return true;
+      })
+    },
+    links: {
+      list: () => clone((fangApp?.graphData?.links ?? storedGraph()?.links ?? []).map(l => ({ ...l, source: l.source?.id ?? l.source, target: l.target?.id ?? l.target }))),
+      add: ({ source, target, label = "", directional = false, type = null, hidden = false, gmOnly = false } = {}) => write((app) => {
+        const ids = new Set(app.graphData.nodes.map(n => n.id));
+        if (!ids.has(source) || !ids.has(target)) throw new Error("FANG | Both ends of a connection must be in the graph.");
+        const link = { id: foundry.utils.randomID(), source, target, label: String(label), directional: !!directional, hidden: !!hidden, gmOnly: !!gmOnly };
+        if (type) link.type = type;
+        app.graphData.links.push(link);
+        return { ...link };
+      }),
+      update: (id, patch = {}) => write((app) => {
+        const link = app.graphData.links.find(l => l.id === id);
+        if (!link) throw new Error(`FANG | No connection ${id}.`);
+        for (const key of ["label", "directional", "type", "hidden", "gmOnly"]) if (key in patch) link[key] = patch[key];
+        return { ...link, source: app._getLinkEndpointId(link.source), target: app._getLinkEndpointId(link.target) };
+      }),
+      remove: (id) => write((app) => { app.graphData.links = app.graphData.links.filter(l => l.id !== id); return true; })
+    },
+    factions: {
+      list: () => clone((fangApp?.graphData?.factions ?? storedGraph()?.factions ?? [])),
+      add: (data = {}) => write((app) => {
+        const faction = app._normalizeFaction({ ...data, id: data.id || foundry.utils.randomID() });
+        app.graphData.factions = [...(app.graphData.factions ?? []), faction];
+        return faction;
+      }),
+      update: (id, patch = {}) => write((app) => {
+        const index = (app.graphData.factions ?? []).findIndex(f => f.id === id);
+        if (index === -1) throw new Error(`FANG | No faction ${id}.`);
+        app.graphData.factions[index] = app._normalizeFaction({ ...app.graphData.factions[index], ...patch, id });
+        return app.graphData.factions[index];
+      }),
+      remove: (id) => write((app) => {
+        app.graphData.factions = (app.graphData.factions ?? []).filter(f => f.id !== id);
+        for (const node of app.graphData.nodes) app._setNodeFactionIds(node, app._getNodeFactionIds(node).filter(f => f !== id));
+        return true;
+      })
+    },
+    // Places. A place has id, name, type, color, description, playerVisible, parentId (the
+    // place it lies in), img, hidden and displayName (the alias players see while hidden).
+    zones: {
+      list: () => clone((fangApp?.graphData?.zones ?? storedGraph()?.zones ?? [])),
+      get: (id) => clone((fangApp?.graphData?.zones ?? storedGraph()?.zones ?? []).find(z => z.id === id) ?? null),
+      add: (data = {}) => write((app) => {
+        if (data.parentId && !(app.graphData.zones ?? []).some(z => z.id === data.parentId)) throw new Error(`FANG | No place ${data.parentId}.`);
+        const zone = app._normalizeZone({ ...data, id: data.id || foundry.utils.randomID() });
+        app.graphData.zones = [...(app.graphData.zones ?? []), zone];
+        Hooks.callAll("fang.zonesChanged", app, { zone, created: true });
+        return zone;
+      }),
+      update: (id, patch = {}) => write((app) => {
+        const zones = app.graphData.zones ?? [];
+        const index = zones.findIndex(z => z.id === id);
+        if (index === -1) throw new Error(`FANG | No place ${id}.`);
+        // A place cannot lie in itself or in anything inside it.
+        if (patch.parentId && app._zoneFamily(id).has(patch.parentId)) throw new Error("FANG | A place cannot lie inside itself.");
+        zones[index] = app._normalizeZone({ ...zones[index], ...patch, id });
+        Hooks.callAll("fang.zonesChanged", app, { zone: zones[index] });
+        return zones[index];
+      }),
+      remove: (id) => write((app) => {
+        const zone = (app.graphData.zones ?? []).find(z => z.id === id);
+        app._deleteZone(id);
+        if (zone) Hooks.callAll("fang.zonesChanged", app, { zone, deleted: true });
+        return true;
+      }),
+      /** Put a character or item at a place; `null` takes it out of any. */
+      assign: (nodeId, zoneId) => write((app) => {
+        const node = app.graphData.nodes.find(n => n.id === nodeId);
+        if (!node) throw new Error(`FANG | No node ${nodeId}.`);
+        if (zoneId && !(app.graphData.zones ?? []).some(z => z.id === zoneId)) throw new Error(`FANG | No place ${zoneId}.`);
+        node.zoneId = zoneId || null;
+        return node;
+      })
+    },
     history: {
       list: () => {
         if (fangApp?._baseline !== undefined) return clone(fangApp._getHistoryEntriesForUser());
         const entries = game.settings.get("fang", "history")?.entries ?? [];
         return clone(game.user.isGM ? entries : entries.filter(e => e?.visibility === "players"));
       },
-      add: async ({ title, playerText = "", gmText = "", nodeId = null, visibility = "gm", kind = "event" } = {}) => {
+      /**
+       * `nodeIds` attaches the entry to several characters, `gameDate` ({ label, sort, time })
+       * dates it (today when left out), `payload` carries an add-on's data such as a place.
+       */
+      add: async ({ title, playerText = "", gmText = "", nodeId = null, nodeIds = null, visibility = "gm", kind = "event", gameDate = null, payload = null } = {}) => {
         const app = await ensureApp();
         const node = nodeId ? app.graphData?.nodes?.find(n => n.id === nodeId) ?? null : null;
-        return app._createHistoryEntry({ node, title, playerText, gmText, kind, visibility, origin: "api" });
+        const refs = Array.isArray(nodeIds) ? nodeIds.map(id => ({ type: "node", id })) : null;
+        return app._createHistoryEntry({ node, refs, title, playerText, gmText, kind, visibility, origin: "api",
+          gameDate: gameDate ?? app.detectCurrentGameDate(), payload });
+      },
+      update: async (id, patch = {}) => {
+        const app = await ensureApp();
+        const allowed = {};
+        for (const key of ["title", "playerText", "gmText", "kind", "visibility", "gameDate", "payload"]) if (key in patch) allowed[key] = patch[key];
+        if (Array.isArray(patch.nodeIds)) allowed.refs = patch.nodeIds.map(n => ({ type: "node", id: n }));
+        return app._updateHistoryEntry(id, allowed);
+      },
+      remove: async (id) => {
+        if (!game.user.isGM) throw new Error("FANG | Only a GM removes chronicle entries.");
+        const app = await ensureApp();
+        return app._deleteHistoryEntry(id);
       }
     },
 
