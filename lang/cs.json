@@ -24,7 +24,16 @@
             "RailTitle": "Lišta vlevo",
             "RailText": "Nahoře jsou zobrazení, pod nimi nástroje. Otazník tohoto průvodce kdykoli vrátí.",
             "EmptyGM": "Zatím tu nikdo není. Zapněte režim úprav tužkou vlevo nahoře a pak přetáhněte aktéry z postranního panelu do grafu.",
-            "EmptyPlayer": "Zatím tu nikdo není. Váš PJ ještě nepřidal žádné postavy."
+            "EmptyPlayer": "Zatím tu nikdo není. Váš PJ ještě nepřidal žádné postavy.",
+            "PremiumButton": "Místa (FANG Premium)",
+            "PremiumTitle": "FANG Premium",
+            "PremiumIntro": "Doplňkový modul pro tento graf. Samotný FANG zůstává zdarma a úplný, Premium přidává zobrazení a nástroje.",
+            "PremiumPlacesTitle": "Místa",
+            "PremiumPlacesText": "Kdo kde byl a kdy: časová osa míst, vyčtená z kroniky, s místnostmi, skrytými místy a cestami každé postavy.",
+            "PremiumItemsTitle": "Předměty",
+            "PremiumItemsText": "Přetahujte předměty do grafu a spojujte je s tím, kdo je vlastní, hledá nebo vytvořil.",
+            "PremiumCollabTitle": "Společné úpravy",
+            "PremiumCollabText": "PJ a hráči upravují graf současně a vidí se při tom."
         },
         "UI": {
             "TabEditor": "Upravit",

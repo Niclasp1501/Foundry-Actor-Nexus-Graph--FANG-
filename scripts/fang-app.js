@@ -10086,6 +10086,33 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             btn.addEventListener("click", (event) => { event.preventDefault(); this.showView(def.id); });
             host.appendChild(btn);
         }
+        // No add-on view: the place where one would be says what the add-on brings, muted,
+        // and only to the GM, who is the one to decide about it.
+        if (views.length === 1 && game.user.isGM) {
+            const t = (key, fallback) => this._localize(`FANG.Guide.${key}`, fallback);
+            const btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = "fang-rail-btn fang-rail-view is-teaser";
+            const label = t("PremiumButton", "Places (FANG Premium)");
+            btn.title = label; btn.dataset.tooltip = label; btn.setAttribute("aria-label", label);
+            btn.innerHTML = `<i class="fas fa-map-location-dot" aria-hidden="true"></i>`;
+            btn.addEventListener("click", (event) => {
+                event.preventDefault();
+                this._closeSidebarPanel();
+                this.showGuide({
+                    id: "premium-teaser",
+                    icon: "fa-gem",
+                    title: t("PremiumTitle", "FANG Premium"),
+                    intro: t("PremiumIntro", "An add-on module for this graph. FANG itself stays free and complete; Premium adds views and tools on top."),
+                    points: [
+                        { icon: "fa-map-location-dot", title: t("PremiumPlacesTitle", "Places"), text: t("PremiumPlacesText", "Who was where, and when: a timeline of places, read out of the chronicle, with rooms, hidden places and journeys for every character.") },
+                        { icon: "fa-gem", title: t("PremiumItemsTitle", "Items"), text: t("PremiumItemsText", "Drag items into the graph and connect them to whoever owns, seeks or made them.") },
+                        { icon: "fa-people-arrows", title: t("PremiumCollabTitle", "Editing together"), text: t("PremiumCollabText", "GM and players edit the graph at the same time and see each other doing it.") }
+                    ]
+                }, { force: true });
+            });
+            host.appendChild(btn);
+        }
         this._markActiveView();
     }
 

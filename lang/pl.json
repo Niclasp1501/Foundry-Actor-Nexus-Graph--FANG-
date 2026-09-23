@@ -24,7 +24,16 @@
             "RailTitle": "Pasek po lewej",
             "RailText": "U góry są widoki, poniżej narzędzia. Znak zapytania w każdej chwili przywraca ten przewodnik.",
             "EmptyGM": "Nikogo tu jeszcze nie ma. Włącz tryb edycji ołówkiem w lewym górnym rogu, a potem przeciągnij aktorów z panelu bocznego na graf.",
-            "EmptyPlayer": "Nikogo tu jeszcze nie ma. Twój MG nie dodał jeszcze żadnych postaci."
+            "EmptyPlayer": "Nikogo tu jeszcze nie ma. Twój MG nie dodał jeszcze żadnych postaci.",
+            "PremiumButton": "Miejsca (FANG Premium)",
+            "PremiumTitle": "FANG Premium",
+            "PremiumIntro": "Moduł dodatkowy do tego grafu. Sam FANG pozostaje darmowy i kompletny, Premium dodaje widoki i narzędzia.",
+            "PremiumPlacesTitle": "Miejsca",
+            "PremiumPlacesText": "Kto gdzie był i kiedy: oś czasu miejsc, odczytana z kroniki, z pomieszczeniami, ukrytymi miejscami i podróżami każdej postaci.",
+            "PremiumItemsTitle": "Przedmioty",
+            "PremiumItemsText": "Przeciągaj przedmioty na graf i łącz je z tym, kto je posiada, szuka ich lub je stworzył.",
+            "PremiumCollabTitle": "Wspólna edycja",
+            "PremiumCollabText": "MG i gracze edytują graf jednocześnie i widzą się przy tym nawzajem."
         },
         "UI": {
             "TabEditor": "Edycja",

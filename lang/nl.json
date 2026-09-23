@@ -24,7 +24,16 @@
             "RailTitle": "De balk links",
             "RailText": "Bovenaan staan de weergaven, daaronder de hulpmiddelen. Het vraagteken haalt deze uitleg altijd terug.",
             "EmptyGM": "Nog niemand hier. Zet met het potlood linksboven de bewerkmodus aan en sleep dan actors uit de zijbalk naar de graaf.",
-            "EmptyPlayer": "Nog niemand hier. Je spelleider heeft nog geen personages toegevoegd."
+            "EmptyPlayer": "Nog niemand hier. Je spelleider heeft nog geen personages toegevoegd.",
+            "PremiumButton": "Plaatsen (FANG Premium)",
+            "PremiumTitle": "FANG Premium",
+            "PremiumIntro": "Een aanvullende module voor deze graaf. FANG zelf blijft gratis en volledig, Premium voegt weergaven en hulpmiddelen toe.",
+            "PremiumPlacesTitle": "Plaatsen",
+            "PremiumPlacesText": "Wie was waar, en wanneer: een tijdlijn van plaatsen, gelezen uit de kroniek, met kamers, verborgen plaatsen en reizen van elk personage.",
+            "PremiumItemsTitle": "Voorwerpen",
+            "PremiumItemsText": "Sleep voorwerpen naar de graaf en verbind ze met wie ze bezit, zoekt of heeft gemaakt.",
+            "PremiumCollabTitle": "Samen bewerken",
+            "PremiumCollabText": "Spelleider en spelers bewerken de graaf tegelijk en zien elkaar daarbij."
         },
         "UI": {
             "TabEditor": "Bewerken",

@@ -24,7 +24,16 @@
             "RailTitle": "La barra a sinistra",
             "RailText": "In alto ci sono le viste, sotto gli strumenti. Il punto interrogativo richiama questa guida in qualsiasi momento.",
             "EmptyGM": "Ancora nessuno. Attiva la modalità modifica con la matita in alto a sinistra, poi trascina gli attori dalla barra laterale nel grafo.",
-            "EmptyPlayer": "Ancora nessuno. Il tuo GM non ha ancora aggiunto personaggi."
+            "EmptyPlayer": "Ancora nessuno. Il tuo GM non ha ancora aggiunto personaggi.",
+            "PremiumButton": "Luoghi (FANG Premium)",
+            "PremiumTitle": "FANG Premium",
+            "PremiumIntro": "Un modulo aggiuntivo per questo grafo. FANG resta gratuito e completo, Premium aggiunge viste e strumenti.",
+            "PremiumPlacesTitle": "Luoghi",
+            "PremiumPlacesText": "Chi era dove, e quando: una linea del tempo dei luoghi, letta dalla cronaca, con stanze, luoghi nascosti e viaggi di ogni personaggio.",
+            "PremiumItemsTitle": "Oggetti",
+            "PremiumItemsText": "Trascina oggetti nel grafo e collegali a chi li possiede, li cerca o li ha creati.",
+            "PremiumCollabTitle": "Modificare insieme",
+            "PremiumCollabText": "GM e giocatori modificano il grafo nello stesso momento e si vedono mentre lo fanno."
         },
         "UI": {
             "TabEditor": "Modifica",

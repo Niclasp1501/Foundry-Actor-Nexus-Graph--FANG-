@@ -24,7 +24,16 @@
             "RailTitle": "La barra de la izquierda",
             "RailText": "Arriba están las vistas, debajo las herramientas. El signo de interrogación recupera esta guía en cualquier momento.",
             "EmptyGM": "Aún no hay nadie. Activa el modo de edición con el lápiz arriba a la izquierda y arrastra actores de la barra lateral al grafo.",
-            "EmptyPlayer": "Aún no hay nadie. Tu DJ todavía no ha añadido personajes."
+            "EmptyPlayer": "Aún no hay nadie. Tu DJ todavía no ha añadido personajes.",
+            "PremiumButton": "Lugares (FANG Premium)",
+            "PremiumTitle": "FANG Premium",
+            "PremiumIntro": "Un módulo adicional para este grafo. FANG sigue siendo gratuito y completo, Premium añade vistas y herramientas.",
+            "PremiumPlacesTitle": "Lugares",
+            "PremiumPlacesText": "Quién estuvo dónde, y cuándo: una línea de tiempo de lugares, leída de la crónica, con estancias, lugares ocultos y viajes de cada personaje.",
+            "PremiumItemsTitle": "Objetos",
+            "PremiumItemsText": "Arrastra objetos al grafo y conéctalos con quien los posee, los busca o los creó.",
+            "PremiumCollabTitle": "Editar juntos",
+            "PremiumCollabText": "El DJ y los jugadores editan el grafo a la vez y se ven mientras lo hacen."
         },
         "UI": {
             "TabEditor": "Editar",

@@ -24,7 +24,16 @@
             "RailTitle": "Die Leiste links",
             "RailText": "Oben stehen die Ansichten, darunter die Werkzeuge. Das Fragezeichen holt diese Anleitung jederzeit zurück.",
             "EmptyGM": "Noch niemand hier. Schalte mit dem Stift oben links den Bearbeitungsmodus ein und ziehe dann Akteure aus der Seitenleiste in den Graphen.",
-            "EmptyPlayer": "Noch niemand hier. Deine Spielleitung hat noch keine Charaktere hinzugefügt."
+            "EmptyPlayer": "Noch niemand hier. Deine Spielleitung hat noch keine Charaktere hinzugefügt.",
+            "PremiumButton": "Orte (FANG Premium)",
+            "PremiumTitle": "FANG Premium",
+            "PremiumIntro": "Ein Zusatzmodul für diesen Graphen. FANG selbst bleibt kostenlos und vollständig, Premium setzt Ansichten und Werkzeuge obendrauf.",
+            "PremiumPlacesTitle": "Orte",
+            "PremiumPlacesText": "Wer war wo, und wann: ein Zeitverlauf der Orte, gelesen aus der Chronik, mit Räumen, verdeckten Orten und Reisen für jeden Charakter.",
+            "PremiumItemsTitle": "Gegenstände",
+            "PremiumItemsText": "Gegenstände in den Graphen ziehen und mit dem verbinden, der sie besitzt, sucht oder geschaffen hat.",
+            "PremiumCollabTitle": "Gemeinsam bearbeiten",
+            "PremiumCollabText": "Spielleitung und Spieler bearbeiten den Graphen gleichzeitig und sehen einander dabei."
         },
         "UI": {
             "TabEditor": "Bearbeiten",
@@ -143,7 +152,7 @@
                 }
             },
             "Color": "Farbe",
-            "CollaborativeWith": "Gemeinsames Bearbeiten — ebenfalls hier: {users}",
+            "CollaborativeWith": "Gemeinsames Bearbeiten, ebenfalls hier: {users}",
             "CollaborativeAlone": "Gemeinsames Bearbeiten",
             "GroupByZone": "Nach Ort gruppieren",
             "GroupByZoneHint": "Zieht Charaktere nach Ort zusammen. Ersetzt die Fraktions-Gruppierung.",
@@ -230,11 +239,11 @@
             "OtherUser": "ein anderer Benutzer",
             "LockStompTitle": "Bearbeitung übernehmen?",
             "LockStompConfirm": "{user} bearbeitet gerade. Trotzdem übernehmen?",
-            "GroupingReset": "Gruppierung zurückgesetzt — vorherige Anordnung wiederhergestellt.",
+            "GroupingReset": "Gruppierung zurückgesetzt, vorherige Anordnung wiederhergestellt.",
             "ZoneGroupingInsufficient": "Weise zuerst Charaktere mindestens zwei Orten zu.",
             "ZoneGroupingApplied": "Nach Ort gruppiert.",
-            "GroupingPositionsLocked": "Gruppierungs-Ansicht — Positionen sind gesperrt. Setze die Gruppierung zurück, um Charaktere zu verschieben.",
-            "GroupingIsAView": "Das ist eine Ansicht — Positionen bleiben gesperrt, bis du sie zurücksetzt.",
+            "GroupingPositionsLocked": "Gruppierungs-Ansicht: Positionen sind gesperrt. Setze die Gruppierung zurück, um Charaktere zu verschieben.",
+            "GroupingIsAView": "Das ist eine Ansicht. Positionen bleiben gesperrt, bis du sie zurücksetzt.",
             "NodeUnpinned": "Position freigegeben.",
             "NodePinned": "Position festgehalten."
         },
@@ -397,7 +406,7 @@
             "RecapCreate": "Rückblick schreiben",
             "RecapWhose": "Wessen Rückblick?",
             "RecapBy": "Rückblick von {name}",
-            "RecapNote": "Der Rückblick selbst öffnet sich nach dem Speichern als Journalseite — dort schreibst du.",
+            "RecapNote": "Der Rückblick selbst öffnet sich nach dem Speichern als Journalseite. Dort schreibst du.",
             "RecapRequested": "Die Spielleitung legt die Seite an …",
             "RecapDeleteTitle": "Auch den Rückblick löschen?",
             "RecapDeleteBody": "Zu diesem Eintrag gehört eine Rückblick-Seite. Behalten oder zusammen mit dem Eintrag löschen?",
@@ -410,7 +419,7 @@
             "PlayerTextHint": "Sicherer Text, den Spieler sehen dürfen, wenn er freigegeben ist.",
             "GMText": "GM-Notizen",
             "GMTextHint": "Private Einordnung für den GM.",
-            "GMTextPrivate": "GM-Notizen bleiben privat — Spieler sehen sie nie, freigegeben oder nicht.",
+            "GMTextPrivate": "GM-Notizen bleiben privat. Spieler sehen sie nie, freigegeben oder nicht.",
             "ReleaseEntry": "Ganzen Eintrag für Spieler freigeben",
             "ReleaseEntryHint": "Ohne Haken bleibt der Eintrag nur für die Spielleitung sichtbar.",
             "VisibleToPlayers": "Für Spieler sichtbar",
@@ -540,7 +549,7 @@
             "DescriptionPlaceholder": "Kurze Beschreibung",
             "VisibleToPlayers": "Für Spieler sichtbar",
             "MemberCount": "{count} Charaktere an diesem Ort",
-            "EmptyHint": "Noch keine Charaktere — der Ort wird nur in der Orts-Ansicht gezeichnet, sobald du welche zuweist (Rechtsklick auf einen Charakter, Bearbeiten).",
+            "EmptyHint": "Noch keine Charaktere. Der Ort wird nur in der Orts-Ansicht gezeichnet, sobald du welche zuweist (Rechtsklick auf einen Charakter, Bearbeiten).",
             "Types": {
                 "region": "Region",
                 "city": "Stadt",
@@ -572,18 +581,18 @@
             "rumor": "Gerücht"
         },
         "Merge": {
-            "ConflictResolved": "{names} wurde gleichzeitig bearbeitet — deine Version wurde übernommen.",
-            "DeletedElsewhere": "{names} wurde von jemand anderem gelöscht — deine Änderung ist verfallen."
+            "ConflictResolved": "{names} wurde gleichzeitig bearbeitet, deine Version wurde übernommen.",
+            "DeletedElsewhere": "{names} wurde von jemand anderem gelöscht, deine Änderung ist verfallen."
         },
         "Willkommen": {
             "Setting": "Willkommensfenster",
             "Untertitel": "Foundry Actor Nexus Graph",
-            "Einleitung": "FANG zeichnet das Beziehungsgeflecht deiner Kampagne als interaktiven Graphen — direkt in Foundry, ohne externes Werkzeug und ohne zweiten Bildschirm voller Notizen.",
-            "Punkt1": "<strong>Beziehungen</strong> — wer wem Geld schuldet, wer wen hasst, welche Fraktion im Hintergrund zieht. Rechtsklick auf eine Verbindung benennt sie um, dreht den Pfeil oder löst ein Doppelporträt aus.",
-            "Punkt2": "<strong>Rollen und Fraktionen</strong> — eine zweite Ordnungsebene über den bloßen Verbindungen. Dazu Zonen nach Ort oder Thema und Boss-Knoten, die magnetisch in der Mitte hängen.",
-            "Punkt3": "<strong>Spielersicher</strong> — verdeckte Kontakte schützen deine Geheimnisse, während Spieler eigene Aliasnamen und Notizen pflegen dürfen.",
-            "Start": "Zum Anfangen: <strong>Shift+G</strong> öffnet den Graphen. Akteure hineinziehen genügt — er ordnet sich selbst an.",
-            "ForgeZeile": "Alle Module, Anleitungen und deutschen Übersetzungen an einem Ort — Modulseite öffnen",
+            "Einleitung": "FANG zeichnet das Beziehungsgeflecht deiner Kampagne als interaktiven Graphen, direkt in Foundry, ohne externes Werkzeug und ohne zweiten Bildschirm voller Notizen.",
+            "Punkt1": "<strong>Beziehungen</strong>: wer wem Geld schuldet, wer wen hasst, welche Fraktion im Hintergrund zieht. Rechtsklick auf eine Verbindung benennt sie um, dreht den Pfeil oder löst ein Doppelporträt aus.",
+            "Punkt2": "<strong>Rollen und Fraktionen</strong>: eine zweite Ordnungsebene über den bloßen Verbindungen. Dazu Zonen nach Ort oder Thema und Boss-Knoten, die magnetisch in der Mitte hängen.",
+            "Punkt3": "<strong>Spielersicher</strong>: verdeckte Kontakte schützen deine Geheimnisse, während Spieler eigene Aliasnamen und Notizen pflegen dürfen.",
+            "Start": "Zum Anfangen: <strong>Shift+G</strong> öffnet den Graphen. Akteure hineinziehen genügt, er ordnet sich selbst an.",
+            "ForgeZeile": "Alle Module, Anleitungen und deutschen Übersetzungen an einem Ort: Modulseite öffnen",
             "Nie": "Nicht mehr anzeigen",
             "Spaeter": "Später"
         },

@@ -2499,6 +2499,17 @@ body.fang-theme-cyberpunk .fang-dialog .faction-icon-preview {
     color: #fff;
 }
 
+.fang-app-container .fang-rail-btn.fang-rail-view.is-teaser {
+    opacity: 0.45;
+    border-style: dashed;
+    box-shadow: none;
+}
+
+.fang-app-container .fang-rail-btn.fang-rail-view.is-teaser:hover,
+.fang-app-container .fang-rail-btn.fang-rail-view.is-teaser:focus-visible {
+    opacity: 0.85;
+}
+
 /* Tools that only make sense for the character graph step aside in another view. */
 /* !important and the body prefix: the GM-only rule reverts display with both. */
 .fang-app-container:not([data-active-view="graph"]) .fang-rail-btn[data-view="graph"],

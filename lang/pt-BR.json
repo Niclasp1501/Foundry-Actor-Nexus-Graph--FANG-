@@ -24,7 +24,16 @@
             "RailTitle": "A barra à esquerda",
             "RailText": "Em cima ficam as visualizações, embaixo as ferramentas. O ponto de interrogação traz este guia de volta a qualquer momento.",
             "EmptyGM": "Ninguém aqui ainda. Ative o modo de edição com o lápis no canto superior esquerdo e arraste atores da barra lateral para o grafo.",
-            "EmptyPlayer": "Ninguém aqui ainda. Seu Mestre ainda não adicionou personagens."
+            "EmptyPlayer": "Ninguém aqui ainda. Seu Mestre ainda não adicionou personagens.",
+            "PremiumButton": "Lugares (FANG Premium)",
+            "PremiumTitle": "FANG Premium",
+            "PremiumIntro": "Um módulo adicional para este grafo. O FANG continua gratuito e completo, o Premium acrescenta visualizações e ferramentas.",
+            "PremiumPlacesTitle": "Lugares",
+            "PremiumPlacesText": "Quem esteve onde, e quando: uma linha do tempo de lugares, lida da crônica, com cômodos, lugares ocultos e viagens de cada personagem.",
+            "PremiumItemsTitle": "Itens",
+            "PremiumItemsText": "Arraste itens para o grafo e conecte-os a quem os possui, procura ou criou.",
+            "PremiumCollabTitle": "Editar juntos",
+            "PremiumCollabText": "Mestre e jogadores editam o grafo ao mesmo tempo e veem uns aos outros fazendo isso."
         },
         "UI": {
             "TabEditor": "Editar",

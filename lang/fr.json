@@ -24,7 +24,16 @@
             "RailTitle": "La barre de gauche",
             "RailText": "Les vues sont en haut, les outils en dessous. Le point d'interrogation rappelle ce guide à tout moment.",
             "EmptyGM": "Personne ici pour l'instant. Activez le mode édition avec le crayon en haut à gauche, puis faites glisser des acteurs de la barre latérale dans le graphe.",
-            "EmptyPlayer": "Personne ici pour l'instant. Votre MJ n'a pas encore ajouté de personnages."
+            "EmptyPlayer": "Personne ici pour l'instant. Votre MJ n'a pas encore ajouté de personnages.",
+            "PremiumButton": "Lieux (FANG Premium)",
+            "PremiumTitle": "FANG Premium",
+            "PremiumIntro": "Un module complémentaire pour ce graphe. FANG lui-même reste gratuit et complet, Premium ajoute des vues et des outils.",
+            "PremiumPlacesTitle": "Lieux",
+            "PremiumPlacesText": "Qui était où, et quand : une chronologie des lieux, tirée de la chronique, avec des pièces, des lieux cachés et les voyages de chaque personnage.",
+            "PremiumItemsTitle": "Objets",
+            "PremiumItemsText": "Faites glisser des objets dans le graphe et reliez-les à qui les possède, les cherche ou les a créés.",
+            "PremiumCollabTitle": "Modifier ensemble",
+            "PremiumCollabText": "Le MJ et les joueurs modifient le graphe en même temps et se voient faire."
         },
         "UI": {
             "TabEditor": "Modifier",

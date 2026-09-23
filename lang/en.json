@@ -24,7 +24,16 @@
             "RailTitle": "The rail on the left",
             "RailText": "Views are on top, tools below. The question mark brings this guide back at any time.",
             "EmptyGM": "Nobody here yet. Switch on edit mode with the pen at the top left, then drag actors from the sidebar into the graph.",
-            "EmptyPlayer": "Nobody here yet. Your GM has not added any characters."
+            "EmptyPlayer": "Nobody here yet. Your GM has not added any characters.",
+            "PremiumButton": "Places (FANG Premium)",
+            "PremiumTitle": "FANG Premium",
+            "PremiumIntro": "An add-on module for this graph. FANG itself stays free and complete; Premium adds views and tools on top.",
+            "PremiumPlacesTitle": "Places",
+            "PremiumPlacesText": "Who was where, and when: a timeline of places, read out of the chronicle, with rooms, hidden places and journeys for every character.",
+            "PremiumItemsTitle": "Items",
+            "PremiumItemsText": "Drag items into the graph and connect them to whoever owns, seeks or made them.",
+            "PremiumCollabTitle": "Editing together",
+            "PremiumCollabText": "GM and players edit the graph at the same time and see each other doing it."
         },
         "UI": {
             "TabEditor": "Edit",
