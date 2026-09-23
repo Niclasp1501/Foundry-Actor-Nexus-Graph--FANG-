@@ -1,142 +1,253 @@
 # Ninjo's FANG (Foundry Actor Nexus Graph)
 
-**Current Version / Aktuelle Version:** 14.2605.3
+A living relationship graph for Foundry VTT: characters, factions, locations and a chronicle of
+what happened, all in one place.
 
-An interactive, self-arranging Actor Graph module for visualizing Character & NPC Relationships natively in Foundry VTT V13 and V14. FANG enables Game Masters and players to dynamically map out self-building relationship networks inside their game world.
-
-*(Scroll down for German version / Scrolle weiter runter für die deutsche Version)*
+*(Scroll down for the German version / Weiter unten auf Deutsch)*
 
 ---
 
 ## 🇬🇧 English
 
-### Features
 <p align="center">
   <img src="assets/fang_ui_1.png" width="32%" title="Canvas Graph Overview" />
   <img src="assets/fang_ui_2.png" width="32%" title="Canvas Quest Panel" />
   <img src="assets/fang_ui_3.png" width="32%" title="Narrative Spotlight" />
 </p>
 
-- **In-Person Gaming Mode:** Enable a specialized workflow for local gaming sessions. Includes toggleable monitor controls that appear dynamically in the UI.
-- **Configurable Monitor Name:** Specify exactly which user/display represents your group monitor (e.g., "TV-Display"). FANG uses smart name-matching to target the right screen.
-- **Modern Canvas-First UI:** Use a compact FANG rail for search, presentation, factions, and settings while edit tools appear directly on the canvas only when editing is active.
-- **Cinematic Monitor Focus (Boss Pivot):** Dedicated Monitor accounts keep the focus strictly on "Center" nodes. The camera pivots around the story's anchor points for a perfect big-screen experience.
-- **Connection Editing & Spotlight:** Right-click relationships to rename them, add lore, flip directed arrows, or cast a cinematic dual-portrait Spotlight with directional arrows.
-- **Player-Safe Actor Editing:** Hidden contacts keep GM secrets protected while players can still edit allowed alias/player notes and view safe information.
-- **Collaborative Editing (Optional):** Instead of an exclusive lock, several people can work on the graph at once. Saving merges field by field against the stored state, so two people editing different things no longer overwrite each other. Physics drift is discarded on purpose – only positions someone actually dragged count as intent.
-- **Precise Coordinate Dragging:** Fully corrected coordinate tracking ensures tokens stay perfectly under your mouse during drag-and-drop, even when zoomed or panned.
-- **Roles & Organizations:** Assign roles and faction affiliations to individual tokens. A character can belong to **several factions at once** — each one gets its own arc on the token ring and its own member lines. One of them carries a star and decides where that character sits while grouping is on, because a position cannot be shared.
-- **Locations:** Assign a location to a token – region, city, district, building, or realm. Factions answer who someone belongs to, locations answer where they are, and either can drive the visual grouping.
-- **Gravity Center (Boss Nodes):** Magnetically anchor important actors (e.g., villains) to the center of the graph with a customizable glowing aura.
-- **Visual Grouping:** Group actors (e.g., by location) with visual bounding boxes or cluster zones.
-- **Link Label Validation:** Ensures all connections have mandatory labels to prevent confusing "invisible" links.
-- **JSON Export & Import (Backup):** Save your entire graph (including token positions, factions, and visual settings) to a file. Perfect for backups or sharing templates.
-- **Customizable Backgrounds (Live Sync):** Customize the graph background via palette colors, custom images (blur/opacity), or style presets. Syncs live to players/monitors.
-- **Theme Dropdown (Fantasy/Cyberpunk):** Choose the FANG visual style in normal module settings. The selected theme is applied live to already open FANG windows.
-- **Search & Filter Overlay:** Search nodes, roles, factions, or links locally inside the graph, highlight exact matches, and optionally isolate only the relevant results.
-- **Placeholder NPC Workflow:** Add placeholder contacts directly on the canvas, then replace them later with real Actors via drag-and-drop or the context menu while keeping graph links intact.
-- **Quest Log + Quest Spotlight:** Link one or multiple Quest Journals per node, keep new quests hidden until revealed, and open visible quests from the in-canvas quest panel or narrative view.
-- **Chronicle:** A day-by-day log of what happened, with player-safe text and private GM text kept apart on every entry. Graph actions write entries by themselves when a token appears, a hidden identity is revealed, a relationship becomes visible, or a quest is released; players can add their own session recaps. A time axis above the log holds one tick per game day and jumps to any of them.
-- **Calendar Aware:** Entries carry the game day and the time of day, read from a calendar module (Calendaria, Seasons & Stars, Simple Calendar) or from Foundry's own calendar – month names, month lengths and festival days included. Worlds with no calendar fall back to the real date. Back-dating an entry picks a day rather than typing one, and can record that the group only found out about it later.
-- **Sheet Only Compatibility:** FANG puts its own button into Sheet Only's button bar, so the graph stays one click away in that mode. (Replacing that module's actor selector moved to Ninjo's In-Person Tools in 14.2609.1.)
-- **DiploGlass One-Way Faction Sync (Optional):** If DiploGlass is installed, FANG can import/sync factions (name, icon, journal/rolltable refs) one-way into FANG. Includes a first-time GM prompt and automatic node-to-faction assignment based on DiploGlass per-character reputation.
-- **Multi-Language Support (I18n):** Available in English, German, French, Spanish, Portuguese (Brazil), Italian, Polish, Russian, Czech, and Dutch.
+Every long campaign reaches the point where nobody quite remembers who still owes whom a favour,
+which merchant secretly works for the thieves' guild, and why the baroness dislikes your party so
+much. FANG draws that web as a living graph right inside Foundry. Drag your characters in, connect
+them with a few words, and the graph arranges itself so you can see at a glance who belongs with
+whom.
+
+FANG also keeps a **chronicle** where your group records what happened on which game day. That
+puts the story of your campaign and the people in it in one place.
+
+### Relationships you can see
+
+Every connection gets a label and a direction, such as "owes money to" or "is afraid of". Right-
+click it to rename it, add notes, flip the arrow, or present the relationship as a big spotlight
+with both portraits when something is revealed at the table. When the graph gets crowded, open the
+list of all of a character's connections and edit them there.
+
+Anchor important figures such as the big villain as a **boss** in the middle, with a glowing aura
+that everything else gathers around. Anyone who does not exist as an actor yet starts out as a
+**placeholder**. Once the character exists, drag it onto the placeholder and every connection
+stays in place.
+
+### Factions and locations
+
+Give your characters **factions**, several at once if needed, because every good campaign has that
+mercenary who officially works for the guild and secretly sits in the circle. Membership shows as a
+coloured ring on the token and as a line between the members. **Locations** record where someone
+is, from a whole region down to a single building.
+
+At the push of a button the graph sorts itself by faction or by location, and every group gets its
+own labelled area. Reset it and everything returns to where it was.
+
+### The chronicle
+
+In the chronicle your group writes down what happened. Entries are sorted by game day, not by when
+someone typed them. FANG reads your world's calendar or a known calendar module for that, and
+without a calendar it simply uses the real date. Above the chronicle sits a timeline with one dot
+per game day, bigger the more happened that day.
+
+A small switch tells apart things the group already knew at the time from a revelation about the
+past it only learns today. Session recaps belong to a character and get their own journal page, so
+longer texts have room. Quests can be attached to characters too, and stay hidden until you
+reveal them.
+
+### Working on the graph together
+
+If you like, several people can work on the graph at the same time. When saving, FANG merges the
+changes field by field, so two people working in different places do not get in each other's way,
+and everyone sees the same layout. Your secrets as GM stay safe: players do not see hidden
+characters, but they can still keep their own notes and nicknames for characters.
+
+You can save the whole graph with all positions, factions and settings to a file and load it again.
+Two themes, fantasy and cyberpunk, switch live, and FANG speaks ten languages. The first time you
+open it, it explains itself in six short points.
+
+### For games in the same room
+
+When you all play in one room, **in-person mode** adds extra buttons for the monitor. Choose which
+account is your group screen and send the graph there in fullscreen with one click. The view stays
+calmly centred on the characters you marked as the centre.
+
+### FANG Premium
+
+FANG is free, fully usable, and it stays that way. If you want more, **FANG Premium** is an add-on
+module for patrons that makes working on the graph together a lot more pleasant. You see who is
+working on what, and you are asked before two people open the same editor. When someone drags a
+character across the graph, it moves for everyone. What a player saves waits for a GM instead of
+being lost. When two versions of the same text collide, you see both side by side and decide. A
+change log shows who changed what and when, and every change can be undone on its own. Premium
+also unlocks the custom background image that FANG already lists as a premium option.
+
+How to get FANG Premium and what the tiers cost is on the [premium page](https://ninjos-forge.web.app/en/premium).
 
 ### Installation
-1. Start Foundry VTT and navigate to the **Add-on Modules** tab.
-2. Click **Install Module**.
-3. Choose your channel and paste one of these Manifest URLs:
-   - **Stable:** `https://github.com/Niclasp1501/Foundry-Actor-Nexus-Graph--FANG-/releases/latest/download/module.json`
-   - **Beta:** `https://github.com/Niclasp1501/Foundry-Actor-Nexus-Graph--FANG-/releases/download/beta-latest/module-beta.json`
-4. Restart Foundry and enable **Foundry Actor Nexus Graph (FANG)** in your World's module settings.
-5. Channel note: both links install the same module id (`fang`). Use one channel per world (no parallel stable+beta install in the same world).
-6. **Beta participation notice (at your own risk):** Beta builds may contain regressions or breaking behavior. Before installing/updating beta, create a full backup of your world first.
 
-### Usage
-#### For the Game Master (GM)
-1. **Opening FANG:** Click the **FANG Graph** Journal button, use the Actor Directory integration, or press `Shift + G`.
-2. **Editing the Graph:** Activate edit mode, then use the canvas edit tools for direct connections and placeholders. Context menus handle actor, quest, and relationship details.
-3. **Sharing the Graph:** 
-   - Click **"Show Players"** to open a read-only window for all players.
-   - Use **"Show Monitor"** (available in In-Person mode) to send a specialized fullscreen view to your dedicated monitor user.
-4. **Closing the Graph:** Use **"Close for Players"** or **"Close Monitor"** to instantly manage remote views.
-5. **Keeping the Chronicle:** Open it from the FANG rail, or from a token's context menu for that character alone. Every entry has a title, a player-safe text and a private GM text; the game day and the time of day come from the world's calendar. Graph actions write entries on their own when a token appears, an identity is revealed, a relationship becomes visible or a quest is released.
-6. **Back-dating an Entry:** Switch from *Today* to *On an earlier day* and pick the day - either one the chronicle already knows or a fresh one from the calendar. Tick *We only found out about this today* when the group learns of something older: the entry stays on the day it happened and notes when you found out.
+FANG is in the official Foundry package catalogue. In Foundry, open the **Add-on Modules** tab,
+click **Install Module** and search for *Ninjo's FANG*. Then enable it in your world's module
+settings.
 
-#### For the Players
-- **Initial Setup:** The GM must open the graph at least once to initialize the background data.
-- **Viewing the Graph:** Once shared by the GM, the window will pop up automatically.
-- **Manual Access:** If a player accidentally closes the window, they can re-open it via the **"FANG Graph" Journal Entry** (a link inside the journal text opens the tool) or simply by pressing `Shift + G`.
-- **The Chronicle:** Players see the chronicle entries the GM released, and can write their own session recaps under the *Flashback* category without taking the graph's edit lock.
+You can also install FANG from a manifest URL. For the stable version that is
+`https://github.com/Niclasp1501/Foundry-Actor-Nexus-Graph--FANG-/releases/latest/download/module.json`,
+and if you want to try new features early, use the beta at
+`https://github.com/Niclasp1501/Foundry-Actor-Nexus-Graph--FANG-/releases/download/beta-latest/module-beta.json`.
+Both install the same module, so a world can only use one of them. Back up your world before
+trying a beta.
 
-### Future Plans & Roadmap
-For the current development status and planned features, please refer to the [TODO.md](TODO.md) file.
+### Using FANG
+
+As GM, open FANG from the **FANG Graph** journal entry, the button in the actor directory, or with
+`Shift + G`. Switch on edit mode and the tools for connections and placeholders appear right on
+the graph. Everything else about characters, quests and relationships is in the context menu.
+**Show Players** opens the graph for everyone, **Show Monitor** puts it on your group screen, and
+you close both just as quickly.
+
+Your players open FANG from the journal entry or with `Shift + G` as well. You only need to have
+opened the graph once yourself so that it exists. When players change something, it goes through
+you. If you are not online at that moment, FANG says so clearly instead of silently doing nothing.
+
+### Working with other modules
+
+With **DiploGlass** installed, FANG takes over its factions including their icons and assigns the
+characters by their reputation there. **Ninjo's In-Person Tools** give FANG a button in the tablet
+sheet view, and **Sheet Only** users find it in that module's bar as before.
+
+### Roadmap
+
+What is planned next is in [TODO.md](TODO.md).
 
 ---
 
 ## 🇩🇪 Deutsch
 
-### Features
 <p align="center">
   <img src="assets/fang_ui_1.png" width="32%" title="Canvas-Graph Übersicht" />
   <img src="assets/fang_ui_2.png" width="32%" title="Canvas-Aufträge-Panel" />
   <img src="assets/fang_ui_3.png" width="32%" title="Narratives Spotlight" />
 </p>
 
-- **In-Person Gaming Modus:** Spezialisierter Workflow für Vor-Ort-Runden. Schaltet optimierte Monitor-Steuerelemente frei, die dynamisch in der UI erscheinen.
-- **Anpassbarer Monitor-Name:** Leg genau fest, welcher Benutzer/Monitor angesteuert werden soll (z. B. "TV-Display"). FANG nutzt intelligentes Name-Matching, um das Bild auf das richtige Ziel zu übertragen.
-- **Modernes Canvas-First UI:** Nutze die kompakte FANG-Leiste für Suche, Präsentation, Fraktionen und Einstellungen; Bearbeitungswerkzeuge erscheinen direkt im Canvas nur bei aktivem Bearbeitungsmodus.
-- **Cinematische Monitor-Zentrierung (Boss-Pivot):** Monitor-Accounts fixieren den Bildausschnitt starr auf den als "Zentrum" markierten Boss-Nodes für ein perfektes Public-Display-Erlebnis.
-- **Verbindungen Bearbeiten & Spotlight:** Rechtsklick auf Beziehungen, um sie umzubenennen, eigene Notizen hinzuzufügen, gerichtete Pfeile umzudrehen oder ein kinematisches Dual-Porträt-Spotlight auszulösen.
-- **Spielersichere Akteur-Bearbeitung:** Verdeckte Kontakte schützen GM-Geheimnisse, während Spieler erlaubte Aliasnamen, Spielernotizen und sichere Informationen weiterhin pflegen können.
-- **Gemeinsames Bearbeiten (optional):** Statt einer exklusiven Sperre können mehrere Personen gleichzeitig am Graphen arbeiten. Speichern führt die Änderungen feldweise mit dem gespeicherten Stand zusammen, sodass zwei Leute an verschiedenen Dingen sich nicht mehr gegenseitig überschreiben. Physik-Drift wird dabei bewusst verworfen – nur gezogene Positionen zählen als Absicht.
-- **Präzises Drag & Drop:** Korrigierte Koordinaten-Berechnung sorgt dafür, dass Tokens beim Ziehen exakt unter der Maus bleiben, auch wenn du gezoomt hast.
-- **Rollen & Fraktionen:** Weise Rollen und Fraktionen zu. Ein Charakter kann **mehreren Fraktionen zugleich** angehören — jede bekommt einen eigenen Bogen auf dem Tokenring und eigene Mitgliederlinien. Eine davon trägt einen Stern und bestimmt, wo der Charakter steht, solange die Gruppierung an ist; einen Platz kann man sich nicht teilen.
-- **Orte:** Ordne einem Token einen Ort zu – Region, Stadt, Viertel, Gebäude oder Reich. Fraktionen beantworten, wem jemand angehört, Orte beantworten, wo jemand ist; nach beidem lässt sich der Graph gruppieren.
-- **Zentrums-Gravitation (Boss-Knoten):** Verankere wichtige Akteure magnetisch in der Mitte des Graphen, inklusive leuchtender Aura.
-- **Visuelle Gruppierung:** Fasse Akteure (z.B. nach Standort) optisch in Gruppen oder Zonen zusammen.
-- **Verbindungs-Validierung:** Stellt sicher, dass jede Verbindung eine Beschriftung hat, um "unsichtbare" Linien zu vermeiden.
-- **JSON Export & Import (Backup):** Speichere deinen gesamten Graphen (inkl. Token-Positionen, Fraktionen und Einstellungen) in einer Datei. Ideal für Backups oder zum Teilen.
-- **Anpassbarer Hintergrund (Live-Sync):** Passe den Hintergrund über Farbpalette, eigene Bilder (Blur/Deckkraft) oder Stil-Presets an. Wird live an Spieler/Monitor synchronisiert.
-- **Theme-Dropdown (Fantasy/Cyberpunk):** Wähle das FANG-Design in den normalen Modul-Einstellungen. Das aktive Theme wird live auf bereits geöffnete FANG-Fenster angewandt.
-- **Such- & Filter-Overlay:** Durchsuche Knoten, Rollen, Fraktionen oder Verbindungen direkt im Graphen, hebe Treffer hervor und isoliere bei Bedarf nur die relevanten Ergebnisse.
-- **Platzhalter-NPC-Workflow:** Lege Platzhalter direkt im Graphen an und ersetze sie später per Drag & Drop oder Kontextmenü durch echte Akteure, ohne Verbindungen neu bauen zu müssen.
-- **Quest Log + Quest Spotlight:** Verknüpfe ein oder mehrere Quest-Journale pro Knoten, halte neue Aufträge bis zur Freigabe verborgen und öffne sichtbare Aufträge über das Canvas-Panel oder die narrative Ansicht.
-- **Chronik:** Ein nach Spieltagen geordnetes Logbuch, in dem spielersicherer Text und private GM-Notizen bei jedem Eintrag getrennt bleiben. Aktionen im Graphen schreiben von selbst Einträge, wenn ein Token auftaucht, eine verdeckte Identität gelüftet wird, eine Beziehung sichtbar wird oder ein Auftrag freigegeben wird; Spieler können eigene Sitzungsrückblicke beisteuern. Über dem Logbuch liegt eine Zeitachse mit einem Punkt je Spieltag, über die man zu jedem Tag springt.
-- **Kalenderfähig:** Einträge tragen den Spieltag und die Tageszeit, gelesen aus einem Kalendermodul (Calendaria, Seasons & Stars, Simple Calendar) oder aus Foundrys eigenem Kalender – samt Monatsnamen, Monatslängen und Feiertagen. Welten ganz ohne Kalender fallen auf das echte Datum zurück. Ein nachgetragenes Ereignis wählt seinen Tag aus, statt ihn zu tippen, und kann festhalten, dass die Gruppe erst später davon erfahren hat.
-- **Sheet-Only-Kompatibilität:** FANG hängt einen eigenen Knopf in die Knopfleiste von Sheet Only, damit der Graph in diesem Modus einen Klick entfernt bleibt. (Das Ersetzen der Akteursauswahl jenes Moduls ist in 14.2609.1 zu Ninjo's In-Person Tools gewandert.)
-- **DiploGlass Einweg-Fraktionssync (Optional):** Wenn DiploGlass installiert ist, kann FANG Fraktionen (Name, Icon, Journal-/RollTable-Referenzen) einseitig nach FANG importieren/synchronisieren. Enthält einen einmaligen GM-Dialog und eine automatische Knoten-zu-Fraktion-Zuordnung auf Basis der DiploGlass-Charakterreputation.
-- **Mehrsprachigkeit (I18n):** Das Modul ist auf Englisch, Deutsch, Französisch, Spanisch, Portugiesisch (Brasilien), Italienisch, Polnisch, Russisch, Tschechisch und Niederländisch verfügbar.
+In jeder längeren Kampagne kommt der Moment, in dem niemand mehr genau weiß, wer eigentlich
+wem noch einen Gefallen schuldet, welcher Händler heimlich für die Diebesgilde arbeitet und
+warum die Baronin eure Gruppe so wenig leiden kann. FANG zeichnet dieses Geflecht als
+lebendigen Graphen direkt in Foundry. Du ziehst deine Figuren hinein, verbindest sie mit ein
+paar Worten, und der Graph ordnet sich von selbst so an, dass man auf einen Blick sieht, wer zu
+wem gehört.
+
+Dazu führt FANG eine **Chronik**, in der ihr festhaltet, was an welchem Spieltag passiert ist.
+So habt ihr die Geschichte eurer Kampagne und die Menschen darin an einem Ort.
+
+### Beziehungen, die man sieht
+
+Jede Verbindung bekommt eine Beschriftung und eine Richtung, etwa „schuldet Geld" oder „hat
+Angst vor". Mit einem Rechtsklick benennst du sie um, schreibst Notizen dazu, drehst den Pfeil
+oder stellst die Beziehung als großes Spotlight mit beiden Porträts vor, wenn am Tisch gerade
+etwas enthüllt wird. Wird es im Graphen eng, öffnest du bei einer Figur einfach die Liste all
+ihrer Verbindungen und bearbeitest sie dort.
+
+Wichtige Figuren wie den großen Schurken verankerst du als **Boss** in der Mitte, mit einer
+leuchtenden Aura, um die sich alles andere gruppiert. Und wer noch gar nicht als Akteur
+existiert, bekommt erst einmal einen **Platzhalter**. Sobald es die Figur gibt, ziehst du sie auf
+den Platzhalter, und alle Verbindungen bleiben erhalten.
+
+### Fraktionen und Orte
+
+Ordne deinen Figuren **Fraktionen** zu, auch mehrere auf einmal, denn die Söldnerin, die offiziell
+für die Gilde arbeitet und heimlich im Zirkel sitzt, gibt es in jeder guten Kampagne. Die
+Mitgliedschaft zeigt sich als farbiger Ring am Token und als Linie zwischen den Mitgliedern. Mit
+**Orten** hältst du fest, wo sich jemand aufhält, von der Region bis zum einzelnen Gebäude.
+
+Auf Knopfdruck sortiert sich der Graph nach Fraktion oder nach Ort, und jede Gruppe bekommt ihren
+eigenen beschrifteten Bereich. Beim Zurücksetzen kehrt alles an seinen alten Platz zurück.
+
+### Die Chronik
+
+In der Chronik hält eure Runde fest, was geschehen ist. Einträge werden nach Spieltag sortiert,
+nicht danach, wann jemand sie eingetippt hat. FANG liest dafür den Kalender eurer Welt oder eines
+bekannten Kalendermoduls, und ohne Kalender nimmt es einfach das echte Datum. Über der Chronik
+liegt eine Zeitleiste mit einem Punkt je Spieltag, der umso größer wird, je mehr an diesem Tag
+passiert ist.
+
+Ein kleiner Schalter unterscheidet zwischen Dingen, die die Gruppe schon damals wusste, und einer
+Enthüllung über die Vergangenheit, die sie erst heute erfährt. Rückblicke auf eine Sitzung
+gehören einer Figur und bekommen eine eigene Seite im Journal, damit auch längere Texte Platz
+haben. Aufträge lassen sich ebenfalls an Figuren hängen und bleiben verdeckt, bis du sie aufdeckst.
+
+### Gemeinsam am Graphen arbeiten
+
+Auf Wunsch arbeiten mehrere Leute gleichzeitig am Graphen. Beim Speichern führt FANG die
+Änderungen Feld für Feld zusammen, sodass sich zwei Leute, die an verschiedenen Stellen arbeiten,
+nicht in die Quere kommen, und alle sehen dieselbe Anordnung. Deine Geheimnisse als Spielleiter
+bleiben dabei geschützt: Verdeckte Figuren sehen die Spieler nicht, eigene Notizen und Spitznamen
+für Figuren pflegen sie aber trotzdem.
+
+Den ganzen Graphen mit allen Positionen, Fraktionen und Einstellungen kannst du als Datei sichern
+und wieder einlesen. Zwei Designs, Fantasy und Cyberpunk, lassen sich live umschalten, und FANG
+spricht zehn Sprachen. Beim ersten Öffnen erklärt es sich selbst in sechs kurzen Punkten.
+
+### Für Runden vor Ort
+
+Spielt ihr zusammen in einem Raum, blendet der **In-Person-Modus** zusätzliche Knöpfe für den
+Monitor ein. Du legst fest, welches Konto euer Gruppenbildschirm ist, und schickst den Graphen mit
+einem Klick als Vollbild dorthin. Der Bildausschnitt bleibt dabei ruhig auf die Figuren
+gerichtet, die du als Zentrum markiert hast.
+
+### FANG Premium
+
+FANG ist kostenlos, vollständig benutzbar und bleibt es auch. Wer mehr möchte, bekommt mit
+**FANG Premium** ein Zusatzmodul für Patrons, das die Zusammenarbeit am Graphen deutlich angenehmer
+macht. Du siehst, wer gerade woran arbeitet, und wirst gefragt, bevor zwei Leute denselben Editor
+öffnen. Zieht jemand eine Figur über den Graphen, bewegt sie sich bei allen mit. Was ein Spieler
+speichert, wartet auf einen Spielleiter, statt verloren zu gehen. Stoßen
+zwei Fassungen desselben Textes aufeinander, siehst du beide nebeneinander und entscheidest. Ein
+Änderungsprotokoll zeigt, wer wann was geändert hat, und jede Änderung lässt sich einzeln
+zurücknehmen. Außerdem schaltet Premium das eigene Hintergrundbild frei, das FANG schon jetzt als
+Premium-Option anzeigt.
+
+Wie du an FANG Premium kommst und was die Stufen kosten, steht auf der
+[Premium-Seite](https://ninjos-forge.web.app/premium).
 
 ### Installation
-1. Starte Foundry VTT und wechsle in den **Zusatzmodule** Reiter.
-2. Klicke auf **Modul installieren**.
-3. Wähle deinen Kanal und füge eine dieser Manifest-URLs ein:
-   - **Stable:** `https://github.com/Niclasp1501/Foundry-Actor-Nexus-Graph--FANG-/releases/latest/download/module.json`
-   - **Beta:** `https://github.com/Niclasp1501/Foundry-Actor-Nexus-Graph--FANG-/releases/download/beta-latest/module-beta.json`
-4. Starte Foundry neu und aktiviere **Foundry Actor Nexus Graph (FANG)** in den Modul-Einstellungen deiner Welt.
-5. Kanal-Hinweis: Beide Links verwenden dieselbe Modul-ID (`fang`). Pro Welt sollte nur ein Kanal genutzt werden (kein paralleles Stable+Beta in derselben Welt).
-6. **Beta-Hinweis (Teilnahme auf eigenes Risiko):** Beta-Builds können Fehler oder unerwartete Auswirkungen haben. Erstelle vor Installation/Update der Beta unbedingt ein vollständiges Backup deiner Welt.
 
-### Anleitung
-#### Für den Spielleiter (GM)
-1. **FANG Öffnen:** Klicke auf den Button im **FANG Graph** Journal, nutze die Akteurs-Verzeichnis-Integration oder drücke `Shift + G`.
-2. **Graph bearbeiten:** Aktiviere den Bearbeitungsmodus und nutze dann die Canvas-Werkzeuge für Direktverbindungen und Platzhalter. Details zu Akteuren, Aufträgen und Beziehungen erreichst du über die Kontextmenüs.
-3. **Den Graphen Teilen:** 
-   - Klicke auf **"Spielern zeigen"**, um ein Lese-Fenster für alle Spieler zu öffnen.
-   - Nutze **"Monitor zeigen"** (im In-Person Modus verfügbar), um ein spezielles Vollbild an deine Player-Display zu senden.
-4. **Graphen Schließen:** Mit **"Bei Spielern schließen"** oder **"Monitor schließen"** verwaltest du die Remote-Fenster deiner Runde.
-5. **Chronik führen:** Öffne sie über die FANG-Leiste oder über das Kontextmenü eines Tokens, dann nur für diesen Charakter. Jeder Eintrag hat einen Titel, einen spielersicheren Text und einen privaten GM-Text; Spieltag und Uhrzeit kommen aus dem Kalender der Welt. Aktionen im Graphen schreiben von selbst Einträge, wenn ein Token auftaucht, eine Identität gelüftet wird, eine Beziehung sichtbar wird oder ein Auftrag freigegeben wird.
-6. **Ereignisse nachtragen:** Schalte von *Heute* auf *An einem früheren Tag* und wähle den Tag – entweder einen, den die Chronik schon kennt, oder einen neuen aus dem Kalender. Setze den Haken *Davon erst heute erfahren*, wenn die Gruppe von etwas Älterem erfährt: der Eintrag bleibt beim Tag des Geschehens und hält fest, wann ihr davon wusstet.
+FANG steht im offiziellen Foundry-Paketkatalog. Öffne in Foundry den Reiter **Add-on-Module**,
+klicke auf **Modul installieren** und suche nach *Ninjo's FANG*. Danach aktivierst du es in den
+Moduleinstellungen deiner Welt.
 
-#### Für die Spieler
-- **Einrichtung:** Der GM muss das Tool einmalig öffnen, damit das Journal im Hintergrund erstellt wird.
-- **Graphen Betrachten:** Sobald der GM den Graphen teilt, öffnet sich dieser automatisch.
-- **Manuell Öffnen:** Falls du das Fenster versehentlich schließt, kannst du es über das **Journal "FANG Graph"** wieder öffnen (Klick auf den Link im Text) oder einfach `Shift + G` drücken.
-- **Die Chronik:** Spieler sehen die Chronikeinträge, die der GM freigegeben hat, und können unter der Kategorie *Rückblick* eigene Sitzungsrückblicke schreiben, ohne die Bearbeitungssperre des Graphen zu ziehen.
+Du kannst FANG auch über eine Manifest-Adresse installieren. Für die stabile Fassung ist das
+`https://github.com/Niclasp1501/Foundry-Actor-Nexus-Graph--FANG-/releases/latest/download/module.json`,
+wer neue Funktionen früher ausprobieren möchte, nimmt die Beta unter
+`https://github.com/Niclasp1501/Foundry-Actor-Nexus-Graph--FANG-/releases/download/beta-latest/module-beta.json`.
+Beide installieren dasselbe Modul, du kannst in einer Welt also nur eine der beiden verwenden.
+Lege vor einer Beta am besten eine Sicherung deiner Welt an.
 
-### Zukünftige Pläne & Roadmap
-Den aktuellen Stand der Entwicklung und geplante Features findest du in der Datei [TODO.md](TODO.md).
+### So benutzt du FANG
+
+Als Spielleiter öffnest du FANG über den Journaleintrag **FANG Graph**, über den Knopf im
+Akteursverzeichnis oder mit `Shift + G`. Schalte den Bearbeitungsmodus ein, und die Werkzeuge für
+Verbindungen und Platzhalter erscheinen direkt auf dem Graphen. Alles Weitere zu Figuren,
+Aufträgen und Beziehungen findest du im Kontextmenü. Mit **Spielern zeigen** öffnet sich der
+Graph bei allen, mit **Monitor zeigen** auf eurem Gruppenbildschirm, und genauso schnell schließt
+du beides wieder.
+
+Deine Spieler öffnen FANG ebenfalls über den Journaleintrag oder mit `Shift + G`. Du musst den
+Graphen nur einmal selbst geöffnet haben, damit er angelegt ist. Ändern Spieler etwas, läuft das
+über dich. Bist du gerade nicht online, sagt FANG das deutlich, statt stillschweigend nichts zu
+tun.
+
+### Zusammen mit anderen Modulen
+
+Ist **DiploGlass** installiert, übernimmt FANG dessen Fraktionen samt Symbol und ordnet die Figuren
+nach ihrem Ansehen dort zu. Mit **Ninjo's In-Person Tools** bekommt FANG einen Knopf in der
+Blattansicht der Tablets, und wer **Sheet Only** nutzt, findet ihn wie gewohnt in dessen Leiste.
+
+### Was als Nächstes kommt
+
+Geplante Funktionen stehen in [TODO.md](TODO.md).
 
 ---
 
