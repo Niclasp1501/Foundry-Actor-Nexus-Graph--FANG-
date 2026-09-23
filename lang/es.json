@@ -546,6 +546,8 @@
             "DropConnect": "Crear relación"
         },
         "Zones": {
+            "CropRound": "Ficha",
+            "CropWide": "Ventana del lugar (16:9)",
             "CropLabel": "Parte visible de la imagen",
             "CropHint": "Arrastra la imagen para moverla, usa la rueda o el control para hacer zoom.",
             "CropZoom": "Zoom",

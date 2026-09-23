@@ -2504,9 +2504,30 @@ body.fang-theme-cyberpunk .fang-dialog .faction-icon-preview {
 
 .fang-app-container .fang-zone-cropper {
     display: flex;
-    gap: 14px;
-    align-items: center;
+    flex-direction: column;
+    gap: 6px;
     margin: 4px 0 8px;
+}
+
+.fang-app-container .fang-zone-crop-panes {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+}
+
+.fang-app-container .fang-zone-crop-pane {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    align-items: center;
+}
+
+.fang-app-container .fang-zone-crop-pane.is-wide {
+    flex: 1 1 auto;
+}
+
+.fang-app-container .fang-zone-crop-pane input[type="range"] {
+    width: 100%;
 }
 
 .fang-app-container .fang-zone-cropper[hidden] {
@@ -2516,14 +2537,21 @@ body.fang-theme-cyberpunk .fang-dialog .faction-icon-preview {
 .fang-app-container .fang-zone-crop-frame {
     position: relative;
     flex: 0 0 auto;
-    width: 140px;
-    height: 140px;
+    width: 120px;
+    height: 120px;
     border-radius: 50%;
     border: 3px solid var(--fang-accent-gold);
     overflow: hidden;
     background: #2b2118;
     cursor: grab;
     touch-action: none;
+}
+
+.fang-app-container .fang-zone-crop-frame.is-wide {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 9;
+    border-radius: 6px;
 }
 
 .fang-app-container .fang-zone-crop-frame:active {

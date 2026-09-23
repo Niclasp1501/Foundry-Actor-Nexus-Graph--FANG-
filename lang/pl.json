@@ -546,6 +546,8 @@
             "DropConnect": "Utwórz relację"
         },
         "Zones": {
+            "CropRound": "Żeton",
+            "CropWide": "Okno miejsca (16:9)",
             "CropLabel": "Widoczny fragment obrazu",
             "CropHint": "Przeciągnij obraz, aby go przesunąć, kółkiem lub suwakiem przybliż.",
             "CropZoom": "Powiększenie",

@@ -546,6 +546,8 @@
             "DropConnect": "Vytvořit vztah"
         },
         "Zones": {
+            "CropRound": "Žeton",
+            "CropWide": "Okno místa (16:9)",
             "CropLabel": "Viditelná část obrázku",
             "CropHint": "Tažením obrázek posunete, kolečkem nebo posuvníkem přiblížíte.",
             "CropZoom": "Přiblížení",

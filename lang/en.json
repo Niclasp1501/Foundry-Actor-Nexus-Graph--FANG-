@@ -546,6 +546,8 @@
             "DropConnect": "Create relationship"
         },
         "Zones": {
+            "CropRound": "Token",
+            "CropWide": "Place window (16:9)",
             "CropLabel": "Part of the picture shown",
             "CropHint": "Drag the picture to move it, scroll or use the slider to zoom.",
             "CropZoom": "Zoom",

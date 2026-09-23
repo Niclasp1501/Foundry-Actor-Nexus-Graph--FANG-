@@ -546,6 +546,8 @@
             "DropConnect": "Beziehung erstellen"
         },
         "Zones": {
+            "CropRound": "Knoten",
+            "CropWide": "Ortsfenster (16:9)",
             "CropLabel": "Sichtbarer Ausschnitt",
             "CropHint": "Bild ziehen zum Verschieben, Mausrad oder Regler zum Zoomen.",
             "CropZoom": "Zoom",

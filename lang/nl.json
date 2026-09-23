@@ -546,6 +546,8 @@
             "DropConnect": "Relatie creëren"
         },
         "Zones": {
+            "CropRound": "Token",
+            "CropWide": "Plaatsvenster (16:9)",
             "CropLabel": "Zichtbaar deel van de afbeelding",
             "CropHint": "Sleep de afbeelding om te verschuiven, scrol of gebruik de schuif om te zoomen.",
             "CropZoom": "Zoom",
