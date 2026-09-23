@@ -46,6 +46,11 @@ Everything the interface does with characters, connections, factions and places 
 
 With FANG Premium, `game.modules.get("fang-premium").api.places` adds what happens between places: `travel({ to, travellers, title?, gameDate? })` records a journey, `whereIs(nodeId)` says where the chronicle puts someone (`{ placeId, seen, home, entryId }`, `seen` meaning only sighted there), `whoIsAt(placeId)` lists who is at a place or inside it, and `followed.list()` / `followed.set(nodeId, true | false)` (GM) decide whose whereabouts are followed.
 
+## Tools for an AI assistant
+
+With Ninjo's Foundry MCP, FANG offers its own tools to an assistant: `fang-read` (graph, places and chronicle), `fang-place`, `fang-character`, `fang-connection`, `fang-faction` and `fang-chronicle`; FANG Premium adds `fang-travel`, `fang-whereabouts` and `fang-follow`. They use the api above, accept names as well as ids, and refuse a name that fits more than one thing. Nothing is offered until the GM adds `fang` (and `fang-premium`) under "Modules with their own tools" in the MCP module's settings; with its write switch off, only `fang-read` and `fang-whereabouts` run.
+
+
 ## Adding to the interface
 
 - `api.registerView({ id, icon, label, gmOnly?, open(app, options), close(app) })` a view of its own in the canvas area. An optional `guide` (`{ icon, title, intro, points: [{ icon, title, text, gmOnly? }] }`, or a function returning that) is shown the first time someone opens the view and again from the question mark in the rail; `app.showGuide(guide, { force })` shows one from code. It gets a button on top of the rail, next to the character graph, and the rail marks the current one. Switch from code with `app.showView(id, options)`; `"graph"` is the character graph.

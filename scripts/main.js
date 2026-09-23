@@ -2,6 +2,7 @@ import { FangApplication, FANG_EXTENSION_VERSION } from "./fang-app.js";
 import { willkommenEinrichten, willkommenZeigen } from "./willkommen.js";
 import { fensterPassenEinrichten } from "./fensterpassen.js";
 import { verzeichnisKnopfEinrichten } from "./verzeichnisknopf.js";
+import "./mcp-tools.js";
 
 // Singleton instance
 let fangApp = null;
