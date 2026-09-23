@@ -3160,8 +3160,11 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         // Foundry's sidebar on the right (actors, items, chat) stays usable: the window ends
         // where it begins, open or folded. Dragging an actor in from there is the main way to
         // fill the graph, and a window lying over it made exactly that impossible.
+        // Someone dragging the window by its title bar puts it where they want, over the
+        // sidebar too; only the screen edge holds it. The rule is for opening and resizing.
+        const dragged = ("left" in position || "top" in position) && !("width" in position) && !("height" in position);
         const sidebarLeft = document.getElementById("ui-right")?.getBoundingClientRect?.().left;
-        const rightEdge = Number.isFinite(sidebarLeft) && sidebarLeft > 400 ? Math.min(window.innerWidth, sidebarLeft) : window.innerWidth;
+        const rightEdge = !dragged && Number.isFinite(sidebarLeft) && sidebarLeft > 400 ? Math.min(window.innerWidth, sidebarLeft) : window.innerWidth;
         const maxWidth = Math.max(320, rightEdge - margin * 2);
         const maxHeight = Math.max(320, window.innerHeight - margin * 2);
         const fitted = { ...position };
@@ -10575,6 +10578,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const host = this.element?.querySelector("#fangRailExtensions");
         if (!host) return;
         host.innerHTML = "";
+        const bottom = this.element.querySelector("#fangRailExtensionsBottom");
+        if (bottom) bottom.innerHTML = "";
         const buttons = game.modules.get("fang")?.api?.extension?._railButtons ?? [];
         for (const def of buttons) {
             if (def.gmOnly && !game.user.isGM) continue;
@@ -10586,7 +10591,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             btn.title = label; btn.dataset.tooltip = label; btn.setAttribute("aria-label", label);
             btn.innerHTML = `<i class="fas ${this._escapeHtml(def.icon || "fa-puzzle-piece")}" aria-hidden="true"></i>`;
             btn.addEventListener("click", (event) => { event.preventDefault(); this._closeSidebarPanel(); def.onClick?.(this); });
-            host.appendChild(btn);
+            // "bottom" is for what is seldom needed: it sits apart, at the foot of the rail.
+            (def.position === "bottom" && bottom ? bottom : host).appendChild(btn);
         }
     }
 

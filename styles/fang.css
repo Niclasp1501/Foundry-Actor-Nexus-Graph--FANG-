@@ -2612,6 +2612,18 @@ body.role-gm .fang-app-container:not([data-active-view="graph"]) .fang-rail-btn.
     display: none !important;
 }
 
+/* Seldom used buttons an extension asks for at the foot of the rail. */
+.fang-app-container .fang-rail-extensions-bottom {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: auto;
+}
+
+.fang-app-container .fang-rail-extensions-bottom:empty {
+    display: none;
+}
+
 /* Rail buttons an extension adds: same look, same spacing as the built-in ones. */
 .fang-rail-extensions {
     display: contents;
@@ -4098,10 +4110,17 @@ body.fang-theme-cyberpunk .background-config-container .premium-notice p {
     content: none !important;
 }
 
-.fang-app-container .sidebar-header p,
-.fang-app-container .fang-rail {
+.fang-app-container .sidebar-header p {
     width: 76px;
     flex: 0 0 auto;
+}
+
+/* The rail fills the rest of the sidebar, so a button asked for "bottom" sits at its foot. */
+.fang-app-container .fang-rail {
+    width: 76px;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
 }
 
 .fang-app-container .fang-rail-btn {
