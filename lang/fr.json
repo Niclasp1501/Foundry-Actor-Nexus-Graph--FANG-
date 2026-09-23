@@ -470,6 +470,14 @@
                 "Name": "Couleur de l'aura centrale (Hex)",
                 "Hint": "La couleur de l'anneau magique autour des jetons épinglés au centre. Entrez un code couleur Hexadécimal (par exemple, #d4af37 pour l'Or, #8b0000 pour le Rouge foncé)."
             },
+            "PlayerPlaces": {
+                "Name": "Les joueurs peuvent créer des lieux",
+                "Hint": "Créer de nouveaux lieux et modifier les existants, directement depuis le champ de lieu. Uniquement avec la modification par les joueurs."
+            },
+            "PlayerChronicle": {
+                "Name": "Les joueurs peuvent écrire dans la chronique",
+                "Hint": "Leurs propres entrées dans la chronique, comme ce que leur personnage a vécu. Le MJ voit chacune et peut la supprimer."
+            },
             "AllowPlayerEditing": {
                 "Name": "Autoriser l'édition par les joueurs",
                 "Hint": "Si activé, les joueurs peuvent créer et supprimer des connexions, et glisser des jetons sur le graphique."
@@ -538,6 +546,9 @@
             "DropConnect": "Créer une relation"
         },
         "Zones": {
+            "RevealVisited": "Une fois qu'ils y sont allés",
+            "RevealOpen": "Connu dès le départ",
+            "RevealHint": "Les joueurs voient un lieu une fois qu'ils y sont allés, qu'un de leurs personnages y appartient ou qu'ils l'ont créé. « Connu dès le départ » convient aux lieux que tout le monde connaît.",
             "Assign": "Attribuer un lieu",
             "AssignTitle": "Où se trouve {name} ?",
             "AssignItemTitle": "Où se trouve {name} ?",

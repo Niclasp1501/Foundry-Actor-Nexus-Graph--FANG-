@@ -222,7 +222,9 @@ Hooks.once("init", () => {
       get: (id) => clone((fangApp?.graphData?.zones ?? storedGraph()?.zones ?? []).find(z => z.id === id) ?? null),
       add: (data = {}) => write((app) => {
         if (data.parentId && !(app.graphData.zones ?? []).some(z => z.id === data.parentId)) throw new Error(`FANG | No place ${data.parentId}.`);
-        const zone = app._normalizeZone({ ...data, id: data.id || foundry.utils.randomID() });
+        // Like one made by hand: players learn of it by going there, unless asked otherwise.
+        const zone = app._normalizeZone({ reveal: "visited", ...data, id: data.id || foundry.utils.randomID(),
+          ...(game.user.isGM ? {} : { createdBy: game.user.id }) });
         app.graphData.zones = [...(app.graphData.zones ?? []), zone];
         Hooks.callAll("fang.zonesChanged", app, { zone, created: true });
         return zone;
@@ -391,6 +393,25 @@ Hooks.once("init", () => {
         console.log("FANG | Center Node Color updated to", value);
       }
     }
+  });
+
+  // Finer rights for players, each on its own. Places and chronicle are what players touch
+  // most, and a GM may want one without the other.
+  game.settings.register("fang", "playerPlaces", {
+    name: "FANG.Settings.PlayerPlaces.Name",
+    hint: "FANG.Settings.PlayerPlaces.Hint",
+    scope: "world",
+    config: true,
+    type: Boolean,
+    default: false
+  });
+  game.settings.register("fang", "playerChronicle", {
+    name: "FANG.Settings.PlayerChronicle.Name",
+    hint: "FANG.Settings.PlayerChronicle.Hint",
+    scope: "world",
+    config: true,
+    type: Boolean,
+    default: true
   });
 
   game.settings.register("fang", "allowPlayerEditing", {
@@ -790,6 +811,13 @@ Hooks.once("ready", async () => {
           fangApp._relayLoad ??= fangApp.loadData().finally(() => { fangApp._relayLoad = null; });
           await fangApp._relayLoad;
         }
+        // Places are a right of their own. Without it, whatever the player sent about places
+        // is set back to what we hold, so the merge sees no change there.
+        if (payload.newGraphData && !game.settings.get("fang", "playerPlaces")) {
+          const ours = foundry.utils.deepClone(fangApp.graphData?.zones ?? []);
+          payload.newGraphData.zones = ours;
+          if (payload.baseline) payload.baseline.zones = foundry.utils.deepClone(ours);
+        }
         if (payload.newGraphData) {
           // Apply the player's change on top of our own state instead of replacing it.
           // Replacing meant that anything the GM changed since the player loaded was
@@ -833,8 +861,11 @@ Hooks.once("ready", async () => {
     }
 
     if (data.action === "playerCreateHistoryEntry" && game.user.isGM) {
+      if (!game.settings.get("fang", "playerChronicle")) return;
       if (!fangApp) fangApp = new FangApplication();
       const payload = data.payload || {};
+      // An add-on may check or trim what a player sends along (a journey, say).
+      if (Hooks.call("fang.playerHistoryEntry", payload, game.users.get(payload.authorUserId)) === false) return;
       const hasContent = String(payload.title || payload.playerText || "").trim();
       if (!hasContent) return;
       await fangApp._createHistoryEntry({

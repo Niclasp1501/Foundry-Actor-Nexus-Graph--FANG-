@@ -470,6 +470,14 @@
                 "Name": "Barva centrální aury (Hex)",
                 "Hint": "Barva magického prstence kolem žetonů připnutých ke středu. Zadejte kód barvy Hex (např. #d4af37 pro zlato, #8b0000 pro tmavě červenou)."
             },
+            "PlayerPlaces": {
+                "Name": "Hráči smí vytvářet místa",
+                "Hint": "Vytvářet nová místa a upravovat stávající, přímo z pole místa. Jen společně s úpravami hráči."
+            },
+            "PlayerChronicle": {
+                "Name": "Hráči smí psát do kroniky",
+                "Hint": "Vlastní záznamy v kronice, třeba co zažila jejich postava. PJ vidí každý a může ho smazat."
+            },
             "AllowPlayerEditing": {
                 "Name": "Povolit úpravy hráčům",
                 "Hint": "Pokud je povoleno, hráči mohou vytvářet a mazat spojení a přetahovat žetony na graf."
@@ -538,6 +546,9 @@
             "DropConnect": "Vytvořit vztah"
         },
         "Zones": {
+            "RevealVisited": "Až tam budou",
+            "RevealOpen": "Známé od začátku",
+            "RevealHint": "Hráči uvidí místo, až tam budou, až k němu bude patřit některá jejich postava nebo až ho sami vytvoří. „Známé od začátku“ je pro místa, která zná každý.",
             "Assign": "Přiřadit místo",
             "AssignTitle": "Kam patří {name}?",
             "AssignItemTitle": "Kde leží {name}?",

@@ -109,6 +109,7 @@ const TOOLS = [
                 playerVisible: { type: "boolean" },
                 hidden: { type: "boolean", description: "Show players the alias instead of the name." },
                 alias: { type: "string" },
+                knownFromStart: { type: "boolean", description: "Players know this place at once. Without it they learn of it only once they have been there." },
                 character: { type: "string", description: "For assign: the character or item (name or id)." }
             },
             required: ["action"]
@@ -124,6 +125,7 @@ const TOOLS = [
             if (args.playerVisible !== undefined) fields.playerVisible = args.playerVisible;
             if (args.hidden !== undefined) fields.hidden = args.hidden;
             if (args.alias !== undefined) fields.displayName = args.alias;
+            if (args.knownFromStart !== undefined) fields.reveal = args.knownFromStart ? "open" : "visited";
             if (args.liesIn !== undefined) fields.parentId = placeOrNull(args.liesIn);
             switch (args.action) {
                 case "add": {

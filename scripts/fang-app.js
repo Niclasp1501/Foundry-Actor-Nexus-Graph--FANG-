@@ -394,7 +394,12 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             parentId: zone.parentId || null,
             img: String(zone.img || ""),
             hidden: !!zone.hidden,
-            displayName: String(zone.displayName || "")
+            displayName: String(zone.displayName || ""),
+            // "visited": players learn of the place once they have been there, created it
+            // themselves, or one of their characters belongs there. "open": everyone knows
+            // it from the start. Older places count as "visited" too: the grouping by place
+            // only ever showed places with a visible member, and those are known anyway.
+            reveal: zone.reveal === "open" ? "open" : "visited"
         };
     }
 
@@ -405,9 +410,42 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         return zone ? this._normalizeZone(zone) : null;
     }
 
-    /** A place the GM keeps to themselves does not exist for a player. */
+    /**
+     * Whether a user knows of a place. A GM knows every place. A player never knows a place
+     * the GM keeps to themselves, always knows an open one, and knows one still to be
+     * discovered only once it is known to them (see _zonesKnownTo).
+     */
     _canUserSeeZone(zone, user = game.user) {
-        return !!zone && (user?.isGM || zone.playerVisible !== false);
+        if (!zone) return false;
+        if (user?.isGM) return true;
+        if (zone.playerVisible === false) return false;
+        if (zone.reveal !== "visited") return true;
+        return this._zonesKnownTo(user).has(zone.id);
+    }
+
+    /**
+     * The places a player has come to know: the ones they created, the ones a character
+     * they can see belongs to, and whatever an add-on adds (a journey in the chronicle,
+     * say). Knowing a place means knowing what it lies in, all the way up. Worked out once
+     * per moment, because every list of places asks for every place.
+     */
+    _zonesKnownTo(user = game.user) {
+        const now = Date.now();
+        if (this._knownZonesCache?.user === user?.id && now - this._knownZonesCache.at < 250) return this._knownZonesCache.set;
+        const zones = this.graphData?.zones ?? [];
+        const known = new Set();
+        for (const z of zones) if (z.createdBy && z.createdBy === user?.id) known.add(z.id);
+        for (const node of this.graphData?.nodes ?? []) {
+            if (node.zoneId && this._canUserSeeNode?.(node, user) !== false) known.add(node.zoneId);
+        }
+        Hooks.callAll("fang.zonesKnown", this, user, known);
+        const byId = new Map(zones.map(z => [z.id, z]));
+        for (const id of [...known]) {
+            const seen = new Set();
+            for (let up = byId.get(id)?.parentId; up && byId.has(up) && !seen.has(up); up = byId.get(up).parentId) { seen.add(up); known.add(up); }
+        }
+        this._knownZonesCache = { user: user?.id, at: now, set: known };
+        return known;
     }
 
     /** What a user reads as the name: the alias while the place is hidden from them. */
@@ -446,8 +484,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         return out;
     }
 
-    /** Anyone who may edit the graph may add and change places; nobody else. */
+    /** A GM who may edit may change places; a player needs the right to, on top of that. */
     _canEditZones() {
+        if (!game.user.isGM && !game.settings.get("fang", "playerPlaces")) return false;
         return this._canEditGraph(true);
     }
 
@@ -469,14 +508,14 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         if (existing && !isGM && (existing.hidden || existing.playerVisible === false)) return Promise.resolve(null);
         const zone = existing ?? this._normalizeZone({ name: defaults.name || "", parentId: defaults.parentId || null, type: defaults.type || (defaults.parentId ? "building" : "city") });
         // A new place starts without a name: a placeholder name would only have to be deleted.
-        if (!existing) zone.name = defaults.name || "";
+        if (!existing) { zone.name = defaults.name || ""; zone.reveal = "visited"; }
         const esc = (v) => this._escapeHtml(String(v ?? ""));
         const t = (key, fallback) => this._localize(key, fallback);
         const types = ["realm", "region", "city", "district", "building", "other"];
         const family = existing ? this._zoneFamily(existing.id) : new Set();
         const parentOptions = this._orderedZones(game.user, { exclude: family })
             .map(({ zone: z, depth }) => `<option value="${esc(z.id)}" ${z.id === zone.parentId ? "selected" : ""}>${"\u00a0\u00a0".repeat(depth)}${depth ? "\u203a " : ""}${esc(this._zoneName(z))}</option>`).join("");
-        const visibility = zone.playerVisible === false ? "gm" : (zone.hidden ? "hidden" : "open");
+        const visibility = zone.playerVisible === false ? "gm" : (zone.hidden ? "hidden" : (zone.reveal === "visited" ? "visited" : "open"));
         const closeLabel = t("FANG.UI.ClosePanel", "Close");
         const panel = document.createElement("div");
         panel.className = "fang-canvas-prompt-panel fang-zone-editor";
@@ -500,10 +539,12 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                         ${isGM ? `
                         <label for="fang-zone-f-vis">${esc(t("FANG.Zones.VisibilityLabel", "For players"))}</label>
                         <select id="fang-zone-f-vis" class="fang-zone-f-vis">
-                            <option value="open" ${visibility === "open" ? "selected" : ""}>${esc(t("FANG.Dialogs.ActorDropVisible", "Show openly"))}</option>
+                            <option value="visited" ${visibility === "visited" ? "selected" : ""}>${esc(t("FANG.Zones.RevealVisited", "Once they have been there"))}</option>
+                            <option value="open" ${visibility === "open" ? "selected" : ""}>${esc(t("FANG.Zones.RevealOpen", "Known from the start"))}</option>
                             <option value="hidden" ${visibility === "hidden" ? "selected" : ""}>${esc(t("FANG.Dialogs.ActorDropHidden", "Show hidden"))}</option>
                             <option value="gm" ${visibility === "gm" ? "selected" : ""}>${esc(t("FANG.Dialogs.ActorDropGMOnly", "GM only"))}</option>
                         </select>
+                        <p class="hint fang-zone-reveal-hint">${esc(t("FANG.Zones.RevealHint", "Players see a place once they have been there, a character of theirs belongs there, or they created it. Choose \"Known from the start\" for a place everybody knows."))}</p>
                         <label for="fang-zone-f-alias" class="fang-zone-alias-row">${esc(t("FANG.Dialogs.IdentityAlias", "Alias"))}</label>
                         <input type="text" id="fang-zone-f-alias" class="fang-zone-f-alias fang-zone-alias-row" value="${esc(zone.displayName)}" placeholder="???">` : ""}
                         <label for="fang-zone-f-img">${esc(t("FANG.Zones.ImageLabel", "Image"))}</label>
@@ -571,10 +612,12 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     ...(vis ? {
                         playerVisible: vis.value !== "gm",
                         hidden: vis.value === "hidden",
+                        reveal: vis.value === "visited" ? "visited" : "open",
                         displayName: vis.value === "hidden" ? (panel.querySelector(".fang-zone-f-alias").value.trim()) : ""
                     } : {})
                 });
                 if (!existing && !isGM) next.createdBy = game.user.id;
+                this._knownZonesCache = null;
                 Hooks.callAll("fang.zoneEditorSaving", this, next, panel.querySelector(".fang-zone-extension"));
                 const index = zones.findIndex(z => z.id === next.id);
                 if (index === -1) zones.push(next); else zones[index] = next;
@@ -1157,6 +1200,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
     _canCreateHistoryEntry(silent = false) {
         if (game.user?.isGM) return true;
+        if (!game.settings.get("fang", "playerChronicle")) return false;
 
         const monitorName = String(game.settings.get("fang", "monitorDisplayName") || "").toLowerCase();
         const isMonitor = monitorName && String(game.user?.name || "").toLowerCase().includes(monitorName);
@@ -3033,6 +3077,20 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     ui.notifications.info(game.i18n.localize(e.target.checked ? "FANG.Messages.PlayersCanEdit" : "FANG.Messages.PlayersCannotEdit"));
                 });
             }
+
+            // The finer rights: each one a world setting, shown only while players may edit
+            // at all where it depends on that.
+            for (const [id, key] of [["cbPlayerPlaces", "playerPlaces"], ["cbPlayerChronicle", "playerChronicle"]]) {
+                const box = this.element.querySelector(`#${id}`);
+                if (!box) continue;
+                box.checked = game.settings.get("fang", key);
+                box.addEventListener("change", async (e) => { await game.settings.set("fang", key, e.target.checked); });
+            }
+            const placesRow = this.element.querySelector(".fang-right-places");
+            const syncRights = () => placesRow?.classList.toggle("is-off", !game.settings.get("fang", "allowPlayerEditing"));
+            syncRights();
+            cbAllowPlayerEdit?.addEventListener("change", () => setTimeout(syncRights, 50));
+            Hooks.callAll("fang.permissionsRender", this, this.element.querySelector("#fangPermissionsExtension"));
 
             const cbDefaultHidden = this.element.querySelector("#cbDefaultHidden");
             if (cbDefaultHidden) {
@@ -8196,7 +8254,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const gruppenBereiche = shownGrouping === "zone"
             ? (this.graphData.zones || [])
                 .map(z => this._normalizeZone(z))
-                .filter(z => game.user?.isGM || z.playerVisible !== false)
+                .filter(z => this._canUserSeeZone(z))
                 .map(z => ({ gruppe: z, mitglieder: visibleNodes.filter(n => n.zoneId === z.id) }))
             : shownGrouping === "faction"
                 ? (this.graphData.factions || [])

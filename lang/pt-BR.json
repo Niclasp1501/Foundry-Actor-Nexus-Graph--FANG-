@@ -470,6 +470,14 @@
                 "Name": "Cor da Aura Central (Hex)",
                 "Hint": "A cor do anel mágico ao redor dos tokens fixados no centro. Digite um código de cor Hex (por exemplo, #d4af37 para Ouro, #8b0000 para Vermelho Escuro)."
             },
+            "PlayerPlaces": {
+                "Name": "Jogadores podem criar lugares",
+                "Hint": "Criar lugares novos e editar os existentes, direto do campo de lugar. Só junto com a edição por jogadores."
+            },
+            "PlayerChronicle": {
+                "Name": "Jogadores podem escrever na crônica",
+                "Hint": "Entradas próprias na crônica, como o que o personagem deles viveu. O Mestre vê cada uma e pode excluí-la."
+            },
             "AllowPlayerEditing": {
                 "Name": "Permitir Edição pelo Jogador",
                 "Hint": "Se habilitado, os jogadores podem criar e excluir conexões, e arrastar tokens para o gráfico."
@@ -538,6 +546,9 @@
             "DropConnect": "Criar relacionamento"
         },
         "Zones": {
+            "RevealVisited": "Depois que estiverem lá",
+            "RevealOpen": "Conhecido desde o início",
+            "RevealHint": "Os jogadores veem um lugar depois de terem estado lá, quando um personagem deles pertence a ele ou quando o criaram. \"Conhecido desde o início\" é para lugares que todos conhecem.",
             "Assign": "Atribuir lugar",
             "AssignTitle": "Onde {name} fica?",
             "AssignItemTitle": "Onde {name} está?",

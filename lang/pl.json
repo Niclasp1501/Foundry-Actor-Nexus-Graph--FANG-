@@ -470,6 +470,14 @@
                 "Name": "Kolor aury środkowego węzła (Hex)",
                 "Hint": "Kolor magicznego pierścienia wokół tokenów przypiętych do środka. Wprowadź kod koloru Hex (np. #d4af37 dla złota, #8b0000 dla ciemnej czerwieni)."
             },
+            "PlayerPlaces": {
+                "Name": "Gracze mogą tworzyć miejsca",
+                "Hint": "Tworzenie nowych miejsc i edycja istniejących, prosto z pola miejsca. Tylko razem z edycją przez graczy."
+            },
+            "PlayerChronicle": {
+                "Name": "Gracze mogą pisać w kronice",
+                "Hint": "Własne wpisy w kronice, na przykład co przeżyła ich postać. MG widzi każdy i może go usunąć."
+            },
             "AllowPlayerEditing": {
                 "Name": "Zezwól graczom na edycję",
                 "Hint": "Jeśli włączone, gracze mogą tworzyć i usuwać połączenia oraz upuszczać tokeny na wykresie."
@@ -538,6 +546,9 @@
             "DropConnect": "Utwórz relację"
         },
         "Zones": {
+            "RevealVisited": "Gdy tam byli",
+            "RevealOpen": "Znane od początku",
+            "RevealHint": "Gracze widzą miejsce, gdy tam byli, gdy należy do niego ich postać lub gdy sami je utworzyli. „Znane od początku” jest dla miejsc, które zna każdy.",
             "Assign": "Przypisz miejsce",
             "AssignTitle": "Gdzie należy {name}?",
             "AssignItemTitle": "Gdzie leży {name}?",

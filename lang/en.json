@@ -470,6 +470,14 @@
                 "Name": "Center Aura Color (Hex)",
                 "Hint": "The color of the magical ring around tokens pinned to the center. Enter a Hex color code (e.g. #d4af37 for Gold, #8b0000 for Dark Red)."
             },
+            "PlayerPlaces": {
+                "Name": "Players may create places",
+                "Hint": "Create new places and edit existing ones, right from the place field. Only together with player editing."
+            },
+            "PlayerChronicle": {
+                "Name": "Players may write chronicle entries",
+                "Hint": "Entries of their own in the chronicle, such as what their character went through. The GM sees each one and can delete it."
+            },
             "AllowPlayerEditing": {
                 "Name": "Allow Player Editing",
                 "Hint": "If enabled, players can create and delete connections, and drop tokens onto the graph."
@@ -538,6 +546,9 @@
             "DropConnect": "Create relationship"
         },
         "Zones": {
+            "RevealVisited": "Once they have been there",
+            "RevealOpen": "Known from the start",
+            "RevealHint": "Players see a place once they have been there, a character of theirs belongs there, or they created it. Choose \"Known from the start\" for a place everybody knows.",
             "Assign": "Assign place",
             "AssignTitle": "Where does {name} belong?",
             "AssignItemTitle": "Where does {name} lie?",

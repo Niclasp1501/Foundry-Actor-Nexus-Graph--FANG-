@@ -2612,6 +2612,17 @@ body.role-gm .fang-app-container:not([data-active-view="graph"]) .fang-rail-btn.
     display: none !important;
 }
 
+/* A right that depends on the one above it: indented, and muted while that one is off. */
+.fang-app-container .fang-right-sub {
+    margin-left: 14px;
+    padding-left: 10px;
+    border-left: 2px solid rgba(var(--fang-primary-red-rgb), 0.25);
+}
+
+.fang-app-container .fang-right-sub.is-off {
+    opacity: 0.45;
+}
+
 /* Seldom used buttons an extension asks for at the foot of the rail. */
 .fang-app-container .fang-rail-extensions-bottom {
     display: flex;

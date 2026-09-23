@@ -470,6 +470,14 @@
                 "Name": "Middelpunt Aura Kleur (Hex)",
                 "Hint": "De kleur van de magische ring rond tokens die aan het middelpunt zijn vastgezet. Voer een Hex-kleurcode in (bijv. #d4af37 voor Goud, #8b0000 voor Donkerrood)."
             },
+            "PlayerPlaces": {
+                "Name": "Spelers mogen plaatsen aanmaken",
+                "Hint": "Nieuwe plaatsen aanmaken en bestaande bewerken, direct vanuit het plaatsveld. Alleen samen met bewerken door spelers."
+            },
+            "PlayerChronicle": {
+                "Name": "Spelers mogen in de kroniek schrijven",
+                "Hint": "Eigen items in de kroniek, zoals wat hun personage meemaakte. De spelleider ziet elk item en kan het verwijderen."
+            },
             "AllowPlayerEditing": {
                 "Name": "Spelersbewerking toestaan",
                 "Hint": "Indien ingeschakeld, kunnen spelers verbindingen maken en verwijderen, en tokens op de grafiek slepen."
@@ -538,6 +546,9 @@
             "DropConnect": "Relatie creëren"
         },
         "Zones": {
+            "RevealVisited": "Zodra ze er geweest zijn",
+            "RevealOpen": "Vanaf het begin bekend",
+            "RevealHint": "Spelers zien een plaats zodra ze er geweest zijn, een van hun personages er thuishoort of ze hem zelf hebben aangemaakt. \"Vanaf het begin bekend\" is voor plaatsen die iedereen kent.",
             "Assign": "Plaats toewijzen",
             "AssignTitle": "Waar hoort {name} thuis?",
             "AssignItemTitle": "Waar ligt {name}?",

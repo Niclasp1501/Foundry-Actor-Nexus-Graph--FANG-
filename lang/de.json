@@ -470,6 +470,14 @@
                 "Name": "Zentrum-Aura Farbe (Hex)",
                 "Hint": "Die Farbe des magischen Rings um Tokens, die im Zentrum verankert sind. Gib einen Hex-Farbcode ein (z.B. #d4af37 für Gold, #8b0000 für Dunkelrot)."
             },
+            "PlayerPlaces": {
+                "Name": "Spieler dürfen Orte anlegen",
+                "Hint": "Neue Orte anlegen und bestehende bearbeiten, direkt aus dem Ortsfeld. Nur zusammen mit Spieler-Bearbeitung."
+            },
+            "PlayerChronicle": {
+                "Name": "Spieler dürfen Chronik-Einträge schreiben",
+                "Hint": "Eigene Einträge in die Chronik, etwa was ihr Charakter erlebt hat. Die Spielleitung sieht jeden und kann ihn löschen."
+            },
             "AllowPlayerEditing": {
                 "Name": "Spieler-Bearbeitung erlauben",
                 "Hint": "Wenn aktiviert, können Spieler eigene Verbindungen erstellen und löschen sowie Tokens auf den Graph ziehen."
@@ -538,6 +546,9 @@
             "DropConnect": "Beziehung erstellen"
         },
         "Zones": {
+            "RevealVisited": "Sobald sie dort waren",
+            "RevealOpen": "Von Anfang an bekannt",
+            "RevealHint": "Spieler sehen einen Ort erst, wenn sie dort waren, einer ihrer Charaktere dort hingehört oder sie ihn selbst angelegt haben. \"Von Anfang an bekannt\" ist für Orte, die jeder kennt.",
             "Assign": "Ort zuweisen",
             "AssignTitle": "Wo gehört {name} hin?",
             "AssignItemTitle": "Wo liegt {name}?",
