@@ -426,8 +426,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
     /**
      * The places a player has come to know: the ones they created, the ones a character
      * they can see belongs to, and whatever an add-on adds (a journey in the chronicle,
-     * say). Knowing a place means knowing what it lies in, all the way up. Worked out once
-     * per moment, because every list of places asks for every place.
+     * say). Knowing a room does not mean knowing the place it lies in: a player who found
+     * a cellar need not know whose house it is under. Worked out once per moment, because
+     * every list of places asks for every place.
      */
     _zonesKnownTo(user = game.user) {
         const now = Date.now();
@@ -439,11 +440,6 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             if (node.zoneId && this._canUserSeeNode?.(node, user) !== false) known.add(node.zoneId);
         }
         Hooks.callAll("fang.zonesKnown", this, user, known);
-        const byId = new Map(zones.map(z => [z.id, z]));
-        for (const id of [...known]) {
-            const seen = new Set();
-            for (let up = byId.get(id)?.parentId; up && byId.has(up) && !seen.has(up); up = byId.get(up).parentId) { seen.add(up); known.add(up); }
-        }
         this._knownZonesCache = { user: user?.id, at: now, set: known };
         return known;
     }
@@ -605,7 +601,10 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     id: zone.id,
                     name,
                     type: panel.querySelector(".fang-zone-f-type").value,
-                    parentId: panel.querySelector(".fang-zone-f-parent").value || null,
+                    // A place this user does not know was never offered as "lies in"; an empty
+                    // choice then means "unchanged", not "a place of its own".
+                    parentId: panel.querySelector(".fang-zone-f-parent").value
+                        || (zone.parentId && !this._canUserSeeZone(this._zoneById(zone.parentId)) ? zone.parentId : null),
                     img: img.value.trim(),
                     color: panel.querySelector(".fang-zone-f-color").value,
                     description: panel.querySelector(".fang-zone-f-desc").value.trim(),
