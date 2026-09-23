@@ -388,8 +388,318 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             type,
             color: String(zone.color || "#d4af37"),
             description: String(zone.description || ""),
-            playerVisible: zone.playerVisible !== false
+            playerVisible: zone.playerVisible !== false,
+            // A place can lie in another (a vault in a tower in a city), carry a picture,
+            // and show players an alias instead of its name.
+            parentId: zone.parentId || null,
+            img: String(zone.img || ""),
+            hidden: !!zone.hidden,
+            displayName: String(zone.displayName || "")
         };
+    }
+
+    // --- Places: one list for the whole module, and one way to pick and edit them ---
+
+    _zoneById(id) {
+        const zone = id ? (this.graphData?.zones ?? []).find(z => z.id === id) : null;
+        return zone ? this._normalizeZone(zone) : null;
+    }
+
+    /** A place the GM keeps to themselves does not exist for a player. */
+    _canUserSeeZone(zone, user = game.user) {
+        return !!zone && (user?.isGM || zone.playerVisible !== false);
+    }
+
+    /** What a user reads as the name: the alias while the place is hidden from them. */
+    _zoneName(zone, user = game.user) {
+        if (!zone) return "";
+        if (!user?.isGM && zone.hidden) return zone.displayName || "???";
+        return zone.name;
+    }
+
+    /** The place and everything inside it, however deep. */
+    _zoneFamily(id) {
+        const zones = this.graphData?.zones ?? [];
+        const out = new Set(id ? [id] : []);
+        for (let grew = true; grew;) {
+            grew = false;
+            for (const z of zones) if (z.parentId && out.has(z.parentId) && !out.has(z.id)) { out.add(z.id); grew = true; }
+        }
+        return out;
+    }
+
+    /** Places as a tree, flattened: each followed by what lies in it, with its depth. */
+    _orderedZones(user = game.user, { exclude = null } = {}) {
+        const zones = (this.graphData?.zones ?? []).map(z => this._normalizeZone(z))
+            .filter(z => this._canUserSeeZone(z, user) && !exclude?.has(z.id));
+        const known = new Set(zones.map(z => z.id));
+        const byName = (a, b) => this._zoneName(a, user).localeCompare(this._zoneName(b, user));
+        const out = [], seen = new Set();
+        const walk = (zone, depth) => {
+            if (seen.has(zone.id)) return;
+            seen.add(zone.id);
+            out.push({ zone, depth });
+            for (const child of zones.filter(z => z.parentId === zone.id).sort(byName)) walk(child, depth + 1);
+        };
+        for (const top of zones.filter(z => !z.parentId || !known.has(z.parentId)).sort(byName)) walk(top, 0);
+        for (const rest of zones) walk(rest, 0);
+        return out;
+    }
+
+    /** Anyone who may edit the graph may add and change places; nobody else. */
+    _canEditZones() {
+        return this._canEditGraph(true);
+    }
+
+    /**
+     * The one editor for a place, wherever it is opened from: the character editor, the
+     * chronicle form, a menu or an add-on. Resolves with the saved place, or null.
+     * `defaults` fills a new place (name, parentId).
+     */
+    openZoneEditor(zoneId = null, defaults = {}) {
+        const host = this.element?.querySelector(".fang-app-container");
+        if (!host) return Promise.resolve(null);
+        if (!this._canEditZones()) {
+            ui.notifications.warn(this._localize("FANG.Messages.EditModeRequired", "Switch on edit mode first."));
+            return Promise.resolve(null);
+        }
+        const isGM = game.user.isGM;
+        const existing = this._zoneById(zoneId);
+        // A player never opens a place hidden from them: the form would show its real name.
+        if (existing && !isGM && (existing.hidden || existing.playerVisible === false)) return Promise.resolve(null);
+        const zone = existing ?? this._normalizeZone({ name: defaults.name || "", parentId: defaults.parentId || null, type: defaults.type || (defaults.parentId ? "building" : "city") });
+        // A new place starts without a name: a placeholder name would only have to be deleted.
+        if (!existing) zone.name = defaults.name || "";
+        const esc = (v) => this._escapeHtml(String(v ?? ""));
+        const t = (key, fallback) => this._localize(key, fallback);
+        const types = ["realm", "region", "city", "district", "building", "other"];
+        const family = existing ? this._zoneFamily(existing.id) : new Set();
+        const parentOptions = this._orderedZones(game.user, { exclude: family })
+            .map(({ zone: z, depth }) => `<option value="${esc(z.id)}" ${z.id === zone.parentId ? "selected" : ""}>${"\u00a0\u00a0".repeat(depth)}${depth ? "\u203a " : ""}${esc(this._zoneName(z))}</option>`).join("");
+        const visibility = zone.playerVisible === false ? "gm" : (zone.hidden ? "hidden" : "open");
+        const closeLabel = t("FANG.UI.ClosePanel", "Close");
+        const panel = document.createElement("div");
+        panel.className = "fang-canvas-prompt-panel fang-zone-editor";
+        panel.setAttribute("role", "dialog");
+        panel.setAttribute("aria-modal", "true");
+        panel.tabIndex = -1;
+        panel.innerHTML = `
+            <div class="fang-canvas-prompt-card">
+                <header class="fang-canvas-prompt-header">
+                    <h3><i class="fas fa-map-location-dot" aria-hidden="true"></i> ${esc(existing ? t("FANG.Zones.EditTitle", "Edit place") : t("FANG.Zones.NewTitle", "New place"))}</h3>
+                    <button type="button" class="fang-canvas-prompt-close" title="${esc(closeLabel)}" aria-label="${esc(closeLabel)}"><i class="fas fa-times" aria-hidden="true"></i></button>
+                </header>
+                <div class="fang-canvas-prompt-body fang-zone-editor-body">
+                    <div class="fang-canvas-prompt-fields">
+                        <label for="fang-zone-f-name">${esc(t("FANG.Zones.NameLabel", "Name"))}</label>
+                        <input type="text" id="fang-zone-f-name" class="fang-zone-f-name" value="${esc(zone.name)}" placeholder="${esc(t("FANG.Zones.NamePlaceholder", "Place name"))}">
+                        <label for="fang-zone-f-type">${esc(t("FANG.Zones.TypeLabel", "Kind of place"))}</label>
+                        <select id="fang-zone-f-type" class="fang-zone-f-type">${types.map(type => `<option value="${type}" ${zone.type === type ? "selected" : ""}>${esc(t(`FANG.Zones.Types.${type}`, type))}</option>`).join("")}</select>
+                        <label for="fang-zone-f-parent">${esc(t("FANG.Zones.ParentLabel", "Lies in"))}</label>
+                        <select id="fang-zone-f-parent" class="fang-zone-f-parent"><option value="">${esc(t("FANG.Zones.NoParent", "A place of its own"))}</option>${parentOptions}</select>
+                        ${isGM ? `
+                        <label for="fang-zone-f-vis">${esc(t("FANG.Zones.VisibilityLabel", "For players"))}</label>
+                        <select id="fang-zone-f-vis" class="fang-zone-f-vis">
+                            <option value="open" ${visibility === "open" ? "selected" : ""}>${esc(t("FANG.Dialogs.ActorDropVisible", "Show openly"))}</option>
+                            <option value="hidden" ${visibility === "hidden" ? "selected" : ""}>${esc(t("FANG.Dialogs.ActorDropHidden", "Show hidden"))}</option>
+                            <option value="gm" ${visibility === "gm" ? "selected" : ""}>${esc(t("FANG.Dialogs.ActorDropGMOnly", "GM only"))}</option>
+                        </select>
+                        <label for="fang-zone-f-alias" class="fang-zone-alias-row">${esc(t("FANG.Dialogs.IdentityAlias", "Alias"))}</label>
+                        <input type="text" id="fang-zone-f-alias" class="fang-zone-f-alias fang-zone-alias-row" value="${esc(zone.displayName)}" placeholder="???">` : ""}
+                        <label for="fang-zone-f-img">${esc(t("FANG.Zones.ImageLabel", "Image"))}</label>
+                        <div class="fang-zone-img-row">
+                            <input type="text" id="fang-zone-f-img" class="fang-zone-f-img" value="${esc(zone.img)}" placeholder="path/to/image.webp">
+                            <button type="button" class="fang-zone-browse" data-tooltip="${esc(t("FILES.BrowseTooltip", "Browse"))}" aria-label="${esc(t("FILES.BrowseTooltip", "Browse"))}"><i class="fas fa-folder-open" aria-hidden="true"></i></button>
+                            <input type="color" class="fang-zone-f-color" value="${esc(zone.color)}" data-tooltip="${esc(t("FANG.Zones.ColorLabel", "Colour when grouping"))}" aria-label="${esc(t("FANG.Zones.ColorLabel", "Colour when grouping"))}">
+                        </div>
+                        <label for="fang-zone-f-desc">${esc(t("FANG.Zones.DescriptionLabel", "Description"))}</label>
+                        <textarea id="fang-zone-f-desc" class="fang-zone-f-desc" placeholder="${esc(t("FANG.Zones.DescriptionPlaceholder", "Short description"))}">${esc(zone.description)}</textarea>
+                        <div class="fang-zone-extension"></div>
+                    </div>
+                </div>
+                <div class="fang-canvas-prompt-actions">
+                    <button type="button" class="fang-canvas-prompt-action primary fang-zone-save"><i class="fas fa-save" aria-hidden="true"></i> <span>${esc(t("FANG.Dialogs.BtnSave", "Save"))}</span></button>
+                    <button type="button" class="fang-canvas-prompt-action fang-zone-cancel"><i class="fas fa-times" aria-hidden="true"></i> <span>${esc(t("FANG.Dialogs.BtnCancel", "Cancel"))}</span></button>
+                    ${existing ? `<button type="button" class="fang-canvas-prompt-action fang-zone-delete"><i class="fas fa-trash" aria-hidden="true"></i> <span>${esc(t("FANG.Zones.Delete", "Delete place"))}</span></button>` : ""}
+                </div>
+            </div>`;
+        host.appendChild(panel);
+        // An add-on keeps its own fields about a place here (a scene, say).
+        Hooks.callAll("fang.zoneEditorRender", this, panel.querySelector(".fang-zone-extension"), zone);
+
+        return new Promise((resolve) => {
+            let done = false;
+            const finish = (result) => {
+                if (done) return;
+                done = true;
+                window.removeEventListener("keydown", onKey, true);
+                panel.remove();
+                resolve(result);
+            };
+            // Escape closes this card and nothing underneath it, such as the character editor.
+            const onKey = (event) => {
+                if (event.key !== "Escape") return;
+                event.preventDefault();
+                event.stopImmediatePropagation();
+                finish(null);
+            };
+            window.addEventListener("keydown", onKey, true);
+            panel.addEventListener("mousedown", (event) => { if (event.target === panel) finish(null); });
+            panel.querySelector(".fang-canvas-prompt-close").addEventListener("click", () => finish(null));
+            panel.querySelector(".fang-zone-cancel").addEventListener("click", () => finish(null));
+            const vis = panel.querySelector(".fang-zone-f-vis");
+            const showAlias = () => panel.querySelectorAll(".fang-zone-alias-row").forEach(el => { el.hidden = vis?.value !== "hidden"; });
+            vis?.addEventListener("change", showAlias);
+            showAlias();
+            const img = panel.querySelector(".fang-zone-f-img");
+            panel.querySelector(".fang-zone-browse").addEventListener("click", () => {
+                new foundry.applications.apps.FilePicker.implementation({ type: "image", current: img.value || "", callback: (path) => { img.value = path; } }).render(true);
+            });
+            panel.querySelector(".fang-zone-save").addEventListener("click", async () => {
+                const name = panel.querySelector(".fang-zone-f-name").value.trim();
+                if (!name) { panel.querySelector(".fang-zone-f-name").focus(); return; }
+                const zones = this.graphData.zones = Array.isArray(this.graphData.zones) ? this.graphData.zones : [];
+                const next = this._normalizeZone({
+                    ...(zones.find(z => z.id === zone.id) ?? {}),
+                    id: zone.id,
+                    name,
+                    type: panel.querySelector(".fang-zone-f-type").value,
+                    parentId: panel.querySelector(".fang-zone-f-parent").value || null,
+                    img: img.value.trim(),
+                    color: panel.querySelector(".fang-zone-f-color").value,
+                    description: panel.querySelector(".fang-zone-f-desc").value.trim(),
+                    ...(vis ? {
+                        playerVisible: vis.value !== "gm",
+                        hidden: vis.value === "hidden",
+                        displayName: vis.value === "hidden" ? (panel.querySelector(".fang-zone-f-alias").value.trim()) : ""
+                    } : {})
+                });
+                if (!existing && !isGM) next.createdBy = game.user.id;
+                Hooks.callAll("fang.zoneEditorSaving", this, next, panel.querySelector(".fang-zone-extension"));
+                const index = zones.findIndex(z => z.id === next.id);
+                if (index === -1) zones.push(next); else zones[index] = next;
+                await this.saveData();
+                this.ticked?.();
+                Hooks.callAll("fang.zonesChanged", this, { zone: next, created: !existing });
+                finish(next);
+            });
+            panel.querySelector(".fang-zone-delete")?.addEventListener("click", async () => {
+                const confirmed = await foundry.applications.api.DialogV2.confirm({
+                    window: { title: t("FANG.Zones.DeleteTitle", "Delete place?") },
+                    content: `<p>${esc(t("FANG.Zones.DeleteBody", "{name} is removed. What lies in it moves up one level, characters keep everything else.").replace("{name}", zone.name))}</p>`,
+                    yes: { label: t("FANG.Zones.Delete", "Delete place"), icon: "fas fa-trash" },
+                    no: { label: t("FANG.Dialogs.BtnCancel", "Cancel") },
+                    defaultYes: false
+                });
+                if (!confirmed) return;
+                this._deleteZone(zone.id);
+                await this.saveData();
+                this.ticked?.();
+                Hooks.callAll("fang.zonesChanged", this, { zone, deleted: true });
+                finish(null);
+            });
+            panel.focus();
+            if (!existing) panel.querySelector(".fang-zone-f-name").focus();
+        });
+    }
+
+    /** Remove a place: what lay in it moves up one level, nobody points at nothing. */
+    _deleteZone(id) {
+        const zones = this.graphData.zones ?? [];
+        const gone = zones.find(z => z.id === id);
+        if (!gone) return;
+        for (const z of zones) if (z.parentId === id) z.parentId = gone.parentId || null;
+        for (const node of this.graphData.nodes ?? []) if (node.zoneId === id) node.zoneId = gone.parentId || null;
+        this.graphData.zones = zones.filter(z => z.id !== id);
+    }
+
+    /**
+     * A place field for any form: the places as a tree, "New place..." at the end and a pen
+     * for the one chosen. Returns an object whose `value` is the chosen id or "".
+     * `extra` adds options after the places (value/label), for an add-on's own choices.
+     */
+    renderZonePicker(host, { value = "", noneLabel = null, extra = [], onChange = null } = {}) {
+        if (!host) return { value: "" };
+        const esc = (v) => this._escapeHtml(String(v ?? ""));
+        const t = (key, fallback) => this._localize(key, fallback);
+        const canEdit = this._canEditZones();
+        host.classList.add("fang-zone-picker");
+        host.innerHTML = `<select class="fang-zone-picker-select"></select>
+            ${canEdit ? `<button type="button" class="fang-zone-picker-edit" data-tooltip="${esc(t("FANG.Zones.EditTitle", "Edit place"))}" aria-label="${esc(t("FANG.Zones.EditTitle", "Edit place"))}"><i class="fas fa-pen" aria-hidden="true"></i></button>` : ""}`;
+        const select = host.querySelector("select");
+        const edit = host.querySelector(".fang-zone-picker-edit");
+        let current = value || "";
+        const fill = () => {
+            const tree = this._orderedZones();
+            select.innerHTML = `<option value="">${esc(noneLabel ?? t("FANG.Zones.NoPlace", "No place"))}</option>`
+                + tree.map(({ zone, depth }) => `<option value="${esc(zone.id)}">${"\u00a0\u00a0".repeat(depth)}${depth ? "\u203a " : ""}${esc(this._zoneName(zone))}</option>`).join("")
+                + extra.map(o => `<option value="${esc(o.value)}">${esc(o.label)}</option>`).join("")
+                + (canEdit ? `<option value="__new">${esc(t("FANG.Zones.NewOption", "+ New place..."))}</option>` : "");
+            // A place this user cannot see stays selected without being shown.
+            if (current && ![...select.options].some(o => o.value === current)) {
+                select.insertAdjacentHTML("afterbegin", `<option value="${esc(current)}" hidden>???</option>`);
+            }
+            select.value = current;
+            const chosen = this._zoneById(select.value);
+            if (edit) edit.disabled = !chosen || (!game.user.isGM && (chosen.hidden || chosen.playerVisible === false));
+        };
+        fill();
+        select.addEventListener("change", async () => {
+            if (select.value !== "__new") { current = select.value; fill(); onChange?.(current); return; }
+            select.value = current;
+            const made = await this.openZoneEditor(null, { parentId: this._zoneById(current)?.id ?? null });
+            if (made) { current = made.id; onChange?.(current); }
+            fill();
+        });
+        edit?.addEventListener("click", async () => {
+            if (!current) return;
+            await this.openZoneEditor(current);
+            if (!this._zoneById(current)) { current = ""; onChange?.(current); }
+            fill();
+        });
+        return { get value() { return current; }, set value(v) { current = v || ""; fill(); }, refresh: fill };
+    }
+
+    /** The context menu's "Assign place": the picker alone, without the whole editor. */
+    async _openAssignZone(node) {
+        if (!this._canEditGraph()) return;
+        const host = this.element?.querySelector(".fang-app-container");
+        if (!host) return;
+        const esc = (v) => this._escapeHtml(String(v ?? ""));
+        const t = (key, fallback) => this._localize(key, fallback);
+        const isItem = node.placeholderType === "item";
+        const panel = document.createElement("div");
+        panel.className = "fang-canvas-prompt-panel fang-zone-assign";
+        panel.setAttribute("role", "dialog");
+        panel.setAttribute("aria-modal", "true");
+        panel.tabIndex = -1;
+        panel.innerHTML = `
+            <div class="fang-canvas-prompt-card">
+                <header class="fang-canvas-prompt-header">
+                    <h3><i class="fas fa-location-dot" aria-hidden="true"></i> ${esc(t(isItem ? "FANG.Zones.AssignItemTitle" : "FANG.Zones.AssignTitle", isItem ? "Where does {name} lie?" : "Where does {name} belong?").replace("{name}", this._getSafeNodeName(node)))}</h3>
+                    <button type="button" class="fang-canvas-prompt-close" aria-label="${esc(t("FANG.UI.ClosePanel", "Close"))}"><i class="fas fa-times" aria-hidden="true"></i></button>
+                </header>
+                <div class="fang-canvas-prompt-body"><div class="fang-zone-assign-picker"></div></div>
+                <div class="fang-canvas-prompt-actions">
+                    <button type="button" class="fang-canvas-prompt-action primary fang-zone-save"><i class="fas fa-save" aria-hidden="true"></i> <span>${esc(t("FANG.Dialogs.BtnSave", "Save"))}</span></button>
+                    <button type="button" class="fang-canvas-prompt-action fang-zone-cancel"><i class="fas fa-times" aria-hidden="true"></i> <span>${esc(t("FANG.Dialogs.BtnCancel", "Cancel"))}</span></button>
+                </div>
+            </div>`;
+        host.appendChild(panel);
+        const picker = this.renderZonePicker(panel.querySelector(".fang-zone-assign-picker"), { value: node.zoneId || "" });
+        const close = () => panel.remove();
+        panel.addEventListener("mousedown", (event) => { if (event.target === panel) close(); });
+        panel.addEventListener("keydown", (event) => { if (event.key === "Escape") { event.stopPropagation(); close(); } });
+        panel.querySelector(".fang-canvas-prompt-close").addEventListener("click", close);
+        panel.querySelector(".fang-zone-cancel").addEventListener("click", close);
+        panel.querySelector(".fang-zone-save").addEventListener("click", async () => {
+            const stored = this.graphData.nodes.find(n => n.id === node.id);
+            if (stored) stored.zoneId = picker.value || null;
+            close();
+            await this.saveData();
+            this.ticked?.();
+        });
+        panel.focus();
     }
 
     _getDefaultRelationshipTypes() {
@@ -2535,6 +2845,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             }, 120);
             window.addEventListener("resize", this._viewportFitHandler);
             window.addEventListener("orientationchange", this._viewportFitHandler);
+            // Opening or folding Foundry's sidebar moves the edge the window has to keep to.
+            this._sidebarFitHook = Hooks.on("collapseSidebar", () => setTimeout(() => this._viewportFitHandler?.(), 250));
         }
 
         // Manage ResizeObserver
@@ -2820,6 +3132,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             window.removeEventListener("resize", this._viewportFitHandler);
             window.removeEventListener("orientationchange", this._viewportFitHandler);
             this._viewportFitHandler = null;
+            if (this._sidebarFitHook) { Hooks.off("collapseSidebar", this._sidebarFitHook); this._sidebarFitHook = null; }
         }
 
         super._onClose(options);
@@ -2844,7 +3157,12 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
      */
     _fitPositionToViewport(position = {}) {
         const margin = 12;
-        const maxWidth = Math.max(320, window.innerWidth - margin * 2);
+        // Foundry's sidebar on the right (actors, items, chat) stays usable: the window ends
+        // where it begins, open or folded. Dragging an actor in from there is the main way to
+        // fill the graph, and a window lying over it made exactly that impossible.
+        const sidebarLeft = document.getElementById("ui-right")?.getBoundingClientRect?.().left;
+        const rightEdge = Number.isFinite(sidebarLeft) && sidebarLeft > 400 ? Math.min(window.innerWidth, sidebarLeft) : window.innerWidth;
+        const maxWidth = Math.max(320, rightEdge - margin * 2);
         const maxHeight = Math.max(320, window.innerHeight - margin * 2);
         const fitted = { ...position };
         const width = Number.isFinite(fitted.width) ? fitted.width : this.position?.width;
@@ -2856,6 +3174,12 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         // valid origin is the margin. Leaving the old offset would push it back off the edge.
         if (fitted.width === maxWidth) fitted.left = margin;
         if (fitted.height === maxHeight) fitted.top = margin;
+        // A window that fits but stands too far right moves left until it clears the sidebar.
+        const left = Number.isFinite(fitted.left) ? fitted.left : this.position?.left;
+        const finalWidth = Number.isFinite(fitted.width) ? fitted.width : width;
+        if (Number.isFinite(left) && Number.isFinite(finalWidth) && left + finalWidth > rightEdge - margin) {
+            fitted.left = Math.max(margin, rightEdge - margin - finalWidth);
+        }
         return fitted;
     }
 
@@ -4815,11 +5139,14 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     label: localize("FANG.Dialogs.BtnSave", "Save"),
                     callback: async (html) => {
                         const nextZones = [];
+                        const before = new Map(zones.map(z => [z.id, z]));
                         html.find(".fang-zone-item").each((_, el) => {
                             const id = $(el).find(".zone-id").val() || foundry.utils.randomID();
                             const name = $(el).find(".zone-name").val()?.trim();
                             if (!name) return;
+                            // The list shows only some fields; image, rooms and alias stay.
                             nextZones.push(this._normalizeZone({
+                                ...(before.get(id) ?? {}),
                                 id,
                                 name,
                                 type: $(el).find(".zone-type").val() || "region",
@@ -4829,10 +5156,14 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                             }));
                         });
                         const zoneIds = new Set(nextZones.map(z => z.id));
+                        this.graphData.zones = nextZones;
+                        // A place removed here: what lay in it moves up one level.
+                        for (const gone of zones.filter(z => !zoneIds.has(z.id))) {
+                            for (const z of nextZones) if (z.parentId === gone.id) z.parentId = zoneIds.has(gone.parentId) ? gone.parentId : null;
+                        }
                         this.graphData.nodes.forEach(node => {
                             if (node.zoneId && !zoneIds.has(node.zoneId)) node.zoneId = null;
                         });
-                        this.graphData.zones = nextZones;
                         await this.saveData();
                         this.ticked();
                     }
@@ -5373,6 +5704,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const btnHistory = menu.querySelector("#ctxHistory");
         const btnDelete = menu.querySelector("#ctxDeleteNode");
         const btnUnpin = menu.querySelector("#ctxUnpinNode");
+        const btnZone = menu.querySelector("#ctxAssignZone");
+        const newBtnZone = btnZone ? btnZone.cloneNode(true) : null;
+        if (btnZone && newBtnZone) btnZone.parentNode.replaceChild(newBtnZone, btnZone);
 
         const newBtnUnpin = btnUnpin ? btnUnpin.cloneNode(true) : null;
         if (btnUnpin && newBtnUnpin) btnUnpin.parentNode.replaceChild(newBtnUnpin, btnUnpin);
@@ -5409,6 +5743,11 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         if (newBtnDelete) {
             newBtnDelete.style.display = "flex";
             this._markMenuItemLocked(newBtnDelete, !hasLock);
+        }
+        if (newBtnZone) {
+            newBtnZone.style.display = (game.user.isGM || canViewNode) ? "flex" : "none";
+            this._markMenuItemLocked(newBtnZone, !hasLock);
+            newBtnZone.addEventListener("click", () => { menu.classList.add("hidden"); this._openAssignZone(node); });
         }
         Hooks.callAll("fang.nodeMenu", this, { node, hasLock, items: { edit: newBtnEdit, delete: newBtnDelete } });
         this._renderExtensionMenuItems(menu, "node", node);
@@ -5926,11 +6265,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 </li>`;
             })
             .join("");
-        const zoneOptions = (this.graphData.zones || [])
-            .map(z => this._normalizeZone(z))
-            .filter(z => game.user?.isGM || z.playerVisible !== false || z.id === node.zoneId)
-            .map(z => `<option value="${escapeHtml(z.id)}" ${z.id === node.zoneId ? "selected" : ""}>${escapeHtml(z.name)}</option>`)
-            .join("");
+
         const gmJournalLabel = node.journalUuid ? localize("FANG.ContextMenu.OpenJournal", "Open GM Journal") : "GM Journal";
         const playerLoreLabel = node.playerLorePageId
             ? localize("FANG.Dialogs.BtnOpenPlayerJournal", "Open Player Notes Journal")
@@ -5971,11 +6306,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     <label>${localize("FANG.Dialogs.FactionInput", "Faction")}</label>
                     <ul id="fang-profile-factions" class="fang-faction-picks">${factionOptions}</ul>
                     ${factionOptions ? `<p class="fang-hint">${localize("FANG.Dialogs.FactionMultiHint", "A character can belong to several factions. The starred one decides where they sit while grouping is on.")}</p>` : ""}
-                    <label>${localize("FANG.Zones.Zone", "Zone")}</label>
-                    <select id="fang-profile-zone">
-                        <option value="">-- None --</option>
-                        ${zoneOptions}
-                    </select>
+                    <label>${node.placeholderType === "item" ? localize("FANG.Zones.ItemLiesIn", "Lies in") : localize("FANG.Zones.Zone", "Place")}</label>
+                    <div id="fang-profile-zone-picker"></div>
                     <div id="fang-actor-location-extension"></div>
                 </section>
                 ${playerViewSection}
@@ -6020,7 +6352,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                             return f && !this._isFactionVisibleToCurrentUser(f);
                         });
                         const newFactionIds = [...gewaehlteFraktionen, ...unsichtbare.filter(id => !gewaehlteFraktionen.includes(id))];
-                        const newZoneId = html.find("#fang-profile-zone").val();
+                        const newZoneId = this._profileZonePicker?.value ?? node.zoneId;
                         const newAlias = isGM ? html.find("#fang-profile-alias").val().trim() : node.displayName;
                         const newLore = html.find("#fang-profile-lore").val().trim();
                         const newConditions = [];
@@ -6119,6 +6451,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 });
 
                 zeichneFraktionen();
+
+                this._profileZonePicker = this.renderZonePicker(html.find("#fang-profile-zone-picker")[0], { value: node.zoneId || "" });
 
                 // An add-on that tracks locations puts its own field into
                 // #fang-actor-location-extension.
@@ -7909,7 +8243,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             this.context.fillStyle = farbe;
             this.context.textAlign = "left";
             this.context.textBaseline = "top";
-            this.context.fillText(gruppe.name || "", minX + 14, minY + 10);
+            this.context.fillText((shownGrouping === "zone" ? this._zoneName(gruppe) : gruppe.name) || "", minX + 14, minY + 10);
             this.context.restore();
         });
 

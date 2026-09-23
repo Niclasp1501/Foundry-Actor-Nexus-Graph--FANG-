@@ -2398,9 +2398,104 @@ body.fang-theme-cyberpunk .fang-dialog .faction-icon-preview {
     color: var(--fang-primary-red);
 }
 
+/* --- Places: the picker and its editor --- */
+
+.fang-app-container .fang-zone-picker {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.fang-app-container .fang-zone-picker select {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.fang-app-container .fang-zone-picker-edit,
+.fang-app-container .fang-zone-browse {
+    flex: 0 0 auto;
+    width: var(--ninjo-tippziel, 40px);
+    min-height: var(--ninjo-tippziel, 40px);
+    border: 1px solid rgba(58, 42, 18, 0.25);
+    border-radius: 8px;
+    background: #fffaf0;
+    color: var(--fang-primary-red);
+    cursor: pointer;
+}
+
+.fang-app-container .fang-zone-picker-edit:disabled {
+    opacity: 0.35;
+    cursor: default;
+}
+
+.fang-app-container .fang-zone-picker-edit:not(:disabled):hover,
+.fang-app-container .fang-zone-browse:hover {
+    background: var(--fang-primary-red);
+    color: #fff;
+}
+
+.fang-app-container .fang-canvas-prompt-panel.fang-zone-editor,
+.fang-app-container .fang-canvas-prompt-panel.fang-zone-assign {
+    z-index: 2100;
+    padding: 16px;
+    outline: none;
+}
+
+.fang-app-container .fang-zone-editor .fang-canvas-prompt-card {
+    display: flex;
+    flex-direction: column;
+    width: min(540px, 100%);
+    max-height: 100%;
+}
+
+.fang-app-container .fang-zone-editor-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+.fang-app-container .fang-zone-editor .fang-canvas-prompt-actions {
+    flex: 0 0 auto;
+    padding: 12px 24px 16px;
+    border-top: 1px solid rgba(58, 42, 18, 0.14);
+}
+
+.fang-app-container .fang-zone-editor .fang-zone-delete {
+    margin-left: auto;
+    color: var(--fang-primary-red);
+}
+
+.fang-app-container .fang-zone-img-row {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.fang-app-container .fang-zone-img-row input[type="text"] {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.fang-app-container .fang-zone-img-row input[type="color"] {
+    flex: 0 0 auto;
+    width: 40px;
+    height: 40px;
+    padding: 2px;
+    border-radius: 8px;
+}
+
+.fang-app-container .fang-zone-editor textarea {
+    min-height: 80px;
+    background: #fff;
+    color: #1a1a1a;
+    border: 1px solid #dcd6cc;
+    border-radius: 6px;
+    font-family: var(--ninjo-schrift);
+}
+
 /* --- Guides and the hint on an empty graph --- */
 
-.fang-app-container .fang-guide-panel {
+.fang-app-container .fang-canvas-prompt-panel.fang-guide-panel {
     z-index: 2000;
     padding: 16px;
     outline: none;

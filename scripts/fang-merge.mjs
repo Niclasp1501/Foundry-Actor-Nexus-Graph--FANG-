@@ -227,13 +227,16 @@ export function mergeGraphData(baseline, mine, server, { draggedNodeIds = new Se
         // any other field rather than tying it to the node drag set.
         label: "faction"
     });
+    // Places are added from many forms now, often by two people in one evening: two new
+    // places must both survive, not one list replace the other.
+    const zones = mergeCollection(base.zones, ours.zones, theirs.zones, { label: "zone" });
 
-    conflicts.push(...nodes.conflicts, ...links.conflicts, ...factions.conflicts);
+    conflicts.push(...nodes.conflicts, ...links.conflicts, ...factions.conflicts, ...zones.conflicts);
 
     // Everything else on the top level (zones, relationshipTypes, showFactionLines, ...)
     // is merged field by field, so a new top-level feature is covered automatically.
     const { merged, conflicts: topConflicts } = mergeElement(base, ours, theirs, {
-        skipFields: ["nodes", "links", "factions"]
+        skipFields: ["nodes", "links", "factions", "zones"]
     });
     for (const field of topConflicts) {
         conflicts.push({ type: "graph.field", id: null, name: field, field });
@@ -242,6 +245,7 @@ export function mergeGraphData(baseline, mine, server, { draggedNodeIds = new Se
     merged.nodes = nodes.merged;
     merged.links = links.merged;
     merged.factions = factions.merged;
+    merged.zones = zones.merged;
 
     // Referential integrity: a link whose endpoint lost the merge must not survive.
     const nodeIds = new Set(merged.nodes.map(n => n.id));
