@@ -1258,31 +1258,49 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
      *
      * @returns {Promise<{converted:number, skipped:number}>}
      */
+    /** The source the calendar in use writes game dates under, or null without one. */
+    _calendarDateSource() {
+        const source = this.detectCurrentGameDate?.()?.source;
+        return source && !["manual", "real-time", "real", "last-used", "chronicle"].includes(source) ? source : null;
+    }
+
+    /**
+     * One game date in the calendar's own format, read from its label ("14. Eleasis 1490 DR"),
+     * or null when there is no calendar or the label names none of its months. A date that
+     * is already the calendar's comes back as it is.
+     */
+    _toCalendarDate(gameDate) {
+        if (!gameDate?.label) return null;
+        const source = this._calendarDateSource();
+        if (!source) return null;
+        if (gameDate.source === source && gameDate.sort) return gameDate;
+        const calendar = game.time?.calendar;
+        const months = calendar?.months?.values;
+        if (!Array.isArray(months)) return null;
+        const yearZero = Number(calendar?.years?.yearZero ?? 0);
+        const match = String(gameDate.label).match(/(\d{1,3})\.?\s+([^\d\s,.][^\d,]*?)[.,]?\s+(-?\d{1,6})/);
+        if (!match) return null;
+        const wanted = match[2].trim().toLowerCase();
+        const month = months.findIndex(m => {
+            const name = String(game.i18n.localize(m.name ?? "")).trim().toLowerCase();
+            const abbr = String(m.abbreviation ?? "").trim().toLowerCase();
+            return name === wanted || (abbr && abbr === wanted);
+        });
+        if (month < 0) return null;
+        const described = this._describeGameDateForComponents({ year: Number(match[3]) - yearZero, month, dayOfMonth: Number(match[1]) - 1 });
+        if (!described?.sort) return null;
+        return { ...described, time: String(gameDate.time || described.time || "") };
+    }
+
     async convertGameDatesToCalendar() {
         const none = { converted: 0, skipped: 0 };
         if (!game.user?.isGM) return none;
-        const calendar = game.time?.calendar;
-        const months = calendar?.months?.values;
-        const current = this.detectCurrentGameDate?.();
-        const source = current?.source;
-        if (!Array.isArray(months) || !source || source === "manual" || source === "real") return none;
-        const yearZero = Number(calendar?.years?.yearZero ?? 0);
-        const names = months.map(m => [String(game.i18n.localize(m.name ?? "")).trim().toLowerCase(), String(m.abbreviation ?? "").trim().toLowerCase()]);
-        const convert = (gameDate) => {
-            const label = String(gameDate?.label || "");
-            const match = label.match(/(\d{1,3})\.?\s+([^\d\s,.][^\d,]*?)[.,]?\s+(-?\d{1,6})/);
-            if (!match) return null;
-            const wanted = match[2].trim().toLowerCase();
-            const month = names.findIndex(([name, abbr]) => name === wanted || (abbr && abbr === wanted));
-            if (month < 0) return null;
-            const [hour, minute] = String(gameDate?.time || "").split(":").map(Number);
-            const described = this._describeGameDateForComponents({
-                year: Number(match[3]) - yearZero, month, dayOfMonth: Number(match[1]) - 1,
-                hour: Number.isFinite(hour) ? hour : 0, minute: Number.isFinite(minute) ? minute : 0
-            });
-            if (!described?.sort) return null;
-            return { ...described, time: String(gameDate?.time || described.time || "") };
-        };
+        const source = this._calendarDateSource();
+        if (!source) return none;
+        const convert = (gameDate) => this._toCalendarDate(gameDate);
+        const last = game.settings.get("fang", "historyLastGameDate");
+        const lastConverted = last?.label && last.source !== source ? convert(last) : null;
+        if (lastConverted) await game.settings.set("fang", "historyLastGameDate", lastConverted);
         const store = this._getHistoryStore();
         let converted = 0, skipped = 0;
         for (const entry of store.entries) {
@@ -1870,7 +1888,10 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         }
 
         const store = this._getHistoryStore();
-        const normalizedGameDate = this._normalizeGameDate(gameDate);
+        // Whatever form a date came in (typed by hand, taken from an older entry, handed in
+        // by a macro or a tool), it is stored the calendar's way.
+        const normalizedGameDate = this._normalizeGameDate(this._toCalendarDate(gameDate) ?? gameDate);
+        if (knownSince?.label) knownSince = this._toCalendarDate(knownSince) ?? knownSince;
         if (normalizedGameDate.source === "manual" && normalizedGameDate.label && normalizedGameDate.label !== this._localize("FANG.History.UnknownDate", "Unscheduled")) {
             await game.settings.set("fang", "historyLastGameDate", {
                 label: normalizedGameDate.label,
@@ -1950,6 +1971,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const index = store.entries.findIndex(entry => entry.id === entryId);
         if (index === -1) return false;
         const current = store.entries[index];
+        if (patch.gameDate?.label) patch = { ...patch, gameDate: this._toCalendarDate(patch.gameDate) ?? patch.gameDate };
+        if (patch.knownSince?.label) patch = { ...patch, knownSince: this._toCalendarDate(patch.knownSince) ?? patch.knownSince };
         const next = this._normalizeHistoryEntry({
             ...current,
             ...patch,
@@ -2958,6 +2981,12 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         super._onRender(context, options);
         this._applyVisualTheme();
         this._renderExtensionRailButtons();
+        const header = this.element.querySelector(".window-header");
+        if (header && !header._fangDragWatch) {
+            header._fangDragWatch = true;
+            header.addEventListener("pointerdown", () => { this._titleBarHeld = true; });
+            window.addEventListener("pointerup", () => { this._titleBarHeld = false; });
+        }
         this.element.querySelector("#fangRailGuide")?.addEventListener("click", (event) => {
             event.preventDefault();
             this._closeSidebarPanel();
@@ -3369,7 +3398,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         // fill the graph, and a window lying over it made exactly that impossible.
         // Someone dragging the window by its title bar puts it where they want, over the
         // sidebar too; only the screen edge holds it. The rule is for opening and resizing.
-        const dragged = ("left" in position || "top" in position) && !("width" in position) && !("height" in position);
+        // Foundry sends the whole position while the title bar is dragged, width and height
+        // included, so what tells a drag apart is the hand on the title bar (see _onRender).
+        const dragged = !!this._titleBarHeld;
         const sidebarLeft = document.getElementById("ui-right")?.getBoundingClientRect?.().left;
         const rightEdge = !dragged && Number.isFinite(sidebarLeft) && sidebarLeft > 400 ? Math.min(window.innerWidth, sidebarLeft) : window.innerWidth;
         const maxWidth = Math.max(320, rightEdge - margin * 2);
