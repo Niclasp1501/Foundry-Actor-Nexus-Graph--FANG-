@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [Unreleased]
 
 ### Added
+- **The welcome window mentions Patreon.** Below the link to Ninjo's Forge, one line now says that the modules are free and stay free, and that you can support the work on Patreon and get premium add-ons. Only GMs see the window, and "Don't show again" still hides it for good.
 - **Add-on api: new hook for drops.** Add-on modules can now handle other things dropped on the graph (`fang.drop`, see `API.md`).
 - **A guide on first open.** The first time you open FANG on a device it explains the graph in six short points: moving around, the menus, edit mode, adding characters, the chronicle and the rail. The question mark in the rail brings it back. An empty graph now says how to fill it.
 - **Views in the rail.** The character graph has a button of its own on top of the rail, and the rail marks the view you are in. Add-ons can add views of their own (`registerView`, see `API.md`).

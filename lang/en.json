@@ -641,7 +641,8 @@
             "Punkt2": "<strong>Roles and factions</strong> — a second layer of order above the bare connections, plus zones by place or theme and boss nodes that hang magnetically in the centre.",
             "Punkt3": "<strong>Safe for players</strong> — hidden contacts keep your secrets while players may still keep their own aliases and notes.",
             "Start": "To begin: <strong>Shift+G</strong> opens the graph. Drag actors in — it arranges itself.",
-            "ForgeZeile": "Every module, its documentation and the German translations in one place — open the module page",
+            "ForgeZeile": "Every module, its documentation and the German translations in one place: open the module page",
+            "PatreonZeile": "The modules are free and stay free. On Patreon you can support my work and get premium add-ons in return.",
             "Nie": "Don't show again",
             "Spaeter": "Later"
         },

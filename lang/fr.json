@@ -641,7 +641,8 @@
             "Punkt2": "<strong>Rôles et factions</strong> — une seconde couche d'organisation au-dessus des simples liaisons, plus des zones par lieu ou par thème et des nœuds de boss qui restent aimantés au centre.",
             "Punkt3": "<strong>Sûr pour les joueurs</strong> — les contacts masqués gardent vos secrets, tandis que les joueurs peuvent tenir leurs propres alias et notes.",
             "Start": "Pour commencer : <strong>Maj+G</strong> ouvre le graphe. Il suffit d'y glisser des acteurs — il s'organise tout seul.",
-            "ForgeZeile": "Tous les modules, leur documentation et les traductions allemandes au même endroit — ouvrir la page du module",
+            "ForgeZeile": "Tous les modules, leur documentation et les traductions allemandes au même endroit: ouvrir la page du module",
+            "PatreonZeile": "Les modules sont gratuits et le resteront. Sur Patreon, vous pouvez soutenir mon travail et obtenir des extensions premium.",
             "Nie": "Ne plus afficher",
             "Spaeter": "Plus tard"
         },
