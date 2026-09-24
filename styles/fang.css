@@ -2700,6 +2700,54 @@ body.role-gm .fang-app-container:not([data-active-view="graph"]) .fang-rail-btn.
     display: none !important;
 }
 
+/* The settings panel: sections with an icon, dependent settings indented under their parent. */
+.fang-app-container .fang-set-section h3 i {
+    width: 1.2em;
+    color: var(--fang-accent-gold);
+}
+
+.fang-app-container .fang-set-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 8px;
+}
+
+.fang-app-container .fang-set-item.is-sub {
+    margin-left: 14px;
+    padding-left: 10px;
+    border-left: 2px solid rgba(var(--fang-primary-red-rgb), 0.25);
+}
+
+.fang-app-container .fang-set-item.is-off {
+    opacity: 0.45;
+}
+
+.fang-app-container .fang-set-file {
+    display: flex;
+    gap: 6px;
+}
+
+.fang-app-container .fang-set-file input {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.fang-app-container .fang-set-browse {
+    flex: 0 0 auto;
+    width: 36px;
+    border: 1px solid rgba(58, 42, 18, 0.25);
+    border-radius: 8px;
+    background: #fffaf0;
+    color: var(--fang-primary-red);
+    cursor: pointer;
+}
+
+.fang-app-container .fang-set-item select,
+.fang-app-container .fang-set-item input[type="text"] {
+    width: 100%;
+}
+
 /* A right that depends on the one above it: indented, and muted while that one is off. */
 .fang-app-container .fang-right-sub {
     margin-left: 14px;

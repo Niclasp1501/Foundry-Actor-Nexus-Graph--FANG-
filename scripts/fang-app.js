@@ -3247,36 +3247,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 });
             }
 
-            const cbAllowPlayerEdit = this.element.querySelector("#cbAllowPlayerEdit");
-            if (cbAllowPlayerEdit) {
-                cbAllowPlayerEdit.checked = game.settings.get("fang", "allowPlayerEditing");
-                cbAllowPlayerEdit.addEventListener("change", async (e) => {
-                    await game.settings.set("fang", "allowPlayerEditing", e.target.checked);
-                    ui.notifications.info(game.i18n.localize(e.target.checked ? "FANG.Messages.PlayersCanEdit" : "FANG.Messages.PlayersCannotEdit"));
-                });
-            }
-
-            // The finer rights: each one a world setting, shown only while players may edit
-            // at all where it depends on that.
-            for (const [id, key] of [["cbPlayerPlaces", "playerPlaces"], ["cbPlayerChronicle", "playerChronicle"]]) {
-                const box = this.element.querySelector(`#${id}`);
-                if (!box) continue;
-                box.checked = game.settings.get("fang", key);
-                box.addEventListener("change", async (e) => { await game.settings.set("fang", key, e.target.checked); });
-            }
-            const placesRow = this.element.querySelector(".fang-right-places");
-            const syncRights = () => placesRow?.classList.toggle("is-off", !game.settings.get("fang", "allowPlayerEditing"));
-            syncRights();
-            cbAllowPlayerEdit?.addEventListener("change", () => setTimeout(syncRights, 50));
-            Hooks.callAll("fang.permissionsRender", this, this.element.querySelector("#fangPermissionsExtension"));
-
-            const cbDefaultHidden = this.element.querySelector("#cbDefaultHidden");
-            if (cbDefaultHidden) {
-                cbDefaultHidden.checked = game.settings.get("fang", "defaultHiddenMode");
-                cbDefaultHidden.addEventListener("change", async (e) => {
-                    await game.settings.set("fang", "defaultHiddenMode", e.target.checked);
-                });
-            }
+            this._renderSettingsSections();
 
             const cbSyncCamera = this.element.querySelector("#cbSyncCamera");
             if (cbSyncCamera) {
@@ -3286,30 +3257,6 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     ui.notifications.info(game.i18n.localize(this._isSyncCameraActive ? "FANG.Messages.SpectatorEnabled" : "FANG.Messages.SpectatorDisabled"));
                     const indicator = this.element.querySelector("#spectator-active-indicator");
                     if (indicator) indicator.classList.toggle("active", this._isSyncCameraActive);
-                });
-            }
-
-            // Physics & Simulation Controls
-            const cbCosmic = this.element.querySelector("#cbEnableCosmicWind");
-            const rngCosmic = this.element.querySelector("#rngCosmicWindStrength");
-            const valCosmic = this.element.querySelector("#wind-strength-val");
-
-            if (cbCosmic && rngCosmic) {
-                cbCosmic.checked = game.settings.get("fang", "enableCosmicWind");
-                rngCosmic.value = game.settings.get("fang", "cosmicWindStrength");
-                if (valCosmic) valCosmic.innerText = rngCosmic.value;
-
-                cbCosmic.addEventListener("change", (ev) => {
-                    game.settings.set("fang", "enableCosmicWind", ev.target.checked);
-                });
-
-                rngCosmic.addEventListener("input", (ev) => {
-                    const val = ev.target.value;
-                    if (valCosmic) valCosmic.innerText = val;
-                });
-
-                rngCosmic.addEventListener("change", (ev) => {
-                    game.settings.set("fang", "cosmicWindStrength", parseFloat(ev.target.value));
                 });
             }
 
@@ -10799,6 +10746,125 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         hint.textContent = game.user.isGM
             ? this._localize("FANG.Guide.EmptyGM", "Nobody here yet. Switch on edit mode with the pen at the top left, then drag actors from the sidebar into the graph.")
             : this._localize("FANG.Guide.EmptyPlayer", "Nobody here yet. Your GM has not added any characters.");
+    }
+
+    /**
+     * The settings panel: every setting of FANG in one place, sorted by what it is about.
+     * Each field is built from Foundry's own description of the setting (name, hint, type,
+     * range, choices), so it reads and behaves exactly like the module settings, and a new
+     * setting only needs a line here. A setting that depends on another is indented under
+     * it and muted while that one is off.
+     */
+    _renderSettingsSections() {
+        const host = this.element?.querySelector("#fangSettingsSections");
+        if (!host || !game.user.isGM) return;
+        const t = (key, fallback) => this._localize(key, fallback);
+        const esc = (v) => this._escapeHtml(String(v ?? ""));
+        const sections = [
+            { icon: "fa-users", title: t("FANG.SettingsPanel.Players", "Players"), items: [
+                { key: "allowPlayerEditing" },
+                { key: "playerPlaces", parent: "allowPlayerEditing" },
+                { key: "collaborativeEditing", parent: "allowPlayerEditing" },
+                { key: "playerChronicle" },
+                { slot: "permissions" }
+            ] },
+            { icon: "fa-user-plus", title: t("FANG.SettingsPanel.NewCharacters", "New characters"), items: [
+                { key: "defaultHiddenMode" }
+            ] },
+            { icon: "fa-palette", title: t("FANG.SettingsPanel.Look", "Look"), items: [
+                { key: "themeVariant" },
+                { key: "tokenSize" },
+                { key: "centerNodeColor" },
+                { button: "background" },
+                { key: "enableCosmicWind" },
+                { key: "cosmicWindStrength", parent: "enableCosmicWind" }
+            ] },
+            { icon: "fa-compass", title: t("FANG.SettingsPanel.Spotlight", "Spotlight"), items: [
+                { key: "spotlightSound" },
+                { key: "spotlightSoundVolume" }
+            ] },
+            { icon: "fa-chess-board", title: t("FANG.SettingsPanel.Table", "At the table"), items: [
+                { key: "inPersonGaming" },
+                { key: "monitorDisplayName" }
+            ] },
+            { icon: "fa-puzzle-piece", title: t("FANG.SettingsPanel.Modules", "Other modules"), items: [
+                { key: "diploglassOneWaySync" }
+            ] }
+        ];
+        const configOf = (key) => game.settings.settings.get(`fang.${key}`);
+        const field = (key) => {
+            const cfg = configOf(key);
+            if (!cfg) return "";
+            const id = `fangSet-${key}`;
+            const value = game.settings.get("fang", key);
+            const name = esc(t(cfg.name, key));
+            const hint = cfg.hint ? `<p class="fang-hint">${esc(t(cfg.hint, ""))}</p>` : "";
+            const type = cfg.type;
+            if (type === Boolean) {
+                return `<div class="fang-toggle-row"><label for="${id}">${name}</label><input type="checkbox" id="${id}" data-set="${key}" ${value ? "checked" : ""}></div>${hint}`;
+            }
+            if (cfg.choices) {
+                const options = Object.entries(cfg.choices).map(([v, label]) => `<option value="${esc(v)}" ${String(value) === v ? "selected" : ""}>${esc(t(label, label))}</option>`).join("");
+                return `<label for="${id}">${name}</label><select id="${id}" data-set="${key}">${options}</select>${hint}`;
+            }
+            if (type === Number && cfg.range) {
+                return `<div class="fang-range-row"><div class="fang-range-labels"><label for="${id}">${name}</label><span data-set-value="${key}">${esc(value)}</span></div>
+                    <input type="range" id="${id}" data-set="${key}" min="${cfg.range.min}" max="${cfg.range.max}" step="${cfg.range.step}" value="${esc(value)}"></div>${hint}`;
+            }
+            if (type instanceof foundry.data.fields.ColorField || /color/i.test(key)) {
+                return `<div class="fang-toggle-row"><label for="${id}">${name}</label><input type="color" id="${id}" data-set="${key}" value="${esc(value?.css ?? value ?? "#d4af37")}"></div>${hint}`;
+            }
+            if (cfg.filePicker) {
+                return `<label for="${id}">${name}</label><div class="fang-set-file"><input type="text" id="${id}" data-set="${key}" value="${esc(value)}">
+                    <button type="button" class="fang-set-browse" data-browse="${key}" data-kind="${esc(cfg.filePicker)}" aria-label="${esc(t("FILES.BrowseTooltip", "Browse"))}"><i class="fas fa-folder-open" aria-hidden="true"></i></button></div>${hint}`;
+            }
+            return `<label for="${id}">${name}</label><input type="text" id="${id}" data-set="${key}" value="${esc(value)}">${hint}`;
+        };
+        const item = (it) => {
+            if (it.slot) return `<div class="fang-set-slot" data-slot="${it.slot}"></div>`;
+            if (it.button === "background") {
+                return `<button id="btnOpenBackgroundConfig" class="btn action-btn fang-btn-block fang-btn-accent"><i class="fas fa-image" aria-hidden="true"></i> ${esc(t("FANG.UI.Background.BackgroundConfigTitle", "Background"))}</button>
+                    <p class="fang-hint">${esc(t("FANG.UI.Background.Hint", ""))}</p>`;
+            }
+            if (!configOf(it.key)) return "";
+            return `<div class="fang-set-item${it.parent ? " is-sub" : ""}" data-item="${it.key}" ${it.parent ? `data-parent="${it.parent}"` : ""}>${field(it.key)}</div>`;
+        };
+        host.innerHTML = sections.map(sec => {
+            const body = sec.items.map(item).join("");
+            if (!body.trim()) return "";
+            return `<div class="control-group fang-set-section"><h3><i class="fas ${sec.icon}" aria-hidden="true"></i> ${esc(sec.title)}</h3><div class="input-stack">${body}</div></div>`;
+        }).join("");
+
+        const syncParents = () => host.querySelectorAll(".fang-set-item[data-parent]").forEach(el => {
+            const on = !!game.settings.get("fang", el.dataset.parent);
+            el.classList.toggle("is-off", !on);
+            el.querySelectorAll("input, select, button").forEach(c => { c.disabled = !on; });
+        });
+        const store = async (key, value) => {
+            await game.settings.set("fang", key, value);
+            if (key === "allowPlayerEditing") ui.notifications.info(game.i18n.localize(value ? "FANG.Messages.PlayersCanEdit" : "FANG.Messages.PlayersCannotEdit"));
+            syncParents();
+        };
+        host.querySelectorAll("[data-set]").forEach(el => {
+            const key = el.dataset.set;
+            const cfg = configOf(key);
+            if (el.type === "checkbox") el.addEventListener("change", () => store(key, el.checked));
+            else if (el.type === "range") {
+                el.addEventListener("input", () => { const shown = host.querySelector(`[data-set-value="${key}"]`); if (shown) shown.textContent = el.value; });
+                el.addEventListener("change", () => store(key, Number(el.value)));
+            } else if (cfg?.type === Number) el.addEventListener("change", () => store(key, Number(el.value)));
+            else el.addEventListener("change", () => store(key, el.value));
+        });
+        host.querySelectorAll(".fang-set-browse").forEach(btn => btn.addEventListener("click", () => {
+            const input = host.querySelector(`[data-set="${btn.dataset.browse}"]`);
+            new foundry.applications.apps.FilePicker.implementation({
+                type: btn.dataset.kind || "any", current: input?.value || "",
+                callback: (path) => { if (input) { input.value = path; store(btn.dataset.browse, path); } }
+            }).render(true);
+        }));
+        syncParents();
+        // Rights of an add-on sit with the rights of FANG, in the players' section.
+        Hooks.callAll("fang.permissionsRender", this, host.querySelector('[data-slot="permissions"]'));
     }
 
     /** Switch the canvas area to a view. `options` go to the view's own `open`. */

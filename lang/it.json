@@ -5,6 +5,14 @@
         "ButtonOpen": "FANG di Ninjo",
         "ButtonShort": "FANG",
         "KeybindingHint": "Apre il grafo interattivo delle relazioni degli Attori di FANG.",
+        "SettingsPanel": {
+            "Players": "Giocatori",
+            "NewCharacters": "Nuovi personaggi",
+            "Look": "Aspetto",
+            "Spotlight": "Riflettore",
+            "Table": "Al tavolo",
+            "Modules": "Altri moduli"
+        },
         "Guide": {
             "Button": "Guida a questa vista",
             "Done": "Capito",

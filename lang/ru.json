@@ -5,6 +5,14 @@
         "ButtonOpen": "Ninjo's FANG",
         "ButtonShort": "FANG",
         "KeybindingHint": "Открывает интерактивный граф отношений актеров FANG.",
+        "SettingsPanel": {
+            "Players": "Игроки",
+            "NewCharacters": "Новые персонажи",
+            "Look": "Внешний вид",
+            "Spotlight": "Прожектор",
+            "Table": "За столом",
+            "Modules": "Другие модули"
+        },
         "Guide": {
             "Button": "Справка по этому виду",
             "Done": "Понятно",

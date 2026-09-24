@@ -5,6 +5,14 @@
         "ButtonOpen": "Ninjo's FANG",
         "ButtonShort": "FANG",
         "KeybindingHint": "Opent de interactieve FANG-actorrelatiegraaf.",
+        "SettingsPanel": {
+            "Players": "Spelers",
+            "NewCharacters": "Nieuwe personages",
+            "Look": "Uiterlijk",
+            "Spotlight": "Spotlight",
+            "Table": "Aan tafel",
+            "Modules": "Andere modules"
+        },
         "Guide": {
             "Button": "Uitleg bij deze weergave",
             "Done": "Begrepen",

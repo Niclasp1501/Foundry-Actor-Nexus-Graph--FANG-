@@ -5,6 +5,14 @@
         "ButtonOpen": "Ninjo's FANG",
         "ButtonShort": "FANG",
         "KeybindingHint": "Otevře interaktivní graf vztahů postav FANG.",
+        "SettingsPanel": {
+            "Players": "Hráči",
+            "NewCharacters": "Nové postavy",
+            "Look": "Vzhled",
+            "Spotlight": "Reflektor",
+            "Table": "U stolu",
+            "Modules": "Další moduly"
+        },
         "Guide": {
             "Button": "Průvodce tímto zobrazením",
             "Done": "Rozumím",

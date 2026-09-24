@@ -167,63 +167,9 @@
 
             <!-- ADVANCED TAB -->
             <section class="tab-content gm-only" data-tab="advanced">
-                <div class="control-group">
-                    <h3>{{localize "FANG.UI.SectionPermissions"}}</h3>
-                    <div class="input-stack">
-                        <div class="fang-toggle-row">
-                            <label for="cbAllowPlayerEdit">{{localize "FANG.Settings.AllowPlayerEditing.Name"}}</label>
-                            <input type="checkbox" id="cbAllowPlayerEdit">
-                        </div>
-                        <p class="fang-hint">{{localize "FANG.Settings.AllowPlayerEditing.Hint"}}</p>
-                        <div class="fang-right-sub fang-right-places">
-                            <div class="fang-toggle-row">
-                                <label for="cbPlayerPlaces">{{localize "FANG.Settings.PlayerPlaces.Name"}}</label>
-                                <input type="checkbox" id="cbPlayerPlaces">
-                            </div>
-                            <p class="fang-hint">{{localize "FANG.Settings.PlayerPlaces.Hint"}}</p>
-                        </div>
-                        <div class="fang-toggle-row">
-                            <label for="cbPlayerChronicle">{{localize "FANG.Settings.PlayerChronicle.Name"}}</label>
-                            <input type="checkbox" id="cbPlayerChronicle">
-                        </div>
-                        <p class="fang-hint">{{localize "FANG.Settings.PlayerChronicle.Hint"}}</p>
-                        <div id="fangPermissionsExtension"></div>
-                        <div class="fang-toggle-row">
-                            <label for="cbDefaultHidden">{{localize "FANG.Settings.DefaultHidden.Name"}}</label>
-                            <input type="checkbox" id="cbDefaultHidden">
-                        </div>
-                        <p class="fang-hint">{{localize "FANG.Settings.DefaultHidden.Hint"}}</p>
-                    </div>
-                </div>
-
-                <div class="control-group">
-                    <h3>{{localize "FANG.Physics.Title"}}</h3>
-                    <div class="input-stack">
-                        <div class="fang-toggle-row">
-                            <label for="cbEnableCosmicWind">{{localize "FANG.Physics.CosmicWind"}}</label>
-                            <input type="checkbox" id="cbEnableCosmicWind">
-                        </div>
-                        <div class="fang-range-row">
-                            <div class="fang-range-labels">
-                                <span>{{localize "FANG.Physics.Strength"}}</span>
-                                <span id="wind-strength-val">4</span>
-                            </div>
-                            <input type="range" id="rngCosmicWindStrength" min="0.1" max="10" step="0.1" value="4">
-                        </div>
-                        <p class="fang-hint">{{localize "FANG.Physics.Hint"}}</p>
-                    </div>
-                </div>
-
-                <div class="control-group">
-                    <h3>{{localize "FANG.UI.Background.Title"}}</h3>
-                    <div class="input-stack">
-                        <button id="btnOpenBackgroundConfig" class="btn action-btn fang-btn-block fang-btn-accent"
-                            title="{{localize 'FANG.UI.Background.BackgroundConfigTitle'}}">
-                            <i class="fas fa-palette" aria-hidden="true"></i> {{localize "FANG.UI.Background.BackgroundConfigTitle"}}
-                        </button>
-                        <p class="fang-hint">{{localize "FANG.UI.Background.Hint"}}</p>
-                    </div>
-                </div>
+                <!-- Every setting of FANG, sorted by what it is about, built from Foundry's own
+                     description of each setting (see _renderSettingsSections). -->
+                <div id="fangSettingsSections"></div>
 
                 <div class="control-group actions-group">
                     <h3>{{localize "FANG.UI.Export"}} / {{localize "FANG.UI.Import"}}</h3>

@@ -5,6 +5,14 @@
         "ButtonOpen": "Ninjo's FANG",
         "ButtonShort": "FANG",
         "KeybindingHint": "Otwiera interaktywny graf relacji postaci FANG.",
+        "SettingsPanel": {
+            "Players": "Gracze",
+            "NewCharacters": "Nowe postacie",
+            "Look": "Wygląd",
+            "Spotlight": "Reflektor",
+            "Table": "Przy stole",
+            "Modules": "Inne moduły"
+        },
         "Guide": {
             "Button": "Przewodnik po tym widoku",
             "Done": "Rozumiem",

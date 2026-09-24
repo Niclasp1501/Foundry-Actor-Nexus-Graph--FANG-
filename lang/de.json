@@ -5,6 +5,14 @@
         "ButtonOpen": "Ninjo's FANG",
         "ButtonShort": "FANG",
         "KeybindingHint": "Öffnet den interaktiven FANG Akteur Beziehungs-Graphen.",
+        "SettingsPanel": {
+            "Players": "Spieler",
+            "NewCharacters": "Neue Charaktere",
+            "Look": "Aussehen",
+            "Spotlight": "Spotlight",
+            "Table": "Am Spieltisch",
+            "Modules": "Andere Module"
+        },
         "Guide": {
             "Button": "Anleitung zu dieser Ansicht",
             "Done": "Verstanden",
