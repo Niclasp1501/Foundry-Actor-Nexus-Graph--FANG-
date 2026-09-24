@@ -6,6 +6,10 @@
         "ButtonShort": "FANG",
         "KeybindingHint": "Opens the interactive FANG Actor relationship graph.",
         "SettingsPanel": {
+            "WindowTitle": "FANG settings",
+            "Data": "Data",
+            "ExportHint": "Saves the whole graph as a file.",
+            "ImportHint": "Replaces the graph with one from a file.",
             "Players": "Players",
             "NewCharacters": "New characters",
             "Look": "Look",
@@ -193,6 +197,7 @@
             "OpenBtn": "Open FANG Graph"
         },
         "Messages": {
+            "NoPlaceRight": "You may not create or change places. The GM can allow it in FANG's settings under Players.",
             "DatesConverted": "FANG: {count} chronicle entries brought into the calendar's date format.",
             "ExportSuccess": "Graph data exported successfully.",
             "ImportSuccess": "Graph data imported successfully.",

@@ -6,6 +6,10 @@
         "ButtonShort": "FANG",
         "KeybindingHint": "Öffnet den interaktiven FANG Akteur Beziehungs-Graphen.",
         "SettingsPanel": {
+            "WindowTitle": "FANG-Einstellungen",
+            "Data": "Daten",
+            "ExportHint": "Speichert den ganzen Graphen als Datei.",
+            "ImportHint": "Ersetzt den Graphen durch einen aus einer Datei.",
             "Players": "Spieler",
             "NewCharacters": "Neue Charaktere",
             "Look": "Aussehen",
@@ -193,6 +197,7 @@
             "OpenBtn": "FANG Graph Öffnen"
         },
         "Messages": {
+            "NoPlaceRight": "Du darfst keine Orte anlegen oder ändern. Die Spielleitung kann das in den FANG-Einstellungen unter Spieler freigeben.",
             "DatesConverted": "FANG: {count} Chronik-Einträge ins Datumsformat des Kalenders übernommen.",
             "ExportSuccess": "Graph-Daten erfolgreich exportiert.",
             "ImportSuccess": "Graph-Daten erfolgreich importiert.",

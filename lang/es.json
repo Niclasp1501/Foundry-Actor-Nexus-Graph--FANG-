@@ -6,6 +6,10 @@
         "ButtonShort": "FANG",
         "KeybindingHint": "Abre el gráfico interactivo de relaciones de actores de FANG.",
         "SettingsPanel": {
+            "WindowTitle": "Ajustes de FANG",
+            "Data": "Datos",
+            "ExportHint": "Guarda todo el grafo en un archivo.",
+            "ImportHint": "Sustituye el grafo por uno de un archivo.",
             "Players": "Jugadores",
             "NewCharacters": "Personajes nuevos",
             "Look": "Aspecto",
@@ -193,6 +197,7 @@
             "OpenBtn": "Abrir Grafo FANG"
         },
         "Messages": {
+            "NoPlaceRight": "No puedes crear ni cambiar lugares. El DJ puede permitirlo en los ajustes de FANG, en Jugadores.",
             "DatesConverted": "FANG: {count} entradas de la crónica pasadas al formato de fecha del calendario.",
             "ExportSuccess": "Datos del grafo exportados correctamente.",
             "ImportSuccess": "Datos del grafo importados correctamente.",

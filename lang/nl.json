@@ -6,6 +6,10 @@
         "ButtonShort": "FANG",
         "KeybindingHint": "Opent de interactieve FANG-actorrelatiegraaf.",
         "SettingsPanel": {
+            "WindowTitle": "FANG-instellingen",
+            "Data": "Gegevens",
+            "ExportHint": "Slaat de hele graaf op als bestand.",
+            "ImportHint": "Vervangt de graaf door een uit een bestand.",
             "Players": "Spelers",
             "NewCharacters": "Nieuwe personages",
             "Look": "Uiterlijk",
@@ -193,6 +197,7 @@
             "OpenBtn": "FANG Graaf Openen"
         },
         "Messages": {
+            "NoPlaceRight": "Je mag geen plaatsen aanmaken of wijzigen. De spelleider kan het toestaan in de FANG-instellingen onder Spelers.",
             "DatesConverted": "FANG: {count} kroniekitems omgezet naar de datumnotatie van de kalender.",
             "ExportSuccess": "Graafgegevens succesvol geëxporteerd.",
             "ImportSuccess": "Graafgegevens succesvol geïmporteerd.",

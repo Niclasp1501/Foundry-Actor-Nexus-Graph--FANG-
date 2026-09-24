@@ -66,6 +66,62 @@ class FangLicense {
 /**
  * Dedicated dialog for background customization.
  */
+/**
+ * FANG's settings in a window of their own: categories on the left, the settings of the
+ * chosen one on the right, with room to read the hints. Resizable and movable like any
+ * window; the fields themselves come from FangApplication#_renderSettingsInto.
+ */
+class FangSettingsWindow extends ApplicationV2 {
+    static DEFAULT_OPTIONS = {
+        id: "fang-settings",
+        classes: ["fang-app-window", "fang-dialog", "fang-settings-window"],
+        position: { width: 860, height: 640 },
+        window: { title: "FANG.SettingsPanel.WindowTitle", icon: "fas fa-sliders", resizable: true, minimizable: true }
+    };
+
+    constructor(fangApp, options = {}) {
+        super(options);
+        this.fangApp = fangApp;
+        this.category = "players";
+    }
+
+    async _renderHTML() {
+        const app = this.fangApp;
+        const esc = (v) => app._escapeHtml(String(v ?? ""));
+        const sections = app._settingsSections();
+        const root = document.createElement("div");
+        root.className = "fang-app-container fang-settings-layout";
+        root.innerHTML = `
+            <nav class="fang-settings-nav" aria-label="${esc(app._localize("FANG.SettingsPanel.WindowTitle", "FANG settings"))}">
+                ${sections.map(sec => `<button type="button" class="fang-settings-tab${sec.id === this.category ? " is-current" : ""}" data-category="${sec.id}" ${sec.id === this.category ? `aria-current="page"` : ""}>
+                    <i class="fas ${sec.icon}" aria-hidden="true"></i><span>${esc(sec.title)}</span></button>`).join("")}
+            </nav>
+            <section class="fang-settings-content"></section>`;
+        return root;
+    }
+
+    _replaceHTML(result, content) {
+        content.replaceChildren(result);
+    }
+
+    _onRender(context, options) {
+        super._onRender?.(context, options);
+        const app = this.fangApp;
+        const sections = app._settingsSections();
+        const show = (id) => {
+            this.category = id;
+            this.element.querySelectorAll(".fang-settings-tab").forEach(btn => {
+                const current = btn.dataset.category === id;
+                btn.classList.toggle("is-current", current);
+                if (current) btn.setAttribute("aria-current", "page"); else btn.removeAttribute("aria-current");
+            });
+            app._renderSettingsInto(this.element.querySelector(".fang-settings-content"), sections.find(sec => sec.id === id) ?? sections[0]);
+        };
+        this.element.querySelectorAll(".fang-settings-tab").forEach(btn => btn.addEventListener("click", () => show(btn.dataset.category)));
+        show(this.category);
+    }
+}
+
 class FangBackgroundConfig extends HandlebarsApplicationMixin(ApplicationV2) {
     static DEFAULT_OPTIONS = {
         id: "fang-background-config",
@@ -518,6 +574,11 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
     openZoneEditor(zoneId = null, defaults = {}) {
         const host = this.element?.querySelector(".fang-app-container");
         if (!host) return Promise.resolve(null);
+        // A missing right is said as such: asking for edit mode while it is on helps nobody.
+        if (!game.user.isGM && !game.settings.get("fang", "playerPlaces")) {
+            ui.notifications.warn(this._localize("FANG.Messages.NoPlaceRight", "You may not create or change places. The GM can allow it in FANG's settings."));
+            return Promise.resolve(null);
+        }
         if (!this._canEditZones()) {
             ui.notifications.warn(this._localize("FANG.Messages.EditModeRequired", "Switch on edit mode first."));
             return Promise.resolve(null);
@@ -3191,7 +3252,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         });
 
         const railManage = this.element.querySelector("#fangRailManage");
-        if (railManage) railManage.addEventListener("click", () => this._openSidebarPanel("advanced"));
+        if (railManage) railManage.addEventListener("click", () => { this._closeSidebarPanel(); this.openSettingsWindow(); });
 
         // 4. GM-specific or Player-specific Logic
         if (game.user.isGM) {
@@ -3246,8 +3307,6 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     await this.saveData();
                 });
             }
-
-            this._renderSettingsSections();
 
             const cbSyncCamera = this.element.querySelector("#cbSyncCamera");
             if (cbSyncCamera) {
@@ -10749,29 +10808,25 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     /**
-     * The settings panel: every setting of FANG in one place, sorted by what it is about.
-     * Each field is built from Foundry's own description of the setting (name, hint, type,
-     * range, choices), so it reads and behaves exactly like the module settings, and a new
-     * setting only needs a line here. A setting that depends on another is indented under
-     * it and muted while that one is off.
+     * The settings of FANG, sorted by what they are about. Each field is built from Foundry's
+     * own description of the setting (name, hint, type, range, choices), so it reads and
+     * behaves exactly like the module settings, and a new setting only needs a line here.
+     * A setting that depends on another is indented under it and muted while that one is off.
      */
-    _renderSettingsSections() {
-        const host = this.element?.querySelector("#fangSettingsSections");
-        if (!host || !game.user.isGM) return;
+    _settingsSections() {
         const t = (key, fallback) => this._localize(key, fallback);
-        const esc = (v) => this._escapeHtml(String(v ?? ""));
-        const sections = [
-            { icon: "fa-users", title: t("FANG.SettingsPanel.Players", "Players"), items: [
+        return [
+            { id: "players", icon: "fa-users", title: t("FANG.SettingsPanel.Players", "Players"), items: [
                 { key: "allowPlayerEditing" },
                 { key: "playerPlaces", parent: "allowPlayerEditing" },
                 { key: "collaborativeEditing", parent: "allowPlayerEditing" },
                 { key: "playerChronicle" },
                 { slot: "permissions" }
             ] },
-            { icon: "fa-user-plus", title: t("FANG.SettingsPanel.NewCharacters", "New characters"), items: [
+            { id: "characters", icon: "fa-user-plus", title: t("FANG.SettingsPanel.NewCharacters", "New characters"), items: [
                 { key: "defaultHiddenMode" }
             ] },
-            { icon: "fa-palette", title: t("FANG.SettingsPanel.Look", "Look"), items: [
+            { id: "look", icon: "fa-palette", title: t("FANG.SettingsPanel.Look", "Look"), items: [
                 { key: "themeVariant" },
                 { key: "tokenSize" },
                 { key: "centerNodeColor" },
@@ -10779,18 +10834,29 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 { key: "enableCosmicWind" },
                 { key: "cosmicWindStrength", parent: "enableCosmicWind" }
             ] },
-            { icon: "fa-compass", title: t("FANG.SettingsPanel.Spotlight", "Spotlight"), items: [
+            { id: "spotlight", icon: "fa-compass", title: t("FANG.SettingsPanel.Spotlight", "Spotlight"), items: [
                 { key: "spotlightSound" },
                 { key: "spotlightSoundVolume" }
             ] },
-            { icon: "fa-chess-board", title: t("FANG.SettingsPanel.Table", "At the table"), items: [
+            { id: "table", icon: "fa-chess-board", title: t("FANG.SettingsPanel.Table", "At the table"), items: [
                 { key: "inPersonGaming" },
                 { key: "monitorDisplayName" }
             ] },
-            { icon: "fa-puzzle-piece", title: t("FANG.SettingsPanel.Modules", "Other modules"), items: [
+            { id: "modules", icon: "fa-puzzle-piece", title: t("FANG.SettingsPanel.Modules", "Other modules"), items: [
                 { key: "diploglassOneWaySync" }
+            ] },
+            { id: "data", icon: "fa-box-archive", title: t("FANG.SettingsPanel.Data", "Data"), items: [
+                { button: "export" },
+                { button: "import" }
             ] }
         ];
+    }
+
+    /** Render one section of the settings into an element, and wire its fields. */
+    _renderSettingsInto(host, section) {
+        if (!host || !section || !game.user.isGM) return;
+        const t = (key, fallback) => this._localize(key, fallback);
+        const esc = (v) => this._escapeHtml(String(v ?? ""));
         const configOf = (key) => game.settings.settings.get(`fang.${key}`);
         const field = (key) => {
             const cfg = configOf(key);
@@ -10820,20 +10886,23 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             }
             return `<label for="${id}">${name}</label><input type="text" id="${id}" data-set="${key}" value="${esc(value)}">${hint}`;
         };
+        const buttons = {
+            background: [`fa-image`, t("FANG.UI.Background.BackgroundConfigTitle", "Background"), t("FANG.UI.Background.Hint", "")],
+            export: [`fa-download`, t("FANG.UI.ExportBtn", "Export"), t("FANG.SettingsPanel.ExportHint", "Saves the whole graph as a file.")],
+            import: [`fa-file-import`, t("FANG.UI.ImportBtn", "Import"), t("FANG.SettingsPanel.ImportHint", "Replaces the graph with one from a file.")]
+        };
         const item = (it) => {
             if (it.slot) return `<div class="fang-set-slot" data-slot="${it.slot}"></div>`;
-            if (it.button === "background") {
-                return `<button id="btnOpenBackgroundConfig" class="btn action-btn fang-btn-block fang-btn-accent"><i class="fas fa-image" aria-hidden="true"></i> ${esc(t("FANG.UI.Background.BackgroundConfigTitle", "Background"))}</button>
-                    <p class="fang-hint">${esc(t("FANG.UI.Background.Hint", ""))}</p>`;
+            if (it.button) {
+                const [icon, label, hint] = buttons[it.button];
+                return `<div class="fang-set-item"><button type="button" class="btn action-btn fang-btn-block fang-set-action" data-action-set="${it.button}"><i class="fas ${icon}" aria-hidden="true"></i> ${esc(label)}</button>
+                    ${it.button === "import" ? `<input type="file" class="fang-set-import" accept=".json" hidden>` : ""}${hint ? `<p class="fang-hint">${esc(hint)}</p>` : ""}</div>`;
             }
             if (!configOf(it.key)) return "";
             return `<div class="fang-set-item${it.parent ? " is-sub" : ""}" data-item="${it.key}" ${it.parent ? `data-parent="${it.parent}"` : ""}>${field(it.key)}</div>`;
         };
-        host.innerHTML = sections.map(sec => {
-            const body = sec.items.map(item).join("");
-            if (!body.trim()) return "";
-            return `<div class="control-group fang-set-section"><h3><i class="fas ${sec.icon}" aria-hidden="true"></i> ${esc(sec.title)}</h3><div class="input-stack">${body}</div></div>`;
-        }).join("");
+        host.innerHTML = `<h2 class="fang-set-heading"><i class="fas ${section.icon}" aria-hidden="true"></i> ${esc(section.title)}</h2>
+            <div class="fang-set-body">${section.items.map(item).join("")}</div>`;
 
         const syncParents = () => host.querySelectorAll(".fang-set-item[data-parent]").forEach(el => {
             const on = !!game.settings.get("fang", el.dataset.parent);
@@ -10862,9 +10931,22 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 callback: (path) => { if (input) { input.value = path; store(btn.dataset.browse, path); } }
             }).render(true);
         }));
+        host.querySelector('[data-action-set="background"]')?.addEventListener("click", () => new FangBackgroundConfig(this).render({ force: true }));
+        host.querySelector('[data-action-set="export"]')?.addEventListener("click", (event) => this._onExportGraph(event));
+        const importInput = host.querySelector(".fang-set-import");
+        host.querySelector('[data-action-set="import"]')?.addEventListener("click", () => importInput?.click());
+        importInput?.addEventListener("change", (event) => this._onImportGraph(event));
         syncParents();
         // Rights of an add-on sit with the rights of FANG, in the players' section.
-        Hooks.callAll("fang.permissionsRender", this, host.querySelector('[data-slot="permissions"]'));
+        const slot = host.querySelector('[data-slot="permissions"]');
+        if (slot) Hooks.callAll("fang.permissionsRender", this, slot);
+    }
+
+    /** The settings, in a window of their own with room for them. */
+    openSettingsWindow() {
+        if (!game.user.isGM) return;
+        this._settingsWindow ??= new FangSettingsWindow(this);
+        this._settingsWindow.render({ force: true });
     }
 
     /** Switch the canvas area to a view. `options` go to the view's own `open`. */

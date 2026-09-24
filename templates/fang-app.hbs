@@ -166,24 +166,7 @@
             </section>
 
             <!-- ADVANCED TAB -->
-            <section class="tab-content gm-only" data-tab="advanced">
-                <!-- Every setting of FANG, sorted by what it is about, built from Foundry's own
-                     description of each setting (see _renderSettingsSections). -->
-                <div id="fangSettingsSections"></div>
-
-                <div class="control-group actions-group">
-                    <h3>{{localize "FANG.UI.Export"}} / {{localize "FANG.UI.Import"}}</h3>
-                    <div class="button-row">
-                        <button id="btnExportGraph" class="btn action-btn">
-                            <i class="fas fa-download" aria-hidden="true"></i> {{localize "FANG.UI.ExportBtn"}}
-                        </button>
-                        <label for="importFile" class="btn action-btn file-label">
-                            <i class="fas fa-file-import" aria-hidden="true"></i> {{localize "FANG.UI.ImportBtn"}}
-                        </label>
-                        <input type="file" id="importFile" accept=".json" hidden>
-                    </div>
-                </div>
-            </section>
+            <!-- The settings live in a window of their own (FangSettingsWindow). -->
         </div>
     </aside>
 

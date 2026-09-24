@@ -2700,6 +2700,119 @@ body.role-gm .fang-app-container:not([data-active-view="graph"]) .fang-rail-btn.
     display: none !important;
 }
 
+/* --- The settings window: categories left, the settings of one on the right --- */
+.fang-settings-window .window-content {
+    padding: 0;
+    overflow: hidden;
+}
+
+.fang-app-container.fang-settings-layout {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    height: 100%;
+    min-height: 0;
+    background: #fdfbf7;
+    color: #1a1a1a;
+}
+
+.fang-app-container .fang-settings-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 12px 8px;
+    background: #f3ece0;
+    border-right: 1px solid rgba(58, 42, 18, 0.15);
+    overflow-y: auto;
+}
+
+.fang-app-container .fang-settings-tab {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    height: auto;
+    line-height: 1.2;
+    gap: 10px;
+    width: 100%;
+    min-height: 44px;
+    padding: 8px 12px;
+    border: 0;
+    border-left: 3px solid transparent;
+    border-radius: 6px;
+    background: transparent;
+    color: #3a2a12;
+    font-family: var(--ninjo-schrift);
+    font-size: 0.95rem;
+    font-weight: 700;
+    text-align: left;
+    cursor: pointer;
+}
+
+.fang-app-container .fang-settings-tab i {
+    width: 1.2em;
+    color: var(--fang-accent-gold);
+}
+
+.fang-app-container .fang-settings-tab:hover {
+    background: rgba(212, 175, 55, 0.12);
+}
+
+.fang-app-container .fang-settings-tab.is-current {
+    background: var(--fang-primary-red);
+    border-left-color: var(--fang-accent-gold);
+    color: #fff;
+}
+
+.fang-app-container .fang-settings-content {
+    padding: 20px 28px;
+    overflow-y: auto;
+    min-height: 0;
+}
+
+.fang-app-container .fang-set-heading {
+    margin: 0 0 16px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--fang-accent-gold);
+    color: var(--fang-primary-red);
+    font-size: 1.3rem;
+}
+
+.fang-app-container .fang-set-heading i {
+    color: var(--fang-accent-gold);
+}
+
+.fang-app-container .fang-set-body {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-width: 640px;
+}
+
+.fang-app-container .fang-set-body .fang-set-item {
+    padding: 10px 12px;
+    border: 1px solid rgba(58, 42, 18, 0.1);
+    border-radius: 8px;
+    background: #fff;
+}
+
+.fang-app-container .fang-set-body .fang-set-item.is-sub {
+    margin-left: 24px;
+    border-left: 3px solid rgba(var(--fang-primary-red-rgb), 0.3);
+}
+
+.fang-app-container .fang-set-slot:empty {
+    display: none;
+}
+
+.fang-app-container .fang-set-slot {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 10px 12px;
+    border: 1px solid rgba(58, 42, 18, 0.1);
+    border-radius: 8px;
+    background: #fff;
+}
+
 /* The settings panel: sections with an icon, dependent settings indented under their parent. */
 .fang-app-container .fang-set-section h3 i {
     width: 1.2em;
@@ -5394,4 +5507,8 @@ body.fang-theme-cyberpunk .background-config-container .premium-notice p {
     .fang-app-container .fang-canvas-prompt-action {
         width: 100%;
     }
+}
+
+.fang-app-container .fang-set-slot label {
+    font-weight: 700;
 }

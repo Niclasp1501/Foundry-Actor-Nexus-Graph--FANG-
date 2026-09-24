@@ -6,6 +6,10 @@
         "ButtonShort": "FANG",
         "KeybindingHint": "Apre il grafo interattivo delle relazioni degli Attori di FANG.",
         "SettingsPanel": {
+            "WindowTitle": "Impostazioni di FANG",
+            "Data": "Dati",
+            "ExportHint": "Salva l'intero grafo in un file.",
+            "ImportHint": "Sostituisce il grafo con quello di un file.",
             "Players": "Giocatori",
             "NewCharacters": "Nuovi personaggi",
             "Look": "Aspetto",
@@ -193,6 +197,7 @@
             "OpenBtn": "Apri Grafo FANG"
         },
         "Messages": {
+            "NoPlaceRight": "Non puoi creare o modificare luoghi. Il GM può permetterlo nelle impostazioni di FANG, sotto Giocatori.",
             "DatesConverted": "FANG: {count} voci della cronaca convertite nel formato data del calendario.",
             "ExportSuccess": "Dati del grafo esportati con successo.",
             "ImportSuccess": "Dati del grafo importati con successo.",

@@ -6,6 +6,10 @@
         "ButtonShort": "FANG",
         "KeybindingHint": "Otwiera interaktywny graf relacji postaci FANG.",
         "SettingsPanel": {
+            "WindowTitle": "Ustawienia FANG",
+            "Data": "Dane",
+            "ExportHint": "Zapisuje cały graf do pliku.",
+            "ImportHint": "Zastępuje graf grafem z pliku.",
             "Players": "Gracze",
             "NewCharacters": "Nowe postacie",
             "Look": "Wygląd",
@@ -193,6 +197,7 @@
             "OpenBtn": "Otwórz Graf FANG"
         },
         "Messages": {
+            "NoPlaceRight": "Nie możesz tworzyć ani zmieniać miejsc. MG może na to pozwolić w ustawieniach FANG, w sekcji Gracze.",
             "DatesConverted": "FANG: {count} wpisów kroniki przeniesiono do formatu daty kalendarza.",
             "ExportSuccess": "Dane grafu pomyślnie wyeksportowano.",
             "ImportSuccess": "Dane grafu pomyślnie zaimportowano.",

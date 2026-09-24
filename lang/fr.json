@@ -6,6 +6,10 @@
         "ButtonShort": "FANG",
         "KeybindingHint": "Ouvre le graphe interactif des relations d'acteurs de FANG.",
         "SettingsPanel": {
+            "WindowTitle": "Paramètres de FANG",
+            "Data": "Données",
+            "ExportHint": "Enregistre tout le graphe dans un fichier.",
+            "ImportHint": "Remplace le graphe par celui d'un fichier.",
             "Players": "Joueurs",
             "NewCharacters": "Nouveaux personnages",
             "Look": "Apparence",
@@ -193,6 +197,7 @@
             "OpenBtn": "Ouvrir le graphe FANG"
         },
         "Messages": {
+            "NoPlaceRight": "Vous ne pouvez pas créer ni modifier de lieux. Le MJ peut l'autoriser dans les paramètres de FANG, sous Joueurs.",
             "DatesConverted": "FANG : {count} entrées de la chronique converties au format de date du calendrier.",
             "ExportSuccess": "Données du graphe exportées avec succès.",
             "ImportSuccess": "Données du graphe importées avec succès.",

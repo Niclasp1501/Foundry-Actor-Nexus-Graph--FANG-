@@ -6,6 +6,10 @@
         "ButtonShort": "FANG",
         "KeybindingHint": "Otevře interaktivní graf vztahů postav FANG.",
         "SettingsPanel": {
+            "WindowTitle": "Nastavení FANG",
+            "Data": "Data",
+            "ExportHint": "Uloží celý graf do souboru.",
+            "ImportHint": "Nahradí graf grafem ze souboru.",
             "Players": "Hráči",
             "NewCharacters": "Nové postavy",
             "Look": "Vzhled",
@@ -193,6 +197,7 @@
             "OpenBtn": "Otevřít graf FANG"
         },
         "Messages": {
+            "NoPlaceRight": "Nesmíte vytvářet ani měnit místa. PJ to může povolit v nastavení FANG v části Hráči.",
             "DatesConverted": "FANG: {count} záznamů kroniky převedeno do formátu data kalendáře.",
             "ExportSuccess": "Data grafu úspěšně exportována.",
             "ImportSuccess": "Data grafu úspěšně importována.",
