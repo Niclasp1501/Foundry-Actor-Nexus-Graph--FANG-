@@ -3401,8 +3401,13 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         // Foundry sends the whole position while the title bar is dragged, width and height
         // included, so what tells a drag apart is the hand on the title bar (see _onRender).
         const dragged = !!this._titleBarHeld;
-        const sidebarLeft = document.getElementById("ui-right")?.getBoundingClientRect?.().left;
-        const rightEdge = !dragged && Number.isFinite(sidebarLeft) && sidebarLeft > 400 ? Math.min(window.innerWidth, sidebarLeft) : window.innerWidth;
+        // Only the sidebar itself counts: the column around it can hold widgets of other
+        // modules (a calendar, say) that reach far into the screen. And it never takes more
+        // than 40 % of the width from FANG; on a narrow screen FANG may lie over it.
+        const sidebar = document.getElementById("sidebar")?.getBoundingClientRect?.();
+        const sidebarLeft = sidebar && sidebar.width > 0 ? sidebar.left : NaN;
+        const rightEdge = !dragged && Number.isFinite(sidebarLeft) && sidebarLeft >= window.innerWidth * 0.6
+            ? Math.min(window.innerWidth, sidebarLeft) : window.innerWidth;
         const maxWidth = Math.max(320, rightEdge - margin * 2);
         const maxHeight = Math.max(320, window.innerHeight - margin * 2);
         const fitted = { ...position };
