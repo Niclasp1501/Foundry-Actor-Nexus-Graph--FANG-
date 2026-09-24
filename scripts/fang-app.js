@@ -587,12 +587,11 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const existing = this._zoneById(zoneId);
         // A player never opens a place hidden from them: the form would show its real name.
         if (existing && !isGM && (existing.hidden || existing.playerVisible === false)) return Promise.resolve(null);
-        const zone = existing ?? this._normalizeZone({ name: defaults.name || "", parentId: defaults.parentId || null, type: defaults.type || (defaults.parentId ? "building" : "city") });
+        const zone = existing ?? this._normalizeZone({ name: defaults.name || "", parentId: defaults.parentId || null });
         // A new place starts without a name: a placeholder name would only have to be deleted.
         if (!existing) { zone.name = defaults.name || ""; zone.reveal = "visited"; }
         const esc = (v) => this._escapeHtml(String(v ?? ""));
         const t = (key, fallback) => this._localize(key, fallback);
-        const types = ["realm", "region", "city", "district", "building", "other"];
         const family = existing ? this._zoneFamily(existing.id) : new Set();
         const parentOptions = this._orderedZones(game.user, { exclude: family })
             .map(({ zone: z, depth }) => `<option value="${esc(z.id)}" ${z.id === zone.parentId ? "selected" : ""}>${"\u00a0\u00a0".repeat(depth)}${depth ? "\u203a " : ""}${esc(this._zoneName(z))}</option>`).join("");
@@ -613,8 +612,6 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     <div class="fang-canvas-prompt-fields">
                         <label for="fang-zone-f-name">${esc(t("FANG.Zones.NameLabel", "Name"))}</label>
                         <input type="text" id="fang-zone-f-name" class="fang-zone-f-name" value="${esc(zone.name)}" placeholder="${esc(t("FANG.Zones.NamePlaceholder", "Place name"))}">
-                        <label for="fang-zone-f-type">${esc(t("FANG.Zones.TypeLabel", "Kind of place"))}</label>
-                        <select id="fang-zone-f-type" class="fang-zone-f-type">${types.map(type => `<option value="${type}" ${zone.type === type ? "selected" : ""}>${esc(t(`FANG.Zones.Types.${type}`, type))}</option>`).join("")}</select>
                         <label for="fang-zone-f-parent">${esc(t("FANG.Zones.ParentLabel", "Lies in"))}</label>
                         <select id="fang-zone-f-parent" class="fang-zone-f-parent"><option value="">${esc(t("FANG.Zones.NoParent", "A place of its own"))}</option>${parentOptions}</select>
                         ${isGM ? `
@@ -753,7 +750,6 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     ...(zones.find(z => z.id === zone.id) ?? {}),
                     id: zone.id,
                     name,
-                    type: panel.querySelector(".fang-zone-f-type").value,
                     // A place this user does not know was never offered as "lies in"; an empty
                     // choice then means "unchanged", not "a place of its own".
                     parentId: panel.querySelector(".fang-zone-f-parent").value
@@ -5310,10 +5306,6 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const zones = Array.isArray(this.graphData.zones) ? this.graphData.zones.map(z => this._normalizeZone(z)) : [];
         const escapeHtml = (value) => this._escapeHtml(value);
         const localize = (key, fallback) => this._localize(key, fallback);
-        // Places, not groups. "organization" used to live here, but an organization is a
-        // faction — that is what factions are for. Legacy values are migrated in
-        // _normalizeZone.
-        const zoneTypes = ["region", "city", "district", "building", "realm", "other"];
 
         // How many characters sit in each zone? A zone is only drawn on the canvas once
         // it has members, so without this the manager gives no clue why a freshly
@@ -5326,9 +5318,6 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     <input type="hidden" class="zone-id" value="${escapeHtml(zone.id || "")}">
                     <input type="color" class="zone-color" value="${escapeHtml(zone.color || "#d4af37")}">
                     <input type="text" class="zone-name" value="${escapeHtml(zone.name || "")}" placeholder="${escapeHtml(localize("FANG.Zones.NamePlaceholder", "Zone name"))}">
-                    <select class="zone-type">
-                        ${zoneTypes.map(type => `<option value="${type}" ${zone.type === type ? "selected" : ""}>${escapeHtml(localize(`FANG.Zones.Types.${type}`, type))}</option>`).join("")}
-                    </select>
                 </div>
                 <textarea class="zone-description" rows="2" placeholder="${escapeHtml(localize("FANG.Zones.DescriptionPlaceholder", "Short zone description"))}">${escapeHtml(zone.description || "")}</textarea>
                 ${(() => {
@@ -5401,7 +5390,6 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                                 ...(before.get(id) ?? {}),
                                 id,
                                 name,
-                                type: $(el).find(".zone-type").val() || "region",
                                 color: $(el).find(".zone-color").val() || "#d4af37",
                                 description: $(el).find(".zone-description").val()?.trim() || "",
                                 playerVisible: $(el).find(".zone-player-visible").is(":checked")

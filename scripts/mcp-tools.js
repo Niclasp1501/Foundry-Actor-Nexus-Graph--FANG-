@@ -54,14 +54,13 @@ function overview() {
         })),
         factions: factions.map(f => ({ id: f.id, name: f.name, color: f.color, playerVisible: f.playerVisible !== false })),
         places: zones.map(z => ({
-            id: z.id, name: z.name, type: z.type, liesIn: name(zones, z.parentId),
+            id: z.id, name: z.name, liesIn: name(zones, z.parentId),
             playerVisible: z.playerVisible !== false, hidden: !!z.hidden, alias: z.displayName || null,
             description: z.description || ""
         }))
     };
 }
 
-const PLACE_TYPES = ["realm", "region", "city", "district", "building", "other"];
 
 const TOOLS = [
     {
@@ -102,7 +101,6 @@ const TOOLS = [
                 action: { type: "string", enum: ["add", "update", "remove", "assign"] },
                 place: { type: "string", description: "The place to change, remove or assign to (name or id). For assign, empty or \"none\" takes the character out of any place." },
                 name: { type: "string" },
-                type: { type: "string", enum: PLACE_TYPES },
                 liesIn: { type: "string", description: "The place it lies in (name or id), or \"none\"." },
                 description: { type: "string" },
                 img: { type: "string", description: "Image path in the Foundry data folder." },
@@ -119,7 +117,6 @@ const TOOLS = [
             const api = fang();
             const fields = {};
             if (args.name !== undefined) fields.name = args.name;
-            if (args.type !== undefined) fields.type = args.type;
             if (args.description !== undefined) fields.description = args.description;
             if (args.img !== undefined) fields.img = args.img;
             if (args.playerVisible !== undefined) fields.playerVisible = args.playerVisible;
