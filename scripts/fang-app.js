@@ -1246,6 +1246,40 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         return liste;
     }
 
+    /**
+     * The key a game date sorts by. Entries reach the chronicle from the form, from the
+     * calendar, from macros and from tools, and not all of them wrote the same kind of key:
+     * one says month 8 for Eleasis, the calendar says month 11. Compared as they are, a new
+     * entry landed before everything else. So the key is read from the label whenever the
+     * label names a month of the game calendar ("14. Eleasis 1490", "15 Eleasis, 1490"),
+     * and the stored key is used only when it does not.
+     */
+    gameDateSortKey(gameDate) {
+        const stored = String(gameDate?.sort || "");
+        const label = String(gameDate?.label || "");
+        if (!label) return stored;
+        this._dateKeyCache ??= new Map();
+        const cacheKey = `${label}|${stored}`;
+        if (this._dateKeyCache.has(cacheKey)) return this._dateKeyCache.get(cacheKey);
+        let key = stored;
+        const months = game.time?.calendar?.months?.values;
+        const match = label.match(/(\d{1,3})\.?\s+([^\d\s,.][^\d,]*?)[.,]?\s+(-?\d{1,6})/);
+        if (Array.isArray(months) && match) {
+            const wanted = match[2].trim().toLowerCase();
+            const index = months.findIndex(m => {
+                const name = String(game.i18n.localize(m.name ?? "")).trim().toLowerCase();
+                return name === wanted;
+            });
+            if (index >= 0) {
+                const pad = (n, w) => String(Math.abs(n)).padStart(w, "0");
+                const year = Number(match[3]);
+                key = `${year < 0 ? "-" : ""}${pad(year, 6)}-${pad(index + 1, 3)}-${pad(Number(match[1]), 3)}`;
+            }
+        }
+        this._dateKeyCache.set(cacheKey, key);
+        return key;
+    }
+
     _getKnownGameDays({ user = game.user } = {}) {
         const days = [];
         const seen = new Set();
@@ -1699,8 +1733,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             .sort((a, b) => {
                 // The chronicle is ordered by GAME day, newest first -- not by the real-world moment
                 // the entry was typed. Anything typed up later still lands on its own day.
-                const aSort = String(a.gameDate?.sort || "");
-                const bSort = String(b.gameDate?.sort || "");
+                const aSort = this.gameDateSortKey(a.gameDate);
+                const bSort = this.gameDateSortKey(b.gameDate);
                 if (aSort !== bSort) {
                     // Undated entries collect at the end rather than jumping to the top.
                     if (!aSort) return 1;
