@@ -185,6 +185,7 @@
             "OpenBtn": "Abrir Grafo FANG"
         },
         "Messages": {
+            "DatesConverted": "FANG: {count} entradas de la crónica pasadas al formato de fecha del calendario.",
             "ExportSuccess": "Datos del grafo exportados correctamente.",
             "ImportSuccess": "Datos del grafo importados correctamente.",
             "ImportError": "Error al importar el grafo: Formato de archivo inválido.",

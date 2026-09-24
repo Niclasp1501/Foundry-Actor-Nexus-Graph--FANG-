@@ -185,6 +185,7 @@
             "OpenBtn": "Ouvrir le graphe FANG"
         },
         "Messages": {
+            "DatesConverted": "FANG : {count} entrées de la chronique converties au format de date du calendrier.",
             "ExportSuccess": "Données du graphe exportées avec succès.",
             "ImportSuccess": "Données du graphe importées avec succès.",
             "ImportError": "Échec de l'importation du graphe : Format de fichier invalide.",

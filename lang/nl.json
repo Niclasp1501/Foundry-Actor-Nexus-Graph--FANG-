@@ -185,6 +185,7 @@
             "OpenBtn": "FANG Graaf Openen"
         },
         "Messages": {
+            "DatesConverted": "FANG: {count} kroniekitems omgezet naar de datumnotatie van de kalender.",
             "ExportSuccess": "Graafgegevens succesvol geëxporteerd.",
             "ImportSuccess": "Graafgegevens succesvol geïmporteerd.",
             "ImportError": "Fout bij importeren graaf: Ongeldig bestandsformaat.",

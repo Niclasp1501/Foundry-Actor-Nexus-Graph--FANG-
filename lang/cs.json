@@ -185,6 +185,7 @@
             "OpenBtn": "Otevřít graf FANG"
         },
         "Messages": {
+            "DatesConverted": "FANG: {count} záznamů kroniky převedeno do formátu data kalendáře.",
             "ExportSuccess": "Data grafu úspěšně exportována.",
             "ImportSuccess": "Data grafu úspěšně importována.",
             "ImportError": "Import grafu selhal: Neplatný formát souboru.",

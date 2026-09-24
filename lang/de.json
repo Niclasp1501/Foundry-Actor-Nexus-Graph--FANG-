@@ -185,6 +185,7 @@
             "OpenBtn": "FANG Graph Öffnen"
         },
         "Messages": {
+            "DatesConverted": "FANG: {count} Chronik-Einträge ins Datumsformat des Kalenders übernommen.",
             "ExportSuccess": "Graph-Daten erfolgreich exportiert.",
             "ImportSuccess": "Graph-Daten erfolgreich importiert.",
             "ImportError": "Import fehlgeschlagen: Ungültiges Dateiformat.",

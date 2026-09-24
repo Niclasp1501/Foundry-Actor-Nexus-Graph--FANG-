@@ -636,6 +636,25 @@ Hooks.once("init", () => {
 
 Hooks.once("ready", async () => {
   fensterPassenEinrichten();
+  // The calendar in use sets the format of game dates; entries from an earlier calendar
+  // module or typed by hand are brought into it once, on the active GM's side.
+  // Who the active GM is may not be known yet at "ready"; the attempt below waits for it.
+  if (game.user.isGM) {
+    // A calendar module may still be starting up at "ready"; wait for it for up to a minute.
+    let tries = 0;
+    const attempt = async () => {
+      try {
+        if (!game.users.activeGM && ++tries < 30) { setTimeout(attempt, 2000); return; }
+        if (game.users.activeGM?.id !== game.user.id) return;
+        if (!fangApp) fangApp = new FangApplication();
+        const source = fangApp.detectCurrentGameDate?.()?.source;
+        if ((!source || source === "manual" || source === "real") && ++tries < 30) { setTimeout(attempt, 2000); return; }
+        const { converted } = await fangApp.convertGameDatesToCalendar();
+        if (converted) ui.notifications.info(game.i18n.format("FANG.Messages.DatesConverted", { count: converted }));
+      } catch (err) { console.error("FANG | Converting game dates failed", err); }
+    };
+    setTimeout(attempt, 1500);
+  }
   // Mark body for role-based CSS — enables body.role-player .gm-only { display:none }
   // to hide GM-only elements globally, including dynamically added ones.
   document.body.classList.toggle("role-player", !game.user.isGM);

@@ -1247,37 +1247,59 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     /**
-     * The key a game date sorts by. Entries reach the chronicle from the form, from the
-     * calendar, from macros and from tools, and not all of them wrote the same kind of key:
-     * one says month 8 for Eleasis, the calendar says month 11. Compared as they are, a new
-     * entry landed before everything else. So the key is read from the label whenever the
-     * label names a month of the game calendar ("14. Eleasis 1490", "15 Eleasis, 1490"),
-     * and the stored key is used only when it does not.
+     * The calendar module in use decides what a game date looks like: its label and its sort
+     * key. Entries written under another one (Seasons & Stars before Calendaria, say) or by
+     * hand carry keys of their own, and a key of another kind does not sort against the
+     * calendar's: Seasons & Stars numbered Eleasis as month 8, Calendaria as month 11, and a
+     * new journey landed before everything else. So those entries are rewritten once into the
+     * calendar's own format, read from their label ("14. Eleasis 1490 DR"). What they said
+     * before stays in `payload.gameDateBefore`. An entry whose label names no month of the
+     * calendar is left as it is.
+     *
+     * @returns {Promise<{converted:number, skipped:number}>}
      */
-    gameDateSortKey(gameDate) {
-        const stored = String(gameDate?.sort || "");
-        const label = String(gameDate?.label || "");
-        if (!label) return stored;
-        this._dateKeyCache ??= new Map();
-        const cacheKey = `${label}|${stored}`;
-        if (this._dateKeyCache.has(cacheKey)) return this._dateKeyCache.get(cacheKey);
-        let key = stored;
-        const months = game.time?.calendar?.months?.values;
-        const match = label.match(/(\d{1,3})\.?\s+([^\d\s,.][^\d,]*?)[.,]?\s+(-?\d{1,6})/);
-        if (Array.isArray(months) && match) {
+    async convertGameDatesToCalendar() {
+        const none = { converted: 0, skipped: 0 };
+        if (!game.user?.isGM) return none;
+        const calendar = game.time?.calendar;
+        const months = calendar?.months?.values;
+        const current = this.detectCurrentGameDate?.();
+        const source = current?.source;
+        if (!Array.isArray(months) || !source || source === "manual" || source === "real") return none;
+        const yearZero = Number(calendar?.years?.yearZero ?? 0);
+        const names = months.map(m => [String(game.i18n.localize(m.name ?? "")).trim().toLowerCase(), String(m.abbreviation ?? "").trim().toLowerCase()]);
+        const convert = (gameDate) => {
+            const label = String(gameDate?.label || "");
+            const match = label.match(/(\d{1,3})\.?\s+([^\d\s,.][^\d,]*?)[.,]?\s+(-?\d{1,6})/);
+            if (!match) return null;
             const wanted = match[2].trim().toLowerCase();
-            const index = months.findIndex(m => {
-                const name = String(game.i18n.localize(m.name ?? "")).trim().toLowerCase();
-                return name === wanted;
+            const month = names.findIndex(([name, abbr]) => name === wanted || (abbr && abbr === wanted));
+            if (month < 0) return null;
+            const [hour, minute] = String(gameDate?.time || "").split(":").map(Number);
+            const described = this._describeGameDateForComponents({
+                year: Number(match[3]) - yearZero, month, dayOfMonth: Number(match[1]) - 1,
+                hour: Number.isFinite(hour) ? hour : 0, minute: Number.isFinite(minute) ? minute : 0
             });
-            if (index >= 0) {
-                const pad = (n, w) => String(Math.abs(n)).padStart(w, "0");
-                const year = Number(match[3]);
-                key = `${year < 0 ? "-" : ""}${pad(year, 6)}-${pad(index + 1, 3)}-${pad(Number(match[1]), 3)}`;
+            if (!described?.sort) return null;
+            return { ...described, time: String(gameDate?.time || described.time || "") };
+        };
+        const store = this._getHistoryStore();
+        let converted = 0, skipped = 0;
+        for (const entry of store.entries) {
+            let changed = false;
+            for (const field of ["gameDate", "knownSince"]) {
+                const date = entry[field];
+                if (!date?.label || date.source === source) continue;
+                const next = convert(date);
+                if (!next) { skipped++; continue; }
+                entry.payload = { ...(entry.payload ?? {}), [`${field}Before`]: { ...date } };
+                entry[field] = next;
+                changed = true;
             }
+            if (changed) converted++;
         }
-        this._dateKeyCache.set(cacheKey, key);
-        return key;
+        if (converted) await this._saveHistoryStore(store);
+        return { converted, skipped };
     }
 
     _getKnownGameDays({ user = game.user } = {}) {
@@ -1733,8 +1755,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             .sort((a, b) => {
                 // The chronicle is ordered by GAME day, newest first -- not by the real-world moment
                 // the entry was typed. Anything typed up later still lands on its own day.
-                const aSort = this.gameDateSortKey(a.gameDate);
-                const bSort = this.gameDateSortKey(b.gameDate);
+                const aSort = String(a.gameDate?.sort || "");
+                const bSort = String(b.gameDate?.sort || "");
                 if (aSort !== bSort) {
                     // Undated entries collect at the end rather than jumping to the top.
                     if (!aSort) return 1;

@@ -185,6 +185,7 @@
             "OpenBtn": "Apri Grafo FANG"
         },
         "Messages": {
+            "DatesConverted": "FANG: {count} voci della cronaca convertite nel formato data del calendario.",
             "ExportSuccess": "Dati del grafo esportati con successo.",
             "ImportSuccess": "Dati del grafo importati con successo.",
             "ImportError": "Errore durante l'importazione del grafo: Formato file non valido.",

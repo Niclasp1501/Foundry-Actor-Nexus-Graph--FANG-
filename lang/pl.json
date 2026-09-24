@@ -185,6 +185,7 @@
             "OpenBtn": "Otwórz Graf FANG"
         },
         "Messages": {
+            "DatesConverted": "FANG: {count} wpisów kroniki przeniesiono do formatu daty kalendarza.",
             "ExportSuccess": "Dane grafu pomyślnie wyeksportowano.",
             "ImportSuccess": "Dane grafu pomyślnie zaimportowano.",
             "ImportError": "Nie udało się zaimportować grafu: Nieprawidłowy format pliku.",
