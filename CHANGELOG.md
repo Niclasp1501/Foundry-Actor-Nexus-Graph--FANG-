@@ -3,7 +3,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Module versions follow the Foundry-targeted `<foundry-major>.<YYMM>.<patch>` release scheme documented in `AGENTS.md`.
 
-## [Unreleased]
+## [14.2609.6] - 2026-09-25
 
 ### Added
 - **Ring tokens fill their node.** Tokens made for Foundry's dynamic token ring leave a transparent border for the ring, so the face looked small in an empty circle. FANG now cuts away a transparent border by itself, in the graph, the chronicle and the spotlight. It can be switched off under Look.
