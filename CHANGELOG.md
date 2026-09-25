@@ -3,9 +3,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Module versions follow the Foundry-targeted `<foundry-major>.<YYMM>.<patch>` release scheme documented in `AGENTS.md`.
 
-## [Unreleased]
+## [14.2609.5] - 2026-09-25
 
 ### Added
+- **Places.** Places can now lie inside other places, as deep as you like, and carry a picture, a description and a setting for what players see. Wherever a place is chosen (the character editor, a chronicle entry, "Assign place" in the context menu) one editor opens, with a round cut of the picture for tokens and a wide one for the place itself.
+- **Players only see places they know.** A place becomes known once one of their characters has been there or belongs there, or when they created it. The GM can mark a place as known from the start. Knowing a room does not reveal the place around it.
+- **Finer player rights.** You decide whether players may create places and whether they may write chronicle entries.
+- **A settings window with categories.** All of FANG's settings are in one window of its own, sorted into players, new characters, look, spotlight, at the table, other modules and data.
+- **Tools for Ninjo's Foundry MCP.** With Ninjo's Foundry MCP, an assistant can read the graph and add or change characters, connections, factions, places and chronicle entries. The GM releases the tools in the MCP settings.
+- **Add-on api: write access.** Characters, connections, factions, places and the chronicle can be changed through the api under the same rights as by hand, and add-ons get slots in the character editor and the chronicle form (see `API.md`).
 - **The welcome window mentions Patreon.** Below the link to Ninjo's Forge, one line now says that the modules are free and stay free, and that you can support the work on Patreon and get premium add-ons. Only GMs see the window, and "Don't show again" still hides it for good.
 - **Add-on api: new hook for drops.** Add-on modules can now handle other things dropped on the graph (`fang.drop`, see `API.md`).
 - **A guide on first open.** The first time you open FANG on a device it explains the graph in six short points: moving around, the menus, edit mode, adding characters, the chronicle and the rail. The question mark in the rail brings it back. An empty graph now says how to fill it.
@@ -13,10 +19,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **Add-on api: node shapes and a drag veto.** A node may be drawn as a rounded square (`shape`), and an add-on may refuse a drag (`fang.nodeDragStart`).
 
 ### Changed
+- **Game dates follow the calendar module.** Every date is stored in the format of the calendar in use, older entries are converted once, and the chronicle orders entries by their calendar day.
+- **Forms use the width of the window.** The chronicle entry, the place editor and the character editor lay out side by side instead of in one long column, and Save stays in sight.
+- **The kind of a place is gone from the forms.** It had no effect anywhere.
 - **A drop no longer pins.** Since July every character you let go of was pinned in place, and over time a graph ended up with most of its characters pinned, with no physics and no wind left. A dropped character is free again; the shared layout keeps where it settles. Pinning is a choice: the context menu now offers "Hold position" and "Release position".
 - **Collaborative editing keeps an edit switch.** The button now switches your own edit mode on and off; it locks nobody out. Off, the graph is a view, as in the classic mode. A player is also told when no GM is online, because edits travel through one.
 
 ### Fixed
+- **Grouping gives nothing away.** Where the layout is shared with players, a grouping that would reveal a hidden faction or an unknown place stays with the GM, and players keep their usual view.
+- **The window no longer sticks to the left edge.** FANG opens at a sensible size beside Foundry's sidebar and can be dragged freely.
 - **Everyone sees the same layout.** Each client used to arrange the graph around the centre of its own window, so two people looking at the same graph saw two different pictures. Now one client lays it out, the active GM, and stores the result; everyone else shows exactly that. Grouping by faction or zone stays a view of your own.
 - **A spotlight on a hidden character no longer gives it away.** The name, the quests and, on a connection, the portraits were composed from the GM's view and sent to every player. They now show what a player may see.
 - **No red flash under portraits after a save.** Loaded portraits are kept when the graph is rebuilt.
