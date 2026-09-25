@@ -258,6 +258,7 @@
             "ZoneGroupingApplied": "Agrupado por lugar.",
             "GroupingPositionsLocked": "Vista de agrupación — las posiciones están bloqueadas. Restablece la agrupación para mover personajes.",
             "GroupingIsAView": "Esto es una vista — las posiciones siguen bloqueadas hasta que la restablezcas.",
+            "GroupingNotForPlayers": "Los jugadores conservan su vista habitual, porque esta agrupación revelaría facciones o lugares que aún no conocen.",
             "NodeUnpinned": "posición liberada.",
             "NodePinned": "posición fijada."
         },

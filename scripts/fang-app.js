@@ -5303,6 +5303,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
     async _onManageZones() {
         if (!game.user?.isGM) return;
+        // An add-on with a place manager of its own takes over, so there is one place to
+        // manage places, not two that look different.
+        if (Hooks.call("fang.manageZones", this) === false) return;
         const zones = Array.isArray(this.graphData.zones) ? this.graphData.zones.map(z => this._normalizeZone(z)) : [];
         const escapeHtml = (value) => this._escapeHtml(value);
         const localize = (key, fallback) => this._localize(key, fallback);
@@ -7875,8 +7878,44 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             ? this._localize("FANG.Messages.ZoneGroupingApplied", "Grouped by zone.")
             : game.i18n.localize("FANG.Messages.FactionGroupingApplied");
         // Say up front that this is a view, so the locked positions are expected
-        // behaviour rather than a surprise.
-        ui.notifications.info(`${applied} ${this._localize("FANG.Messages.GroupingIsAView", "This is a view — positions stay locked until you reset it.")}`);
+        // behaviour rather than a surprise. Where the view is shared with players (an
+        // add-on streams the layout), say too when it is kept from them.
+        const private_ = typeof this._streamLayout === "function" && !this._groupingShownToPlayers(mode)
+            ? ` ${this._localize("FANG.Messages.GroupingNotForPlayers", "Players keep their usual view, because this grouping would reveal factions or places they do not know yet.")}`
+            : "";
+        ui.notifications.info(`${applied} ${this._localize("FANG.Messages.GroupingIsAView", "This is a view — positions stay locked until you reset it.")}${private_}`);
+    }
+
+    /**
+     * Whether every player may see the grouping as it stands: no group in it is a faction
+     * hidden from players or a place one of them does not know. Only groups that a
+     * character visible to some player belongs to count; the rest never shows.
+     *
+     * The boxes are drawn per viewer anyway, but the arrangement is shared: characters
+     * pulled together by a hidden faction still stand together, box or not, and that says
+     * as much as the box would.
+     *
+     * @param {"none"|"faction"|"zone"} [mode]
+     * @returns {boolean}
+     */
+    _groupingShownToPlayers(mode = this._groupingMode) {
+        if (mode !== "faction" && mode !== "zone") return true;
+        const players = game.users?.filter(u => !u.isGM) ?? [];
+        if (!players.length) return true;
+        const key = mode === "zone" ? "zoneId" : "factionId";
+        const used = new Set((this.graphData?.nodes ?? [])
+            .filter(n => n?.[key] && players.some(u => this._canUserSeeNode?.(n, u) !== false))
+            .map(n => n[key]));
+        for (const id of used) {
+            if (mode === "zone") {
+                const zone = this._zoneById(id);
+                if (zone && players.some(u => !this._canUserSeeZone(zone, u))) return false;
+            } else {
+                const faction = (this.graphData?.factions ?? []).find(f => f.id === id);
+                if (faction && faction.playerVisible === false) return false;
+            }
+        }
+        return true;
     }
 
     _onToggleGroupByFaction() {

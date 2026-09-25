@@ -258,6 +258,7 @@
             "ZoneGroupingApplied": "Seskupeno podle místa.",
             "GroupingPositionsLocked": "Zobrazení seskupení — pozice jsou zamčené. Pro přesun postav zruš seskupení.",
             "GroupingIsAView": "Toto je zobrazení — pozice zůstanou zamčené, dokud ho nezrušíš.",
+            "GroupingNotForPlayers": "Hráči si ponechají běžné zobrazení, protože toto seskupení by prozradilo frakce nebo místa, která ještě neznají.",
             "NodeUnpinned": "pozice uvolněna.",
             "NodePinned": "pozice podržena."
         },

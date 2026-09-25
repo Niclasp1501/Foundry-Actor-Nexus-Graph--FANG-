@@ -258,6 +258,7 @@
             "ZoneGroupingApplied": "Gegroepeerd op locatie.",
             "GroupingPositionsLocked": "Groeperingsweergave — posities zijn vergrendeld. Reset de groepering om personages te verplaatsen.",
             "GroupingIsAView": "Dit is een weergave — posities blijven vergrendeld tot je reset.",
+            "GroupingNotForPlayers": "Spelers houden hun gewone weergave, omdat deze groepering facties of plaatsen zou onthullen die ze nog niet kennen.",
             "NodeUnpinned": "positie vrijgegeven.",
             "NodePinned": "positie vastgehouden."
         },

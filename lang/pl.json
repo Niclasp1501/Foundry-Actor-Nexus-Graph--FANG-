@@ -258,6 +258,7 @@
             "ZoneGroupingApplied": "Pogrupowano wg miejsca.",
             "GroupingPositionsLocked": "Widok grupowania — pozycje są zablokowane. Zresetuj grupowanie, aby przesuwać postacie.",
             "GroupingIsAView": "To jest widok — pozycje pozostają zablokowane do czasu zresetowania.",
+            "GroupingNotForPlayers": "Gracze zachowują swój zwykły widok, ponieważ to grupowanie ujawniłoby frakcje lub miejsca, których jeszcze nie znają.",
             "NodeUnpinned": "pozycja zwolniona.",
             "NodePinned": "pozycja przytrzymana."
         },

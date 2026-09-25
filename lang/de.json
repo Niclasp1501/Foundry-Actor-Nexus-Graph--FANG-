@@ -258,6 +258,7 @@
             "ZoneGroupingApplied": "Nach Ort gruppiert.",
             "GroupingPositionsLocked": "Gruppierungs-Ansicht: Positionen sind gesperrt. Setze die Gruppierung zurück, um Charaktere zu verschieben.",
             "GroupingIsAView": "Das ist eine Ansicht. Positionen bleiben gesperrt, bis du sie zurücksetzt.",
+            "GroupingNotForPlayers": "Die Spieler behalten ihre normale Ansicht, weil diese Gruppierung Fraktionen oder Orte verraten würde, die sie noch nicht kennen.",
             "NodeUnpinned": "Position freigegeben.",
             "NodePinned": "Position festgehalten."
         },
