@@ -75,7 +75,7 @@ class FangSettingsWindow extends ApplicationV2 {
     static DEFAULT_OPTIONS = {
         id: "fang-settings",
         classes: ["fang-app-window", "fang-dialog", "fang-settings-window"],
-        position: { width: 860, height: 640 },
+        position: { width: 900, height: 820 },
         window: { title: "FANG.SettingsPanel.WindowTitle", icon: "fas fa-sliders", resizable: true, minimizable: true }
     };
 
@@ -609,7 +609,10 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     <button type="button" class="fang-canvas-prompt-close" title="${esc(closeLabel)}" aria-label="${esc(closeLabel)}"><i class="fas fa-times" aria-hidden="true"></i></button>
                 </header>
                 <div class="fang-canvas-prompt-body fang-zone-editor-body">
-                    <div class="fang-canvas-prompt-fields">
+                    <!-- What the place is on the left, its picture on the right: one column of
+                         both meant scrolling past the picture to reach the description. -->
+                    <div class="fang-zone-cols">
+                    <div class="fang-canvas-prompt-fields fang-zone-col">
                         <label for="fang-zone-f-name">${esc(t("FANG.Zones.NameLabel", "Name"))}</label>
                         <input type="text" id="fang-zone-f-name" class="fang-zone-f-name" value="${esc(zone.name)}" placeholder="${esc(t("FANG.Zones.NamePlaceholder", "Place name"))}">
                         <label for="fang-zone-f-parent">${esc(t("FANG.Zones.ParentLabel", "Lies in"))}</label>
@@ -625,6 +628,11 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                         <p class="hint fang-zone-reveal-hint">${esc(t("FANG.Zones.RevealHint", "Players see a place once they have been there, a character of theirs belongs there, or they created it. Choose \"Known from the start\" for a place everybody knows."))}</p>
                         <label for="fang-zone-f-alias" class="fang-zone-alias-row">${esc(t("FANG.Dialogs.IdentityAlias", "Alias"))}</label>
                         <input type="text" id="fang-zone-f-alias" class="fang-zone-f-alias fang-zone-alias-row" value="${esc(zone.displayName)}" placeholder="???">` : ""}
+                        <label for="fang-zone-f-desc">${esc(t("FANG.Zones.DescriptionLabel", "Description"))}</label>
+                        <textarea id="fang-zone-f-desc" class="fang-zone-f-desc" placeholder="${esc(t("FANG.Zones.DescriptionPlaceholder", "Short description"))}">${esc(zone.description)}</textarea>
+                        <div class="fang-zone-extension"></div>
+                    </div>
+                    <div class="fang-canvas-prompt-fields fang-zone-col">
                         <label for="fang-zone-f-img">${esc(t("FANG.Zones.ImageLabel", "Image"))}</label>
                         <div class="fang-zone-img-row">
                             <input type="text" id="fang-zone-f-img" class="fang-zone-f-img" value="${esc(zone.img)}" placeholder="path/to/image.webp">
@@ -644,9 +652,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                             <p class="hint">${esc(t("FANG.Zones.CropHint", "Drag the picture to move it, scroll or use the slider to zoom."))}</p>
                             <button type="button" class="fang-zone-crop-reset"><i class="fas fa-rotate-left" aria-hidden="true"></i> ${esc(t("FANG.Zones.CropReset", "Whole picture"))}</button>
                         </div>
-                        <label for="fang-zone-f-desc">${esc(t("FANG.Zones.DescriptionLabel", "Description"))}</label>
-                        <textarea id="fang-zone-f-desc" class="fang-zone-f-desc" placeholder="${esc(t("FANG.Zones.DescriptionPlaceholder", "Short description"))}">${esc(zone.description)}</textarea>
-                        <div class="fang-zone-extension"></div>
+                    </div>
                     </div>
                 </div>
                 <div class="fang-canvas-prompt-actions">
@@ -2503,24 +2509,30 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     <h3><i class="fas fa-feather"></i> ${this._escapeHtml(title)}</h3>
                     <button type="button" class="fang-history-canvas-close" title="${this._escapeHtml(this._localize("FANG.UI.ClosePanel", "Close panel"))}"><i class="fas fa-times"></i></button>
                 </header>
+                <!-- Two columns where there is room: what, when and who on the left, the texts
+                     on the right. One long column meant scrolling past everything to save. -->
                 <div class="fang-history-editor">
-                    ${node ? `<p class="hint">${this._escapeHtml(this._localize("FANG.History.LinkedTo", "Linked to"))}: <strong>${this._escapeHtml(safeNodeName)}</strong></p>` : ""}
-                    ${dateControl}
-                    <label>${this._escapeHtml(this._localize("FANG.History.Category", "Category"))}</label>
-                    <select id="fang-history-kind" ${canEditCategory ? "" : "disabled"}>${categoryOptions}</select>
-                    <label id="fang-history-title-label">${this._escapeHtml(this._localize("FANG.History.Title", "Title"))}</label>
-                    <input type="text" id="fang-history-title" value="${this._escapeHtml(editingEntry?.title || "")}">
-                    <select id="fang-history-recap-author" hidden>${recapAuthorOptions}</select>
-                    <label id="fang-history-player-text-label">${this._escapeHtml(this._localize("FANG.History.PlayerText", "Player Text"))}</label>
-                    <p class="fang-hint fang-history-recap-note" hidden>${this._escapeHtml(this._localize("FANG.History.RecapNote", "Only a short line for the log here - the recap itself opens as a journal page once you save."))}</p>
-                    <textarea id="fang-history-player-text" placeholder="${this._escapeHtml(this._localize("FANG.History.PlayerTextHint", "Safe text players may see if published."))}">${this._escapeHtml(editingEntry?.playerText || "")}</textarea>
-                    ${gmFields}
-                    <div id="fang-history-location-extension"></div>
-                    ${editingEntry ? `<button type="button" class="btn secondary-btn fang-history-recap-open"><i class="fas fa-book-open"></i> ${this._escapeHtml(editingEntry.recapPageId ? this._localize("FANG.History.RecapOpen", "Open recap") : this._localize("FANG.History.RecapCreate", "Write recap"))}</button>` : ""}
-                    <div class="fang-history-editor-actions">
-                        <button type="button" class="btn action-btn fang-history-save"><i class="fas fa-save"></i> ${this._escapeHtml(this._localize("FANG.Dialogs.BtnSave", "Save"))}</button>
-                        <button type="button" class="btn secondary-btn fang-history-cancel"><i class="fas fa-arrow-left"></i> ${this._escapeHtml(this._localize("FANG.Dialogs.BtnCancel", "Cancel"))}</button>
+                    <div class="fang-history-col fang-history-col-facts">
+                        ${node ? `<p class="hint">${this._escapeHtml(this._localize("FANG.History.LinkedTo", "Linked to"))}: <strong>${this._escapeHtml(safeNodeName)}</strong></p>` : ""}
+                        ${dateControl}
+                        <label>${this._escapeHtml(this._localize("FANG.History.Category", "Category"))}</label>
+                        <select id="fang-history-kind" ${canEditCategory ? "" : "disabled"}>${categoryOptions}</select>
+                        <label id="fang-history-title-label">${this._escapeHtml(this._localize("FANG.History.Title", "Title"))}</label>
+                        <input type="text" id="fang-history-title" value="${this._escapeHtml(editingEntry?.title || "")}">
+                        <select id="fang-history-recap-author" hidden>${recapAuthorOptions}</select>
+                        <div id="fang-history-location-extension"></div>
                     </div>
+                    <div class="fang-history-col fang-history-col-texts">
+                        <label id="fang-history-player-text-label">${this._escapeHtml(this._localize("FANG.History.PlayerText", "Player Text"))}</label>
+                        <p class="fang-hint fang-history-recap-note" hidden>${this._escapeHtml(this._localize("FANG.History.RecapNote", "Only a short line for the log here - the recap itself opens as a journal page once you save."))}</p>
+                        <textarea id="fang-history-player-text" placeholder="${this._escapeHtml(this._localize("FANG.History.PlayerTextHint", "Safe text players may see if published."))}">${this._escapeHtml(editingEntry?.playerText || "")}</textarea>
+                        ${gmFields}
+                        ${editingEntry ? `<button type="button" class="btn secondary-btn fang-history-recap-open"><i class="fas fa-book-open"></i> ${this._escapeHtml(editingEntry.recapPageId ? this._localize("FANG.History.RecapOpen", "Open recap") : this._localize("FANG.History.RecapCreate", "Write recap"))}</button>` : ""}
+                    </div>
+                </div>
+                <div class="fang-history-editor-actions">
+                    <button type="button" class="btn action-btn fang-history-save"><i class="fas fa-save"></i> ${this._escapeHtml(this._localize("FANG.Dialogs.BtnSave", "Save"))}</button>
+                    <button type="button" class="btn secondary-btn fang-history-cancel"><i class="fas fa-arrow-left"></i> ${this._escapeHtml(this._localize("FANG.Dialogs.BtnCancel", "Cancel"))}</button>
                 </div>
             </div>`;
         panelHost?.appendChild(panel);
@@ -6514,7 +6526,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             ? localize("FANG.Dialogs.BtnOpenPlayerJournal", "Open Player Notes Journal")
             : localize("FANG.Dialogs.BtnConvertPlayerJournal", "Convert & Open in Player Journal");
         const playerViewSection = isGM ? `
-                <section class="fang-editor-section">
+                <section class="fang-editor-section fang-editor-gm">
                     <h3><i class="fas fa-user-secret"></i> ${localize("FANG.ActorEditor.PlayerViewGMSettings", "GM Settings for Player View")}</h3>
                     <label class="fang-editor-check"><input type="checkbox" id="fang-profile-hidden" ${node.hidden ? "checked" : ""}> ${localize("FANG.Dialogs.IdentityHidden", "Hidden for Players")}</label>
                     <label class="fang-editor-check"><input type="checkbox" id="fang-profile-gm-only" ${node.gmOnly ? "checked" : ""}> ${localize("FANG.Dialogs.IdentityGMOnly", "GM only - hide completely")}</label>
@@ -6540,7 +6552,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
         const content = `
             <div class="fang-actor-editor">
-                <section class="fang-editor-section">
+                <section class="fang-editor-section fang-editor-profile">
                     <h3><i class="fas fa-id-card"></i> ${localize("FANG.ActorEditor.Profile", "Profile")}</h3>
                     <label>${localize("FANG.Dialogs.IdentityName", "Displayed Name")}</label>
                     <input type="text" id="fang-profile-name" value="${escapeHtml(node.name || "")}">
@@ -6554,7 +6566,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     <div id="fang-actor-location-extension"></div>
                 </section>
                 ${playerViewSection}
-                <section class="fang-editor-section">
+                <section class="fang-editor-section fang-editor-conditions">
                     <h3><i class="fas fa-tags"></i> ${localize("FANG.ActorEditor.Conditions", "Conditions")}</h3>
                     ${conditionGrid}
                 </section>

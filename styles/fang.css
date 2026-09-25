@@ -2444,8 +2444,21 @@ body.fang-theme-cyberpunk .fang-dialog .faction-icon-preview {
 .fang-app-container .fang-zone-editor .fang-canvas-prompt-card {
     display: flex;
     flex-direction: column;
-    width: min(540px, 100%);
+    width: min(980px, 100%);
     max-height: 100%;
+}
+
+/* Two columns where the window is wide enough, one under the other where it is not. */
+.fang-app-container .fang-zone-cols {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 6px 28px;
+    align-items: start;
+}
+
+.fang-app-container .fang-zone-col {
+    min-width: 0;
+    align-content: start;
 }
 
 .fang-app-container .fang-zone-editor-body {
@@ -3040,6 +3053,56 @@ body.role-gm .fang-app-container:not([data-active-view="graph"]) .fang-rail-btn.
 .fang-actor-editor .fang-editor-notes,
 .fang-actor-editor .fang-editor-actions {
     grid-column: 1 / -1;
+}
+
+/* On a wide window the character editor uses the width instead of the height: profile,
+   then the GM's switches and the conditions, then the notes, and the buttons below across
+   all three. Two columns meant scrolling past the conditions to reach the notes. */
+.fang-editor-panel:has(.fang-actor-editor) {
+    width: min(1140px, 100%);
+}
+
+.fang-editor-panel:has(.fang-actor-editor) .fang-editor-body {
+    container-type: inline-size;
+}
+
+@container (min-width: 1000px) {
+    .fang-actor-editor {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        align-items: start;
+    }
+
+    .fang-actor-editor .fang-editor-profile {
+        grid-column: 1;
+        grid-row: 1 / span 2;
+    }
+
+    .fang-actor-editor .fang-editor-gm {
+        grid-column: 2;
+        grid-row: 1;
+    }
+
+    .fang-actor-editor .fang-editor-conditions {
+        grid-column: 2;
+        grid-row: 2;
+    }
+
+    .fang-actor-editor:not(:has(.fang-editor-gm)) .fang-editor-conditions {
+        grid-row: 1 / span 2;
+    }
+
+    .fang-actor-editor .fang-editor-notes {
+        grid-column: 3;
+        grid-row: 1 / span 2;
+        align-self: stretch;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .fang-actor-editor .fang-editor-notes textarea {
+        flex: 1 1 auto;
+        min-height: 220px;
+    }
 }
 
 .fang-actor-editor .fang-condition-grid {
@@ -4505,9 +4568,9 @@ body.fang-theme-cyberpunk .background-config-container .premium-notice p {
 
 .fang-app-container .fang-history-canvas-card {
     position: relative;
-    width: min(760px, 92%);
+    width: min(1080px, 94%);
     min-width: 360px;
-    max-height: 85%;
+    max-height: 92%;
     pointer-events: auto;
     overflow: hidden;
     display: flex;
@@ -5201,9 +5264,33 @@ body.fang-theme-cyberpunk .background-config-container .premium-notice p {
 
 .fang-history-editor {
     display: grid;
-    gap: 8px;
+    /* Facts and who on the left, the texts on the right; one under the other when narrow. */
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    align-items: start;
+    gap: 8px 28px;
+    flex: 1 1 auto;
+    min-height: 0;
     overflow: auto;
-    padding: 20px 24px 24px;
+    padding: 18px 24px 16px;
+}
+
+.fang-history-col {
+    display: grid;
+    gap: 8px;
+    align-content: start;
+    min-width: 0;
+}
+
+.fang-history-col-texts textarea {
+    min-height: 120px;
+}
+
+/* Save and cancel stay in sight below the fields instead of at the end of a long scroll. */
+.fang-history-canvas-card > .fang-history-editor-actions {
+    flex: 0 0 auto;
+    margin-top: 0;
+    padding: 10px 24px 14px;
+    border-top: 1px solid rgba(var(--fang-accent-gold-rgb), 0.35);
 }
 
 .fang-history-editor input[type="text"],
