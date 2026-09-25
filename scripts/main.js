@@ -547,6 +547,43 @@ Hooks.once("init", () => {
     }
   });
 
+  // FANG's own ring around each picture, like Foundry's token ring.
+  const ringChanged = () => {
+    fangNodeImageOptions.ring = game.settings.get("fang", "nodeRing") !== false;
+    const colour = game.settings.get("fang", "nodeRingColor");
+    fangNodeImageOptions.ringColor = colour?.css ?? (colour ? String(colour) : "#8a6a3a");
+    fangNodeImageOptions.ringWidth = Number(game.settings.get("fang", "nodeRingWidth")) || 3;
+    if (fangApp?.rendered) fangApp.ticked();
+  };
+  game.settings.register("fang", "nodeRing", {
+    name: "FANG.Settings.NodeRing.Name",
+    hint: "FANG.Settings.NodeRing.Hint",
+    scope: "world",
+    config: false,
+    type: Boolean,
+    default: true,
+    onChange: ringChanged
+  });
+  game.settings.register("fang", "nodeRingColor", {
+    name: "FANG.Settings.NodeRingColor.Name",
+    hint: "FANG.Settings.NodeRingColor.Hint",
+    scope: "world",
+    config: false,
+    type: new foundry.data.fields.ColorField({ initial: "#8a6a3a" }),
+    default: "#8a6a3a",
+    onChange: ringChanged
+  });
+  game.settings.register("fang", "nodeRingWidth", {
+    name: "FANG.Settings.NodeRingWidth.Name",
+    hint: "FANG.Settings.NodeRingWidth.Hint",
+    scope: "world",
+    config: false,
+    type: Number,
+    range: { min: 1, max: 8, step: 1 },
+    default: 3,
+    onChange: ringChanged
+  });
+
   game.settings.register("fang", "themeVariant", {
     name: "FANG.Settings.ThemeVariant.Name",
     hint: "FANG.Settings.ThemeVariant.Hint",
@@ -665,6 +702,9 @@ Hooks.once("init", () => {
 
 Hooks.once("ready", async () => {
   fangNodeImageOptions.autoCrop = game.settings.get("fang", "nodeImageAutoCrop") !== false;
+  fangNodeImageOptions.ring = game.settings.get("fang", "nodeRing") !== false;
+  { const colour = game.settings.get("fang", "nodeRingColor"); fangNodeImageOptions.ringColor = colour?.css ?? (colour ? String(colour) : "#8a6a3a"); }
+  fangNodeImageOptions.ringWidth = Number(game.settings.get("fang", "nodeRingWidth")) || 3;
   fensterPassenEinrichten();
   // The calendar in use sets the format of game dates; entries from an earlier calendar
   // module or typed by hand are brought into it once, on the active GM's side.

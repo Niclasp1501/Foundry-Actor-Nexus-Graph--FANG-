@@ -43,7 +43,9 @@ export const FANG_EXTENSION_VERSION = 1;
  * the ring; drawn whole, the face sits small in an empty circle. Worked out once per picture.
  */
 const FANG_IMAGE_INFO = new Map(); // src -> { w, h, trim: { x, y, zoom } } | "loading"
-export const fangNodeImageOptions = { autoCrop: true };
+// The picture options and FANG's own ring, read once from the settings and kept current by
+// their onChange: the canvas asks for them on every frame for every node.
+export const fangNodeImageOptions = { autoCrop: true, ring: true, ringColor: "#8a6a3a", ringWidth: 3 };
 
 /** Which rail button belongs to which sidebar panel. Add a panel -> add a line here. */
 const FANG_RAIL_BY_PANEL = {
@@ -4667,6 +4669,20 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         return null;
     }
 
+    /**
+     * FANG's own ring around a node's picture, like Foundry's token ring: a cut-away ring
+     * token keeps its frame, and a plain portrait gets one. The world switches it on or off,
+     * a character may choose otherwise and carry a colour of its own. Null for no ring.
+     */
+    _nodeRing(node) {
+        const on = node?.ring === "on" ? true : (node?.ring === "off" ? false : fangNodeImageOptions.ring);
+        if (!on) return null;
+        return {
+            width: Math.max(1, Number(fangNodeImageOptions.ringWidth) || 3),
+            color: node?.ringColor || fangNodeImageOptions.ringColor || "#8a6a3a"
+        };
+    }
+
     /** The square of the picture a view shows, in the picture's own pixels. */
     _imageSourceRect(view, w, h) {
         const side = Math.min(w, h) / Math.max(1, view.zoom || 1);
@@ -6740,6 +6756,16 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                         </div>
                     </div>
                     <p class="fang-hint">${localize("FANG.Zones.CropHint", "Drag the picture to move it, scroll or use the slider to zoom.")}</p>
+                    <div class="fang-node-ring-row">
+                        <label for="fang-profile-ring">${localize("FANG.ActorEditor.Ring", "Ring")}</label>
+                        <select id="fang-profile-ring">
+                            <option value="" ${!node.ring ? "selected" : ""}>${escapeHtml(localize("FANG.ActorEditor.ImageSourceDefault", "As in the settings ({choice})").replace("{choice}", game.settings.get("fang", "nodeRing") ? localize("FANG.ActorEditor.RingOn", "On") : localize("FANG.ActorEditor.RingOff", "Off")))}</option>
+                            <option value="on" ${node.ring === "on" ? "selected" : ""}>${localize("FANG.ActorEditor.RingOn", "On")}</option>
+                            <option value="off" ${node.ring === "off" ? "selected" : ""}>${localize("FANG.ActorEditor.RingOff", "Off")}</option>
+                        </select>
+                        <input type="color" id="fang-profile-ring-color" value="${escapeHtml(node.ringColor || game.settings.get("fang", "nodeRingColor")?.css || game.settings.get("fang", "nodeRingColor") || "#8a6a3a")}" data-tooltip="${escapeHtml(localize("FANG.ActorEditor.RingColor", "Colour"))}" aria-label="${escapeHtml(localize("FANG.ActorEditor.RingColor", "Colour"))}">
+                        <button type="button" class="fang-node-ring-reset" data-tooltip="${escapeHtml(localize("FANG.ActorEditor.RingColorReset", "Default colour"))}" aria-label="${escapeHtml(localize("FANG.ActorEditor.RingColorReset", "Default colour"))}"><i class="fas fa-rotate-left" aria-hidden="true"></i></button>
+                    </div>
                 </section>
                 <section class="fang-editor-section fang-editor-notes">
                     <h3><i class="fas fa-feather"></i> ${localize("FANG.ActorEditor.Notes", "Notes")}</h3>
@@ -6808,6 +6834,13 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                         node.imgView = this._profileImageCut?.() ?? node.imgView ?? null;
                         if (!node.imgView) delete node.imgView;
                         if (!node.imageSource) delete node.imageSource;
+                        // The ring: the world's choice unless this character has its own, and a
+                        // colour of its own only when one was picked here.
+                        const pickedRing = html.find("#fang-profile-ring").val();
+                        node.ring = pickedRing === "on" || pickedRing === "off" ? pickedRing : null;
+                        node.ringColor = this._profileRingColor?.() ?? node.ringColor ?? null;
+                        if (!node.ring) delete node.ring;
+                        if (!node.ringColor) delete node.ringColor;
                         if (this._getNodeImageSource(node) !== imageBefore) this._reloadNodeImage(node);
                         // An add-on reads its own field from the form and writes it onto the
                         // node here, the same moment every other field is taken from the form.
@@ -6895,6 +6928,21 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                         change({ x: Math.min(100, Math.max(0, v.x + step[0])), y: Math.min(100, Math.max(0, v.y + step[1])) });
                     });
                     html[0].querySelector(".fang-node-crop-auto").addEventListener("click", () => { manual = null; paint(); });
+                    // The ring, shown on the preview as the graph will draw it.
+                    const ringSelect = html[0].querySelector("#fang-profile-ring");
+                    const ringColor = html[0].querySelector("#fang-profile-ring-color");
+                    const worldColor = () => fangNodeImageOptions.ringColor || "#8a6a3a";
+                    let ownColor = node.ringColor || null;
+                    const paintRing = () => {
+                        const ring = this._nodeRing({ ring: ringSelect.value || null, ringColor: ownColor });
+                        frame.style.borderColor = ring ? ring.color : "transparent";
+                        ringColor.disabled = !ring;
+                    };
+                    this._profileRingColor = () => ownColor;
+                    ringSelect.addEventListener("change", paintRing);
+                    ringColor.addEventListener("input", () => { ownColor = ringColor.value; paintRing(); });
+                    html[0].querySelector(".fang-node-ring-reset").addEventListener("click", () => { ownColor = null; ringColor.value = worldColor(); paintRing(); });
+                    paintRing();
                     sourceSelect?.addEventListener("change", paint);
                     // The size of a picture is looked at once; until then the frame shows it whole.
                     const src = srcNow();
@@ -9247,6 +9295,18 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     this.context.drawImage(node.imgElement, pos.x - radius, pos.y - radius, radius * 2, radius * 2);
                 }
                 this.context.restore();
+                // --- FANG's own token ring, at the edge of the picture ---
+                // Filters (hidden, deceased) belong to the picture, not to the frame around it.
+                const tokenRing = this._nodeRing(node);
+                if (tokenRing) {
+                    this.context.save();
+                    this.context.filter = "none";
+                    this._tokenPath(node, pos.x, pos.y, Math.max(1, radius - tokenRing.width / 2));
+                    this.context.lineWidth = tokenRing.width;
+                    this.context.strokeStyle = tokenRing.color;
+                    this.context.stroke();
+                    this.context.restore();
+                }
             } else {
                 this._tokenPath(node, pos.x, pos.y, radius);
                 this.context.fillStyle = "#b91c1c";
@@ -9276,7 +9336,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             // assigns a second one. The gaps are what makes three colours read as three
             // memberships rather than as a decorative gradient.
             if (visibleFactions.length && !isHidden && this.graphData.showFactionLines !== false) {
-                const ringRadius = Math.max(2, radius - 2);
+                const ringRadius = Math.max(2, radius - 2 - (this._nodeRing(node)?.width ?? 0));
                 this.context.save();
                 this.context.lineWidth = 3;
                 if (visibleFactions.length === 1) {
@@ -11121,6 +11181,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 { key: "tokenSize" },
                 { key: "nodeImageSource" },
                 { key: "nodeImageAutoCrop" },
+                { key: "nodeRing" },
+                { key: "nodeRingColor", parent: "nodeRing" },
+                { key: "nodeRingWidth", parent: "nodeRing" },
                 { key: "centerNodeColor" },
                 { button: "background" },
                 { key: "enableCosmicWind" },

@@ -268,6 +268,11 @@
             "ImageSource": "Obraz",
             "ImageSourceDefault": "Jak w ustawieniach ({choice})",
             "ImageAuto": "Automatycznie",
+            "Ring": "Pierścień",
+            "RingOn": "Włączony",
+            "RingOff": "Wyłączony",
+            "RingColor": "Kolor",
+            "RingColorReset": "Kolor domyślny",
             "Profile": "Profil",
             "PlayerView": "Widok graczy",
             "PlayerNotesTitle": "Notatki graczy",
@@ -516,6 +521,18 @@
             "NodeImageAutoCrop": {
                 "Name": "Przycinaj przezroczyste krawędzie",
                 "Hint": "Tokeny przygotowane pod pierścień tokenów Foundry mają przezroczystą krawędź na pierścień, przez co twarz w grafie wydaje się mała. FANG pokazuje wtedy tylko sam obraz. Kadr ustawiony ręcznie w edytorze postaci zawsze ma pierwszeństwo."
+            },
+            "NodeRing": {
+                "Name": "Pierścień wokół postaci",
+                "Hint": "FANG rysuje własny pierścień wokół obrazu każdej postaci, podobnie jak pierścień tokenów Foundry. Wyłącz go, jeśli twoje tokeny mają już pierścień na obrazie. W edytorze postaci można go włączyć lub wyłączyć dla pojedynczej postaci."
+            },
+            "NodeRingColor": {
+                "Name": "Kolor pierścienia",
+                "Hint": "Kolory frakcji pozostają wewnątrz pierścienia."
+            },
+            "NodeRingWidth": {
+                "Name": "Szerokość pierścienia",
+                "Hint": "W pikselach przy zwykłym powiększeniu. (Domyślnie: 3)"
             },
             "ThemeVariant": {
                 "Name": "Wariant motywu FANG",

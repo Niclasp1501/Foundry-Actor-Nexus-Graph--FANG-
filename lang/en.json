@@ -268,6 +268,11 @@
             "ImageSource": "Picture",
             "ImageSourceDefault": "As in the settings ({choice})",
             "ImageAuto": "Automatic",
+            "Ring": "Ring",
+            "RingOn": "On",
+            "RingOff": "Off",
+            "RingColor": "Colour",
+            "RingColorReset": "Default colour",
             "Profile": "Profile",
             "PlayerView": "Player View",
             "PlayerNotesTitle": "Player Notes",
@@ -516,6 +521,18 @@
             "NodeImageAutoCrop": {
                 "Name": "Cut away transparent borders",
                 "Hint": "Tokens made for Foundry's token ring leave a transparent border for the ring, so the face looks small in the graph. FANG then shows only the picture itself. A cut set by hand in the character editor always wins."
+            },
+            "NodeRing": {
+                "Name": "Ring around characters",
+                "Hint": "FANG draws its own ring around every character's picture, like Foundry's token ring. Switch it off if your tokens already carry a ring in the picture; the character editor can switch it on or off for a single character."
+            },
+            "NodeRingColor": {
+                "Name": "Colour of the ring",
+                "Hint": "Faction colours stay inside the ring."
+            },
+            "NodeRingWidth": {
+                "Name": "Width of the ring",
+                "Hint": "In pixels at normal zoom. (Default: 3)"
             },
             "ThemeVariant": {
                 "Name": "FANG Theme",

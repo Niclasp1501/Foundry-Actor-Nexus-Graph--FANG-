@@ -268,6 +268,11 @@
             "ImageSource": "Imagen",
             "ImageSourceDefault": "Como en los ajustes ({choice})",
             "ImageAuto": "Automático",
+            "Ring": "Anillo",
+            "RingOn": "Activado",
+            "RingOff": "Desactivado",
+            "RingColor": "Color",
+            "RingColorReset": "Color predeterminado",
             "Profile": "Perfil",
             "PlayerView": "Vista de jugadores",
             "PlayerNotesTitle": "Notas de jugadores",
@@ -516,6 +521,18 @@
             "NodeImageAutoCrop": {
                 "Name": "Recortar bordes transparentes",
                 "Hint": "Los tokens hechos para el anillo de token de Foundry dejan un borde transparente para el anillo, y la cara se ve pequeña en el grafo. FANG muestra entonces solo la imagen en sí. Un recorte fijado a mano en el editor de personaje siempre tiene prioridad."
+            },
+            "NodeRing": {
+                "Name": "Anillo alrededor de los personajes",
+                "Hint": "FANG dibuja su propio anillo alrededor de la imagen de cada personaje, como el anillo de token de Foundry. Desactívalo si tus tokens ya llevan un anillo en la imagen. En el editor de personaje se puede activar o desactivar para un personaje concreto."
+            },
+            "NodeRingColor": {
+                "Name": "Color del anillo",
+                "Hint": "Los colores de facción siguen dentro del anillo."
+            },
+            "NodeRingWidth": {
+                "Name": "Grosor del anillo",
+                "Hint": "En píxeles con el zoom normal. (Por defecto: 3)"
             },
             "ThemeVariant": {
                 "Name": "Variante de Tema de FANG",

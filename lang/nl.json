@@ -268,6 +268,11 @@
             "ImageSource": "Afbeelding",
             "ImageSourceDefault": "Zoals in de instellingen ({choice})",
             "ImageAuto": "Automatisch",
+            "Ring": "Ring",
+            "RingOn": "Aan",
+            "RingOff": "Uit",
+            "RingColor": "Kleur",
+            "RingColorReset": "Standaardkleur",
             "Profile": "Profiel",
             "PlayerView": "Spelersweergave",
             "PlayerNotesTitle": "Spelersnotities",
@@ -516,6 +521,18 @@
             "NodeImageAutoCrop": {
                 "Name": "Transparante randen wegsnijden",
                 "Hint": "Tokens voor de tokenring van Foundry laten een transparante rand vrij voor de ring, waardoor het gezicht in de graaf klein lijkt. FANG toont dan alleen de afbeelding zelf. Een uitsnede die je in de personage-editor met de hand instelt, gaat altijd voor."
+            },
+            "NodeRing": {
+                "Name": "Ring om de personages",
+                "Hint": "FANG tekent een eigen ring om de afbeelding van elk personage, zoals de tokenring van Foundry. Zet hem uit als je tokens al een ring in de afbeelding hebben. In de personage-editor kun je hem per personage aan- of uitzetten."
+            },
+            "NodeRingColor": {
+                "Name": "Kleur van de ring",
+                "Hint": "Factiekleuren blijven binnen de ring."
+            },
+            "NodeRingWidth": {
+                "Name": "Breedte van de ring",
+                "Hint": "In pixels bij normale zoom. (Standaard: 3)"
             },
             "ThemeVariant": {
                 "Name": "FANG Thema",

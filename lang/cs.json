@@ -268,6 +268,11 @@
             "ImageSource": "Obrázek",
             "ImageSourceDefault": "Podle nastavení ({choice})",
             "ImageAuto": "Automaticky",
+            "Ring": "Prstenec",
+            "RingOn": "Zapnuto",
+            "RingOff": "Vypnuto",
+            "RingColor": "Barva",
+            "RingColorReset": "Výchozí barva",
             "Profile": "Profil",
             "PlayerView": "Pohled hráče",
             "PlayerNotesTitle": "Hráčské poznámky",
@@ -516,6 +521,18 @@
             "NodeImageAutoCrop": {
                 "Name": "Odříznout průhledný okraj",
                 "Hint": "Tokeny pro prstenec tokenů ve Foundry mají průhledný okraj pro prstenec, takže tvář v grafu působí malá. FANG pak ukazuje jen samotný obrázek. Výřez nastavený ručně v editoru postavy má vždy přednost."
+            },
+            "NodeRing": {
+                "Name": "Prstenec kolem postav",
+                "Hint": "FANG kreslí kolem obrázku každé postavy vlastní prstenec, podobně jako prstenec tokenů ve Foundry. Vypni ho, pokud tvé tokeny už prstenec v obrázku mají. V editoru postavy ho lze zapnout nebo vypnout pro jednotlivou postavu."
+            },
+            "NodeRingColor": {
+                "Name": "Barva prstence",
+                "Hint": "Barvy frakcí zůstávají uvnitř prstence."
+            },
+            "NodeRingWidth": {
+                "Name": "Šířka prstence",
+                "Hint": "V pixelech při běžném přiblížení. (Výchozí: 3)"
             },
             "ThemeVariant": {
                 "Name": "Varianta tématu FANG",

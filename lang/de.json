@@ -268,6 +268,11 @@
             "ImageSource": "Bild",
             "ImageSourceDefault": "Wie in den Einstellungen ({choice})",
             "ImageAuto": "Automatisch",
+            "Ring": "Ring",
+            "RingOn": "An",
+            "RingOff": "Aus",
+            "RingColor": "Farbe",
+            "RingColorReset": "Standardfarbe",
             "Profile": "Profil",
             "PlayerView": "Spieleransicht",
             "PlayerNotesTitle": "Spieler-Notizen",
@@ -516,6 +521,18 @@
             "NodeImageAutoCrop": {
                 "Name": "Durchsichtigen Rand abschneiden",
                 "Hint": "Tokens für Foundrys Token-Ring haben einen durchsichtigen Rand für den Ring, dadurch wirkt das Gesicht im Graphen klein. FANG zeigt dann nur das eigentliche Bild. Ein Ausschnitt, der im Charakter-Editor von Hand gesetzt ist, hat immer Vorrang."
+            },
+            "NodeRing": {
+                "Name": "Ring um die Charaktere",
+                "Hint": "FANG zeichnet einen eigenen Ring um das Bild jedes Charakters, wie Foundrys Token-Ring. Schalte ihn aus, wenn deine Tokens schon einen Ring im Bild haben. Im Charakter-Editor lässt er sich je Charakter an- oder ausschalten."
+            },
+            "NodeRingColor": {
+                "Name": "Farbe des Rings",
+                "Hint": "Die Fraktionsfarben bleiben innerhalb des Rings sichtbar."
+            },
+            "NodeRingWidth": {
+                "Name": "Breite des Rings",
+                "Hint": "In Pixeln bei normaler Vergrößerung. (Standard: 3)"
             },
             "ThemeVariant": {
                 "Name": "FANG-Design",

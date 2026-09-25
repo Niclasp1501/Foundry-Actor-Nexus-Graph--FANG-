@@ -2566,6 +2566,36 @@ body.fang-theme-cyberpunk .fang-dialog .faction-icon-preview {
     width: 100%;
 }
 
+.fang-app-container .fang-node-ring-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 6px;
+}
+
+.fang-app-container .fang-node-ring-row select {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.fang-app-container .fang-node-ring-row input[type="color"] {
+    flex: 0 0 auto;
+    width: 40px;
+    height: 36px;
+    padding: 2px;
+}
+
+.fang-app-container .fang-node-ring-row input[type="color"]:disabled {
+    opacity: 0.4;
+}
+
+.fang-app-container .fang-node-ring-reset {
+    flex: 0 0 auto;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+}
+
 .fang-app-container .fang-node-crop-auto {
     width: auto;
     align-self: flex-start;

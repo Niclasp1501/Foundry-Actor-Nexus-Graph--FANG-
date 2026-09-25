@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **Ring tokens fill their node.** Tokens made for Foundry's dynamic token ring leave a transparent border for the ring, so the face looked small in an empty circle. FANG now cuts away a transparent border by itself, in the graph, the chronicle and the spotlight. It can be switched off under Look.
 - **Token or portrait.** Under Look you choose whether nodes show the token or the actor's portrait; the character editor can choose otherwise for a single character.
 - **The picture's cut by hand.** The character editor shows the node's picture in a round frame: drag to move it, scroll or use the slider to zoom, "Automatic" to go back to the automatic cut.
+- **A ring of FANG's own.** Every character's picture gets a ring like Foundry's token ring, so a ring token whose border was cut away keeps its frame. Colour and width are set under Look, where it can also be switched off; the character editor can switch it on or off and give it a colour for a single character. Faction colours now sit inside the ring.
 
 ## [14.2609.5] - 2026-09-25
 
