@@ -45,7 +45,7 @@ export const FANG_EXTENSION_VERSION = 1;
 const FANG_IMAGE_INFO = new Map(); // src -> { w, h, trim: { x, y, zoom } } | "loading"
 // The picture options and FANG's own ring, read once from the settings and kept current by
 // their onChange: the canvas asks for them on every frame for every node.
-export const fangNodeImageOptions = { autoCrop: true, ring: true, ringColor: "#8a6a3a", ringWidth: 3 };
+export const fangNodeImageOptions = { autoCrop: true, ring: true, ringColor: "#7a7a7a", ringWidth: 3 };
 
 /** Which rail button belongs to which sidebar panel. Add a panel -> add a line here. */
 const FANG_RAIL_BY_PANEL = {
@@ -4679,7 +4679,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         if (!on) return null;
         return {
             width: Math.max(1, Number(fangNodeImageOptions.ringWidth) || 3),
-            color: node?.ringColor || fangNodeImageOptions.ringColor || "#8a6a3a"
+            color: node?.ringColor || fangNodeImageOptions.ringColor || "#7a7a7a"
         };
     }
 
@@ -6763,7 +6763,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                             <option value="on" ${node.ring === "on" ? "selected" : ""}>${localize("FANG.ActorEditor.RingOn", "On")}</option>
                             <option value="off" ${node.ring === "off" ? "selected" : ""}>${localize("FANG.ActorEditor.RingOff", "Off")}</option>
                         </select>
-                        <input type="color" id="fang-profile-ring-color" value="${escapeHtml(node.ringColor || game.settings.get("fang", "nodeRingColor")?.css || game.settings.get("fang", "nodeRingColor") || "#8a6a3a")}" data-tooltip="${escapeHtml(localize("FANG.ActorEditor.RingColor", "Colour"))}" aria-label="${escapeHtml(localize("FANG.ActorEditor.RingColor", "Colour"))}">
+                        <input type="color" id="fang-profile-ring-color" value="${escapeHtml(node.ringColor || game.settings.get("fang", "nodeRingColor")?.css || game.settings.get("fang", "nodeRingColor") || "#7a7a7a")}" data-tooltip="${escapeHtml(localize("FANG.ActorEditor.RingColor", "Colour"))}" aria-label="${escapeHtml(localize("FANG.ActorEditor.RingColor", "Colour"))}">
                         <button type="button" class="fang-node-ring-reset" data-tooltip="${escapeHtml(localize("FANG.ActorEditor.RingColorReset", "Default colour"))}" aria-label="${escapeHtml(localize("FANG.ActorEditor.RingColorReset", "Default colour"))}"><i class="fas fa-rotate-left" aria-hidden="true"></i></button>
                     </div>
                 </section>
@@ -6931,7 +6931,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     // The ring, shown on the preview as the graph will draw it.
                     const ringSelect = html[0].querySelector("#fang-profile-ring");
                     const ringColor = html[0].querySelector("#fang-profile-ring-color");
-                    const worldColor = () => fangNodeImageOptions.ringColor || "#8a6a3a";
+                    const worldColor = () => fangNodeImageOptions.ringColor || "#7a7a7a";
                     let ownColor = node.ringColor || null;
                     const paintRing = () => {
                         const ring = this._nodeRing({ ring: ringSelect.value || null, ringColor: ownColor });

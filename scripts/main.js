@@ -551,7 +551,7 @@ Hooks.once("init", () => {
   const ringChanged = () => {
     fangNodeImageOptions.ring = game.settings.get("fang", "nodeRing") !== false;
     const colour = game.settings.get("fang", "nodeRingColor");
-    fangNodeImageOptions.ringColor = colour?.css ?? (colour ? String(colour) : "#8a6a3a");
+    fangNodeImageOptions.ringColor = colour?.css ?? (colour ? String(colour) : "#7a7a7a");
     fangNodeImageOptions.ringWidth = Number(game.settings.get("fang", "nodeRingWidth")) || 3;
     if (fangApp?.rendered) fangApp.ticked();
   };
@@ -569,8 +569,8 @@ Hooks.once("init", () => {
     hint: "FANG.Settings.NodeRingColor.Hint",
     scope: "world",
     config: false,
-    type: new foundry.data.fields.ColorField({ initial: "#8a6a3a" }),
-    default: "#8a6a3a",
+    type: new foundry.data.fields.ColorField({ initial: "#7a7a7a" }),
+    default: "#7a7a7a",
     onChange: ringChanged
   });
   game.settings.register("fang", "nodeRingWidth", {
@@ -703,7 +703,7 @@ Hooks.once("init", () => {
 Hooks.once("ready", async () => {
   fangNodeImageOptions.autoCrop = game.settings.get("fang", "nodeImageAutoCrop") !== false;
   fangNodeImageOptions.ring = game.settings.get("fang", "nodeRing") !== false;
-  { const colour = game.settings.get("fang", "nodeRingColor"); fangNodeImageOptions.ringColor = colour?.css ?? (colour ? String(colour) : "#8a6a3a"); }
+  { const colour = game.settings.get("fang", "nodeRingColor"); fangNodeImageOptions.ringColor = colour?.css ?? (colour ? String(colour) : "#7a7a7a"); }
   fangNodeImageOptions.ringWidth = Number(game.settings.get("fang", "nodeRingWidth")) || 3;
   fensterPassenEinrichten();
   // The calendar in use sets the format of game dates; entries from an earlier calendar
