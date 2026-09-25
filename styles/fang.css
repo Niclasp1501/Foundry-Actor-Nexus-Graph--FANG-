@@ -2547,6 +2547,30 @@ body.fang-theme-cyberpunk .fang-dialog .faction-icon-preview {
     display: none;
 }
 
+/* The cut of a node's picture in the character editor: the round frame, zoom and "Automatic". */
+.fang-app-container .fang-node-crop {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.fang-app-container .fang-node-crop-side {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+}
+
+.fang-app-container .fang-node-crop-side input[type="range"] {
+    width: 100%;
+}
+
+.fang-app-container .fang-node-crop-auto {
+    width: auto;
+    align-self: flex-start;
+}
+
 .fang-app-container .fang-zone-crop-frame {
     position: relative;
     flex: 0 0 auto;
@@ -3087,13 +3111,19 @@ body.role-gm .fang-app-container:not([data-active-view="graph"]) .fang-rail-btn.
         grid-row: 2;
     }
 
+    /* The picture sits above the notes: the notes' box gives way, the middle column does not grow. */
+    .fang-actor-editor .fang-editor-image {
+        grid-column: 3;
+        grid-row: 1;
+    }
+
     .fang-actor-editor:not(:has(.fang-editor-gm)) .fang-editor-conditions {
         grid-row: 1 / span 2;
     }
 
     .fang-actor-editor .fang-editor-notes {
         grid-column: 3;
-        grid-row: 1 / span 2;
+        grid-row: 2;
         align-self: stretch;
         display: flex;
         flex-direction: column;
@@ -3101,7 +3131,7 @@ body.role-gm .fang-app-container:not([data-active-view="graph"]) .fang-rail-btn.
 
     .fang-actor-editor .fang-editor-notes textarea {
         flex: 1 1 auto;
-        min-height: 220px;
+        min-height: 140px;
     }
 }
 

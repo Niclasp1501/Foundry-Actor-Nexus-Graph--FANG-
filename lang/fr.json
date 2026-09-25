@@ -264,6 +264,10 @@
         },
         "ActorEditor": {
             "Title": "Modifier l'acteur",
+            "Image": "Image dans le nœud",
+            "ImageSource": "Image",
+            "ImageSourceDefault": "Comme dans les paramètres ({choice})",
+            "ImageAuto": "Automatique",
             "Profile": "Profil",
             "PlayerView": "Vue joueurs",
             "PlayerNotesTitle": "Notes des joueurs",
@@ -500,6 +504,18 @@
             "DefaultHidden": {
                 "Name": "Mode caché par défaut",
                 "Hint": "Si activé, les nouveaux jetons glissés sur le graphique sont automatiquement cachés aux joueurs. Vous pouvez les révéler plus tard via le menu contextuel."
+            },
+            "NodeImageSource": {
+                "Name": "Image dans le nœud",
+                "Hint": "Quelle image un personnage affiche dans le graphe : le token ou le portrait de l'acteur. L'éditeur de personnage permet un autre choix pour un seul personnage.",
+                "Choices": {
+                    "Token": "Token",
+                    "Portrait": "Portrait"
+                }
+            },
+            "NodeImageAutoCrop": {
+                "Name": "Couper les bords transparents",
+                "Hint": "Les tokens conçus pour l'anneau de token de Foundry laissent un bord transparent pour l'anneau, et le visage paraît petit dans le graphe. FANG n'affiche alors que l'image elle-même. Un cadrage réglé à la main dans l'éditeur de personnage l'emporte toujours."
             },
             "ThemeVariant": {
                 "Name": "Variante du thème FANG",

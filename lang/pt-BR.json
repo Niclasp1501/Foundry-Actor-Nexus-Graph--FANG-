@@ -264,6 +264,10 @@
         },
         "ActorEditor": {
             "Title": "Editar ator",
+            "Image": "Imagem no nó",
+            "ImageSource": "Imagem",
+            "ImageSourceDefault": "Como nas configurações ({choice})",
+            "ImageAuto": "Automático",
             "Profile": "Perfil",
             "PlayerView": "Visão dos jogadores",
             "PlayerNotesTitle": "Notas dos jogadores",
@@ -500,6 +504,18 @@
             "DefaultHidden": {
                 "Name": "Modo Oculto Padrão",
                 "Hint": "Se habilitado, novos tokens arrastados para o gráfico são automaticamente ocultos para os jogadores. Você pode revelá-los mais tarde através do menu de contexto."
+            },
+            "NodeImageSource": {
+                "Name": "Imagem no nó",
+                "Hint": "Qual imagem um personagem mostra no grafo: o token ou o retrato do ator. No editor de personagem é possível escolher outra para um único personagem.",
+                "Choices": {
+                    "Token": "Token",
+                    "Portrait": "Retrato"
+                }
+            },
+            "NodeImageAutoCrop": {
+                "Name": "Cortar bordas transparentes",
+                "Hint": "Tokens feitos para o anel de token do Foundry deixam uma borda transparente para o anel, e o rosto parece pequeno no grafo. O FANG mostra então só a imagem em si. Um recorte ajustado à mão no editor de personagem sempre tem prioridade."
             },
             "ThemeVariant": {
                 "Name": "Variante de Tema do FANG",

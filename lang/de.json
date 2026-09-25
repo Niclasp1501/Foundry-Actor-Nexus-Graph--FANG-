@@ -264,6 +264,10 @@
         },
         "ActorEditor": {
             "Title": "Akteur bearbeiten",
+            "Image": "Bild im Knoten",
+            "ImageSource": "Bild",
+            "ImageSourceDefault": "Wie in den Einstellungen ({choice})",
+            "ImageAuto": "Automatisch",
             "Profile": "Profil",
             "PlayerView": "Spieleransicht",
             "PlayerNotesTitle": "Spieler-Notizen",
@@ -500,6 +504,18 @@
             "DefaultHidden": {
                 "Name": "Standardmäßig verborgen",
                 "Hint": "Wenn aktiviert, werden neue Tokens automatisch für Spieler verborgen. Du kannst sie später über das Kontextmenü aufdecken."
+            },
+            "NodeImageSource": {
+                "Name": "Bild im Knoten",
+                "Hint": "Welches Bild ein Charakter im Graphen zeigt: das Token oder das Porträt des Actors. Im Charakter-Editor lässt sich das je Charakter anders wählen.",
+                "Choices": {
+                    "Token": "Token",
+                    "Portrait": "Porträt"
+                }
+            },
+            "NodeImageAutoCrop": {
+                "Name": "Durchsichtigen Rand abschneiden",
+                "Hint": "Tokens für Foundrys Token-Ring haben einen durchsichtigen Rand für den Ring, dadurch wirkt das Gesicht im Graphen klein. FANG zeigt dann nur das eigentliche Bild. Ein Ausschnitt, der im Charakter-Editor von Hand gesetzt ist, hat immer Vorrang."
             },
             "ThemeVariant": {
                 "Name": "FANG-Design",

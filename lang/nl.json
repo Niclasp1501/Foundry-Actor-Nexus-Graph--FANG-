@@ -264,6 +264,10 @@
         },
         "ActorEditor": {
             "Title": "Actor bewerken",
+            "Image": "Afbeelding in de knoop",
+            "ImageSource": "Afbeelding",
+            "ImageSourceDefault": "Zoals in de instellingen ({choice})",
+            "ImageAuto": "Automatisch",
             "Profile": "Profiel",
             "PlayerView": "Spelersweergave",
             "PlayerNotesTitle": "Spelersnotities",
@@ -500,6 +504,18 @@
             "DefaultHidden": {
                 "Name": "Standaard Verborgen Modus",
                 "Hint": "Indien ingeschakeld, worden nieuwe tokens die op de grafiek worden gesleept automatisch verborgen voor spelers. Je kunt ze later via het contextmenu zichtbaar maken."
+            },
+            "NodeImageSource": {
+                "Name": "Afbeelding in de knoop",
+                "Hint": "Welke afbeelding een personage in de graaf toont: het token of het portret van de actor. In de personage-editor kun je per personage anders kiezen.",
+                "Choices": {
+                    "Token": "Token",
+                    "Portrait": "Portret"
+                }
+            },
+            "NodeImageAutoCrop": {
+                "Name": "Transparante randen wegsnijden",
+                "Hint": "Tokens voor de tokenring van Foundry laten een transparante rand vrij voor de ring, waardoor het gezicht in de graaf klein lijkt. FANG toont dan alleen de afbeelding zelf. Een uitsnede die je in de personage-editor met de hand instelt, gaat altijd voor."
             },
             "ThemeVariant": {
                 "Name": "FANG Thema",

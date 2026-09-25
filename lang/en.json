@@ -264,6 +264,10 @@
         },
         "ActorEditor": {
             "Title": "Edit Actor",
+            "Image": "Picture in the node",
+            "ImageSource": "Picture",
+            "ImageSourceDefault": "As in the settings ({choice})",
+            "ImageAuto": "Automatic",
             "Profile": "Profile",
             "PlayerView": "Player View",
             "PlayerNotesTitle": "Player Notes",
@@ -500,6 +504,18 @@
             "DefaultHidden": {
                 "Name": "Default Hidden Mode",
                 "Hint": "If enabled, new tokens dragged onto the graph are automatically hidden for players. You can reveal them later via the context menu."
+            },
+            "NodeImageSource": {
+                "Name": "Picture in the node",
+                "Hint": "Which picture a character shows in the graph: the token or the actor's portrait. The character editor can choose otherwise for a single character.",
+                "Choices": {
+                    "Token": "Token",
+                    "Portrait": "Portrait"
+                }
+            },
+            "NodeImageAutoCrop": {
+                "Name": "Cut away transparent borders",
+                "Hint": "Tokens made for Foundry's token ring leave a transparent border for the ring, so the face looks small in the graph. FANG then shows only the picture itself. A cut set by hand in the character editor always wins."
             },
             "ThemeVariant": {
                 "Name": "FANG Theme",

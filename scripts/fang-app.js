@@ -37,6 +37,14 @@ const FANG_GRAPH_SCHEMA_VERSION = 2;
  */
 export const FANG_EXTENSION_VERSION = 1;
 
+/**
+ * What FANG knows about each picture it shows in a node: its size, and the square that holds
+ * its visible part. Tokens made for Foundry's token ring leave a wide transparent border for
+ * the ring; drawn whole, the face sits small in an empty circle. Worked out once per picture.
+ */
+const FANG_IMAGE_INFO = new Map(); // src -> { w, h, trim: { x, y, zoom } } | "loading"
+export const fangNodeImageOptions = { autoCrop: true };
+
 /** Which rail button belongs to which sidebar panel. Add a panel -> add a line here. */
 const FANG_RAIL_BY_PANEL = {
     affiliation: "#fangRailAffiliation",
@@ -1456,6 +1464,14 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         return node.name || this._localize("FANG.Dropdowns.Unknown", "Unknown");
     }
 
+    /** The cut of a chronicle entry's picture, the same as its node shows. */
+    _getHistoryEntryImageStyle(entry, user = game.user) {
+        const nodeRef = entry.refs?.find(ref => ref.type === "node");
+        const node = nodeRef ? this.graphData.nodes.find(n => n.id === nodeRef.id) : null;
+        if (!node || this._isNodeHiddenForUser(node, user)) return "";
+        return this.nodeImageStyle(node);
+    }
+
     _getHistoryEntryImage(entry, user = game.user) {
         const nodeRef = entry.refs?.find(ref => ref.type === "node");
         const node = nodeRef ? this.graphData.nodes.find(n => n.id === nodeRef.id) : null;
@@ -2784,12 +2800,13 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                             : "";
                         const focusRef = entry.displayRefs.find(ref => ref.type === "node" && ref.canFocus);
                         const imageSrc = this._getHistoryEntryImage(entry);
+                        const imageStyle = this._getHistoryEntryImageStyle(entry);
                         const canEdit = this._canEditHistoryEntry(entry);
                         const category = this._getHistoryCategory(entry.kind);
                         return `
                             <li class="fang-history-entry" data-entry-id="${this._escapeHtml(entry.id)}">
                                 <div class="fang-history-entry-media">
-                                    <img src="${this._escapeHtml(imageSrc)}" alt="">
+                                    <img src="${this._escapeHtml(imageSrc)}" alt="" ${imageStyle ? `style="${this._escapeHtml(imageStyle)}"` : ""}>
                                     <div class="fang-history-entry-body">
                                         <div class="fang-history-entry-head">
                                             <div class="fang-history-title-line">
@@ -4551,7 +4568,143 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         // the moment the node was added, so changing a portrait never reached the graph.
         // node.img still matters: a player who may not see the actor does not have it in
         // their collection at all, and nobody has it once the actor is deleted.
-        return actor?.prototypeToken?.texture?.src || actor?.img || normalizedNodeImg || "icons/svg/mystery-man.svg";
+        // Token or portrait: the node's own choice, else the world's. An actor without a
+        // portrait of its own shows its token either way.
+        const token = actor?.prototypeToken?.texture?.src || null;
+        const portrait = actor?.img && !/mystery-man\.svg$/.test(actor.img) ? actor.img : null;
+        const prefer = node?.imageSource === "portrait" || node?.imageSource === "token"
+            ? node.imageSource
+            : (game.settings?.get?.("fang", "nodeImageSource") === "portrait" ? "portrait" : "token");
+        const first = prefer === "portrait" ? (portrait || token) : (token || portrait);
+        return first || actor?.img || normalizedNodeImg || "icons/svg/mystery-man.svg";
+    }
+
+    /** Size and visible square of a picture, or null while it is still being looked at. */
+    _imageInfo(src) {
+        if (!src) return null;
+        const known = FANG_IMAGE_INFO.get(src);
+        if (known && known !== "loading") return known;
+        if (!known) this._analyzeImage(src);
+        return null;
+    }
+
+    /**
+     * Find the square around the visible part of a picture: its non-transparent pixels, read
+     * from a small copy. A picture without a transparent border is left whole, and so is one
+     * from another server, which the browser does not let anyone read.
+     */
+    _analyzeImage(src, image = null) {
+        if (!src) return;
+        const known = FANG_IMAGE_INFO.get(src);
+        if (known && known !== "loading") return;
+        FANG_IMAGE_INFO.set(src, "loading");
+        const done = (img) => {
+            const w = img.naturalWidth, h = img.naturalHeight;
+            if (!w || !h) { FANG_IMAGE_INFO.delete(src); return; }
+            let trim = { x: 50, y: 50, zoom: 1 };
+            try {
+                const scale = 96 / Math.max(w, h);
+                const cw = Math.max(1, Math.round(w * scale)), ch = Math.max(1, Math.round(h * scale));
+                const canvas = document.createElement("canvas");
+                canvas.width = cw;
+                canvas.height = ch;
+                const ctx = canvas.getContext("2d", { willReadFrequently: true });
+                ctx.drawImage(img, 0, 0, cw, ch);
+                const data = ctx.getImageData(0, 0, cw, ch).data;
+                let minX = cw, minY = ch, maxX = -1, maxY = -1;
+                for (let y = 0; y < ch; y++) {
+                    for (let x = 0; x < cw; x++) {
+                        if (data[(y * cw + x) * 4 + 3] <= 24) continue;
+                        if (x < minX) minX = x;
+                        if (x > maxX) maxX = x;
+                        if (y < minY) minY = y;
+                        if (y > maxY) maxY = y;
+                    }
+                }
+                if (maxX >= 0) {
+                    const bx = minX / scale, by = minY / scale;
+                    const bw = (maxX - minX + 1) / scale, bh = (maxY - minY + 1) / scale;
+                    const m = Math.min(w, h);
+                    // A hair of air around the motif, so nothing touches the edge of the circle.
+                    const side = Math.min(m, Math.max(bw, bh) * 1.04);
+                    if (side < m * 0.92) {
+                        const at = (centre, full) => (full - side > 0.5 ? Math.min(100, Math.max(0, (centre - side / 2) / (full - side) * 100)) : 50);
+                        trim = { x: at(bx + bw / 2, w), y: at(by + bh / 2, h), zoom: m / side };
+                    }
+                }
+            } catch (_err) {
+                // Another server's picture cannot be read: it is shown whole.
+            }
+            FANG_IMAGE_INFO.set(src, { w, h, trim });
+            if (this.rendered) this.ticked?.();
+        };
+        if (image?.complete && image.naturalWidth) { done(image); return; }
+        const probe = image ?? new Image();
+        probe.addEventListener("load", () => done(probe), { once: true });
+        probe.addEventListener("error", () => FANG_IMAGE_INFO.delete(src), { once: true });
+        if (!image) probe.src = src;
+    }
+
+    /**
+     * The part of a node's picture to show, as { x, y, zoom } like a place's cut, or null for
+     * the whole picture. A cut set by hand wins, as long as it was set on this very picture;
+     * otherwise the transparent border is cut away, with the token ring's own size as the
+     * answer until the picture has been looked at.
+     */
+    _nodeImageView(node, src) {
+        if (!src) return null;
+        const manual = node?.imgView;
+        if (manual && manual.src === src) return this._normalizeImageView(manual);
+        if (!fangNodeImageOptions.autoCrop) return null;
+        const info = this._imageInfo(src);
+        if (info) return info.trim.zoom > 1.001 ? info.trim : null;
+        const actor = this._getNodeActor(node);
+        const ring = actor?.prototypeToken?.ring;
+        if (ring?.enabled && src === actor?.prototypeToken?.texture?.src) {
+            // Foundry's advice for ring tokens: the subject fills the middle two thirds.
+            return { x: 50, y: 50, zoom: Math.min(4, Math.max(1, (Number(ring.subject?.scale) || 1) / 0.66)) };
+        }
+        return null;
+    }
+
+    /** The square of the picture a view shows, in the picture's own pixels. */
+    _imageSourceRect(view, w, h) {
+        const side = Math.min(w, h) / Math.max(1, view.zoom || 1);
+        return { sx: (w - side) * (view.x ?? 50) / 100, sy: (h - side) * (view.y ?? 50) / 100, side };
+    }
+
+    /**
+     * The same cut for an <img>: an `inset(...)` for CSS object-view-box, or "" while the
+     * picture's size is not known yet or nothing needs cutting.
+     */
+    nodeImageInset(node, src = this._getNodeImageSource(node)) {
+        const view = this._nodeImageView(node, src);
+        const info = view ? this._imageInfo(src) : null;
+        if (!view || !info) return "";
+        const { sx, sy, side } = this._imageSourceRect(view, info.w, info.h);
+        const pct = (v, full) => Math.max(0, v / full * 100).toFixed(2);
+        return `inset(${pct(sy, info.h)}% ${pct(info.w - sx - side, info.w)}% ${pct(info.h - sy - side, info.h)}% ${pct(sx, info.w)}%)`;
+    }
+
+    /** The style an <img> of a node needs to show the same part as the graph. */
+    nodeImageStyle(node, src) {
+        const inset = this.nodeImageInset(node, src);
+        return inset ? `object-fit: cover; object-view-box: ${inset};` : "";
+    }
+
+    /** Load a node's picture afresh: a new source, or a new cut that needs its size. */
+    _reloadNodeImage(node) {
+        const src = this._getNodeImageSource(node);
+        const img = new Image();
+        img._fangSrc = src;
+        img.onload = () => { this._analyzeImage(src, img); if (this.rendered) this.ticked?.(); };
+        img.src = src;
+        for (const n of [node, ...(this.simulation?.nodes() ?? []).filter(n => n.id === node.id && n !== node)]) n.imgElement = img;
+    }
+
+    _reloadAllNodeImages() {
+        for (const node of this.graphData?.nodes ?? []) this._reloadNodeImage(node);
+        if (this.rendered) this.ticked?.();
     }
 
     /**
@@ -6570,6 +6723,24 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     <h3><i class="fas fa-tags"></i> ${localize("FANG.ActorEditor.Conditions", "Conditions")}</h3>
                     ${conditionGrid}
                 </section>
+                <section class="fang-editor-section fang-editor-image">
+                    <h3><i class="fas fa-crop-simple"></i> ${localize("FANG.ActorEditor.Image", "Picture in the node")}</h3>
+                    ${this._getNodeActor(node) ? `
+                    <label for="fang-profile-img-source">${localize("FANG.ActorEditor.ImageSource", "Picture")}</label>
+                    <select id="fang-profile-img-source">
+                        <option value="" ${!node.imageSource ? "selected" : ""}>${escapeHtml(localize("FANG.ActorEditor.ImageSourceDefault", "As in the settings ({choice})").replace("{choice}", localize(game.settings.get("fang", "nodeImageSource") === "portrait" ? "FANG.Settings.NodeImageSource.Choices.Portrait" : "FANG.Settings.NodeImageSource.Choices.Token", "")))}</option>
+                        <option value="token" ${node.imageSource === "token" ? "selected" : ""}>${localize("FANG.Settings.NodeImageSource.Choices.Token", "Token")}</option>
+                        <option value="portrait" ${node.imageSource === "portrait" ? "selected" : ""}>${localize("FANG.Settings.NodeImageSource.Choices.Portrait", "Portrait")}</option>
+                    </select>` : ""}
+                    <div class="fang-node-crop">
+                        <div class="fang-zone-crop-frame is-round fang-node-crop-frame" tabindex="0" aria-label="${escapeHtml(localize("FANG.Zones.CropLabel", "Part of the picture shown"))}"></div>
+                        <div class="fang-node-crop-side">
+                            <input type="range" class="fang-node-crop-zoom" min="1" max="5" step="0.05" aria-label="${escapeHtml(localize("FANG.Zones.CropZoom", "Zoom"))}">
+                            <button type="button" class="fang-node-crop-auto"><i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i> ${localize("FANG.ActorEditor.ImageAuto", "Automatic")}</button>
+                        </div>
+                    </div>
+                    <p class="fang-hint">${localize("FANG.Zones.CropHint", "Drag the picture to move it, scroll or use the slider to zoom.")}</p>
+                </section>
                 <section class="fang-editor-section fang-editor-notes">
                     <h3><i class="fas fa-feather"></i> ${localize("FANG.ActorEditor.Notes", "Notes")}</h3>
                     <textarea id="fang-profile-lore" placeholder="${localize("FANG.Dialogs.InfoInput", "Notes")}">${escapeHtml(node.lore || "")}</textarea>
@@ -6629,6 +6800,15 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                         }
                         node.lore = newLore || null;
                         node.conditions = newConditions;
+                        // Picture: token or portrait, and the cut of it. A cut is kept with the
+                        // picture it was set on, so a new token starts from the automatic cut.
+                        const imageBefore = this._getNodeImageSource(node);
+                        const pickedSource = html.find("#fang-profile-img-source").val();
+                        if (pickedSource !== undefined) node.imageSource = pickedSource || null;
+                        node.imgView = this._profileImageCut?.() ?? node.imgView ?? null;
+                        if (!node.imgView) delete node.imgView;
+                        if (!node.imageSource) delete node.imageSource;
+                        if (this._getNodeImageSource(node) !== imageBefore) this._reloadNodeImage(node);
                         // An add-on reads its own field from the form and writes it onto the
                         // node here, the same moment every other field is taken from the form.
                         Hooks.callAll("fang.actorEditorSaving", this, node, html);
@@ -6667,6 +6847,60 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             },
             default: "save",
             render: (html, dialog) => {
+                // The cut of the node's picture: the round frame shows what the graph will show,
+                // dragged and zoomed like a place's picture. Untouched, it follows the automatic cut.
+                {
+                    const frame = html[0].querySelector(".fang-node-crop-frame");
+                    const slider = html[0].querySelector(".fang-node-crop-zoom");
+                    const sourceSelect = html[0].querySelector("#fang-profile-img-source");
+                    let manual = node.imgView ? { ...node.imgView } : null;
+                    const srcNow = () => this._getNodeImageSource({ ...node, imageSource: sourceSelect ? (sourceSelect.value || null) : node.imageSource });
+                    const autoView = (src) => this._nodeImageView({ ...node, imgView: null }, src) ?? { x: 50, y: 50, zoom: 1 };
+                    const viewNow = () => {
+                        const src = srcNow();
+                        return manual && manual.src === src ? this._normalizeImageView(manual) : autoView(src);
+                    };
+                    const paint = () => {
+                        const src = srcNow();
+                        const view = viewNow();
+                        frame.innerHTML = this.zoneImageHtml({ imgView: view }, { src, view: "imgView" });
+                        slider.value = String(view.zoom);
+                    };
+                    const change = (patch) => { manual = { ...viewNow(), ...patch, src: srcNow() }; paint(); };
+                    this._profileImageCut = () => (manual && manual.src === srcNow() ? { ...this._normalizeImageView(manual), src: manual.src } : null);
+                    slider.addEventListener("input", () => change({ zoom: Number(slider.value) }));
+                    frame.addEventListener("wheel", (event) => {
+                        event.preventDefault();
+                        const zoom = viewNow().zoom;
+                        change({ zoom: Math.min(5, Math.max(1, zoom * (event.deltaY < 0 ? 1.08 : 1 / 1.08))) });
+                    }, { passive: false });
+                    frame.addEventListener("pointerdown", (event) => {
+                        event.preventDefault();
+                        frame.setPointerCapture?.(event.pointerId);
+                        const start = { px: event.clientX, py: event.clientY, ...viewNow() };
+                        const size = frame.clientWidth || 120;
+                        const move = (e) => change({
+                            x: Math.min(100, Math.max(0, start.x - (e.clientX - start.px) * 100 / (size * start.zoom))),
+                            y: Math.min(100, Math.max(0, start.y - (e.clientY - start.py) * 100 / (size * start.zoom)))
+                        });
+                        const up = () => { frame.removeEventListener("pointermove", move); frame.removeEventListener("pointerup", up); };
+                        frame.addEventListener("pointermove", move);
+                        frame.addEventListener("pointerup", up);
+                    });
+                    frame.addEventListener("keydown", (event) => {
+                        const step = { ArrowLeft: [-2, 0], ArrowRight: [2, 0], ArrowUp: [0, -2], ArrowDown: [0, 2] }[event.key];
+                        if (!step) return;
+                        event.preventDefault();
+                        const v = viewNow();
+                        change({ x: Math.min(100, Math.max(0, v.x + step[0])), y: Math.min(100, Math.max(0, v.y + step[1])) });
+                    });
+                    html[0].querySelector(".fang-node-crop-auto").addEventListener("click", () => { manual = null; paint(); });
+                    sourceSelect?.addEventListener("change", paint);
+                    // The size of a picture is looked at once; until then the frame shows it whole.
+                    const src = srcNow();
+                    if (!this._imageInfo(src)) setTimeout(paint, 400);
+                    paint();
+                }
                 // Everything the faction picker needs, before the GM-only part below: a player
                 // who may edit an open node gets the same list.
                 const liste = html.find("#fang-profile-factions");
@@ -8183,7 +8417,10 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     img.src = "icons/svg/mystery-man.svg";
                 };
                 img.src = imgSrc;
-                img.onload = () => { if (this.simulation) this.simulation.alpha(0.05).restart(); };
+                img.onload = () => {
+                    this._analyzeImage(imgSrc, img);
+                    if (this.simulation) this.simulation.alpha(0.05).restart();
+                };
                 nInfo.imgElement = img;
             } else if (oldNode && oldNode.imgElement) {
                 nInfo.imgElement = oldNode.imgElement;
@@ -9000,7 +9237,15 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 this.context.save();
                 this._tokenPath(node, pos.x, pos.y, radius);
                 this.context.clip();
-                this.context.drawImage(node.imgElement, pos.x - radius, pos.y - radius, radius * 2, radius * 2);
+                // Only the part of the picture that is the picture: a ring token's border for
+                // the ring, or a cut set by hand, would otherwise leave a small face in a big circle.
+                const view = this._nodeImageView(node, node.imgElement._fangSrc);
+                if (view) {
+                    const { sx, sy, side } = this._imageSourceRect(view, node.imgElement.naturalWidth, node.imgElement.naturalHeight);
+                    this.context.drawImage(node.imgElement, sx, sy, side, side, pos.x - radius, pos.y - radius, radius * 2, radius * 2);
+                } else {
+                    this.context.drawImage(node.imgElement, pos.x - radius, pos.y - radius, radius * 2, radius * 2);
+                }
                 this.context.restore();
             } else {
                 this._tokenPath(node, pos.x, pos.y, radius);
@@ -10158,6 +10403,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             info: link.info || "",
             sourcePortrait: sourceImg,
             targetPortrait: targetImg,
+            sourceInset: this._isNodeHiddenForUser(sourceNode, player) ? "" : this.nodeImageInset(sourceNode, sourceImg),
+            targetInset: this._isNodeHiddenForUser(targetNode, player) ? "" : this.nodeImageInset(targetNode, targetImg),
             sourceX: sourceNode.x,
             sourceY: sourceNode.y,
             targetX: targetNode.x,
@@ -10203,8 +10450,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 title.textContent = payload.label;
                 textArea.innerHTML = payload.info || "";
 
-                if (payload.sourcePortrait && sourcePortrait) sourcePortrait.src = payload.sourcePortrait;
-                if (payload.targetPortrait && targetPortrait) targetPortrait.src = payload.targetPortrait;
+                const cut = (el, inset) => { if (!el) return; el.style.objectFit = inset ? "cover" : ""; el.style.objectViewBox = inset || ""; };
+                if (payload.sourcePortrait && sourcePortrait) { sourcePortrait.src = payload.sourcePortrait; cut(sourcePortrait, payload.sourceInset); }
+                if (payload.targetPortrait && targetPortrait) { targetPortrait.src = payload.targetPortrait; cut(targetPortrait, payload.targetInset); }
 
                 // Handle directional indicator
                 const directionalIndicator = overlay.querySelector(".edge-directional-indicator");
@@ -10280,6 +10528,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             subtitle: subtitle,
             lore: loreText,
             portrait: imgSrc,
+            portraitInset: hiddenForUser ? "" : this.nodeImageInset(node, imgSrc),
             quests: this._getNodeQuestsForUser(node, asPlayer)
         };
     }
@@ -10369,6 +10618,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
 
                 if (payload.portrait && portrait) {
                     portrait.src = payload.portrait;
+                    portrait.style.objectFit = payload.portraitInset ? "cover" : "";
+                    portrait.style.objectViewBox = payload.portraitInset || "";
                     portraitContainer.classList.remove("hidden");
                 } else {
                     portraitContainer.classList.add("hidden");
@@ -10868,6 +11119,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             { id: "look", icon: "fa-palette", title: t("FANG.SettingsPanel.Look", "Look"), items: [
                 { key: "themeVariant" },
                 { key: "tokenSize" },
+                { key: "nodeImageSource" },
+                { key: "nodeImageAutoCrop" },
                 { key: "centerNodeColor" },
                 { button: "background" },
                 { key: "enableCosmicWind" },

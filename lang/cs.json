@@ -264,6 +264,10 @@
         },
         "ActorEditor": {
             "Title": "Upravit postavu",
+            "Image": "Obrázek v uzlu",
+            "ImageSource": "Obrázek",
+            "ImageSourceDefault": "Podle nastavení ({choice})",
+            "ImageAuto": "Automaticky",
             "Profile": "Profil",
             "PlayerView": "Pohled hráče",
             "PlayerNotesTitle": "Hráčské poznámky",
@@ -500,6 +504,18 @@
             "DefaultHidden": {
                 "Name": "Výchozí skrytý režim",
                 "Hint": "Pokud je povoleno, nové žetony přetažené na graf jsou pro hráče automaticky skryté. Můžete je později odhalit prostřednictvím kontextového menu."
+            },
+            "NodeImageSource": {
+                "Name": "Obrázek v uzlu",
+                "Hint": "Který obrázek postava v grafu ukazuje: token, nebo portrét aktéra. V editoru postavy lze pro jednotlivou postavu zvolit jinak.",
+                "Choices": {
+                    "Token": "Token",
+                    "Portrait": "Portrét"
+                }
+            },
+            "NodeImageAutoCrop": {
+                "Name": "Odříznout průhledný okraj",
+                "Hint": "Tokeny pro prstenec tokenů ve Foundry mají průhledný okraj pro prstenec, takže tvář v grafu působí malá. FANG pak ukazuje jen samotný obrázek. Výřez nastavený ručně v editoru postavy má vždy přednost."
             },
             "ThemeVariant": {
                 "Name": "Varianta tématu FANG",

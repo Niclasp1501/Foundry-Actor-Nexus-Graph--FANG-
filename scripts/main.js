@@ -1,4 +1,4 @@
-import { FangApplication, FANG_EXTENSION_VERSION } from "./fang-app.js";
+import { FangApplication, FANG_EXTENSION_VERSION, fangNodeImageOptions } from "./fang-app.js";
 import { willkommenEinrichten, willkommenZeigen } from "./willkommen.js";
 import { fensterPassenEinrichten } from "./fensterpassen.js";
 import { verzeichnisKnopfEinrichten } from "./verzeichnisknopf.js";
@@ -518,6 +518,35 @@ Hooks.once("init", () => {
     default: false
   });
 
+  // Which picture a node shows, and whether a transparent border is cut away. Tokens made
+  // for Foundry's token ring leave a wide border for the ring; drawn whole, the face is small.
+  game.settings.register("fang", "nodeImageSource", {
+    name: "FANG.Settings.NodeImageSource.Name",
+    hint: "FANG.Settings.NodeImageSource.Hint",
+    scope: "world",
+    config: false,
+    type: String,
+    choices: {
+      token: "FANG.Settings.NodeImageSource.Choices.Token",
+      portrait: "FANG.Settings.NodeImageSource.Choices.Portrait"
+    },
+    default: "token",
+    onChange: () => { if (fangApp?.rendered) fangApp._reloadAllNodeImages(); }
+  });
+
+  game.settings.register("fang", "nodeImageAutoCrop", {
+    name: "FANG.Settings.NodeImageAutoCrop.Name",
+    hint: "FANG.Settings.NodeImageAutoCrop.Hint",
+    scope: "world",
+    config: false,
+    type: Boolean,
+    default: true,
+    onChange: (value) => {
+      fangNodeImageOptions.autoCrop = value !== false;
+      if (fangApp?.rendered) fangApp.ticked();
+    }
+  });
+
   game.settings.register("fang", "themeVariant", {
     name: "FANG.Settings.ThemeVariant.Name",
     hint: "FANG.Settings.ThemeVariant.Hint",
@@ -635,6 +664,7 @@ Hooks.once("init", () => {
 });
 
 Hooks.once("ready", async () => {
+  fangNodeImageOptions.autoCrop = game.settings.get("fang", "nodeImageAutoCrop") !== false;
   fensterPassenEinrichten();
   // The calendar in use sets the format of game dates; entries from an earlier calendar
   // module or typed by hand are brought into it once, on the active GM's side.

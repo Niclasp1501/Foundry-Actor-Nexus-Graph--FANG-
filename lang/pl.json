@@ -264,6 +264,10 @@
         },
         "ActorEditor": {
             "Title": "Edytuj aktora",
+            "Image": "Obraz w węźle",
+            "ImageSource": "Obraz",
+            "ImageSourceDefault": "Jak w ustawieniach ({choice})",
+            "ImageAuto": "Automatycznie",
             "Profile": "Profil",
             "PlayerView": "Widok graczy",
             "PlayerNotesTitle": "Notatki graczy",
@@ -500,6 +504,18 @@
             "DefaultHidden": {
                 "Name": "Domyślnie ukryty",
                 "Hint": "Jeśli włączone, nowe tokeny przeciągnięte na wykres są automatycznie ukrywane dla graczy. Możesz je później ujawnić za pomocą menu kontekstowego."
+            },
+            "NodeImageSource": {
+                "Name": "Obraz w węźle",
+                "Hint": "Który obraz postać pokazuje w grafie: token czy portret aktora. W edytorze postaci można wybrać inaczej dla pojedynczej postaci.",
+                "Choices": {
+                    "Token": "Token",
+                    "Portrait": "Portret"
+                }
+            },
+            "NodeImageAutoCrop": {
+                "Name": "Przycinaj przezroczyste krawędzie",
+                "Hint": "Tokeny przygotowane pod pierścień tokenów Foundry mają przezroczystą krawędź na pierścień, przez co twarz w grafie wydaje się mała. FANG pokazuje wtedy tylko sam obraz. Kadr ustawiony ręcznie w edytorze postaci zawsze ma pierwszeństwo."
             },
             "ThemeVariant": {
                 "Name": "Wariant motywu FANG",
