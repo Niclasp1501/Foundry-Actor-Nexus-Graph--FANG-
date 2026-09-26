@@ -273,6 +273,9 @@
             "RingOff": "Aus",
             "RingColor": "Farbe",
             "RingColorReset": "Standardfarbe",
+            "Background": "Hintergrund",
+            "BackgroundOwn": "Eigene Farbe",
+            "BackgroundNone": "Kein Hintergrund",
             "Profile": "Profil",
             "PlayerView": "Spieleransicht",
             "PlayerNotesTitle": "Spieler-Notizen",
@@ -533,6 +536,21 @@
             "NodeRingWidth": {
                 "Name": "Breite des Rings",
                 "Hint": "In Pixeln bei normaler Vergrößerung. (Standard: 3)"
+            },
+            "NodeBackground": {
+                "Name": "Hintergrund hinter freigestellten Bildern",
+                "Hint": "Was dort zu sehen ist, wo ein Bild durchsichtig ist, etwa bei einer freigestellten Figur. Bilder mit eigenem Hintergrund bleiben unverändert. Im Charakter-Editor lässt sich das je Charakter anders wählen.",
+                "Choices": {
+                    "Gradient": "Heller Verlauf",
+                    "White": "Weiß",
+                    "Faction": "Helle Fraktionsfarbe",
+                    "Color": "Eigene Farbe",
+                    "None": "Kein Hintergrund"
+                }
+            },
+            "NodeBackgroundColor": {
+                "Name": "Eigene Hintergrundfarbe",
+                "Hint": "Gilt, wenn oben „Eigene Farbe“ gewählt ist."
             },
             "ThemeVariant": {
                 "Name": "FANG-Design",

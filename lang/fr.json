@@ -273,6 +273,9 @@
             "RingOff": "Désactivé",
             "RingColor": "Couleur",
             "RingColorReset": "Couleur par défaut",
+            "Background": "Fond",
+            "BackgroundOwn": "Couleur personnalisée",
+            "BackgroundNone": "Sans fond",
             "Profile": "Profil",
             "PlayerView": "Vue joueurs",
             "PlayerNotesTitle": "Notes des joueurs",
@@ -533,6 +536,21 @@
             "NodeRingWidth": {
                 "Name": "Épaisseur de l'anneau",
                 "Hint": "En pixels au zoom normal. (Par défaut : 3)"
+            },
+            "NodeBackground": {
+                "Name": "Fond derrière les images détourées",
+                "Hint": "Ce qui apparaît là où une image est transparente, comme une figurine détourée. Les images avec leur propre fond ne changent pas. L'éditeur de personnage permet un autre choix pour un seul personnage.",
+                "Choices": {
+                    "Gradient": "Dégradé clair",
+                    "White": "Blanc",
+                    "Faction": "Couleur de faction claire",
+                    "Color": "Couleur personnalisée",
+                    "None": "Sans fond"
+                }
+            },
+            "NodeBackgroundColor": {
+                "Name": "Couleur de fond personnalisée",
+                "Hint": "Utilisée quand « Couleur personnalisée » est choisie ci-dessus."
             },
             "ThemeVariant": {
                 "Name": "Variante du thème FANG",

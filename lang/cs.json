@@ -273,6 +273,9 @@
             "RingOff": "Vypnuto",
             "RingColor": "Barva",
             "RingColorReset": "Výchozí barva",
+            "Background": "Pozadí",
+            "BackgroundOwn": "Vlastní barva",
+            "BackgroundNone": "Bez pozadí",
             "Profile": "Profil",
             "PlayerView": "Pohled hráče",
             "PlayerNotesTitle": "Hráčské poznámky",
@@ -533,6 +536,21 @@
             "NodeRingWidth": {
                 "Name": "Šířka prstence",
                 "Hint": "V pixelech při běžném přiblížení. (Výchozí: 3)"
+            },
+            "NodeBackground": {
+                "Name": "Pozadí za vyříznutými obrázky",
+                "Hint": "Co je vidět tam, kde je obrázek průhledný, například u vyříznuté postavy. Obrázky s vlastním pozadím se nemění. V editoru postavy lze pro jednotlivou postavu zvolit jinak.",
+                "Choices": {
+                    "Gradient": "Světlý přechod",
+                    "White": "Bílá",
+                    "Faction": "Světlá barva frakce",
+                    "Color": "Vlastní barva",
+                    "None": "Bez pozadí"
+                }
+            },
+            "NodeBackgroundColor": {
+                "Name": "Vlastní barva pozadí",
+                "Hint": "Platí, když je výše zvolena „Vlastní barva“."
             },
             "ThemeVariant": {
                 "Name": "Varianta tématu FANG",

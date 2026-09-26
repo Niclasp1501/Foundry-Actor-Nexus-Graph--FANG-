@@ -2585,6 +2585,10 @@ body.fang-theme-cyberpunk .fang-dialog .faction-icon-preview {
     padding: 2px;
 }
 
+.fang-app-container .fang-node-bg-row {
+    margin-top: 4px;
+}
+
 .fang-app-container .fang-node-ring-row input[type="color"]:disabled {
     opacity: 0.4;
 }

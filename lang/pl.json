@@ -273,6 +273,9 @@
             "RingOff": "Wyłączony",
             "RingColor": "Kolor",
             "RingColorReset": "Kolor domyślny",
+            "Background": "Tło",
+            "BackgroundOwn": "Własny kolor",
+            "BackgroundNone": "Bez tła",
             "Profile": "Profil",
             "PlayerView": "Widok graczy",
             "PlayerNotesTitle": "Notatki graczy",
@@ -533,6 +536,21 @@
             "NodeRingWidth": {
                 "Name": "Szerokość pierścienia",
                 "Hint": "W pikselach przy zwykłym powiększeniu. (Domyślnie: 3)"
+            },
+            "NodeBackground": {
+                "Name": "Tło za wyciętymi obrazami",
+                "Hint": "Co widać tam, gdzie obraz jest przezroczysty, na przykład przy wyciętej postaci. Obrazy z własnym tłem się nie zmieniają. W edytorze postaci można wybrać inaczej dla pojedynczej postaci.",
+                "Choices": {
+                    "Gradient": "Jasny gradient",
+                    "White": "Biały",
+                    "Faction": "Jasny kolor frakcji",
+                    "Color": "Własny kolor",
+                    "None": "Bez tła"
+                }
+            },
+            "NodeBackgroundColor": {
+                "Name": "Własny kolor tła",
+                "Hint": "Obowiązuje, gdy powyżej wybrano „Własny kolor”."
             },
             "ThemeVariant": {
                 "Name": "Wariant motywu FANG",

@@ -45,7 +45,16 @@ export const FANG_EXTENSION_VERSION = 1;
 const FANG_IMAGE_INFO = new Map(); // src -> { w, h, trim: { x, y, zoom } } | "loading"
 // The picture options and FANG's own ring, read once from the settings and kept current by
 // their onChange: the canvas asks for them on every frame for every node.
-export const fangNodeImageOptions = { autoCrop: true, ring: true, ringColor: "#7a7a7a", ringWidth: 3 };
+export const fangNodeImageOptions = { autoCrop: true, ring: true, ringColor: "#7a7a7a", ringWidth: 3, background: "gradient", backgroundColor: "#fbf8f1", dark: false };
+
+/** A colour mixed towards white: 0 leaves it, 1 is white. */
+function fangTint(hex, amount) {
+    const m = /^#?([0-9a-f]{6})$/i.exec(String(hex || "").trim());
+    if (!m) return null;
+    const n = parseInt(m[1], 16);
+    const mix = (c) => Math.round(c + (255 - c) * amount).toString(16).padStart(2, "0");
+    return `#${mix(n >> 16)}${mix((n >> 8) & 255)}${mix(n & 255)}`;
+}
 
 /** Which rail button belongs to which sidebar panel. Add a panel -> add a line here. */
 const FANG_RAIL_BY_PANEL = {
@@ -4683,6 +4692,42 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         };
     }
 
+    /**
+     * What lies under a node's picture: it shows only where the picture is transparent, such
+     * as around a cut-out figure, so a portrait with a background of its own looks as before.
+     * A character's own choice ("none" or a colour) wins over the world's. Returns the colour
+     * at the middle and at the edge, or null for nothing.
+     */
+    _nodeBackground(node) {
+        const own = node?.bg;
+        if (own === "none") return null;
+        if (typeof own === "string" && /^#[0-9a-f]{6}$/i.test(own)) return { inner: own, outer: own };
+        const mode = fangNodeImageOptions.background;
+        if (mode === "none") return null;
+        if (mode === "white") return { inner: "#ffffff", outer: "#ffffff" };
+        if (mode === "color") {
+            const colour = fangNodeImageOptions.backgroundColor || "#fbf8f1";
+            return { inner: colour, outer: colour };
+        }
+        if (mode === "faction") {
+            const faction = node?.factionId ? (this.graphData?.factions ?? []).find(f => f.id === node.factionId) : null;
+            if (faction && this._isFactionVisibleToCurrentUser(faction)) {
+                const inner = fangTint(faction.color, 0.88), outer = fangTint(faction.color, 0.72);
+                if (inner && outer) return { inner, outer };
+            }
+        }
+        // The light gradient: nearly white in the middle, warm towards the rim, so the circle
+        // reads as slightly curved. On the dark theme the same idea in the dark.
+        return fangNodeImageOptions.dark ? { inner: "#2b3845", outer: "#121a22" } : { inner: "#fbf8f1", outer: "#e8dfcc" };
+    }
+
+    /** The same ground as a CSS value for an <img>: a gradient, a colour, or "". */
+    _nodeBackgroundCss(node) {
+        const bg = this._nodeBackground(node);
+        if (!bg) return "";
+        return bg.inner === bg.outer ? bg.inner : `radial-gradient(circle at 38% 35%, ${bg.inner}, ${bg.outer})`;
+    }
+
     /** The square of the picture a view shows, in the picture's own pixels. */
     _imageSourceRect(view, w, h) {
         const side = Math.min(w, h) / Math.max(1, view.zoom || 1);
@@ -4705,7 +4750,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
     /** The style an <img> of a node needs to show the same part as the graph. */
     nodeImageStyle(node, src) {
         const inset = this.nodeImageInset(node, src);
-        return inset ? `object-fit: cover; object-view-box: ${inset};` : "";
+        const ground = this._nodeBackgroundCss(node);
+        return `${inset ? `object-fit: cover; object-view-box: ${inset};` : ""}${ground ? `background: ${ground};` : ""}`;
     }
 
     /** Load a node's picture afresh: a new source, or a new cut that needs its size. */
@@ -6766,6 +6812,15 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                         <input type="color" id="fang-profile-ring-color" value="${escapeHtml(node.ringColor || game.settings.get("fang", "nodeRingColor")?.css || game.settings.get("fang", "nodeRingColor") || "#7a7a7a")}" data-tooltip="${escapeHtml(localize("FANG.ActorEditor.RingColor", "Colour"))}" aria-label="${escapeHtml(localize("FANG.ActorEditor.RingColor", "Colour"))}">
                         <button type="button" class="fang-node-ring-reset" data-tooltip="${escapeHtml(localize("FANG.ActorEditor.RingColorReset", "Default colour"))}" aria-label="${escapeHtml(localize("FANG.ActorEditor.RingColorReset", "Default colour"))}"><i class="fas fa-rotate-left" aria-hidden="true"></i></button>
                     </div>
+                    <div class="fang-node-ring-row fang-node-bg-row">
+                        <label for="fang-profile-bg">${localize("FANG.ActorEditor.Background", "Background")}</label>
+                        <select id="fang-profile-bg">
+                            <option value="" ${!node.bg ? "selected" : ""}>${escapeHtml(localize("FANG.ActorEditor.ImageSourceDefault", "As in the settings ({choice})").replace("{choice}", localize(`FANG.Settings.NodeBackground.Choices.${({ gradient: "Gradient", white: "White", faction: "Faction", color: "Color", none: "None" })[game.settings.get("fang", "nodeBackground")] ?? "Gradient"}`, "")))}</option>
+                            <option value="own" ${node.bg && node.bg !== "none" ? "selected" : ""}>${localize("FANG.ActorEditor.BackgroundOwn", "Own colour")}</option>
+                            <option value="none" ${node.bg === "none" ? "selected" : ""}>${localize("FANG.ActorEditor.BackgroundNone", "No background")}</option>
+                        </select>
+                        <input type="color" id="fang-profile-bg-color" value="${escapeHtml(node.bg && node.bg !== "none" ? node.bg : "#fbf8f1")}" data-tooltip="${escapeHtml(localize("FANG.ActorEditor.BackgroundOwn", "Own colour"))}" aria-label="${escapeHtml(localize("FANG.ActorEditor.BackgroundOwn", "Own colour"))}">
+                    </div>
                 </section>
                 <section class="fang-editor-section fang-editor-notes">
                     <h3><i class="fas fa-feather"></i> ${localize("FANG.ActorEditor.Notes", "Notes")}</h3>
@@ -6841,6 +6896,10 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                         node.ringColor = this._profileRingColor?.() ?? node.ringColor ?? null;
                         if (!node.ring) delete node.ring;
                         if (!node.ringColor) delete node.ringColor;
+                        // The ground: the world's unless this character has none or a colour of its own.
+                        const pickedGround = html.find("#fang-profile-bg").val();
+                        node.bg = pickedGround === "none" ? "none" : (pickedGround === "own" ? html.find("#fang-profile-bg-color").val() : null);
+                        if (!node.bg) delete node.bg;
                         if (this._getNodeImageSource(node) !== imageBefore) this._reloadNodeImage(node);
                         // An add-on reads its own field from the form and writes it onto the
                         // node here, the same moment every other field is taken from the form.
@@ -6943,6 +7002,18 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     ringColor.addEventListener("input", () => { ownColor = ringColor.value; paintRing(); });
                     html[0].querySelector(".fang-node-ring-reset").addEventListener("click", () => { ownColor = null; ringColor.value = worldColor(); paintRing(); });
                     paintRing();
+                    // The ground, shown behind the picture in the same frame.
+                    const groundSelect = html[0].querySelector("#fang-profile-bg");
+                    const groundColor = html[0].querySelector("#fang-profile-bg-color");
+                    const paintGround = () => {
+                        const choice = groundSelect.value;
+                        const bg = choice === "none" ? "none" : (choice === "own" ? groundColor.value : null);
+                        frame.style.background = this._nodeBackgroundCss({ ...node, bg }) || "transparent";
+                        groundColor.disabled = choice !== "own";
+                    };
+                    groundSelect.addEventListener("change", paintGround);
+                    groundColor.addEventListener("input", () => { if (groundSelect.value !== "own") groundSelect.value = "own"; paintGround(); });
+                    paintGround();
                     sourceSelect?.addEventListener("change", paint);
                     // The size of a picture is looked at once; until then the frame shows it whole.
                     const src = srcNow();
@@ -9285,6 +9356,19 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 this.context.save();
                 this._tokenPath(node, pos.x, pos.y, radius);
                 this.context.clip();
+                // The ground under the picture, seen only where the picture is transparent.
+                const ground = this._nodeBackground(node);
+                if (ground) {
+                    if (ground.inner === ground.outer) {
+                        this.context.fillStyle = ground.inner;
+                    } else {
+                        const gradient = this.context.createRadialGradient(pos.x - radius * 0.25, pos.y - radius * 0.3, radius * 0.05, pos.x, pos.y, radius);
+                        gradient.addColorStop(0, ground.inner);
+                        gradient.addColorStop(1, ground.outer);
+                        this.context.fillStyle = gradient;
+                    }
+                    this.context.fillRect(pos.x - radius, pos.y - radius, radius * 2, radius * 2);
+                }
                 // Only the part of the picture that is the picture: a ring token's border for
                 // the ring, or a cut set by hand, would otherwise leave a small face in a big circle.
                 const view = this._nodeImageView(node, node.imgElement._fangSrc);
@@ -10465,6 +10549,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             targetPortrait: targetImg,
             sourceInset: this._isNodeHiddenForUser(sourceNode, player) ? "" : this.nodeImageInset(sourceNode, sourceImg),
             targetInset: this._isNodeHiddenForUser(targetNode, player) ? "" : this.nodeImageInset(targetNode, targetImg),
+            sourceGround: this._isNodeHiddenForUser(sourceNode, player) ? "" : this._nodeBackgroundCss(sourceNode),
+            targetGround: this._isNodeHiddenForUser(targetNode, player) ? "" : this._nodeBackgroundCss(targetNode),
             sourceX: sourceNode.x,
             sourceY: sourceNode.y,
             targetX: targetNode.x,
@@ -10510,9 +10596,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 title.textContent = payload.label;
                 textArea.innerHTML = payload.info || "";
 
-                const cut = (el, inset) => { if (!el) return; el.style.objectFit = inset ? "cover" : ""; el.style.objectViewBox = inset || ""; };
-                if (payload.sourcePortrait && sourcePortrait) { sourcePortrait.src = payload.sourcePortrait; cut(sourcePortrait, payload.sourceInset); }
-                if (payload.targetPortrait && targetPortrait) { targetPortrait.src = payload.targetPortrait; cut(targetPortrait, payload.targetInset); }
+                const cut = (el, inset, ground) => { if (!el) return; el.style.objectFit = inset ? "cover" : ""; el.style.objectViewBox = inset || ""; el.style.background = ground || ""; };
+                if (payload.sourcePortrait && sourcePortrait) { sourcePortrait.src = payload.sourcePortrait; cut(sourcePortrait, payload.sourceInset, payload.sourceGround); }
+                if (payload.targetPortrait && targetPortrait) { targetPortrait.src = payload.targetPortrait; cut(targetPortrait, payload.targetInset, payload.targetGround); }
 
                 // Handle directional indicator
                 const directionalIndicator = overlay.querySelector(".edge-directional-indicator");
@@ -10589,6 +10675,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             lore: loreText,
             portrait: imgSrc,
             portraitInset: hiddenForUser ? "" : this.nodeImageInset(node, imgSrc),
+            portraitGround: hiddenForUser ? "" : this._nodeBackgroundCss(node),
             quests: this._getNodeQuestsForUser(node, asPlayer)
         };
     }
@@ -10680,6 +10767,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     portrait.src = payload.portrait;
                     portrait.style.objectFit = payload.portraitInset ? "cover" : "";
                     portrait.style.objectViewBox = payload.portraitInset || "";
+                    portrait.style.background = payload.portraitGround || "";
                     portraitContainer.classList.remove("hidden");
                 } else {
                     portraitContainer.classList.add("hidden");
@@ -11184,6 +11272,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 { key: "nodeRing" },
                 { key: "nodeRingColor", parent: "nodeRing" },
                 { key: "nodeRingWidth", parent: "nodeRing" },
+                { key: "nodeBackground" },
+                { key: "nodeBackgroundColor", parent: "nodeBackground", parentValue: "color" },
                 { key: "centerNodeColor" },
                 { button: "background" },
                 { key: "enableCosmicWind" },
@@ -11254,13 +11344,15 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     ${it.button === "import" ? `<input type="file" class="fang-set-import" accept=".json" hidden>` : ""}${hint ? `<p class="fang-hint">${esc(hint)}</p>` : ""}</div>`;
             }
             if (!configOf(it.key)) return "";
-            return `<div class="fang-set-item${it.parent ? " is-sub" : ""}" data-item="${it.key}" ${it.parent ? `data-parent="${it.parent}"` : ""}>${field(it.key)}</div>`;
+            return `<div class="fang-set-item${it.parent ? " is-sub" : ""}" data-item="${it.key}" ${it.parent ? `data-parent="${it.parent}"` : ""} ${it.parentValue ? `data-parent-value="${it.parentValue}"` : ""}>${field(it.key)}</div>`;
         };
         host.innerHTML = `<h2 class="fang-set-heading"><i class="fas ${section.icon}" aria-hidden="true"></i> ${esc(section.title)}</h2>
             <div class="fang-set-body">${section.items.map(item).join("")}</div>`;
 
         const syncParents = () => host.querySelectorAll(".fang-set-item[data-parent]").forEach(el => {
-            const on = !!game.settings.get("fang", el.dataset.parent);
+            // A switch turns its children on; a choice does so only for the value named.
+            const parent = game.settings.get("fang", el.dataset.parent);
+            const on = el.dataset.parentValue ? parent === el.dataset.parentValue : !!parent;
             el.classList.toggle("is-off", !on);
             el.querySelectorAll("input, select, button").forEach(c => { c.disabled = !on; });
         });

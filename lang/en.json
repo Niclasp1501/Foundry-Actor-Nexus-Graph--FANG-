@@ -273,6 +273,9 @@
             "RingOff": "Off",
             "RingColor": "Colour",
             "RingColorReset": "Default colour",
+            "Background": "Background",
+            "BackgroundOwn": "Own colour",
+            "BackgroundNone": "No background",
             "Profile": "Profile",
             "PlayerView": "Player View",
             "PlayerNotesTitle": "Player Notes",
@@ -533,6 +536,21 @@
             "NodeRingWidth": {
                 "Name": "Width of the ring",
                 "Hint": "In pixels at normal zoom. (Default: 3)"
+            },
+            "NodeBackground": {
+                "Name": "Background behind cut-out pictures",
+                "Hint": "What shows where a picture is transparent, such as a figure without a background. Pictures with a background of their own are not affected; the character editor can choose otherwise for a single character.",
+                "Choices": {
+                    "Gradient": "Light gradient",
+                    "White": "White",
+                    "Faction": "Light faction colour",
+                    "Color": "Own colour",
+                    "None": "No background"
+                }
+            },
+            "NodeBackgroundColor": {
+                "Name": "Own background colour",
+                "Hint": "Used when \"Own colour\" is chosen above."
             },
             "ThemeVariant": {
                 "Name": "FANG Theme",

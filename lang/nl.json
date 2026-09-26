@@ -273,6 +273,9 @@
             "RingOff": "Uit",
             "RingColor": "Kleur",
             "RingColorReset": "Standaardkleur",
+            "Background": "Achtergrond",
+            "BackgroundOwn": "Eigen kleur",
+            "BackgroundNone": "Geen achtergrond",
             "Profile": "Profiel",
             "PlayerView": "Spelersweergave",
             "PlayerNotesTitle": "Spelersnotities",
@@ -533,6 +536,21 @@
             "NodeRingWidth": {
                 "Name": "Breedte van de ring",
                 "Hint": "In pixels bij normale zoom. (Standaard: 3)"
+            },
+            "NodeBackground": {
+                "Name": "Achtergrond achter vrijstaande afbeeldingen",
+                "Hint": "Wat je ziet waar een afbeelding transparant is, zoals bij een vrijstaande figuur. Afbeeldingen met een eigen achtergrond veranderen niet. In de personage-editor kun je per personage anders kiezen.",
+                "Choices": {
+                    "Gradient": "Lichte overloop",
+                    "White": "Wit",
+                    "Faction": "Lichte factiekleur",
+                    "Color": "Eigen kleur",
+                    "None": "Geen achtergrond"
+                }
+            },
+            "NodeBackgroundColor": {
+                "Name": "Eigen achtergrondkleur",
+                "Hint": "Geldt als hierboven \"Eigen kleur\" is gekozen."
             },
             "ThemeVariant": {
                 "Name": "FANG Thema",

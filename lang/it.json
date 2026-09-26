@@ -273,6 +273,9 @@
             "RingOff": "Disattivo",
             "RingColor": "Colore",
             "RingColorReset": "Colore predefinito",
+            "Background": "Sfondo",
+            "BackgroundOwn": "Colore personalizzato",
+            "BackgroundNone": "Nessuno sfondo",
             "Profile": "Profilo",
             "PlayerView": "Vista giocatori",
             "PlayerNotesTitle": "Note dei giocatori",
@@ -533,6 +536,21 @@
             "NodeRingWidth": {
                 "Name": "Spessore dell'anello",
                 "Hint": "In pixel con lo zoom normale. (Predefinito: 3)"
+            },
+            "NodeBackground": {
+                "Name": "Sfondo dietro le immagini scontornate",
+                "Hint": "Ciò che si vede dove un'immagine è trasparente, come una figura senza sfondo. Le immagini con uno sfondo proprio non cambiano. Nell'editor del personaggio si può scegliere diversamente per un singolo personaggio.",
+                "Choices": {
+                    "Gradient": "Sfumatura chiara",
+                    "White": "Bianco",
+                    "Faction": "Colore di fazione chiaro",
+                    "Color": "Colore personalizzato",
+                    "None": "Nessuno sfondo"
+                }
+            },
+            "NodeBackgroundColor": {
+                "Name": "Colore di sfondo personalizzato",
+                "Hint": "Vale quando sopra è scelto «Colore personalizzato»."
             },
             "ThemeVariant": {
                 "Name": "Variante Tema FANG",

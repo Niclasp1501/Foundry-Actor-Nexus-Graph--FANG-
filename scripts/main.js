@@ -37,6 +37,7 @@ function _fangGetRenderedFangApps() {
 function _fangApplyVisualThemeToOpenApps() {
   const themeVariant = _fangGetThemeVariant();
   const enabled = themeVariant === "cyberpunk";
+  fangNodeImageOptions.dark = enabled;
   document.documentElement?.classList?.toggle("fang-theme-cyberpunk", enabled);
   document.body?.classList?.toggle("fang-theme-cyberpunk", enabled);
   for (const app of _fangGetRenderedFangApps()) {
@@ -584,6 +585,39 @@ Hooks.once("init", () => {
     onChange: ringChanged
   });
 
+  // The ground under a node's picture, seen where the picture is transparent.
+  const groundChanged = () => {
+    fangNodeImageOptions.background = game.settings.get("fang", "nodeBackground") || "gradient";
+    const colour = game.settings.get("fang", "nodeBackgroundColor");
+    fangNodeImageOptions.backgroundColor = colour?.css ?? (colour ? String(colour) : "#fbf8f1");
+    if (fangApp?.rendered) fangApp.ticked();
+  };
+  game.settings.register("fang", "nodeBackground", {
+    name: "FANG.Settings.NodeBackground.Name",
+    hint: "FANG.Settings.NodeBackground.Hint",
+    scope: "world",
+    config: false,
+    type: String,
+    choices: {
+      gradient: "FANG.Settings.NodeBackground.Choices.Gradient",
+      white: "FANG.Settings.NodeBackground.Choices.White",
+      faction: "FANG.Settings.NodeBackground.Choices.Faction",
+      color: "FANG.Settings.NodeBackground.Choices.Color",
+      none: "FANG.Settings.NodeBackground.Choices.None"
+    },
+    default: "gradient",
+    onChange: groundChanged
+  });
+  game.settings.register("fang", "nodeBackgroundColor", {
+    name: "FANG.Settings.NodeBackgroundColor.Name",
+    hint: "FANG.Settings.NodeBackgroundColor.Hint",
+    scope: "world",
+    config: false,
+    type: new foundry.data.fields.ColorField({ initial: "#fbf8f1" }),
+    default: "#fbf8f1",
+    onChange: groundChanged
+  });
+
   game.settings.register("fang", "themeVariant", {
     name: "FANG.Settings.ThemeVariant.Name",
     hint: "FANG.Settings.ThemeVariant.Hint",
@@ -705,6 +739,9 @@ Hooks.once("ready", async () => {
   fangNodeImageOptions.ring = game.settings.get("fang", "nodeRing") !== false;
   { const colour = game.settings.get("fang", "nodeRingColor"); fangNodeImageOptions.ringColor = colour?.css ?? (colour ? String(colour) : "#7a7a7a"); }
   fangNodeImageOptions.ringWidth = Number(game.settings.get("fang", "nodeRingWidth")) || 3;
+  fangNodeImageOptions.background = game.settings.get("fang", "nodeBackground") || "gradient";
+  { const colour = game.settings.get("fang", "nodeBackgroundColor"); fangNodeImageOptions.backgroundColor = colour?.css ?? (colour ? String(colour) : "#fbf8f1"); }
+  fangNodeImageOptions.dark = _fangGetThemeVariant() === "cyberpunk";
   fensterPassenEinrichten();
   // The calendar in use sets the format of game dates; entries from an earlier calendar
   // module or typed by hand are brought into it once, on the active GM's side.
