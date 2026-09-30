@@ -8,6 +8,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Added
 - **A ground for cut-out figures.** Where a picture is transparent, such as a figure without a background, FANG now lays a light gradient under it instead of letting the canvas and the connections show through. Under Look it can be white, a light tint of the faction colour, a colour of your own or switched off; the character editor can choose otherwise for a single character. Pictures with a background of their own look as before.
 
+### Fixed
+- **A picture's cut can be moved in every direction.** At full size the cut of a square or tall picture could not be moved sideways at all. It now moves freely, and where the picture ends, the node's background shows.
+
 ## [14.2609.6] - 2026-09-25
 
 ### Added

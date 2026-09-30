@@ -4641,6 +4641,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     if (side < m * 0.92) {
                         const at = (centre, full) => (full - side > 0.5 ? Math.min(100, Math.max(0, (centre - side / 2) / (full - side) * 100)) : 50);
                         trim = { x: at(bx + bw / 2, w), y: at(by + bh / 2, h), zoom: m / side };
+                        // The same cut as a centre, the way a node's cut is kept.
+                        trim = { x: (bx + bw / 2) / w * 100, y: (by + bh / 2) / h * 100, zoom: m / side, v: 2 };
                     }
                 }
             } catch (_err) {
@@ -4665,7 +4667,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
     _nodeImageView(node, src) {
         if (!src) return null;
         const manual = node?.imgView;
-        if (manual && manual.src === src) return this._normalizeImageView(manual);
+        if (manual && manual.src === src) return { ...this._normalizeImageView(manual), v: manual.v === 2 ? 2 : undefined };
         if (!fangNodeImageOptions.autoCrop) return null;
         const info = this._imageInfo(src);
         if (info) return info.trim.zoom > 1.001 ? info.trim : null;
@@ -4673,7 +4675,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const ring = actor?.prototypeToken?.ring;
         if (ring?.enabled && src === actor?.prototypeToken?.texture?.src) {
             // Foundry's advice for ring tokens: the subject fills the middle two thirds.
-            return { x: 50, y: 50, zoom: Math.min(4, Math.max(1, (Number(ring.subject?.scale) || 1) / 0.66)) };
+            return { x: 50, y: 50, zoom: Math.min(4, Math.max(1, (Number(ring.subject?.scale) || 1) / 0.66)), v: 2 };
         }
         return null;
     }
@@ -4731,6 +4733,13 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
     /** The square of the picture a view shows, in the picture's own pixels. */
     _imageSourceRect(view, w, h) {
         const side = Math.min(w, h) / Math.max(1, view.zoom || 1);
+        // A node's cut (v 2) names the centre of the circle, in percent of the picture, and
+        // may reach past its edge: a tall portrait can then still be moved sideways, and
+        // where the picture ends, the ground shows. Older cuts, and the places' cuts, keep
+        // the circle inside the picture.
+        if (view.v === 2) {
+            return { sx: w * (view.x ?? 50) / 100 - side / 2, sy: h * (view.y ?? 50) / 100 - side / 2, side };
+        }
         return { sx: (w - side) * (view.x ?? 50) / 100, sy: (h - side) * (view.y ?? 50) / 100, side };
     }
 
@@ -4743,7 +4752,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const info = view ? this._imageInfo(src) : null;
         if (!view || !info) return "";
         const { sx, sy, side } = this._imageSourceRect(view, info.w, info.h);
-        const pct = (v, full) => Math.max(0, v / full * 100).toFixed(2);
+        const pct = (v, full) => (v / full * 100).toFixed(2); // may be negative: the cut can reach past the edge
         return `inset(${pct(sy, info.h)}% ${pct(info.w - sx - side, info.w)}% ${pct(info.h - sy - side, info.h)}% ${pct(sx, info.w)}%)`;
     }
 
@@ -6948,18 +6957,36 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     let manual = node.imgView ? { ...node.imgView } : null;
                     const srcNow = () => this._getNodeImageSource({ ...node, imageSource: sourceSelect ? (sourceSelect.value || null) : node.imageSource });
                     const autoView = (src) => this._nodeImageView({ ...node, imgView: null }, src) ?? { x: 50, y: 50, zoom: 1 };
+                    // Every cut is handled as a centre (v 2); an older one is turned into one the
+                    // moment the picture's size is known.
+                    const asCentre = (view, src) => {
+                        if (view.v === 2) return view;
+                        const info = this._imageInfo(src);
+                        if (!info) return view;
+                        const r = this._imageSourceRect(view, info.w, info.h);
+                        return { x: (r.sx + r.side / 2) / info.w * 100, y: (r.sy + r.side / 2) / info.h * 100, zoom: view.zoom, v: 2 };
+                    };
                     const viewNow = () => {
                         const src = srcNow();
-                        return manual && manual.src === src ? this._normalizeImageView(manual) : autoView(src);
+                        const view = manual && manual.src === src ? { ...this._normalizeImageView(manual), v: manual.v } : autoView(src);
+                        return asCentre(view, src);
                     };
                     const paint = () => {
                         const src = srcNow();
                         const view = viewNow();
-                        frame.innerHTML = this.zoneImageHtml({ imgView: view }, { src, view: "imgView" });
+                        const info = this._imageInfo(src);
+                        if (info && view.v === 2) {
+                            // Drawn with the very rectangle the graph uses, so what is seen here is what it shows.
+                            const r = this._imageSourceRect(view, info.w, info.h);
+                            const scale = (frame.clientWidth || 120) / r.side;
+                            frame.innerHTML = `<img src="${escapeHtml(src)}" alt="" draggable="false" style="position:absolute; left:${-r.sx * scale}px; top:${-r.sy * scale}px; width:${info.w * scale}px; height:${info.h * scale}px; max-width:none; border:0; pointer-events:none;">`;
+                        } else {
+                            frame.innerHTML = this.zoneImageHtml({ imgView: view }, { src, view: "imgView" });
+                        }
                         slider.value = String(view.zoom);
                     };
-                    const change = (patch) => { manual = { ...viewNow(), ...patch, src: srcNow() }; paint(); };
-                    this._profileImageCut = () => (manual && manual.src === srcNow() ? { ...this._normalizeImageView(manual), src: manual.src } : null);
+                    const change = (patch) => { manual = { ...viewNow(), ...patch, v: 2, src: srcNow() }; paint(); };
+                    this._profileImageCut = () => (manual && manual.src === srcNow() ? { ...this._normalizeImageView(manual), v: 2, src: manual.src } : null);
                     slider.addEventListener("input", () => change({ zoom: Number(slider.value) }));
                     frame.addEventListener("wheel", (event) => {
                         event.preventDefault();
@@ -6971,9 +6998,14 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                         frame.setPointerCapture?.(event.pointerId);
                         const start = { px: event.clientX, py: event.clientY, ...viewNow() };
                         const size = frame.clientWidth || 120;
+                        // One pixel dragged is one pixel of the picture as the frame shows it.
+                        const info = this._imageInfo(srcNow());
+                        const side = info ? Math.min(info.w, info.h) / start.zoom : null;
+                        const perPxX = info ? side / size / info.w * 100 : 100 / (size * start.zoom);
+                        const perPxY = info ? side / size / info.h * 100 : 100 / (size * start.zoom);
                         const move = (e) => change({
-                            x: Math.min(100, Math.max(0, start.x - (e.clientX - start.px) * 100 / (size * start.zoom))),
-                            y: Math.min(100, Math.max(0, start.y - (e.clientY - start.py) * 100 / (size * start.zoom)))
+                            x: Math.min(100, Math.max(0, start.x - (e.clientX - start.px) * perPxX)),
+                            y: Math.min(100, Math.max(0, start.y - (e.clientY - start.py) * perPxY))
                         });
                         const up = () => { frame.removeEventListener("pointermove", move); frame.removeEventListener("pointerup", up); };
                         frame.addEventListener("pointermove", move);
