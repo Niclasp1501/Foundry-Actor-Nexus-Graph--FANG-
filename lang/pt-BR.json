@@ -427,6 +427,7 @@
             "KnownDays": "Dias na crônica",
             "LearnedToday": "Só descobrimos isso hoje",
             "LearnedTodayHint": "A entrada permanece no dia em que aconteceu; abaixo consta quando vocês descobriram.",
+            "EnteredBy": "Registrado por {name}",
             "LearnedOn": "Descoberto em {date}",
             "DeleteConfirmBody": "“{title}” será removida da crônica em definitivo.",
             "RecapOpen": "Abrir a retrospectiva",

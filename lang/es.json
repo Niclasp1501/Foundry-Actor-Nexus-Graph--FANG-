@@ -427,6 +427,7 @@
             "KnownDays": "Días de la crónica",
             "LearnedToday": "Nos enteramos de esto hoy",
             "LearnedTodayHint": "La entrada permanece en el día en que ocurrió; debajo consta cuándo os enterasteis.",
+            "EnteredBy": "Anotado por {name}",
             "LearnedOn": "Descubierto el {date}",
             "DeleteConfirmBody": "«{title}» se eliminará definitivamente de la crónica.",
             "RecapOpen": "Abrir la retrospectiva",

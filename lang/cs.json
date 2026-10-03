@@ -427,6 +427,7 @@
             "KnownDays": "Dny v kronice",
             "LearnedToday": "Dozvěděli jsme se o tom až dnes",
             "LearnedTodayHint": "Záznam zůstává u dne, kdy se to stalo; níže je uvedeno, kdy jste se o tom dozvěděli.",
+            "EnteredBy": "Zapsal(a) {name}",
             "LearnedOn": "Zjištěno {date}",
             "DeleteConfirmBody": "„{title}“ bude z kroniky nenávratně odstraněn.",
             "RecapOpen": "Otevřít retrospektivu",

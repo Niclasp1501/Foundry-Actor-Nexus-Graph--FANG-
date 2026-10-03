@@ -427,6 +427,7 @@
             "KnownDays": "Days in the chronicle",
             "LearnedToday": "We only found out about this today",
             "LearnedTodayHint": "The entry stays on the day it happened; when you found out is noted underneath.",
+            "EnteredBy": "Entered by {name}",
             "LearnedOn": "Found out on {date}",
             "DeleteConfirmBody": "“{title}” will be removed from the chronicle for good.",
             "RecapOpen": "Open recap",

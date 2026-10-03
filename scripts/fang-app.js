@@ -1475,6 +1475,18 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         return node.name || this._localize("FANG.Dropdowns.Unknown", "Unknown");
     }
 
+    /**
+     * The place a journey went to, when an entry is one and this user knows the place. Such an
+     * entry is shown with the place in front, not with whichever traveller happened to be
+     * listed first: that read as if that character had written it.
+     */
+    _historyEntryPlace(entry, user = game.user) {
+        const to = entry?.payload?.location?.to;
+        if (!to || !Array.isArray(entry.payload.travellers) || !entry.payload.travellers.length) return null;
+        const zone = this._zoneById(to);
+        return zone && this._canUserSeeZone(zone, user) ? zone : null;
+    }
+
     /** The cut of a chronicle entry's picture, the same as its node shows. */
     _getHistoryEntryImageStyle(entry, user = game.user) {
         const nodeRef = entry.refs?.find(ref => ref.type === "node");
@@ -2802,7 +2814,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 <h3><i class="fas fa-calendar-day"></i> ${this._escapeHtml(date)}</h3>
                 <ol class="fang-history-list">
                     ${dayEntries.map(entry => {
-                        const primaryRef = node ? null : entry.displayRefs.find(ref => ref.type === "node");
+                        // A journey shows its destination in front, and every traveller alike below.
+                        const place = this._historyEntryPlace(entry);
+                        const primaryRef = node || place ? null : entry.displayRefs.find(ref => ref.type === "node");
                         const visibleRefs = node
                             ? entry.displayRefs.filter(ref => !(ref.type === "node" && ref.id === node.id))
                             : entry.displayRefs.filter(ref => !(primaryRef && ref.type === primaryRef.type && ref.id === primaryRef.id));
@@ -2817,7 +2831,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                         return `
                             <li class="fang-history-entry" data-entry-id="${this._escapeHtml(entry.id)}">
                                 <div class="fang-history-entry-media">
-                                    <img src="${this._escapeHtml(imageSrc)}" alt="" ${imageStyle ? `style="${this._escapeHtml(imageStyle)}"` : ""}>
+                                    ${place
+                                        ? `<span class="fang-history-place-media" data-tooltip="${this._escapeHtml(this._zoneName(place))}">${place.img && !(place.hidden && !game.user.isGM) ? this.zoneImageHtml(place) : `<i class="fas fa-map-location-dot" aria-hidden="true"></i>`}</span>`
+                                        : `<img src="${this._escapeHtml(imageSrc)}" alt="" ${imageStyle ? `style="${this._escapeHtml(imageStyle)}"` : ""}>`}
                                     <div class="fang-history-entry-body">
                                         <div class="fang-history-entry-head">
                                             <div class="fang-history-title-line">
@@ -2825,6 +2841,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                                                 <strong><i class="fas ${this._escapeHtml(category.icon)}"></i> ${this._escapeHtml(entry.title || this._localize("FANG.History.Untitled", "Untitled insight"))}</strong>
                                             </div>
                                             <div class="fang-history-meta">
+                                                ${entry.authorName ? `<span class="fang-history-author" data-tooltip="${this._escapeHtml(this._localize("FANG.History.EnteredBy", "Entered by {name}").replace("{name}", entry.authorName))}" aria-label="${this._escapeHtml(this._localize("FANG.History.EnteredBy", "Entered by {name}").replace("{name}", entry.authorName))}"><i class="fas fa-pen-nib" aria-hidden="true"></i>${this._escapeHtml(entry.authorName)}</span>` : ""}
                                                 ${entry.gameDate?.time ? `<span class="fang-history-time"><i class="fas fa-clock" aria-hidden="true"></i>${this._escapeHtml(entry.gameDate.time)}</span>` : ""}
                                                 <span class="fang-history-category">${this._escapeHtml(category.label)}</span>
                                             </div>

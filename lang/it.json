@@ -427,6 +427,7 @@
             "KnownDays": "Giorni nella cronaca",
             "LearnedToday": "Lo abbiamo scoperto solo oggi",
             "LearnedTodayHint": "La voce resta nel giorno in cui è accaduto; sotto è indicato quando lo avete scoperto.",
+            "EnteredBy": "Annotato da {name}",
             "LearnedOn": "Scoperto il {date}",
             "DeleteConfirmBody": "«{title}» verrà rimossa definitivamente dalla cronaca.",
             "RecapOpen": "Apri la retrospettiva",

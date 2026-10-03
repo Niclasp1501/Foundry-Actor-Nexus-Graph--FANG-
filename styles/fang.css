@@ -5197,6 +5197,32 @@ body.fang-theme-cyberpunk .background-config-container .premium-notice p {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
 }
 
+/* A journey's destination in front of its entry, cut the way the place's token is. */
+.fang-history-place-media {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 54px;
+    height: 54px;
+    overflow: hidden;
+    border: 2px solid rgba(var(--fang-accent-gold-rgb), 0.7);
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.65);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+    color: var(--fang-accent-gold);
+    font-size: 1.3rem;
+}
+
+/* Who wrote an entry: quiet, beside the time. */
+.fang-history-author {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.78rem;
+    opacity: 0.7;
+}
+
 .fang-history-entry-body {
     min-width: 0;
 }

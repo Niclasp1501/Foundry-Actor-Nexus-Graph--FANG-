@@ -427,6 +427,7 @@
             "KnownDays": "Dagen in de kroniek",
             "LearnedToday": "We kwamen er pas vandaag achter",
             "LearnedTodayHint": "De vermelding blijft op de dag van gebeuren staan; eronder staat wanneer jullie het ontdekten.",
+            "EnteredBy": "Ingevoerd door {name}",
             "LearnedOn": "Ontdekt op {date}",
             "DeleteConfirmBody": "“{title}” wordt definitief uit de kroniek verwijderd.",
             "RecapOpen": "Terugblik openen",
