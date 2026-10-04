@@ -3,6 +3,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Module versions follow the Foundry-targeted `<foundry-major>.<YYMM>.<patch>` release scheme documented in `AGENTS.md`.
 
+## [Unreleased]
+
+### Fixed
+- **The guide stays away once closed, and never covers a shared screen.** It came back on every opening unless "Got it" was pressed, and it appeared on screens the GM had opened FANG on, such as the monitor at the table, covering the picture. Closing it in any way now counts as seen, for that user on every device, and it never opens by itself on a screen the GM steers or for the monitor user. The question mark in the rail still brings it up.
+
 ## [14.2610.1] - 2026-10-04
 
 ### Added

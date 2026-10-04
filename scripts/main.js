@@ -861,6 +861,7 @@ Hooks.once("ready", async () => {
     // Initial show/close actions
     if (data.action === "showGraph") {
       if (!fangApp) fangApp = new FangApplication();
+      fangApp._openedRemotely = true;
       setTimeout(async () => {
         await fangApp.loadData();
         if (fangApp.rendered) {
@@ -892,6 +893,7 @@ Hooks.once("ready", async () => {
       const monitorName = game.settings.get("fang", "monitorDisplayName").toLowerCase();
       if (game.user.name.toLowerCase().includes(monitorName)) {
         if (!fangApp) fangApp = new FangApplication();
+        fangApp._openedRemotely = true;
         setTimeout(async () => {
           await fangApp.loadData();
           if (fangApp.rendered) {

@@ -3409,6 +3409,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     _onClose(options) {
+        // Opened by the GM on this screen or not, the next opening is this user's own.
+        this._openedRemotely = false;
+        this._guideOffered = false;
         this._releaseMyLock();
         document.body.classList.remove("fang-monitor");
         if (this._resizeObserver) this._resizeObserver.disconnect();
@@ -11233,8 +11236,14 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
      */
     showGuide(guide, { force = false } = {}) {
         if (!guide?.id || !this.element) return;
-        const seen = game.settings.get("fang", "guidesSeen") ?? {};
-        if (!force && seen[guide.id]) return;
+        if (!force) {
+            // Never on a screen someone else steers: a window the GM opened on the players'
+            // screens or on the monitor at the table, and never on the monitor user at all.
+            // There it covered the very picture everyone was meant to look at.
+            const monitorName = String(game.settings.get("fang", "monitorDisplayName") || "").trim().toLowerCase();
+            if (this._openedRemotely || (monitorName && game.user.name.toLowerCase().includes(monitorName))) return;
+            if (this._guidesSeen()[guide.id]) return;
+        }
         const host = this.element.querySelector(".canvas-container");
         if (!host) return;
         host.querySelector(".fang-guide-panel")?.remove();
@@ -11261,20 +11270,31 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 </div>
                 <div class="fang-canvas-prompt-actions">
                     <button type="button" class="fang-canvas-prompt-action primary fang-guide-done"><i class="fas fa-check" aria-hidden="true"></i> <span>${esc(this._localize("FANG.Guide.Done", "Got it"))}</span></button>
-                    <button type="button" class="fang-canvas-prompt-action fang-guide-later"><i class="fas fa-clock" aria-hidden="true"></i> <span>${esc(this._localize("FANG.Guide.Later", "Later"))}</span></button>
                 </div>
             </div>`;
         host.appendChild(panel);
-        const close = () => panel.remove();
+        // However it is closed, it counts as seen: someone who pushed it away once does not
+        // want it back. The question mark in the rail still brings it up on purpose.
+        const close = () => { panel.remove(); this._markGuideSeen(guide.id); };
         panel.addEventListener("mousedown", (event) => { if (event.target === panel) close(); });
         panel.addEventListener("keydown", (event) => { if (event.key === "Escape") { event.stopPropagation(); close(); } });
         panel.querySelector(".fang-canvas-prompt-close").addEventListener("click", close);
-        panel.querySelector(".fang-guide-later").addEventListener("click", close);
-        panel.querySelector(".fang-guide-done").addEventListener("click", async () => {
-            close();
-            await game.settings.set("fang", "guidesSeen", { ...(game.settings.get("fang", "guidesSeen") ?? {}), [guide.id]: true });
-        });
+        panel.querySelector(".fang-guide-done").addEventListener("click", close);
         panel.focus();
+    }
+
+    /**
+     * Which guides this user has seen. Kept with the user, so it holds on every device they
+     * play from; what a device remembered from before still counts.
+     */
+    _guidesSeen() {
+        return { ...(game.settings.get("fang", "guidesSeen") ?? {}), ...(game.user?.getFlag?.("fang", "guidesSeen") ?? {}) };
+    }
+
+    async _markGuideSeen(id) {
+        if (!id || this._guidesSeen()[id]) return;
+        try { await game.settings.set("fang", "guidesSeen", { ...(game.settings.get("fang", "guidesSeen") ?? {}), [id]: true }); } catch (_err) { /* device only */ }
+        try { await game.user?.setFlag?.("fang", "guidesSeen", { ...(game.user.getFlag("fang", "guidesSeen") ?? {}), [id]: true }); } catch (_err) { /* the device keeps it */ }
     }
 
     /** An empty graph says what to do with it instead of showing a blank sheet. */
