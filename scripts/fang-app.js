@@ -1962,7 +1962,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         return true;
     }
 
-    async _createHistoryEntry({ node = null, refs = null, title, playerText, gmText, gameDate, knownSince = null, kind, visibility, origin = "manual", type = "manual", editableByPlayers = true, authorUserId = null, authorName = "", recapPageId = null, payload = null }) {
+    async _createHistoryEntry({ node = null, refs = null, title, playerText, gmText, gameDate, knownSince = null, kind, visibility, origin = "manual", type = "manual", editableByPlayers = true, authorUserId = null, authorName = "", recapPageId = null, payload = null, notifyAuthor = true }) {
         if (!game.user?.isGM) {
             if (!this._canCreateHistoryEntry(false)) return false;
             game.socket.emit("module.fang", {
@@ -2036,7 +2036,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             const gespeichert = this._getHistoryStore().entries.find(item => item.id === neueId);
             const verfasser = authorUserId || game.user.id;
             const pageId = gespeichert ? await this._createRecapPage(gespeichert, verfasser) : null;
-            if (pageId && verfasser !== game.user.id) {
+            // The player who asked for a recap gets its page opened; one the GM wrote on their
+            // behalf does not pop up on their screen in the middle of a session.
+            if (pageId && verfasser !== game.user.id && notifyAuthor) {
                 game.socket.emit("module.fang", { action: "recapPageReady", payload: { entryId: neueId, userId: verfasser, pageId } });
             }
         }
@@ -2081,8 +2083,9 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             id: current.id,
             updatedAt: new Date().toISOString(),
             refs: Array.isArray(patch.refs) ? patch.refs : current.refs,
-            authorUserId: current.authorUserId,
-            authorName: current.authorName,
+            // The author only changes when the GM sets it (writing on behalf of a player).
+            authorUserId: patch.authorUserId !== undefined ? patch.authorUserId : current.authorUserId,
+            authorName: patch.authorName !== undefined ? patch.authorName : current.authorName,
             createdAt: current.createdAt,
             // Merged, not replaced: more than one add-on may keep a key in here, and a save
             // that does not touch payload at all must not wipe out what another one wrote.
@@ -2475,7 +2478,22 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const title = node
             ? (editingEntry ? this._localize("FANG.History.EditEventForNode", "Edit Event for {name}") : this._localize("FANG.History.AddEventForNode", "Add Event for {name}")).replace("{name}", safeNodeName)
             : (editingEntry ? this._localize("FANG.History.EditEvent", "Edit Event") : this._localize("FANG.History.AddEvent", "Add Event"));
+        // The GM can write an entry on behalf of a player: what someone said at the table,
+        // their notes, their recap. It then stands under their name, as if they had written it.
+        const monitorName = String(game.settings.get("fang", "monitorDisplayName") || "").trim().toLowerCase();
+        const authorPlayers = isGM
+            ? game.users.filter(u => !u.isGM && !(monitorName && u.name.toLowerCase().includes(monitorName))).sort((a, b) => a.name.localeCompare(b.name))
+            : [];
+        const currentAuthorIsPlayer = !!editingEntry?.authorUserId && authorPlayers.some(u => u.id === editingEntry.authorUserId);
+        const authorField = isGM && authorPlayers.length ? `
+                    <label for="fang-history-author">${this._escapeHtml(this._localize("FANG.History.EnteredByLabel", "Entered by"))}</label>
+                    <select id="fang-history-author">
+                        <option value="">${this._escapeHtml(this._localize("FANG.History.EnteredBySelf", "Me ({name})").replace("{name}", game.user.name))}</option>
+                        ${authorPlayers.map(u => `<option value="${this._escapeHtml(u.id)}" ${currentAuthorIsPlayer && editingEntry.authorUserId === u.id ? "selected" : ""}>${this._escapeHtml(u.character ? `${u.name} (${u.character.name})` : u.name)}</option>`).join("")}
+                    </select>
+                    <p class="fang-hint">${this._escapeHtml(this._localize("FANG.History.EnteredByHint", "Enter it on behalf of a player: it then stands under their name, is released to the players and they can edit it."))}</p>` : "";
         const gmFields = isGM ? `
+                    ${authorField}
                     <label>${this._escapeHtml(this._localize("FANG.History.GMText", "GM Notes"))}</label>
                     <textarea id="fang-history-gm-text" placeholder="${this._escapeHtml(this._localize("FANG.History.GMTextHint", "Private GM context."))}">${this._escapeHtml(editingEntry?.gmText || "")}</textarea>
                     <p class="fang-hint">${this._escapeHtml(this._localize("FANG.History.GMTextPrivate", "GM notes stay private - players never see them, released or not."))}</p>
@@ -2590,6 +2608,16 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const titleLabel = panel.querySelector("#fang-history-title-label");
         const titleBox = panel.querySelector("#fang-history-title");
         const authorSelect = panel.querySelector("#fang-history-recap-author");
+        const onBehalf = panel.querySelector("#fang-history-author");
+        const releaseBox = panel.querySelector("#fang-history-visible");
+        const syncOnBehalf = () => {
+            if (!onBehalf || !releaseBox) return;
+            const forPlayer = !!onBehalf.value;
+            if (forPlayer) releaseBox.checked = true;
+            releaseBox.disabled = forPlayer;
+        };
+        onBehalf?.addEventListener("change", syncOnBehalf);
+        syncOnBehalf();
         const zeigeKategorie = () => {
             const istRueckblick = kindSelect?.value === "flashback";
             // A recap needs no summary and no headline typed by hand: it is someone's recap of a
@@ -2704,6 +2732,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             // in that token's own chronicle rather than only in the global one.
             const recapNode = gewaehlt?.actorId ? this.graphData.nodes.find(n => n.actorId === gewaehlt.actorId) : null;
             const gameDate = this._readHistoryFormGameDate(panel, detectedGameDate, formGameDate, dateReadonly);
+            const writtenFor = isGM ? game.users.get(panel.querySelector("#fang-history-author")?.value || "") : null;
             const patch = {
                 title: entryTitle || this._localize("FANG.History.Untitled", "Untitled insight"),
                 playerText,
@@ -2711,8 +2740,16 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 kind: kindNow,
                 gameDate: gameDate.gameDate,
                 knownSince: gameDate.knownSince,
-                visibility: isGM && panel.querySelector("#fang-history-visible")?.checked ? "players" : (isGM ? "gm" : "players")
+                visibility: isGM && (writtenFor || panel.querySelector("#fang-history-visible")?.checked) ? "players" : (isGM ? "gm" : "players")
             };
+            if (writtenFor) {
+                patch.authorUserId = writtenFor.id;
+                patch.authorName = writtenFor.name;
+                patch.editableByPlayers = true;
+            } else if (isGM && panel.querySelector("#fang-history-author") && (!editingEntry || currentAuthorIsPlayer)) {
+                patch.authorUserId = game.user.id;
+                patch.authorName = game.user.name;
+            }
             // An add-on collects whatever it put into the slot above into this bag.
             const extraPayload = {};
             // `refs` is what the entry is attached to. An add-on may change the list in
@@ -2734,7 +2771,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             }
             let neueId = null;
             if (editingEntry) await this._updateHistoryEntry(editingEntry.id, patch);
-            else neueId = await this._createHistoryEntry({ node: recapNode ?? node, ...patch });
+            else neueId = await this._createHistoryEntry({ node: recapNode ?? node, ...patch, notifyAuthor: !writtenFor });
             if (typeof refresh === "function") refresh();
             else this._openHistoryDialog({ node });
             // Straight into the page for a fresh recap: the form asked for a heading and a
