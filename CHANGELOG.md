@@ -8,6 +8,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Added
 - **The GM can write an entry on behalf of a player.** The chronicle form has "Entered by" for the GM: pick a player, and the entry stands under their name, is released to the players and they can edit it, as if they had written it themselves. A recap written this way belongs to that player without popping up on their screen.
 
+### Removed
+- **The beta channel has ended.** New versions come only through the Foundry package catalogue and the stable manifest URL.
+
 ### Fixed
 - **The guide stays away once closed, and never covers a shared screen.** It came back on every opening unless "Got it" was pressed, and it appeared on screens the GM had opened FANG on, such as the monitor at the table, covering the picture. Closing it in any way now counts as seen, for that user on every device, and it never opens by itself on a screen the GM steers or for the monitor user. The question mark in the rail still brings it up.
 

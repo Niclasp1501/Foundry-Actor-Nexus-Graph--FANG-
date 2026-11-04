@@ -124,12 +124,8 @@ FANG is in the official Foundry package catalogue. In Foundry, open the **Add-on
 click **Install Module** and search for *Ninjo's FANG*. Then enable it in your world's module
 settings.
 
-You can also install FANG from a manifest URL. For the stable version that is
-`https://github.com/Niclasp1501/Foundry-Actor-Nexus-Graph--FANG-/releases/latest/download/module.json`,
-and if you want to try new features early, use the beta at
-`https://github.com/Niclasp1501/Foundry-Actor-Nexus-Graph--FANG-/releases/download/beta-latest/module-beta.json`.
-Both install the same module, so a world can only use one of them. Back up your world before
-trying a beta.
+You can also install FANG from its manifest URL:
+`https://github.com/Niclasp1501/Foundry-Actor-Nexus-Graph--FANG-/releases/latest/download/module.json`.
 
 ### Using FANG
 
@@ -286,12 +282,8 @@ FANG steht im offiziellen Foundry-Paketkatalog. Öffne in Foundry den Reiter **A
 klicke auf **Modul installieren** und suche nach *Ninjo's FANG*. Danach aktivierst du es in den
 Moduleinstellungen deiner Welt.
 
-Du kannst FANG auch über eine Manifest-Adresse installieren. Für die stabile Fassung ist das
-`https://github.com/Niclasp1501/Foundry-Actor-Nexus-Graph--FANG-/releases/latest/download/module.json`,
-wer neue Funktionen früher ausprobieren möchte, nimmt die Beta unter
-`https://github.com/Niclasp1501/Foundry-Actor-Nexus-Graph--FANG-/releases/download/beta-latest/module-beta.json`.
-Beide installieren dasselbe Modul, du kannst in einer Welt also nur eine der beiden verwenden.
-Lege vor einer Beta am besten eine Sicherung deiner Welt an.
+Du kannst FANG auch über seine Manifest-Adresse installieren:
+`https://github.com/Niclasp1501/Foundry-Actor-Nexus-Graph--FANG-/releases/latest/download/module.json`.
 
 ### So benutzt du FANG
 

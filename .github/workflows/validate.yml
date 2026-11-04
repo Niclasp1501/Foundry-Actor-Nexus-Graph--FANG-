@@ -1,6 +1,6 @@
 name: Validate
 
-# Runs on every pull request and on pushes to the working branches.
+# Runs on every pull request and on pushes to main.
 #
 # The check says: the JSON parses, all ten locales have the same keys as
 # en.json, no placeholder was lost, every script parses as an ES module and
@@ -12,7 +12,6 @@ on:
   push:
     branches:
       - main
-      - beta
 
 jobs:
   validate:
