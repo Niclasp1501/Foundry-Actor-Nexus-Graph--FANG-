@@ -802,36 +802,34 @@ Hooks.once("ready", async () => {
     }
 
     if (!game.settings.get("fang", "diploglassSyncPromptSeen")) {
-      await new Promise((resolve) => {
-        new Dialog({
-          title: game.i18n.localize("FANG.Dialogs.DiploGlassSyncTitle"),
-          content: `<p>${game.i18n.localize("FANG.Dialogs.DiploGlassSyncContent")}</p>`,
-          buttons: {
-            enable: {
-              icon: '<i class="fas fa-check"></i>',
-              label: game.i18n.localize("FANG.Dialogs.DiploGlassSyncEnable"),
-              callback: async () => {
-                await game.settings.set("fang", "diploglassSyncPromptSeen", true);
-                await game.settings.set("fang", "diploglassOneWaySync", true);
-                resolve(true);
-              }
-            },
-            skip: {
-              icon: '<i class="fas fa-times"></i>',
-              label: game.i18n.localize("FANG.Dialogs.DiploGlassSyncSkip"),
-              callback: async () => {
-                await game.settings.set("fang", "diploglassSyncPromptSeen", true);
-                resolve(false);
-              }
-            }
+      // Closing with X or Escape answers nothing: the question comes back on the next start,
+      // and only one of the two buttons marks it as seen.
+      const choice = await foundry.applications.api.DialogV2.wait({
+        window: { title: game.i18n.localize("FANG.Dialogs.DiploGlassSyncTitle") },
+        content: `<p>${game.i18n.localize("FANG.Dialogs.DiploGlassSyncContent")}</p>`,
+        buttons: [
+          {
+            action: "enable",
+            icon: "fas fa-check",
+            label: game.i18n.localize("FANG.Dialogs.DiploGlassSyncEnable"),
+            default: true
           },
-          default: "enable",
-          close: () => resolve(false)
-        }, {
-          classes: ["dialog", "fang-dialog"],
-          width: 440
-        }).render(true);
+          {
+            action: "skip",
+            icon: "fas fa-times",
+            label: game.i18n.localize("FANG.Dialogs.DiploGlassSyncSkip")
+          }
+        ],
+        classes: ["fang-dialog"],
+        position: { width: 440 },
+        rejectClose: false
       });
+      if (choice === "enable") {
+        await game.settings.set("fang", "diploglassSyncPromptSeen", true);
+        await game.settings.set("fang", "diploglassOneWaySync", true);
+      } else if (choice === "skip") {
+        await game.settings.set("fang", "diploglassSyncPromptSeen", true);
+      }
     }
   }
 
@@ -1232,12 +1230,6 @@ verzeichnisKnopfEinrichten("fang", () => ({
   }
 }));
 
-
-Hooks.on("renderJournalTextPageSheet", (app, html, data) => {
-  // Foundry sanitizes onclick attributes for security. We attach the listener here safely.
-  const $html = $(html);
-  $html.find(".fang-open-btn").on("click", _fangOpenGraphFromJournalButtonEvent);
-});
 
 // An actor's picture or name changed. The graph reads the picture from the actor now, so a
 // client only has to let go of its cached image; the GM additionally keeps the node's own

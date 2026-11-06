@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 - **The guide stays away once closed, and never covers a shared screen.** It came back on every opening unless "Got it" was pressed, and it appeared on screens the GM had opened FANG on, such as the monitor at the table, covering the picture. Closing it in any way now counts as seen, for that user on every device, and it never opens by itself on a screen the GM steers or for the monitor user. The question mark in the rail still brings it up.
+- **The DiploGlass question uses the current window framework.** The one-time question whether FANG should take its factions from DiploGlass was the last window still built on the old framework, which Foundry warns about and will remove in version 16. It now looks like every other FANG dialog; closing it still asks again on the next start.
 
 ## [14.2610.1] - 2026-10-04
 
