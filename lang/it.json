@@ -685,6 +685,14 @@
             "failed": "Fallita",
             "rumor": "Voce"
         },
+        "QuestRole": {
+            "Label": "Ruolo nella missione",
+            "quest_giver": "Committente",
+            "target": "Bersaglio",
+            "ally": "Alleato",
+            "enemy": "Nemico",
+            "contact": "Contatto"
+        },
         "Merge": {
             "ConflictResolved": "{names} era in modifica anche da altri — è stata mantenuta la tua versione.",
             "DeletedElsewhere": "{names} è stato eliminato da qualcun altro — la tua modifica è andata persa."

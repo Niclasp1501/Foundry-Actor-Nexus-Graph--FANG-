@@ -3698,12 +3698,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                         delete node._questJournalName;
                     }
                     if (!node.questUuids) node.questUuids = [];
-                    node.questUuids = node.questUuids.map(q => ({
-                        uuid: q.uuid,
-                        name: q.name || "Quest Journal",
-                        visibleToPlayers: q.visibleToPlayers !== false,
-                        status: q.status || "open"
-                    }));
+                    node.questUuids = node.questUuids.map(q => this._normalizeQuestRef(q));
                 });
 
                 if (this.graphData.showFactionLines === undefined) {
@@ -5798,15 +5793,15 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                         callback: async () => {
                             if (!targetNode.questUuids) targetNode.questUuids = [];
                             const alreadyLinked = targetNode.questUuids.some(q => q.uuid === data.uuid);
+                            let droppedQuest = null;
                             if (!alreadyLinked) {
-                                targetNode.questUuids.push({ uuid: data.uuid, name: this._getJournalDocumentTitle(droppedDoc), visibleToPlayers: false, status: "open" });
+                                droppedQuest = { uuid: data.uuid, name: this._getJournalDocumentTitle(droppedDoc), visibleToPlayers: false, status: "open" };
+                                targetNode.questUuids.push(droppedQuest);
                             }
-                            if (!targetNode.conditions) targetNode.conditions = [];
-                            if (!targetNode.conditions.includes("questgiver")) {
-                                targetNode.conditions.push("questgiver");
-                            }
+                            this._syncQuestGiverMark(targetNode);
                             this.ticked();
                             await this.saveData();
+                            if (droppedQuest) this._emitQuestChanged(targetNode, droppedQuest, "linked", "fang");
                             ui.notifications.info(game.i18n.format("FANG.Notify.QuestLogLinked", { name: targetNode.name }));
                         }
                     }
@@ -6462,12 +6457,56 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             addedQuest = { uuid, name: this._getJournalDocumentTitle(doc), visibleToPlayers, status: "open" };
             node.questUuids.push(addedQuest);
         }
-        if (!node.conditions) node.conditions = [];
-        if (!node.conditions.includes("questgiver")) node.conditions.push("questgiver");
+        this._syncQuestGiverMark(node);
         await this.saveData();
         this.ticked();
         if (addedQuest && visibleToPlayers) await this._recordQuestVisibleHistory(node, addedQuest);
+        if (addedQuest) this._emitQuestChanged(node, addedQuest, "linked", "fang");
         return true;
+    }
+
+    // Rollen, die ein Verweis auf eine Quest tragen kann (gleiche Namen wie im Foundry MCP
+    // und im Journal Atlas). Leer heißt: unbekannt, so wie jede Quest von vor dieser Angabe.
+    static QUEST_ROLES = ["quest_giver", "target", "ally", "enemy", "contact"];
+    static QUEST_STATUSES = ["rumor", "open", "active", "done", "failed"];
+
+    /** Ein Verweis in der Form, in der er gespeichert wird; Unbekanntes fällt weg. */
+    _normalizeQuestRef(q = {}) {
+        const ref = {
+            uuid: q.uuid,
+            name: q.name || "Quest Journal",
+            visibleToPlayers: q.visibleToPlayers !== false,
+            status: FangApplication.QUEST_STATUSES.includes(q.status) ? q.status : "open"
+        };
+        if (FangApplication.QUEST_ROLES.includes(q.role)) ref.role = q.role;
+        return ref;
+    }
+
+    /**
+     * Das Auftraggeber-Zeichen am Knoten. Es kommt mit jeder Quest ohne Rolle oder mit der Rolle
+     * Auftraggeber; ein Ziel oder ein Gegner bekommt es nicht. Es geht, wenn keine solche Quest
+     * mehr bleibt. Ein Zeichen, das ohne Quest von Hand gesetzt wurde, bleibt stehen.
+     */
+    _syncQuestGiverMark(node, { removed = false } = {}) {
+        if (!node) return;
+        if (!Array.isArray(node.conditions)) node.conditions = [];
+        const marks = (node.questUuids || []).some(q => !q.role || q.role === "quest_giver");
+        if (marks && !node.conditions.includes("questgiver")) node.conditions.push("questgiver");
+        if (!marks && removed) node.conditions = node.conditions.filter(c => c !== "questgiver");
+    }
+
+    /** Meldet eine Änderung an einer Quest an andere Module (Journal Atlas). Nur auf diesem Client. */
+    _emitQuestChanged(node, quest, change, origin = "fang") {
+        try {
+            Hooks.callAll("fang.questChanged", this, {
+                node: foundry.utils.deepClone(node),
+                quest: foundry.utils.deepClone(quest),
+                change,
+                origin
+            });
+        } catch (err) {
+            console.error("FANG | fang.questChanged failed.", err);
+        }
     }
 
     async _onManageNodeQuests(node) {
@@ -6496,9 +6535,10 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 <li class="fang-quest-manager-row" data-index="${index}" data-uuid="${escapeHtml(quest.uuid)}">
                     <span class="fang-quest-title"><i class="fas fa-scroll"></i> ${escapeHtml(quest.name || "Quest Journal")}</span>
                     <div class="fang-quest-manager-actions">
+                        ${game.user.isGM && quest.role ? `<span class="fang-quest-role" title="${localize("FANG.QuestRole.Label", "Role in the quest")}">${escapeHtml(localize(`FANG.QuestRole.${quest.role}`, quest.role))}</span>` : ""}
                         ${game.user.isGM ? `<span class="fang-quest-visibility ${quest.visibleToPlayers === false ? "is-hidden" : "is-visible"}">${quest.visibleToPlayers === false ? localize("FANG.Dialogs.QuestHiddenFromPlayers", "Hidden from players") : localize("FANG.Dialogs.QuestVisibleToPlayers", "Visible to players")}</span>` : ""}
                         ${canEdit ? `<select class="fang-quest-status" title="${localize("FANG.QuestStatus.Label", "Quest status")}">
-                            ${["open", "active", "done", "failed", "rumor"].map(status => `<option value="${status}" ${String(quest.status || "open") === status ? "selected" : ""}>${localize(`FANG.QuestStatus.${status}`, status)}</option>`).join("")}
+                            ${FangApplication.QUEST_STATUSES.map(status => `<option value="${status}" ${String(quest.status || "open") === status ? "selected" : ""}>${localize(`FANG.QuestStatus.${status}`, status)}</option>`).join("")}
                         </select>` : ""}
                         <button type="button" class="fang-icon-btn fang-quest-open" title="${localize("FANG.ContextMenu.OpenQuest", "Open Quest Log")}" data-tooltip="${localize("FANG.ContextMenu.OpenQuest", "Open Quest Log")}"><i class="fas fa-book-open"></i></button>
                         <button type="button" class="fang-icon-btn fang-quest-spotlight" title="${localize("FANG.ContextMenu.Spotlight", "Spotlight for Everyone")}" data-tooltip="${localize("FANG.ContextMenu.Spotlight", "Spotlight for Everyone")}"><i class="fas fa-compass"></i></button>
@@ -6594,6 +6634,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 if (!wasVisible && node.questUuids[index].visibleToPlayers !== false) {
                     await this._recordQuestVisibleHistory(node, node.questUuids[index]);
                 }
+                this._emitQuestChanged(node, node.questUuids[index], "updated", "fang");
                 refreshPanel();
             });
         });
@@ -6605,6 +6646,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 if (!Number.isInteger(index) || !node.questUuids?.[index]) return;
                 node.questUuids[index].status = event.currentTarget.value || "open";
                 await this.saveData();
+                this._emitQuestChanged(node, node.questUuids[index], "updated", "fang");
                 refreshPanel();
             });
         });
@@ -6613,13 +6655,12 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 if (!canEdit) return;
                 const row = event.currentTarget.closest(".fang-quest-manager-row");
                 const index = Number(row?.dataset?.index);
-                if (!Number.isInteger(index)) return;
-                node.questUuids.splice(index, 1);
-                if (!node.questUuids.length) {
-                    node.conditions = (node.conditions || []).filter(c => c !== "questgiver");
-                }
+                if (!Number.isInteger(index) || !node.questUuids?.[index]) return;
+                const [removedQuest] = node.questUuids.splice(index, 1);
+                this._syncQuestGiverMark(node, { removed: true });
                 await this.saveData();
                 this.ticked();
+                this._emitQuestChanged(node, removedQuest, "unlinked", "fang");
                 refreshPanel();
             });
         });
@@ -10397,7 +10438,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 lore: n.lore || "",
                 playerLorePageId: n.playerLorePageId || null,
                 journalUuid: n.journalUuid || null,
-                questUuids: (n.questUuids || []).map(q => ({ uuid: q.uuid, name: q.name, visibleToPlayers: q.visibleToPlayers !== false, status: q.status || "open" })),
+                questUuids: (n.questUuids || []).map(q => this._normalizeQuestRef(q)),
                 hidden: n.hidden || false,
                 gmOnly: n.gmOnly === true,
                 secretKind: n.secretKind || "",

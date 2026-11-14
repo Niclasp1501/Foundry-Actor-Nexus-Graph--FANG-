@@ -135,6 +135,62 @@ Hooks.once("init", () => {
     }
   };
 
+  /** Ein neuer Knoten für einen Akteur, so wie ihn auch das Hineinziehen anlegt. */
+  const actorNode = (actor) => ({ id: actor.id, actorId: actor.id, isPlaceholder: false, placeholderType: null,
+    img: actor.prototypeToken?.texture?.src || actor.img || null, name: actor.name, originalName: actor.name,
+    playerNotes: "", showHiddenQuestsToPlayers: true, conditions: [] });
+
+  // ---------------------------------------------------------------------------
+  // Quests. Die Wahrheit ist die Journalseite; FANG hält am Knoten nur den Verweis
+  // { uuid, name, visibleToPlayers, status, role? }. Schreiben darf nur die Spielleitung,
+  // wie im Quest-Panel. Jede Änderung meldet fang.questChanged, mit origin, damit ein
+  // Modul wie der Journal Atlas seine eigenen Änderungen nicht zurückspiegelt.
+  // ---------------------------------------------------------------------------
+  const requireGM = () => { if (!game.user.isGM) throw new Error("FANG | Only a GM links or changes quests."); };
+  const questRef = (node, q) => ({ nodeId: node.id, actorUuid: node.actorId ? (game.actors.get(node.actorId)?.uuid ?? null) : null,
+    uuid: q.uuid, name: q.name, status: q.status || "open", visibleToPlayers: q.visibleToPlayers !== false,
+    role: game.user.isGM ? (q.role ?? null) : null });
+  /** Übernimmt erlaubte Felder in einen Verweis; true, wenn sich etwas geändert hat. */
+  const patchQuest = (quest, patch) => {
+    const roles = FangApplication.QUEST_ROLES, statuses = FangApplication.QUEST_STATUSES;
+    let changed = false;
+    if (typeof patch.name === "string" && patch.name && patch.name !== quest.name) { quest.name = patch.name; changed = true; }
+    if (patch.status !== undefined) {
+      if (!statuses.includes(patch.status)) throw new Error(`FANG | Unknown quest status ${patch.status}.`);
+      if (patch.status !== quest.status) { quest.status = patch.status; changed = true; }
+    }
+    if (typeof patch.visibleToPlayers === "boolean" && patch.visibleToPlayers !== (quest.visibleToPlayers !== false)) {
+      quest.visibleToPlayers = patch.visibleToPlayers; changed = true;
+    }
+    if (patch.role !== undefined) {
+      if (patch.role === null || patch.role === "") { if (quest.role) { delete quest.role; changed = true; } }
+      else if (!roles.includes(patch.role)) throw new Error(`FANG | Unknown quest role ${patch.role}.`);
+      else if (patch.role !== quest.role) { quest.role = patch.role; changed = true; }
+    }
+    return changed;
+  };
+  /** Der Knoten zu nodeId oder actorUuid; mit addMissing wird ein fehlender Akteur verborgen angelegt. */
+  const questNode = async (app, { actorUuid, nodeId, addMissing = false }) => {
+    if (nodeId) return app.graphData.nodes.find(n => n.id === nodeId) ?? null;
+    if (!actorUuid) throw new Error("FANG | A quest link needs actorUuid or nodeId.");
+    const actor = await fromUuid(actorUuid);
+    if (!actor || actor.documentName !== "Actor") throw new Error(`FANG | No actor ${actorUuid}.`);
+    let node = app.graphData.nodes.find(n => n.actorId === actor.id) ?? null;
+    if (!node && addMissing) {
+      node = { ...actorNode(actor), hidden: true };
+      app.graphData.nodes.push(node);
+    }
+    return node;
+  };
+  /** Nach dem Speichern: Chronik-Eintrag bei neu sichtbaren Quests, dann der Hook. */
+  const afterQuestWrite = async (events, origin) => {
+    const app = await ensureApp();
+    for (const { node, quest, change, becameVisible } of events) {
+      if (becameVisible) await app._recordQuestVisibleHistory(node, quest);
+      app._emitQuestChanged(node, quest, change, origin);
+    }
+  };
+
   const api = {
     version: game.modules.get("fang").version,
     interface: FANG_EXTENSION_VERSION,
@@ -160,8 +216,7 @@ Hooks.once("init", () => {
         const actor = data.actorUuid ? await fromUuid(data.actorUuid) : (data.actorId ? game.actors.get(data.actorId) : null);
         if (actor && app.graphData.nodes.some(n => n.actorId === actor.id)) return app.graphData.nodes.find(n => n.actorId === actor.id);
         const node = actor
-          ? { id: actor.id, actorId: actor.id, isPlaceholder: false, placeholderType: null, img: actor.prototypeToken?.texture?.src || actor.img || null,
-              name: actor.name, originalName: actor.name, playerNotes: "", showHiddenQuestsToPlayers: true, conditions: [] }
+          ? actorNode(actor)
           : app._buildPlaceholderNode({ name: String(data.name || "?"), img: data.img || undefined, placeholderType: data.type === "item" ? "item" : "default" });
         applyNodeFields(app, node, data);
         app.graphData.nodes.push(node);
@@ -283,6 +338,88 @@ Hooks.once("init", () => {
         if (!game.user.isGM) throw new Error("FANG | Only a GM removes chronicle entries.");
         const app = await ensureApp();
         return app._deleteHistoryEntry(id);
+      }
+    },
+    quests: {
+      /** Alle Quest-Verweise im Graphen, einer je Knoten und Quest. Spieler sehen nur, was das Panel ihnen zeigt. */
+      list: () => {
+        const nodes = fangApp?.graphData?.nodes ?? storedGraph()?.nodes ?? [];
+        const out = [];
+        for (const node of nodes) {
+          let quests = Array.isArray(node.questUuids) ? node.questUuids : [];
+          if (!game.user.isGM) {
+            if (node.gmOnly || (node.hidden && node.showHiddenQuestsToPlayers === false)) continue;
+            quests = quests.filter(q => q.visibleToPlayers !== false);
+          }
+          for (const q of quests) out.push(questRef(node, q));
+        }
+        return clone(out);
+      },
+      link: async ({ actorUuid, nodeId, uuid, name, status, visibleToPlayers, role, addMissing = false, origin = "api" } = {}) => {
+        requireGM();
+        const doc = uuid ? await fromUuid(uuid) : null;
+        if (!doc || !["JournalEntry", "JournalEntryPage"].includes(doc.documentName)) throw new Error(`FANG | No journal or page ${uuid}.`);
+        const events = [];
+        const result = await write(async (app) => {
+          const node = await questNode(app, { actorUuid, nodeId, addMissing });
+          if (!node) throw new Error(`FANG | No node for ${nodeId ?? actorUuid}.`);
+          if (!Array.isArray(node.questUuids)) node.questUuids = [];
+          let quest = node.questUuids.find(q => q.uuid === uuid);
+          if (!quest) {
+            // Neu verknüpft ist verborgen, wie beim Hineinziehen, solange nichts anderes verlangt wird.
+            quest = app._normalizeQuestRef({ uuid, name: name || app._getJournalDocumentTitle(doc), status: "open", visibleToPlayers: false });
+            patchQuest(quest, { status, visibleToPlayers, role });
+            node.questUuids.push(quest);
+            events.push({ node, quest, change: "linked", becameVisible: quest.visibleToPlayers !== false });
+          } else {
+            const wasVisible = quest.visibleToPlayers !== false;
+            const roleBefore = quest.role;
+            if (patchQuest(quest, { name, status, visibleToPlayers, role })) {
+              events.push({ node, quest, change: "updated", becameVisible: !wasVisible && quest.visibleToPlayers !== false });
+            }
+            if (roleBefore !== quest.role) app._syncQuestGiverMark(node, { removed: true });
+          }
+          app._syncQuestGiverMark(node);
+          return questRef(node, quest);
+        });
+        await afterQuestWrite(events, origin);
+        return result;
+      },
+      /** Ändert die Quest an jedem Knoten, der sie trägt; liefert die geänderten Verweise. */
+      update: async (uuid, { origin = "api", ...patch } = {}) => {
+        requireGM();
+        const events = [];
+        const result = await write((app) => {
+          const out = [];
+          for (const node of app.graphData.nodes) {
+            const quest = (node.questUuids ?? []).find(q => q.uuid === uuid);
+            if (!quest) continue;
+            const wasVisible = quest.visibleToPlayers !== false;
+            const roleBefore = quest.role;
+            if (!patchQuest(quest, patch)) continue;
+            if (roleBefore !== quest.role) { app._syncQuestGiverMark(node, { removed: true }); app._syncQuestGiverMark(node); }
+            events.push({ node, quest, change: "updated", becameVisible: !wasVisible && quest.visibleToPlayers !== false });
+            out.push(questRef(node, quest));
+          }
+          return out;
+        });
+        await afterQuestWrite(events, origin);
+        return result;
+      },
+      unlink: async ({ actorUuid, nodeId, uuid, origin = "api" } = {}) => {
+        requireGM();
+        const events = [];
+        const result = await write(async (app) => {
+          const node = await questNode(app, { actorUuid, nodeId });
+          const index = node?.questUuids?.findIndex(q => q.uuid === uuid) ?? -1;
+          if (index === -1) return false;
+          const [quest] = node.questUuids.splice(index, 1);
+          app._syncQuestGiverMark(node, { removed: true });
+          events.push({ node, quest, change: "unlinked" });
+          return true;
+        });
+        await afterQuestWrite(events, origin);
+        return result;
       }
     },
 

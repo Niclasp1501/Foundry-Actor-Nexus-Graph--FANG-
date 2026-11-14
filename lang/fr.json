@@ -685,6 +685,14 @@
             "failed": "Échouée",
             "rumor": "Rumeur"
         },
+        "QuestRole": {
+            "Label": "Rôle dans la quête",
+            "quest_giver": "Commanditaire",
+            "target": "Cible",
+            "ally": "Allié",
+            "enemy": "Ennemi",
+            "contact": "Contact"
+        },
         "Merge": {
             "ConflictResolved": "{names} était aussi en cours de modification — votre version a été conservée.",
             "DeletedElsewhere": "{names} a été supprimé par quelqu'un d'autre — votre modification a été abandonnée."

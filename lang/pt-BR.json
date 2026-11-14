@@ -685,6 +685,14 @@
             "failed": "Fracassada",
             "rumor": "Boato"
         },
+        "QuestRole": {
+            "Label": "Papel na missão",
+            "quest_giver": "Contratante",
+            "target": "Alvo",
+            "ally": "Aliado",
+            "enemy": "Inimigo",
+            "contact": "Contato"
+        },
         "Merge": {
             "ConflictResolved": "{names} também estava sendo editado — sua versão foi mantida.",
             "DeletedElsewhere": "{names} foi excluído por outra pessoa — sua alteração foi descartada."

@@ -685,6 +685,14 @@
             "failed": "Failed",
             "rumor": "Rumor"
         },
+        "QuestRole": {
+            "Label": "Role in the quest",
+            "quest_giver": "Quest giver",
+            "target": "Target",
+            "ally": "Ally",
+            "enemy": "Enemy",
+            "contact": "Contact"
+        },
         "Merge": {
             "ConflictResolved": "{names} was also being edited — your version was kept.",
             "DeletedElsewhere": "{names} was deleted by someone else — your change to it was dropped."

@@ -45,6 +45,17 @@ Everything the interface does with characters, connections, factions and places 
 - Game dates follow the calendar module in use: `label` and `sort` as it writes them (`app.detectCurrentGameDate()` gives today's). Entries from an earlier calendar module or typed by hand are converted into that format once, on the active GM's side (`app.convertGameDatesToCalendar()`); what they said before stays in `payload.gameDateBefore`. Write dates the calendar's way, never a `sort` of your own.
 - `api.history.update(id, { title?, playerText?, gmText?, kind?, visibility?, gameDate?, payload?, nodeIds? })` (a player may change title and text of their own entries only), `api.history.remove(id)` (GM only).
 
+### Quests
+
+A node carries references to quest journals or journal pages: `{ uuid, name, visibleToPlayers, status, role? }`. The journal is the source of truth; FANG keeps the reference, shows it in the node's quest panel and opens a page uuid on that page. `status` is one of `rumor, open, active, done, failed`. `role` says what the character is to the quest: `quest_giver, target, ally, enemy, contact`, or nothing when unknown. Only the GM sees the role. The quest giver mark on a node comes with any quest without a role or with `quest_giver`, so a target or an enemy does not get it. Check for `api.quests` before using it.
+
+- `api.quests.list()` every reference as `{ nodeId, actorUuid, uuid, name, status, visibleToPlayers, role }`. A player gets only what the quest panel shows them, without `role`.
+- `api.quests.link({ actorUuid | nodeId, uuid, name?, status?, visibleToPlayers?, role?, addMissing?, origin? })` attaches a quest to a node. A new link is hidden from players unless `visibleToPlayers: true`. Linking a quest the node already has only updates the fields given, it never adds it twice. `addMissing: true` adds a missing actor as a hidden node first. Resolves with the reference.
+- `api.quests.update(uuid, { status?, name?, visibleToPlayers?, role?, origin? })` changes the quest on every node that carries it and resolves with the changed references. Set a role per character through `link` rather than here.
+- `api.quests.unlink({ actorUuid | nodeId, uuid, origin? })` resolves with `true`, or `false` when the node did not carry the quest.
+
+All three writes are GM only, also while player editing is on. A quest that becomes visible to players writes the same chronicle entry as revealing it in the panel. Each change fires `fang.questChanged` (see Hooks) with `origin`: `"api"` unless you pass your own, `"fang"` for changes made in FANG's own panel or by dropping a journal on a node. Compare it with your own to avoid writing your change back.
+
 With FANG Premium, `game.modules.get("fang-premium").api.places` adds what happens between places: `travel({ to, travellers, title?, gameDate? })` records a journey, `whereIs(nodeId)` says where the chronicle puts someone (`{ placeId, seen, home, entryId }`, `seen` meaning only sighted there), `whoIsAt(placeId)` lists who is at a place or inside it, and `followed.list()` / `followed.set(nodeId, true | false)` (GM) decide whose whereabouts are followed.
 
 ## Tools for an AI assistant
@@ -77,6 +88,7 @@ Named `fang.*` and called with Foundry's `Hooks.on`. The first argument is alway
 | `fang.nodeDragStart` | `app, node` | someone starts dragging a node; return `false` to refuse the drag |
 | `fang.linkChanged` | `app, link, change` | a connection was created, edited or deleted; `change = "created" \| "updated" \| "deleted"` |
 | `fang.historyEntryCreated` | `app, entry` | a chronicle entry was stored |
+| `fang.questChanged` | `app, { node, quest, change, origin }` | a quest was linked to a node, changed or removed from it; `change = "linked" \| "updated" \| "unlinked"`, `node` and `quest` are copies. Fires only on the client where the change was made |
 | `fang.saved` | `app, { data }` | the graph was written |
 
 `fang.drop` fires with `app, { data, x, y, targetNode }` when something other than an actor or a journal is dropped on the graph: `data` is Foundry's drag data, `x`/`y` the drop point in graph coordinates, `targetNode` the node it landed on or `null`.

@@ -890,6 +890,17 @@ body.role-gm .fang-app-container .tab-content.gm-only:not(.active) {
     color: var(--fang-primary-red);
 }
 
+/* Rolle der Figur in der Quest, nur für die Spielleitung (kommt aus dem Journal Atlas). */
+.fang-quest-role {
+    align-self: center;
+    padding: 3px 7px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 800;
+    background: rgba(0, 0, 0, 0.06);
+    color: var(--fang-text-color, #2b221a);
+}
+
 .fang-quest-add {
     display: grid;
     gap: 10px;

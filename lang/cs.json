@@ -685,6 +685,14 @@
             "failed": "Neúspěšný",
             "rumor": "Fáma"
         },
+        "QuestRole": {
+            "Label": "Role v úkolu",
+            "quest_giver": "Zadavatel",
+            "target": "Cíl",
+            "ally": "Spojenec",
+            "enemy": "Nepřítel",
+            "contact": "Kontakt"
+        },
         "Merge": {
             "ConflictResolved": "{names} byl upravován současně — byla zachována tvoje verze.",
             "DeletedElsewhere": "{names} byl smazán někým jiným — tvoje změna propadla."

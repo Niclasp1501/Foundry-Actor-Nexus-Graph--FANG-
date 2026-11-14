@@ -685,6 +685,14 @@
             "failed": "Gescheitert",
             "rumor": "Gerücht"
         },
+        "QuestRole": {
+            "Label": "Rolle im Auftrag",
+            "quest_giver": "Auftraggeber",
+            "target": "Ziel",
+            "ally": "Verbündeter",
+            "enemy": "Gegner",
+            "contact": "Kontakt"
+        },
         "Merge": {
             "ConflictResolved": "{names} wurde gleichzeitig bearbeitet, deine Version wurde übernommen.",
             "DeletedElsewhere": "{names} wurde von jemand anderem gelöscht, deine Änderung ist verfallen."

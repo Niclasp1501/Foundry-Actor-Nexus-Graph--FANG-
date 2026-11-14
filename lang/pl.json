@@ -685,6 +685,14 @@
             "failed": "Nieudane",
             "rumor": "Plotka"
         },
+        "QuestRole": {
+            "Label": "Rola w zadaniu",
+            "quest_giver": "Zleceniodawca",
+            "target": "Cel",
+            "ally": "Sojusznik",
+            "enemy": "Wróg",
+            "contact": "Kontakt"
+        },
         "Merge": {
             "ConflictResolved": "{names} był edytowany równocześnie — zachowano twoją wersję.",
             "DeletedElsewhere": "{names} został usunięty przez kogoś innego — twoja zmiana przepadła."
