@@ -36,6 +36,7 @@ Everything the interface does with characters, connections, factions and places 
 - `api.nodes.add({ actorUuid } | { name, type?: "item" })` an actor, or a placeholder (an item with `type: "item"`). Also takes the fields of `update`. An actor already in the graph is returned as it is.
 - `api.nodes.update(id, { name?, role?, img?, hidden?, gmOnly?, displayName?, playerNotes?, lore?, conditions?, zoneId?, factionIds? })`
 - `api.nodes.remove(id)` removes the node and its connections.
+- `api.nodes.focus(id | { nodeId } | { actorUuid })` opens FANG, switches to the character graph and brings the node to the middle. Resolves with `false` when there is no such node or the current user may not see it. Changes nothing, so a player may call it too.
 - `api.links.add({ source, target, label?, directional?, type?, hidden?, gmOnly? })`, `api.links.update(id, patch)`, `api.links.remove(id)`
 - `api.factions.add(faction)`, `api.factions.update(id, patch)`, `api.factions.remove(id)` (members lose the faction).
 - `api.zones.add({ name, type?, parentId?, img?, description?, playerVisible?, hidden?, displayName?, color? })`, `api.zones.update(id, patch)`. A place cannot lie inside itself.

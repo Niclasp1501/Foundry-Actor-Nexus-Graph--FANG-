@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 - **The GM can write an entry on behalf of a player.** The chronicle form has "Entered by" for the GM: pick a player, and the entry stands under their name, is released to the players and they can edit it, as if they had written it themselves. A recap written this way belongs to that player without popping up on their screen.
-- **Quests for other modules.** A quest module can now link its quests to characters in FANG, change their status and visibility, and remove them again, and it hears about every change made in FANG's own quest panel (`api.quests`, hook `fang.questChanged`, see API.md). A link can say what the character is to the quest, such as quest giver, target or enemy; the GM sees it in the quest panel, and only a quest giver gets the quest giver mark. The status list now starts with Rumor.
+- **Quests for other modules.** A quest module can now link its quests to characters in FANG, change their status and visibility, and remove them again, and it hears about every change made in FANG's own quest panel (`api.quests`, hook `fang.questChanged`, see API.md). `api.nodes.focus` opens FANG on a character. A link can say what the character is to the quest, such as quest giver, target or enemy; the GM sees it in the quest panel, and only a quest giver gets the quest giver mark. The status list now starts with Rumor.
 
 ### Removed
 - **The beta channel has ended.** New versions come only through the Foundry package catalogue and the stable manifest URL.

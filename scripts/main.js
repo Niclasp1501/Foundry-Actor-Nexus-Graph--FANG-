@@ -228,6 +228,30 @@ Hooks.once("init", () => {
         applyNodeFields(app, node, patch);
         return node;
       }),
+      /**
+       * Öffnet FANG, wechselt zum Figurengraphen und holt den Knoten in die Mitte. Nimmt eine
+       * Knoten-Id oder `{ actorUuid }`; false, wenn es keinen Knoten gibt oder der Nutzer ihn nicht sieht.
+       */
+      focus: async (target) => {
+        const app = await ensureApp();
+        let node = null;
+        if (typeof target === "string") node = app.graphData.nodes.find(n => n.id === target) ?? null;
+        else if (target?.nodeId) node = app.graphData.nodes.find(n => n.id === target.nodeId) ?? null;
+        else if (target?.actorUuid) {
+          const actor = await fromUuid(target.actorUuid);
+          if (actor?.documentName === "Actor") node = app.graphData.nodes.find(n => n.actorId === actor.id) ?? null;
+        }
+        if (!node || !app._canUserSeeNode(node, game.user)) return false;
+        if (app.rendered) app.bringToFront();
+        else await app.render({ force: true });
+        if ((app._activeView || "graph") !== "graph") app.showView("graph");
+        // Nach dem ersten Zeichnen hat die Simulation den Knoten erst nach ein paar Takten platziert.
+        const live = () => app.graphData.nodes.find(n => n.id === node.id);
+        for (let i = 0; i < 30 && !Number.isFinite(live()?.x); i++) await new Promise(r => setTimeout(r, 50));
+        if (!Number.isFinite(live()?.x)) return false;
+        app._focusNodeOnCanvas(live());
+        return true;
+      },
       remove: (id) => write((app) => {
         app.graphData.nodes = app.graphData.nodes.filter(n => n.id !== id);
         app.graphData.links = app.graphData.links.filter(l => app._getLinkEndpointId(l.source) !== id && app._getLinkEndpointId(l.target) !== id);
