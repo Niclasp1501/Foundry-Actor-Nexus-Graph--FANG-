@@ -109,6 +109,9 @@ Hooks.once("init", () => {
     if (fangApp._baseline === undefined) await fangApp.loadData();
     return fangApp;
   };
+  // Für Erweiterungen: die eine Instanz, geladen, ohne das Fenster zu öffnen. Wer sich selbst
+  // eine FangApplication baut, hat neben dem Fenster eine zweite mit eigenem, bald altem Stand.
+  extension.ensureApp = ensureApp;
   const mayWrite = () => game.user.isGM || game.settings.get("fang", "allowPlayerEditing");
   /** One write through the api: load, change, save and merge, redraw an open window. */
   const write = async (change) => {

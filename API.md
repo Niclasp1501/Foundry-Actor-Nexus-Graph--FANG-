@@ -72,6 +72,7 @@ With Ninjo's Foundry MCP, FANG offers its own tools to an assistant: `fang-read`
 - `api.registerRailButton({ id, icon, label, gmOnly?, position?, onClick(app) })` a button in FANG's rail. `position: "bottom"` puts it at the foot of the rail, for something seldom needed. `label` may be a string or a function (for localisation). `icon` is a Font Awesome class such as `"fa-star"`.
 - `api.registerMenuItem({ id, target: "node" | "link", icon?, label, gmOnly?, when?(target), onClick(target) })` an entry in the right-click menu of a node or a connection. `when` decides per element whether the entry shows; omit it to always show.
 - `api.registerEditGuard(async (app, editing) => boolean)` runs before an editor opens; returning `false` keeps it closed. `editing` is `{ type: "node" | "link", id, name }`.
+- `extension.ensureApp()` resolves with FANG's one application instance, loaded, without opening the window. Use it instead of `new extension.FangApplication()`: a second instance lives beside the window with a state of its own that goes stale, and its next save can write that old state back.
 - `api.register({ id, requires, setup })` for add-ons that install deeper hooks. `requires` is the interface version needed; `setup(api)` runs once, or not at all when FANG's interface is older.
 
 ## Hooks
