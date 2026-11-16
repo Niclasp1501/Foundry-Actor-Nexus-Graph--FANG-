@@ -1015,6 +1015,12 @@ Hooks.once("ready", async () => {
     }
   }
 
+  // Anfragen von Spielern bearbeitet genau eine Spielleitung: die aktive, die Foundry bestimmt
+  // (eine volle Spielleitung vor einer Assistenz). Bis zum 17.11.2026 tat es jede, die online war;
+  // seit der KI-Client als Assistenz dauerhaft mitläuft, kam so jeder Chronik-Eintrag eines
+  // Spielers doppelt an, sobald Ninjo auch online war.
+  const isRelayGM = () => game.user.isGM && (!game.users.activeGM || game.users.activeGM.id === game.user.id);
+
   // Listen for GM share events natively on ready
   console.log("FANG | Registering socket listener for module.fang");
   game.socket.on("module.fang", async (data) => {
@@ -1086,7 +1092,7 @@ Hooks.once("ready", async () => {
     }
 
     // --- SOCKET RELAY FOR PLAYER EDITING ---
-    if (data.action === "playerEditGraph" && game.user.isGM) {
+    if (data.action === "playerEditGraph" && isRelayGM()) {
       if (!fangApp) fangApp = new FangApplication();
       setTimeout(async () => {
         const payload = data.payload || {};
@@ -1132,7 +1138,7 @@ Hooks.once("ready", async () => {
 
     // A player asked for the recap page of an entry. They cannot create documents, so we do
     // it, hand them ownership of their own recap, and tell them where it is.
-    if (data.action === "playerRequestRecapPage" && game.user.isGM) {
+    if (data.action === "playerRequestRecapPage" && isRelayGM()) {
       if (!fangApp) fangApp = new FangApplication();
       const { entryId, userId } = data.payload || {};
       const entry = fangApp._getHistoryStore().entries.find(item => item.id === entryId);
@@ -1150,7 +1156,7 @@ Hooks.once("ready", async () => {
       journal?.sheet?.render(true, { pageId });
     }
 
-    if (data.action === "playerCreateHistoryEntry" && game.user.isGM) {
+    if (data.action === "playerCreateHistoryEntry" && isRelayGM()) {
       if (!game.settings.get("fang", "playerChronicle")) return;
       if (!fangApp) fangApp = new FangApplication();
       const payload = data.payload || {};
@@ -1178,7 +1184,7 @@ Hooks.once("ready", async () => {
       });
     }
 
-    if (data.action === "playerUpdateHistoryEntry" && game.user.isGM) {
+    if (data.action === "playerUpdateHistoryEntry" && isRelayGM()) {
       if (!fangApp) fangApp = new FangApplication();
       const payload = data.payload || {};
       await fangApp._updateHistoryEntryFromPlayer(payload.entryId, {
@@ -1199,7 +1205,7 @@ Hooks.once("ready", async () => {
       if (fangApp && fangApp.rendered) fangApp.render();
     }
 
-    if (data.action === "requestLock" && game.user.isGM) {
+    if (data.action === "requestLock" && isRelayGM()) {
       const entry = game.journal.getName("FANG Graph");
       if (entry) {
         const currentLock = entry.getFlag("fang", "editLock");
@@ -1216,7 +1222,7 @@ Hooks.once("ready", async () => {
       }
     }
 
-    if (data.action === "requestReleaseLock" && game.user.isGM) {
+    if (data.action === "requestReleaseLock" && isRelayGM()) {
       const entry = game.journal.getName("FANG Graph");
       if (entry) {
         const currentLock = entry.getFlag("fang", "editLock");
@@ -1348,7 +1354,7 @@ Hooks.once("ready", async () => {
       _fangApplyVisualThemeToOpenApps();
     }
 
-    if (!game.user.isGM) return;
+    if (!isRelayGM()) return;
     if (!game.settings.get("fang", "diploglassOneWaySync")) return;
     if (!game.modules.get("diploglass")?.active) return;
     if (!game.journal.getName("FANG Graph")) return;
@@ -1414,7 +1420,7 @@ Hooks.on("userConnected", async (user, connected) => {
   // when someone joins or leaves.
   if (fangApp?.rendered) fangApp._updateLockUI();
 
-  if (!connected && game.user.isGM) {
+  if (!connected && game.user.isGM && (!game.users.activeGM || game.users.activeGM.id === game.user.id)) {
     const entry = game.journal.getName("FANG Graph");
     if (!entry) return;
 
