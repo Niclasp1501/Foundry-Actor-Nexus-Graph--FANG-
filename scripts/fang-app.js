@@ -11313,6 +11313,11 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
      * not confirmed it; closing it any other way than with the button means "later".
      */
     showGuide(guide, { force = false } = {}) {
+        // Die Anleitung einer anderen Ansicht geht, sobald gewechselt wird, auch wenn für die
+        // neue keine kommt. Sonst blieb beim Öffnen direkt in die Quests die Graph-Anleitung
+        // über der Quest-Ansicht liegen (21.11.2026).
+        const stale = this.element?.querySelector(".canvas-container .fang-guide-panel");
+        if (stale && stale.dataset.guide !== guide?.id) stale.remove();
         if (!guide?.id || !this.element) return;
         if (!force) {
             // Never on a screen someone else steers: a window the GM opened on the players'
@@ -11330,6 +11335,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const closeLabel = this._localize("FANG.UI.ClosePanel", "Close");
         const panel = document.createElement("div");
         panel.className = "fang-canvas-prompt-panel fang-guide-panel";
+        panel.dataset.guide = guide.id;
         panel.setAttribute("role", "dialog");
         panel.setAttribute("aria-modal", "true");
         panel.setAttribute("aria-label", guide.title ?? "");
