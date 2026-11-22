@@ -30,6 +30,9 @@
 /* ── Das Einzige, was je Modul angepasst wird ─────────────────────── */
 
 const MODUL = {
+  /** Die Modulkennung - fuer die Einstellung „auch fremde Fenster". */
+  id: "fang",
+
   /**
    * Klassen, an denen dieses Modul seine eigenen Fenster erkennt.
    *
@@ -93,6 +96,42 @@ function element(app) {
   return el instanceof HTMLElement ? el : (el[0] ?? null);
 }
 
+/**
+ * Duerfen auch fremde Fenster ins Bild gerueckt werden?
+ *
+ * Ab Werk ja: Ein Dialog, an dessen Rand niemand mehr kommt, ist kaputt -
+ * gleich wer ihn gebaut hat. Wer es abstellen will, findet den Schalter in
+ * den Moduleinstellungen.
+ */
+function fremdeKlemmen() {
+  try { return game.settings.get(MODUL.id, "fremdeFensterKlemmen") !== false; }
+  catch { return true; }
+}
+
+
+/**
+ * Wer kuemmert sich um **fremde** Fenster?
+ *
+ * Diese Datei liegt in mehreren Modulen. Waeren alle zustaendig, klemmte
+ * dasselbe fremde Fenster zwei- oder dreimal hintereinander - dieselbe
+ * Rechnung, dieselbe Lage, aber jedes Mal ein `setPosition`, und wer den
+ * Fehler spaeter sucht, findet drei Schuldige.
+ *
+ * Deshalb eine feste Reihenfolge statt "wer zuerst laedt": Das **erste
+ * aktive** Modul dieser Liste macht die Arbeit, alle uebrigen kuemmern sich
+ * nur um ihre eigenen Fenster. Vorn steht der Tisch, denn dort stehen die
+ * Tablets, auf denen ein zu grosses Fenster wirklich weh tut - und wer nur
+ * eines der beiden Module installiert hat, ist trotzdem versorgt.
+ */
+const WACHT = ["ninjos-inperson-tools", "ninjos-shops"];
+
+export function ichBinDieWacht() {
+  for (const id of WACHT) {
+    if (game.modules.get(id)?.active) return id === MODUL.id;
+  }
+  return false;
+}
+
 /** Gehoert das Fenster diesem Modul? */
 function unseres(app) {
   const liste = element(app)?.classList;
@@ -117,9 +156,39 @@ function fehlbetrag(el) {
  * die Breite (sie aendert den Umbruch), dann die Lage nach oben (sie gibt den
  * Platz frei), dann die Hoehe.
  */
-export function insBildRuecken(app) {
+export function insBildRuecken(app, { nurKlemmen = false } = {}) {
   const el = element(app);
   if (!el || !el.isConnected) return;
+
+  /*
+   * **Ein minimiertes Fenster bleibt minimiert.** Foundry merkt sich die alte
+   * Groesse selbst und stellt sie beim Aufklappen wieder her. Setzten wir hier
+   * eine Hoehe, wuchs die Titelleiste bei jedem Neuzeichnen zu einem halben
+   * Fenster, das unten rechts im Weg lag (Spielabend 21.11.2026).
+   */
+  if (app.minimized || el.classList.contains("minimized")) return;
+
+  /*
+   * **Fremdes nur, wenn es wirklich ein schwebendes Fenster ist.**
+   *
+   * Der Haken haengt an *jedem* `renderApplicationV2`, und in Foundry v13+
+   * sind auch die Seitenleiste, die Spielerliste, die Verzeichnisreiter und
+   * die Szenen-Werkzeuge ApplicationV2. Gemessen am 08.09.2026 in der
+   * laufenden Welt: `max-height: 1139px` stand im Stil von Players, Sidebar,
+   * ActorDirectory, CompendiumDirectory und PlaylistDirectory - von uns
+   * hineingeschrieben, und wie der Kommentar weiter unten sagt, wird der
+   * Deckel nie wieder zurueckgenommen. Bei einem kleineren Bild waere er
+   * schlicht falsch.
+   *
+   * Ein angedockter Reiter liegt im Fluss der Seite (`static`/`relative`), ein
+   * schwebendes Fenster nicht. Das ist der Unterschied, um den es geht - nicht
+   * ob ein Fenster einen Rahmen hat: Die Verzeichnisse haben einen und sind
+   * trotzdem angedockt.
+   */
+  if (nurKlemmen) {
+    const lage = getComputedStyle(el).position;
+    if (lage !== "absolute" && lage !== "fixed") return;
+  }
 
   const bildBreite = window.innerWidth;
   const bildHoehe = window.innerHeight;
@@ -146,7 +215,14 @@ export function insBildRuecken(app) {
   /* ── Breite ─────────────────────────────────────────────────────── */
 
   let wunschBreite = sollBreite;
-  if (!gewachsen.has(app)) {
+  if (nurKlemmen) {
+    /*
+     * Fremde Fenster werden nur **kleiner** gemacht, nie groesser. Ein Dialog,
+     * der in den Schirm passt, gehoert dem Modul, das ihn gebaut hat - wir
+     * greifen erst ein, wenn er darueber hinauslaeuft und niemand mehr an
+     * seinen Rand kommt.
+     */
+  } else if (!gewachsen.has(app)) {
     gewachsen.add(app);
     wunschBreite = Math.min(sollBreite * WACHSTUM, bildBreite - 2 * RAND);
   } else if (unberuehrt && unsere?.wunsch) {
@@ -154,7 +230,17 @@ export function insBildRuecken(app) {
     // bekommt ein gedrehtes Tablet seine Fenster wieder gross.
     wunschBreite = Math.min(unsere.wunsch * WACHSTUM, bildBreite - 2 * RAND);
   }
-  const breite = Math.max(MINDEST.breite, Math.min(wunschBreite, bildBreite - 2 * RAND));
+  /*
+   * **Die Mindestgroesse gilt nur fuer eigene Fenster.** Am 08.09.2026 stand
+   * Monk's Common Display mit 280 x 200 im Bild, obwohl es `width: "auto"` und
+   * `height: 95` verlangt - die Haelfte des Fensters war leer. Fuer ein
+   * fremdes Fenster ist "zu klein" keine Diagnose, die uns zusteht: Wer es
+   * gebaut hat, kennt seinen Inhalt. Wir greifen nur ein, wenn es **groesser**
+   * ist als der Schirm.
+   */
+  const breite = nurKlemmen
+    ? Math.min(wunschBreite, bildBreite - 2 * RAND)
+    : Math.max(MINDEST.breite, Math.min(wunschBreite, bildBreite - 2 * RAND));
 
   // Zuerst, denn sie aendert den Umbruch: Mit 1170 statt 780 Pixeln steht eine
   // Auslage zweispaltig und braucht die halbe Hoehe.
@@ -181,7 +267,7 @@ export function insBildRuecken(app) {
    * Solange niemand selbst gezogen hat, darf es bei jedem Zeichnen nachwachsen;
    * es aendert sich ohnehin nur, wenn wirklich etwas fehlt.
    */
-  if (unberuehrt) {
+  if (unberuehrt && !nurKlemmen) {
     const fehlt = fehlbetrag(el);
     if (fehlt > 1) {
       hoehe = fehlt > bildHoehe * 0.15
@@ -189,7 +275,9 @@ export function insBildRuecken(app) {
         : Math.min(nach.height + fehlt, hoechsteHoehe);
     }
   }
-  hoehe = Math.max(MINDEST.hoehe, Math.min(hoehe, hoechsteHoehe));
+  hoehe = nurKlemmen
+    ? Math.min(hoehe, hoechsteHoehe)
+    : Math.max(MINDEST.hoehe, Math.min(hoehe, hoechsteHoehe));
 
   /* ── Lage ───────────────────────────────────────────────────────── */
 
@@ -251,9 +339,56 @@ function alleNachziehen() {
 /**
  * Anmelden. Gehoert in `ready`.
  */
+/**
+ * Fenster mit dem Finger verschiebbar machen.
+ *
+ * **Der Fehler.** Am 08.09.2026 liess sich auf dem Tablet kein Fenster dieses
+ * Moduls verschieben. Foundry zieht die Titelleiste ueber Zeigerereignisse,
+ * und die kommen auf einem Touchscreen auch an - nur entscheidet der Browser
+ * vorher, dass eine Wischgeste ueber einem Element ein *Scrollen* ist, und
+ * bricht das Ziehen ab, sobald der Finger sich bewegt. Mit der Maus faellt
+ * das nie auf, weil ein Mauszeiger nicht scrollt.
+ *
+ * `touch-action: none` sagt dem Browser, dass er die Geste dem Element
+ * ueberlassen soll. Nur fuer die Titelleiste und die Anfasser zum Groesse-
+ * aendern - nicht fuer den Inhalt, der weiter mit dem Finger gescrollt
+ * werden muss.
+ *
+ * Steht hier und nicht im Stylesheet, damit es mit dieser Datei in jedes
+ * Modul wandert: Ein Fenster, das man nicht anfassen kann, ist derselbe
+ * Fehler wie eines, das aus dem Bild laeuft.
+ */
+function fingerZiehenErlauben() {
+  const id = "ninjo-fensterpassen-touch";
+  if (document.getElementById(id)) return;
+  const wahl = MODUL.marke.map(k =>
+    `.${k} .window-header, .${k} .window-resize-handle, .${k} [data-action="resize"]`
+  ).join(", ");
+  const stil = document.createElement("style");
+  stil.id = id;
+  stil.textContent = `${wahl} { touch-action: none; }`;
+  document.head.append(stil);
+}
+
 export function fensterPassenEinrichten() {
+  fingerZiehenErlauben();
+
   const beimZeichnen = app => {
-    if (!unseres(app)) return;
+    const eigenes = unseres(app);
+    /*
+     * **Fremde Fenster auch - aber nur klemmen.**
+     *
+     * Am 08.09.2026 am Tisch: Auf einem Tablet oeffnete der Trefferwuerfel-
+     * Dialog von dnd5e groesser als der Schirm, und man kam nicht mehr heraus -
+     * kein Rand zum Ziehen, kein Schliessen-Kreuz im Bild. Dasselbe beim
+     * Bearbeiten der Trefferpunkte. Das sind nicht unsere Fenster, und
+     * trotzdem sitzt der Spieler fest.
+     *
+     * Wir machen sie deshalb nur kleiner, nie groesser, und ruecken sie ins
+     * Bild. Wer das nicht will, schaltet es ab - dann bleibt es bei den
+     * eigenen Fenstern.
+     */
+    if (!eigenes && (!ichBinDieWacht() || !fremdeKlemmen())) return;
     /*
      * **Kein `requestAnimationFrame`.** Der naheliegende Weg, auf das fertige
      * Bild zu warten, ist hier der falsche: Ein Browser, dessen Fenster
@@ -266,7 +401,7 @@ export function fensterPassenEinrichten() {
      * `setTimeout` laeuft auch dann. Warten muss man trotzdem: Im Haken
      * selbst haengt der Inhalt noch nicht vollstaendig am Dokument.
      */
-    setTimeout(() => insBildRuecken(app), 0);
+    setTimeout(() => insBildRuecken(app, { nurKlemmen: !eigenes }), 0);
   };
 
   Hooks.on("renderApplicationV2", beimZeichnen);
