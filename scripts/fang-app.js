@@ -1092,6 +1092,32 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         return value && value !== key ? value : fallback;
     }
 
+    /**
+     * Wie jemand in FANG heisst: die zugewiesene Figur zuerst, das Konto dahinter.
+     *
+     * Am Tisch denkt die Spielleitung in Figuren, nicht in Anmeldungen; bei einem
+     * Konto wie "Testnutzer2" weiss niemand mehr, wer dahintersteckt. Ein Konto
+     * ohne Figur, etwa ein Monitor oder die Spielleitung, behaelt seinen Namen.
+     *
+     * @param {User|null} user
+     * @param {string} [fallback]  gespeicherter Name, wenn es das Konto nicht mehr gibt
+     * @returns {string} Klartext, zum Beispiel fuer Tooltips und Auswahllisten
+     */
+    _personLabel(user, fallback = "") {
+        if (!user) return fallback || "";
+        const figur = user.character?.name;
+        return figur ? `${figur} (${user.name})` : user.name;
+    }
+
+    /** Wie _personLabel, als HTML: die Figur, dahinter klein das Konto. */
+    _personHtml(user, fallback = "") {
+        if (!user) return this._escapeHtml(fallback || "");
+        const figur = user.character?.name;
+        return figur
+            ? `${this._escapeHtml(figur)} <small class="fang-login-name">${this._escapeHtml(user.name)}</small>`
+            : this._escapeHtml(user.name);
+    }
+
     _escapeHtml(value) {
         const escapeHtml = foundry.utils.escapeHTML ?? ((input) => String(input ?? "").replace(/[&<>"']/g, (char) => ({
             "&": "&amp;",
@@ -2482,14 +2508,14 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         // their notes, their recap. It then stands under their name, as if they had written it.
         const monitorName = String(game.settings.get("fang", "monitorDisplayName") || "").trim().toLowerCase();
         const authorPlayers = isGM
-            ? game.users.filter(u => !u.isGM && !(monitorName && u.name.toLowerCase().includes(monitorName))).sort((a, b) => a.name.localeCompare(b.name))
+            ? game.users.filter(u => !u.isGM && !(monitorName && u.name.toLowerCase().includes(monitorName))).sort((a, b) => this._personLabel(a).localeCompare(this._personLabel(b)))
             : [];
         const currentAuthorIsPlayer = !!editingEntry?.authorUserId && authorPlayers.some(u => u.id === editingEntry.authorUserId);
         const authorField = isGM && authorPlayers.length ? `
                     <label for="fang-history-author">${this._escapeHtml(this._localize("FANG.History.EnteredByLabel", "Entered by"))}</label>
                     <select id="fang-history-author">
                         <option value="">${this._escapeHtml(this._localize("FANG.History.EnteredBySelf", "Me ({name})").replace("{name}", game.user.name))}</option>
-                        ${authorPlayers.map(u => `<option value="${this._escapeHtml(u.id)}" ${currentAuthorIsPlayer && editingEntry.authorUserId === u.id ? "selected" : ""}>${this._escapeHtml(u.character ? `${u.name} (${u.character.name})` : u.name)}</option>`).join("")}
+                        ${authorPlayers.map(u => `<option value="${this._escapeHtml(u.id)}" ${currentAuthorIsPlayer && editingEntry.authorUserId === u.id ? "selected" : ""}>${this._escapeHtml(this._personLabel(u))}</option>`).join("")}
                     </select>
                     <p class="fang-hint">${this._escapeHtml(this._localize("FANG.History.EnteredByHint", "Enter it on behalf of a player: it then stands under their name, is released to the players and they can edit it."))}</p>` : "";
         const gmFields = isGM ? `
@@ -2884,7 +2910,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                                                 <strong><i class="fas ${this._escapeHtml(category.icon)}"></i> ${this._escapeHtml(entry.title || this._localize("FANG.History.Untitled", "Untitled insight"))}</strong>
                                             </div>
                                             <div class="fang-history-meta">
-                                                ${entry.authorName ? `<span class="fang-history-author" data-tooltip="${this._escapeHtml(this._localize("FANG.History.EnteredBy", "Entered by {name}").replace("{name}", entry.authorName))}" aria-label="${this._escapeHtml(this._localize("FANG.History.EnteredBy", "Entered by {name}").replace("{name}", entry.authorName))}"><i class="fas fa-pen-nib" aria-hidden="true"></i>${this._escapeHtml(entry.authorName)}</span>` : ""}
+                                                ${entry.authorName ? (() => { const wer = game.users.get(entry.authorUserId); const label = this._escapeHtml(this._localize("FANG.History.EnteredBy", "Entered by {name}").replace("{name}", this._personLabel(wer, entry.authorName))); return `<span class="fang-history-author" data-tooltip="${label}" aria-label="${label}"><i class="fas fa-pen-nib" aria-hidden="true"></i>${this._personHtml(wer, entry.authorName)}</span>`; })() : ""}
                                                 ${entry.gameDate?.time ? `<span class="fang-history-time"><i class="fas fa-clock" aria-hidden="true"></i>${this._escapeHtml(entry.gameDate.time)}</span>` : ""}
                                                 <span class="fang-history-category">${this._escapeHtml(category.label)}</span>
                                             </div>
@@ -11017,7 +11043,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             for (const user of game.users) {
                 if (user.id === game.user.id) continue;
                 const note = this._getPersonalNote(node.id, user);
-                if (note) rows.push(`<li><strong>${esc(user.name)}</strong><div class="fang-personal-note">${await enrich(note)}</div></li>`);
+                if (note) rows.push(`<li><strong>${this._personHtml(user)}</strong><div class="fang-personal-note">${await enrich(note)}</div></li>`);
             }
             if (rows.length) others = `<h5>${esc(t("Others", "Notes of the players"))}</h5><ul class="fang-personal-others">${rows.join("")}</ul>`;
         }
@@ -11873,7 +11899,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 ? game.i18n.localize("FANG.Messages.NoGMOnline")
                 : others.length
                     ? this._localize("FANG.UI.CollaborativeWith", "Collaborative editing — also here: {users}")
-                          .replace("{users}", others.map(u => u.name).join(", "))
+                          .replace("{users}", others.map(u => this._personLabel(u)).join(", "))
                     : this._localize("FANG.UI.CollaborativeAlone", "Collaborative editing");
             return;
         }

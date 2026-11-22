@@ -5714,3 +5714,11 @@ body.fang-theme-cyberpunk .background-config-container .premium-notice p {
 .fang-app-container .fang-personal-others { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }
 .fang-personal-editor-dialog prose-mirror { display: block; min-height: 280px; }
 .fang-personal-editor-dialog .window-content { overflow-y: auto; }
+
+/* Das Konto klein hinter dem Namen der Figur */
+.fang-login-name {
+    font-size: 0.85em;
+    font-weight: normal;
+    opacity: 0.7;
+    margin-left: 0.25em;
+}
