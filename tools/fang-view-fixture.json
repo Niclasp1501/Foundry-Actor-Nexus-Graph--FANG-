@@ -1,0 +1,56 @@
+{
+  "_comment": "Spoiler fixture for viewFor. Every secret carries a unique mark GEHEIM-<n>; tools/fang-view-test.mjs lists which marks each user may see.",
+  "users": {
+    "A": { "id": "userA", "name": "Player A", "isGM": false, "ownedActorIds": ["charA"] },
+    "B": { "id": "userB", "name": "Player B", "isGM": false, "ownedActorIds": ["charB"] },
+    "GM": { "id": "userGM", "name": "GM", "isGM": true, "ownedActorIds": [] }
+  },
+  "graph": {
+    "nodes": [
+      { "id": "nA", "actorId": "charA", "name": "Asha", "role": "Ranger", "lore": "Open lore of Asha.", "img": "tokens/asha.webp", "zoneId": "zRoom", "factionIds": ["fOpen"], "questUuids": [{ "uuid": "JournalEntry.qOpen", "name": "Open quest", "status": "active", "visibleToPlayers": true }, { "uuid": "JournalEntry.qHid", "name": "GEHEIM-25 hidden quest", "status": "active", "visibleToPlayers": false }], "journalUuid": "JournalEntry.GEHEIM-24" },
+      { "id": "nB", "actorId": "charB", "name": "Bram", "role": "Cleric", "lore": "Open lore of Bram.", "img": "tokens/bram.webp", "zoneId": "zOpen", "factionIds": ["fOpen", "fSecret"] },
+      { "id": "nFree", "actorId": "charFree", "name": "Mara the Smith", "role": "Smith", "img": "tokens/mara.webp" },
+      { "id": "nHidden", "actorId": "GEHEIM-4", "name": "GEHEIM-1 the Lich King", "displayName": "Hooded Stranger", "hidden": true, "role": "GEHEIM-5 lich", "lore": "GEHEIM-2 phylactery under the well", "img": "tokens/GEHEIM-3-lich.webp", "playerNotes": "Wears a grey hood.", "showHiddenQuestsToPlayers": false, "questUuids": [{ "uuid": "JournalEntry.qLich", "name": "GEHEIM-26 Lich hunt", "status": "open", "visibleToPlayers": true }], "factionIds": ["fSecret"] },
+      { "id": "nGmOnly", "actorId": "charGmOnly", "name": "GEHEIM-6 the Traitor", "gmOnly": true, "lore": "GEHEIM-6b", "zoneId": "zHouse" }
+    ],
+    "links": [
+      { "id": "lOpen", "source": "nA", "target": "nB", "label": "travels with", "info": "Since the shipwreck." },
+      { "id": "lGmOnly", "source": "nA", "target": "nFree", "label": "GEHEIM-7 is the secret child of", "gmOnly": true },
+      { "id": "lToGmOnly", "source": "nB", "target": "nGmOnly", "label": "GEHEIM-8 is watched by" },
+      { "id": "lToHidden", "source": "nA", "target": "nHidden", "label": "fears" }
+    ],
+    "factions": [
+      { "id": "fOpen", "name": "Harbour Watch", "color": "#2563eb" },
+      { "id": "fSecret", "name": "GEHEIM-9 Cult of Bones", "color": "#000000", "playerVisible": false }
+    ],
+    "zones": [
+      { "id": "zOpen", "name": "Market Square", "reveal": "open" },
+      { "id": "zUnknown", "name": "GEHEIM-10 Sunken Vault", "reveal": "visited" },
+      { "id": "zGmOnly", "name": "GEHEIM-11 Lair", "reveal": "open", "playerVisible": false },
+      { "id": "zAlias", "name": "GEHEIM-12 Necropolis", "displayName": "Old Ruins", "hidden": true, "description": "GEHEIM-13 city of the dead", "img": "places/GEHEIM-14.webp", "reveal": "open" },
+      { "id": "zHouse", "name": "GEHEIM-15 House of the Traitor", "reveal": "visited" },
+      { "id": "zRoom", "name": "Cellar", "parentId": "zHouse", "reveal": "visited" },
+      { "id": "zMine", "name": "Hideout of B", "reveal": "visited", "createdBy": "userB" }
+    ]
+  },
+  "history": [
+    { "id": "hGm", "visibility": "gm", "title": "GEHEIM-16 the plan", "playerText": "", "gmText": "GEHEIM-16b", "refs": [] },
+    { "id": "hPlayersGm", "visibility": "players", "title": "Market brawl", "playerText": "A fight broke out.", "gmText": "GEHEIM-17 the brawl was staged", "refs": [{ "type": "node", "id": "nB" }], "authorUserId": "userGM", "authorName": "GM" },
+    { "id": "hGmOnlyNode", "visibility": "players", "title": "GEHEIM-18 visit", "playerText": "Someone came by.", "refs": [{ "type": "node", "id": "nGmOnly" }] },
+    { "id": "hByA", "visibility": "players", "title": "Asha's diary", "playerText": "We arrived.", "authorUserId": "userA", "authorName": "Player A", "refs": [{ "type": "node", "id": "nA" }] },
+    { "id": "hTravelHidden", "visibility": "players", "title": "Journey to the ruins", "playerText": "Asha and the stranger travel.", "refs": [{ "type": "node", "id": "nA" }, { "type": "node", "id": "nHidden" }], "payload": { "secret": "GEHEIM-20 payload" } },
+    { "id": "hRecapA", "visibility": "players", "kind": "flashback", "title": "Recap by Asha", "playerText": "", "recapPageId": "pageGEHEIM-19", "authorUserId": "userA", "refs": [{ "type": "node", "id": "nA" }] },
+    { "id": "hQuestA", "visibility": "players", "kind": "quest", "title": "GEHEIM-21 Asha's vow", "playerText": "The quest \"GEHEIM-21 Asha's vow\" is done.", "onlyFor": ["Actor.charA"], "payload": { "questId": "qVowA" }, "refs": [{ "type": "node", "id": "nA" }] },
+    { "id": "hSecretFaction", "visibility": "players", "title": "Rumours", "playerText": "People whisper.", "refs": [{ "type": "faction", "id": "fSecret" }, { "type": "node", "id": "nB" }] }
+  ],
+  "notes": {
+    "userA": { "nB": { "html": "<p>GEHEIM-22 I think Bram lies.</p>" }, "nGmOnly": { "html": "<p>GEHEIM-27 note on a node A no longer sees</p>" } },
+    "userB": { "nB": { "html": "<p>GEHEIM-23 my own secret.</p>" } }
+  },
+  "readablePages": { "userA": ["pageGEHEIM-19"], "userB": [] },
+  "settings": { "allowPlayerEditing": true, "playerPlaces": false, "playerChronicle": true },
+  "allowed": {
+    "A": ["GEHEIM-19", "GEHEIM-21", "GEHEIM-22"],
+    "B": ["GEHEIM-23"]
+  }
+}

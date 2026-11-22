@@ -1,4 +1,5 @@
 import { FangApplication, FANG_EXTENSION_VERSION, fangNodeImageOptions } from "./fang-app.js";
+import * as fangView from "./fang-view.mjs";
 import { willkommenEinrichten, willkommenZeigen } from "./willkommen.js";
 import { fensterPassenEinrichten } from "./fensterpassen.js";
 import { verzeichnisKnopfEinrichten } from "./verzeichnisknopf.js";
@@ -337,22 +338,71 @@ Hooks.once("init", () => {
         return node;
       })
     },
+    /**
+     * What another user sees of FANG, already projected (interface 2). For a GM-side program
+     * that reads on behalf of a player, such as a companion app or add-on: it gets exactly
+     * what that player's own FANG would show and nothing else, from the same rules
+     * (fang-view.mjs). Add-ons add their part through the hook `fang.viewForUser`.
+     */
+    view: {
+      forUser: async (userId) => {
+        if (!game.user.isGM) throw new Error("FANG | Only a GM reads the view of another user.");
+        const user = game.users.get(userId);
+        if (!user) throw new Error(`FANG | No user ${userId}.`);
+        const app = await ensureApp();
+        const viewUser = app._viewUser(user);
+        const pageOf = (id) => game.journal.find(j => j.pages?.get?.(id))?.pages.get(id) ?? null;
+        const data = {
+          graph: app._baseline !== undefined ? app._buildExportData() : clone(storedGraph() ?? {}),
+          history: app._getHistoryStore().entries,
+          settings: {
+            allowPlayerEditing: game.settings.get("fang", "allowPlayerEditing"),
+            playerPlaces: game.settings.get("fang", "playerPlaces"),
+            playerChronicle: game.settings.get("fang", "playerChronicle")
+          },
+          notes: clone(user.getFlag("fang", "personalNotes") ?? {}),
+          knownZoneIds: user.isGM ? [] : [...app._zonesKnownTo(user)],
+          canReadPage: (id) => !!pageOf(id)?.testUserPermission?.(user, "OBSERVER"),
+          // Everything FANG and its add-ons say about an entry for this user, e.g. FANG
+          // Premium for the entries of a quest.
+          entryVisible: (entry) => app._getHistoryEntryForUser(entry, user) !== null
+        };
+        const view = fangView.viewFor(data, viewUser, { unknown: game.i18n.localize("FANG.Dropdowns.Unknown") });
+        Hooks.callAll("fang.viewForUser", app, user, view);
+        return view;
+      },
+      /** What a user may change in FANG, by the world settings. */
+      rightsFor: (userId) => {
+        const user = game.users.get(userId);
+        return fangView.rightsFor({
+          allowPlayerEditing: game.settings.get("fang", "allowPlayerEditing"),
+          playerPlaces: game.settings.get("fang", "playerPlaces"),
+          playerChronicle: game.settings.get("fang", "playerChronicle")
+        }, { isGM: !!user?.isGM });
+      }
+    },
     history: {
       list: () => {
         if (fangApp?._baseline !== undefined) return clone(fangApp._getHistoryEntriesForUser());
         const entries = game.settings.get("fang", "history")?.entries ?? [];
-        return clone(game.user.isGM ? entries : entries.filter(e => e?.visibility === "players"));
+        if (game.user.isGM) return clone(entries);
+        // Without a loaded graph the same rules as in FANG, from fang-view.mjs: no GM text,
+        // no entry for someone else's personal quest, none about characters only the GM knows.
+        const nodesById = new Map((storedGraph()?.nodes ?? []).map(n => [n.id, n]));
+        const user = { id: game.user.id, isGM: false, ownedActorIds: game.actors.filter(a => a.isOwner).map(a => a.id) };
+        return clone(entries.filter(e => fangView.canSeeEntry(e, user, nodesById)
+          && Hooks.call("fang.historyEntryVisible", e, game.user) !== false).map(e => ({ ...e, gmText: "" })));
       },
       /**
        * `nodeIds` attaches the entry to several characters, `gameDate` ({ label, sort, time })
        * dates it (today when left out), `payload` carries an add-on's data such as a place.
        */
-      add: async ({ title, playerText = "", gmText = "", nodeId = null, nodeIds = null, visibility = "gm", kind = "event", gameDate = null, payload = null } = {}) => {
+      add: async ({ title, playerText = "", gmText = "", nodeId = null, nodeIds = null, visibility = "gm", kind = "event", gameDate = null, payload = null, onlyFor = null } = {}) => {
         const app = await ensureApp();
         const node = nodeId ? app.graphData?.nodes?.find(n => n.id === nodeId) ?? null : null;
         const refs = Array.isArray(nodeIds) ? nodeIds.map(id => ({ type: "node", id })) : null;
         return app._createHistoryEntry({ node, refs, title, playerText, gmText, kind, visibility, origin: "api",
-          gameDate: gameDate ?? app.detectCurrentGameDate(), payload });
+          gameDate: gameDate ?? app.detectCurrentGameDate(), payload, onlyFor: Array.isArray(onlyFor) ? onlyFor : null });
       },
       update: async (id, patch = {}) => {
         const app = await ensureApp();
@@ -1033,7 +1083,9 @@ Hooks.once("ready", async () => {
 
   // Listen for GM share events natively on ready
   console.log("FANG | Registering socket listener for module.fang");
-  game.socket.on("module.fang", async (data) => {
+  // The server hands every receiver the id of the user who sent a message (handleCustomSocket
+  // in Foundry's server/sockets.mjs). That id cannot be forged; anything inside `data` can.
+  game.socket.on("module.fang", async (data, senderId) => {
     console.debug("FANG | Socket event received:", data);
 
     // Initial show/close actions
@@ -1150,9 +1202,12 @@ Hooks.once("ready", async () => {
     // it, hand them ownership of their own recap, and tell them where it is.
     if (data.action === "playerRequestRecapPage" && isRelayGM()) {
       if (!fangApp) fangApp = new FangApplication();
-      const { entryId, userId } = data.payload || {};
+      const { entryId } = data.payload || {};
+      // Only for the sender's own player entry: the page goes to its author, and until
+      // 23.11.2026 anyone could ask for the page of any entry, owned by anyone.
+      const userId = senderId;
       const entry = fangApp._getHistoryStore().entries.find(item => item.id === entryId);
-      if (!entry) return;
+      if (!entry || !userId || entry.authorUserId !== userId || entry.visibility !== "players") return;
       const pageId = entry.recapPageId || await fangApp._createRecapPage(entry, userId);
       if (pageId) game.socket.emit("module.fang", { action: "recapPageReady", payload: { entryId, userId, pageId } });
     }
@@ -1170,8 +1225,13 @@ Hooks.once("ready", async () => {
       if (!game.settings.get("fang", "playerChronicle")) return;
       if (!fangApp) fangApp = new FangApplication();
       const payload = data.payload || {};
+      // The author is whoever sent the message, whatever the message says.
+      const sender = game.users.get(senderId);
+      if (!sender || sender.isGM) return;
+      payload.authorUserId = sender.id;
+      payload.authorName = sender.name;
       // An add-on may check or trim what a player sends along (a journey, say).
-      if (Hooks.call("fang.playerHistoryEntry", payload, game.users.get(payload.authorUserId)) === false) return;
+      if (Hooks.call("fang.playerHistoryEntry", payload, sender) === false) return;
       const hasContent = String(payload.title || payload.playerText || "").trim();
       if (!hasContent) return;
       await fangApp._createHistoryEntry({
@@ -1190,7 +1250,9 @@ Hooks.once("ready", async () => {
         authorUserId: payload.authorUserId,
         authorName: payload.authorName,
         // The entry's own free-form bag, e.g. an add-on's location tag.
-        payload: (payload.entryPayload && typeof payload.entryPayload === "object") ? payload.entryPayload : null
+        payload: (payload.entryPayload && typeof payload.entryPayload === "object") ? payload.entryPayload : null,
+        // A player may narrow who reads their entry, never widen it.
+        onlyFor: Array.isArray(payload.onlyFor) ? payload.onlyFor.filter(a => typeof a === "string") : null
       });
     }
 
@@ -1200,7 +1262,7 @@ Hooks.once("ready", async () => {
       await fangApp._updateHistoryEntryFromPlayer(payload.entryId, {
         title: payload.title,
         playerText: payload.playerText
-      });
+      }, senderId);
     }
 
     if (data.action === "applyBackground") {

@@ -3,6 +3,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Module versions follow the Foundry-targeted `<foundry-major>.<YYMM>.<patch>` release scheme documented in `AGENTS.md`.
 
+## [Unreleased]
+
+### Added
+- **What another user sees, for companion apps.** `api.view.forUser(userId)` gives a GM-side program exactly what a player's own FANG shows, already filtered: hidden characters by their alias without picture or description, no GM text, no places the player does not know, only their own notes. The rules now live in one file shared by FANG's window and the api, with a test that searches a fixture full of marked secrets (see API.md, interface 2).
+- **Chronicle entries for chosen characters.** An entry can name the characters it is for (`onlyFor`); then only their players and the GM read it.
+
+### Fixed
+- **A player changes only their own chronicle entries.** Any player could rewrite any player's entry by sending its id, and ask for the recap page of any entry. FANG now takes the sender from Foundry's server instead of from the message and checks that they wrote the entry.
+- **No GM text in a player's copy of an entry.** The chronicle hid it, but the entry object a player's FANG handed to add-ons still carried it, and so did `api.history.list()` before the graph was loaded.
+
 ## [14.2611.2] - 2026-11-22
 
 ### Fixed

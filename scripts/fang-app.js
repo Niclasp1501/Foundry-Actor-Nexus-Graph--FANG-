@@ -1,4 +1,5 @@
 import { mergeGraphData, valuesEqual, structurallyEqual } from "./fang-merge.mjs";
+import * as fangView from "./fang-view.mjs";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
@@ -35,7 +36,7 @@ const FANG_GRAPH_SCHEMA_VERSION = 2;
  * states the version it needs; the core refuses one that needs more than it offers.
  * Bump when a hook's arguments or a strategy's contract change, never for additions.
  */
-export const FANG_EXTENSION_VERSION = 1;
+export const FANG_EXTENSION_VERSION = 2;
 
 /**
  * What FANG knows about each picture it shows in a node: its size, and the square that holds
@@ -517,9 +518,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
     _canUserSeeZone(zone, user = game.user) {
         if (!zone) return false;
         if (user?.isGM) return true;
-        if (zone.playerVisible === false) return false;
-        if (zone.reveal !== "visited") return true;
-        return this._zonesKnownTo(user).has(zone.id);
+        return fangView.canSeeZone(zone, user, this._zonesKnownTo(user));
     }
 
     /**
@@ -992,8 +991,11 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     _isFactionVisibleToCurrentUser(faction) {
-        if (!faction) return false;
-        return game.user.isGM || faction.playerVisible !== false;
+        return this._isFactionVisibleToUser(faction, game.user);
+    }
+
+    _isFactionVisibleToUser(faction, user = game.user) {
+        return fangView.canSeeFaction(faction, user);
     }
 
     _shouldShowFactionLinesToCurrentUser(faction) {
@@ -1007,17 +1009,16 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     _canUserSeeNode(node, user = game.user) {
-        if (!node) return false;
-        if (!user?.isGM && node.gmOnly === true) return false;
         // Hidden nodes are still player-managed contacts, so a player keeps interacting
         // with the safe facade. Note what this does and does not do: it decides what gets
         // drawn, not what gets sent. The real name travels to every client inside the graph
         // flag either way - see "Visibility is a display filter" in AGENTS.md.
-        return true;
+        // The rule itself lives in fang-view.mjs, shared with view.forUser.
+        return fangView.canSeeNode(node, user);
     }
 
     _isNodeHiddenForUser(node, user = game.user) {
-        return !!node?.hidden && !user?.isGM;
+        return fangView.isNodeHidden(node, user);
     }
 
     _canUserSeeQuest(node, quest, user = game.user) {
@@ -1883,6 +1884,10 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             // A recap is prose, and prose does not belong in a world setting that is rewritten
             // and broadcast in full every time a token appears.
             recapPageId: entry.recapPageId ? String(entry.recapPageId) : null,
+            // Actors (id or "Actor.<id>") whose owners alone read the entry, besides the GM.
+            // Empty means every player who may read player entries. Written for the entries
+            // of a personal quest, whose completion used to reach every player.
+            onlyFor: Array.isArray(entry.onlyFor) ? [...new Set(entry.onlyFor.filter(a => typeof a === "string" && a))] : [],
             refs,
             payload: entry.payload && typeof entry.payload === "object" ? foundry.utils.duplicate(entry.payload) : {}
         };
@@ -1933,6 +1938,10 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         const normalized = this._normalizeHistoryEntry(entry);
         if (!normalized) return null;
         if (!user?.isGM && normalized.visibility !== "players") return null;
+        if (!user?.isGM && !fangView.entryAudienceAllows(normalized, this._viewUser(user))) return null;
+        // An add-on may say no for a player, e.g. FANG Premium for the entries of a quest
+        // the player does not know.
+        if (!user?.isGM && Hooks.call("fang.historyEntryVisible", normalized, user) === false) return null;
         const isGM = !!user?.isGM;
         const playerText = String(normalized.playerText || "").trim();
         const gmText = String(normalized.gmText || "").trim();
@@ -1949,10 +1958,31 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         if (!isGM && normalized.refs.some(ref => ref.type === "node") && !displayRefs.some(ref => ref.type === "node")) return null;
         return {
             ...normalized,
+            // A player's copy carries no GM text at all, not just an empty display field:
+            // whatever hands this object on (an add-on, view.forUser) must not leak it.
+            gmText: isGM ? normalized.gmText : "",
             displayText,
             displayGmText,
             displayRefs
         };
+    }
+
+    /**
+     * A user as fang-view.mjs knows one: id, name, GM or not, and the actors they own.
+     * Worked out once per moment, because a chronicle asks for every entry.
+     */
+    _viewUser(user = game.user) {
+        const now = Date.now();
+        const cache = this._viewUserCache;
+        if (cache?.id === user?.id && now - cache.at < 250) return cache.value;
+        const value = {
+            id: user?.id ?? null,
+            name: user?.name ?? "",
+            isGM: !!user?.isGM,
+            ownedActorIds: user?.isGM ? [] : (game.actors?.filter(a => a.testUserPermission?.(user, "OWNER")) ?? []).map(a => a.id)
+        };
+        this._viewUserCache = { id: user?.id, at: now, value };
+        return value;
     }
 
     _getHistoryDisplayRefs(entry, user = game.user) {
@@ -1988,7 +2018,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         return true;
     }
 
-    async _createHistoryEntry({ node = null, refs = null, title, playerText, gmText, gameDate, knownSince = null, kind, visibility, origin = "manual", type = "manual", editableByPlayers = true, authorUserId = null, authorName = "", recapPageId = null, payload = null, notifyAuthor = true }) {
+    async _createHistoryEntry({ node = null, refs = null, title, playerText, gmText, gameDate, knownSince = null, kind, visibility, origin = "manual", type = "manual", editableByPlayers = true, authorUserId = null, authorName = "", recapPageId = null, payload = null, notifyAuthor = true, onlyFor = null }) {
         if (!game.user?.isGM) {
             if (!this._canCreateHistoryEntry(false)) return false;
             game.socket.emit("module.fang", {
@@ -2008,7 +2038,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                     authorName: game.user.name,
                     // The entry's own free-form bag (add-ons use it, e.g. a location tag),
                     // riding along inside the socket message's own payload wrapper.
-                    entryPayload: payload
+                    entryPayload: payload,
+                    onlyFor
                 }
             });
             ui.notifications.info(this._localize("FANG.History.PlayerSubmitted", "Event submitted."));
@@ -2050,6 +2081,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             gmText,
             editableByPlayers,
             refs: entryRefs,
+            onlyFor: Array.isArray(onlyFor) ? onlyFor : [],
             payload: (payload && typeof payload === "object") ? payload : {}
         }));
         if (!await this._saveHistoryStore(store)) return false;
@@ -2123,10 +2155,16 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         return this._saveHistoryStore(store);
     }
 
-    async _updateHistoryEntryFromPlayer(entryId, patch = {}) {
+    /**
+     * A player's change to a chronicle entry, carried out by the GM. `senderId` is the user
+     * the server says sent the socket message, never what the message claims: API.md promised
+     * that a player changes their own entries only, but until 23.11.2026 any player could
+     * rewrite any player entry by sending its id.
+     */
+    async _updateHistoryEntryFromPlayer(entryId, patch = {}, senderId = null) {
         if (!game.user?.isGM || !entryId) return false;
         const entry = this._getHistoryStore().entries.find(item => item.id === entryId);
-        if (!entry || entry.visibility !== "players" || entry.editableByPlayers === false) return false;
+        if (!fangView.playerMayEditEntry(entry, senderId)) return false;
         const cleanPatch = {
             title: String(patch.title || "").trim(),
             playerText: String(patch.playerText || "").trim()

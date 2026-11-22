@@ -27,3 +27,9 @@ jobs:
 
       - name: Validate locales, scripts and stylesheets
         run: node tools/fang-validate.mjs
+
+      - name: Merge tests
+        run: node tools/fang-merge-test.mjs
+
+      - name: Spoiler test for what a user sees
+        run: node tools/fang-view-test.mjs

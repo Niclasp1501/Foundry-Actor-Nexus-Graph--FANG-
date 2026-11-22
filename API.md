@@ -14,7 +14,7 @@ if (fang.interface < 1) return;             // interface version of this documen
 ```
 
 - `api.version` FANG's module version, as in its `module.json`.
-- `api.interface` version of this interface. Currently `1`.
+- `api.interface` version of this interface. Currently `2` (since 14.2611.3: `view`, `onlyFor`, the hooks `fang.historyEntryVisible` and `fang.viewForUser`).
 - `api.atLeast(version)` true when FANG is at least that version.
 
 ## Reading the graph
@@ -27,7 +27,14 @@ All readers return copies. Writing to a copy changes nothing.
 - `api.links.list()` connections, with `source` and `target` as node ids.
 - `api.factions.list()` factions.
 - `api.zones.list()`, `api.zones.get(id)` places. A place has `id, name, type, color, description, playerVisible, parentId, img, hidden, displayName, reveal`; `parentId` is the place it lies in. `reveal: "visited"` (the default for new places) keeps a place from players until they know it: they created it, a character they can see belongs there, or an add-on says so through the hook `fang.zonesKnown` (`app, user, knownIds`, add ids to the set). `reveal: "open"` shows it to everyone at once.
-- `api.history.list()` chronicle entries the current user may see.
+- `api.history.list()` chronicle entries the current user may see. A player's copy carries no `gmText`.
+
+## What another user sees
+
+- `api.view.forUser(userId)` (GM only) everything that user sees of FANG, already projected: `{ user, rights, nodes, links, factions, zones, history, notes }`, and whatever add-ons add (FANG Premium: `quests`, `whereabouts`, `followed`, `rights.travel`, and the journey and quest fields of an entry's `payload`). Hidden characters come with their alias and without actor, picture, description or role; nothing `gmOnly`; places the user does not know are left out, and so is the place around a room they do know; no `gmText`, `gmNotes`, `gmLinks`, no `payload` unless an add-on names its fields, the author's id only on the user's own entries, a recap page only when the user may read it, and only the user's own personal notes. It is meant for a program that reads on behalf of a player, such as a companion app, and gives it exactly what that player's FANG shows.
+- `api.view.rightsFor(userId)` `{ graph, places, chronicle, notes }`: what the user may change, by FANG's settings.
+
+The rules live in `scripts/fang-view.mjs` as plain functions without `game` (`viewFor(data, user)`, `canSeeNode`, `canSeeEntry`, `projectEntry`, `rightsFor`, `playerMayEditEntry` and more), shared with FANG's own window and tested in Node by `tools/fang-view-test.mjs` against a fixture whose every secret carries a mark.
 
 ## Changing the graph
 
@@ -42,7 +49,7 @@ Everything the interface does with characters, connections, factions and places 
 - `api.zones.add({ name, type?, parentId?, img?, description?, playerVisible?, hidden?, displayName?, color? })`, `api.zones.update(id, patch)`. A place cannot lie inside itself.
 - `api.zones.remove(id)` what lay in it moves up one level; characters there move with it.
 - `api.zones.assign(nodeId, zoneId | null)` puts a character or item at a place.
-- `api.history.add({ title, playerText?, gmText?, nodeId?, nodeIds?, visibility?: "gm" | "players", kind?, gameDate?, payload? })` creates a chronicle entry and returns its id, or `false`. `nodeIds` attaches it to several characters, `gameDate` (`{ label, sort, time }`) dates it, today when left out, `payload` carries an add-on's data. A player's entry is relayed to a GM as with entries made in FANG itself.
+- `api.history.add({ title, playerText?, gmText?, nodeId?, nodeIds?, visibility?: "gm" | "players", kind?, gameDate?, payload?, onlyFor? })` creates a chronicle entry and returns its id, or `false`. `onlyFor` lists actors (id or `Actor.<id>`); then only their owners and the GM read the entry, in FANG and through `view.forUser`. `nodeIds` attaches it to several characters, `gameDate` (`{ label, sort, time }`) dates it, today when left out, `payload` carries an add-on's data. A player's entry is relayed to a GM as with entries made in FANG itself.
 - Game dates follow the calendar module in use: `label` and `sort` as it writes them (`app.detectCurrentGameDate()` gives today's). Entries from an earlier calendar module or typed by hand are converted into that format once, on the active GM's side (`app.convertGameDatesToCalendar()`); what they said before stays in `payload.gameDateBefore`. Write dates the calendar's way, never a `sort` of your own.
 - `api.history.update(id, { title?, playerText?, gmText?, kind?, visibility?, gameDate?, payload?, nodeIds? })` (a player may change title and text of their own entries only), `api.history.remove(id)` (GM only).
 
@@ -92,6 +99,8 @@ Named `fang.*` and called with Foundry's `Hooks.on`. The first argument is alway
 | `fang.historyEntryCreated` | `app, entry` | a chronicle entry was stored |
 | `fang.questChanged` | `app, { node, quest, change, origin }` | a quest was linked to a node, changed or removed from it; `change = "linked" \| "updated" \| "unlinked"`, `node` and `quest` are copies. Fires only on the client where the change was made |
 | `fang.saved` | `app, { data }` | the graph was written |
+| `fang.historyEntryVisible` | `entry, user` | FANG asks whether a player may read an entry; return `false` to hide it. Called with `Hooks.call`, so the first `false` wins |
+| `fang.viewForUser` | `app, user, view` | `view.forUser` built a view; add your part to `view` (read-only for everything else) |
 
 `fang.drop` fires with `app, { data, x, y, targetNode }` when something other than an actor or a journal is dropped on the graph: `data` is Foundry's drag data, `x`/`y` the drop point in graph coordinates, `targetNode` the node it landed on or `null`.
 
