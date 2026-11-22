@@ -10,7 +10,7 @@ what happened, all in one place.
 ## 🇬🇧 English
 
 <p align="center">
-  <img src=".github/screenshots/graph.webp" width="100%" alt="Your campaign's graph at a glance: portraits, labelled relationships and the direction they point." />
+  <img src=".github/screenshots/fang-1-graph.png" width="100%" alt="Your campaign's graph at a glance: portraits, labelled relationships and the direction they point." />
 </p>
 <p align="center"><em>Your campaign's graph at a glance: portraits, labelled relationships and the direction they point.</em></p>
 
@@ -36,10 +36,9 @@ that everything else gathers around. Anyone who does not exist as an actor yet s
 stays in place.
 
 <p align="center">
-  <img src=".github/screenshots/fokus.webp" width="49%" alt="A click on a character highlights them and their connections" />
-  <img src=".github/screenshots/info.webp" width="49%" alt="the info card shows what the party knows about them" />
+  <img src=".github/screenshots/fang-2-info-card.png" width="80%" alt="A click on a character opens their info card: what the party knows about them, and a note of your own that only you can see." />
 </p>
-<p align="center"><em>A click on a character highlights them and their connections, and the info card shows what the party knows about them.</em></p>
+<p align="center"><em>A click on a character opens their info card: what the party knows about them, and a note of your own that only you can see.</em></p>
 
 ### Factions and locations
 
@@ -54,10 +53,10 @@ own labelled area. Reset it and everything returns to where it was. Who was wher
 timeline across your game nights, is what the places view of FANG Premium shows.
 
 <p align="center">
-  <img src=".github/screenshots/fraktionen.webp" width="49%" alt="Factions as coloured rings and dashed lines between their members" />
-  <img src=".github/screenshots/gruppierung.webp" width="49%" alt="the graph sorted by faction, each in its own area" />
+  <img src=".github/screenshots/fang-5-grouped.png" width="49%" alt="The graph sorted by faction, each in its own area" />
+  <img src=".github/screenshots/fang-6-place-editor.png" width="49%" alt="the place editor with a picture, the place it lies in and what players get to see" />
 </p>
-<p align="center"><em>Factions as coloured rings and dashed lines between their members, and the graph sorted by faction, each in its own area.</em></p>
+<p align="center"><em>The graph sorted by faction, each in its own area, and the place editor with a picture, the place it lies in and what players get to see.</em></p>
 
 ### The chronicle
 
@@ -72,16 +71,23 @@ longer texts have room. Quests can be attached to characters too, and stay hidde
 reveal them.
 
 <p align="center">
-  <img src=".github/screenshots/chronik.webp" width="80%" alt="The chronicle records what happened on which game day, dated by your calendar." />
+  <img src=".github/screenshots/fang-3-chronicle.png" width="80%" alt="The chronicle records what happened on which game day, dated by your calendar, with the character who wrote each entry." />
 </p>
-<p align="center"><em>The chronicle records what happened on which game day, dated by your calendar.</em></p>
+<p align="center"><em>The chronicle records what happened on which game day, dated by your calendar, with the character who wrote each entry.</em></p>
 
 ### Working on the graph together
 
 If you like, several people can work on the graph at the same time. When saving, FANG merges the
 changes field by field, so two people working in different places do not get in each other's way,
 and everyone sees the same layout. Your secrets as GM stay safe: players do not see hidden
-characters, but they can still keep their own notes and nicknames for characters.
+characters, but they can still keep their own nicknames for characters, and everyone can write a
+personal note on any character, with lists and links, that FANG shows to its author alone. A
+world setting lets you as GM read along.
+
+<p align="center">
+  <img src=".github/screenshots/fang-4-gm-and-player.png" width="100%" alt="The same graph for the GM and for a player: hidden characters stay unknown to the player." />
+</p>
+<p align="center"><em>The same graph for the GM and for a player: hidden characters stay unknown to the player.</em></p>
 
 You can save the whole graph with all positions, factions and settings to a file and load it again.
 Two themes, fantasy and cyberpunk, switch live, and FANG speaks ten languages. The first time you
@@ -93,17 +99,15 @@ When you all play in one room, **in-person mode** adds extra buttons for the mon
 account is your group screen and send the graph there in fullscreen with one click. The view stays
 calmly centred on the characters you marked as the centre.
 
-<p align="center">
-  <img src=".github/screenshots/praesentation.webp" width="80%" alt="Group the graph, show it to all players, or let your own camera lead everyone's view." />
-</p>
-<p align="center"><em>Group the graph, show it to all players, or let your own camera lead everyone's view.</em></p>
-
 ### FANG Premium
 
 FANG is free, fully usable, and it stays that way. If you want more, **FANG Premium** is an add-on
-module for patrons. Its biggest part is the **places view**: a timeline across your game nights
-that shows which character was where and when, with journeys on foot, on horseback, by ship or by
-magic, each with its duration and arrival. On top of that, working on the graph together gets a lot
+module for patrons. It brings **quests** with objectives, rewards that are handed out when a quest
+is done and a chronicle of their own, and personal quests stay covered at the table until their
+player taps them. The **places view** is a timeline across your game nights that shows which
+character was where and when, with journeys on foot, on horseback, by ship or by magic, each with
+its duration and arrival, and a split party keeps its own clock. All your personal notes are in
+one view with search. On top of that, working on the graph together gets a lot
 more pleasant: you see who is working on what, a character someone drags moves for everyone, what
 a player saves waits for a GM instead of being lost, and when two versions of the same text
 collide, you decide. A change log shows who changed what and when and takes changes back step by
@@ -111,12 +115,7 @@ step, newest first. Premium also brings items into the graph and unlocks the cus
 image.
 
 How to get FANG Premium and what the tiers cost is on the [premium page](https://ninjos-forge.web.app/en/premium).
-
-<p align="center">
-  <img src=".github/screenshots/orte.webp" width="49%" alt="FANG Premium: the places view, every character as a coloured line from place to place" />
-  <img src=".github/screenshots/aenderungen.webp" width="49%" alt="the change log, step by step back" />
-</p>
-<p align="center"><em>FANG Premium: the places view, every character as a coloured line from place to place, and the change log, step by step back.</em></p>
+Screenshots of FANG Premium are on [its page at Ninjo's Forge](https://ninjos-forge.web.app/en/modules/fang-premium).
 
 ### Installation
 
@@ -139,12 +138,6 @@ Your players open FANG from the journal entry or with `Shift + G` as well. You o
 opened the graph once yourself so that it exists. When players change something, it goes through
 you. If you are not online at that moment, FANG says so clearly instead of silently doing nothing.
 
-<p align="center">
-  <img src=".github/screenshots/menue.webp" width="49%" alt="A right-click opens everything you can do with a character" />
-  <img src=".github/screenshots/anleitung.webp" width="49%" alt="the first time you open it, FANG explains itself" />
-</p>
-<p align="center"><em>A right-click opens everything you can do with a character, and the first time you open it, FANG explains itself.</em></p>
-
 ### Working with other modules
 
 With **DiploGlass** installed, FANG takes over its factions including their icons and assigns the
@@ -160,7 +153,7 @@ What is planned next is in [TODO.md](TODO.md).
 ## 🇩🇪 Deutsch
 
 <p align="center">
-  <img src=".github/screenshots/graph.webp" width="100%" alt="Der Graph eurer Kampagne auf einen Blick: Porträts, beschriftete Beziehungen und die Richtung, in die sie gehen." />
+  <img src=".github/screenshots/fang-1-graph.png" width="100%" alt="Der Graph eurer Kampagne auf einen Blick: Porträts, beschriftete Beziehungen und die Richtung, in die sie gehen." />
 </p>
 <p align="center"><em>Der Graph eurer Kampagne auf einen Blick: Porträts, beschriftete Beziehungen und die Richtung, in die sie gehen.</em></p>
 
@@ -188,10 +181,9 @@ existiert, bekommt erst einmal einen **Platzhalter**. Sobald es die Figur gibt, 
 den Platzhalter, und alle Verbindungen bleiben erhalten.
 
 <p align="center">
-  <img src=".github/screenshots/fokus.webp" width="49%" alt="Ein Klick hebt eine Figur und ihre Verbindungen hervor" />
-  <img src=".github/screenshots/info.webp" width="49%" alt="die Infokarte zeigt, was die Gruppe über sie weiß" />
+  <img src=".github/screenshots/fang-2-info-card.png" width="80%" alt="Ein Klick auf eine Figur öffnet ihre Infokarte: was die Gruppe über sie weiß, und eine eigene Notiz, die nur du siehst." />
 </p>
-<p align="center"><em>Ein Klick hebt eine Figur und ihre Verbindungen hervor, und die Infokarte zeigt, was die Gruppe über sie weiß.</em></p>
+<p align="center"><em>Ein Klick auf eine Figur öffnet ihre Infokarte: was die Gruppe über sie weiß, und eine eigene Notiz, die nur du siehst.</em></p>
 
 ### Fraktionen und Orte
 
@@ -207,10 +199,10 @@ eigenen beschrifteten Bereich. Beim Zurücksetzen kehrt alles an seinen alten Pl
 wo war, als Zeitleiste über eure Spieltage, zeigt die Orte-Ansicht von FANG Premium.
 
 <p align="center">
-  <img src=".github/screenshots/fraktionen.webp" width="49%" alt="Fraktionen als farbige Ringe und gestrichelte Linien zwischen ihren Mitgliedern" />
-  <img src=".github/screenshots/gruppierung.webp" width="49%" alt="der Graph nach Fraktion sortiert, jede in ihrem eigenen Bereich" />
+  <img src=".github/screenshots/fang-5-grouped.png" width="49%" alt="Der Graph nach Fraktion sortiert, jede in ihrem eigenen Bereich" />
+  <img src=".github/screenshots/fang-6-place-editor.png" width="49%" alt="der Orte-Editor mit Bild, dem Ort, in dem er liegt, und dem, was Spieler sehen" />
 </p>
-<p align="center"><em>Fraktionen als farbige Ringe und gestrichelte Linien zwischen ihren Mitgliedern, und der Graph nach Fraktion sortiert, jede in ihrem eigenen Bereich.</em></p>
+<p align="center"><em>Der Graph nach Fraktion sortiert, jede in ihrem eigenen Bereich, und der Orte-Editor mit Bild, dem Ort, in dem er liegt, und dem, was Spieler sehen.</em></p>
 
 ### Die Chronik
 
@@ -226,17 +218,24 @@ gehören einer Figur und bekommen eine eigene Seite im Journal, damit auch läng
 haben. Aufträge lassen sich ebenfalls an Figuren hängen und bleiben verdeckt, bis du sie aufdeckst.
 
 <p align="center">
-  <img src=".github/screenshots/chronik.webp" width="80%" alt="Die Chronik hält fest, was an welchem Spieltag passiert ist, mit dem Datum aus eurem Kalender." />
+  <img src=".github/screenshots/fang-3-chronicle.png" width="80%" alt="Die Chronik hält fest, was an welchem Spieltag passiert ist, mit dem Datum aus eurem Kalender und der Figur, die den Eintrag geschrieben hat." />
 </p>
-<p align="center"><em>Die Chronik hält fest, was an welchem Spieltag passiert ist, mit dem Datum aus eurem Kalender.</em></p>
+<p align="center"><em>Die Chronik hält fest, was an welchem Spieltag passiert ist, mit dem Datum aus eurem Kalender und der Figur, die den Eintrag geschrieben hat.</em></p>
 
 ### Gemeinsam am Graphen arbeiten
 
 Auf Wunsch arbeiten mehrere Leute gleichzeitig am Graphen. Beim Speichern führt FANG die
 Änderungen Feld für Feld zusammen, sodass sich zwei Leute, die an verschiedenen Stellen arbeiten,
 nicht in die Quere kommen, und alle sehen dieselbe Anordnung. Deine Geheimnisse als Spielleiter
-bleiben dabei geschützt: Verdeckte Figuren sehen die Spieler nicht, eigene Notizen und Spitznamen
-für Figuren pflegen sie aber trotzdem.
+bleiben dabei geschützt: Verdeckte Figuren sehen die Spieler nicht, eigene Spitznamen
+für Figuren pflegen sie aber trotzdem, und alle können zu jeder Figur eine persönliche Notiz mit
+Listen und Links schreiben, die FANG nur ihrem Verfasser zeigt. Mit einer Welteinstellung liest
+du als Spielleiter mit.
+
+<p align="center">
+  <img src=".github/screenshots/fang-4-gm-and-player.png" width="100%" alt="Derselbe Graph für den Spielleiter und für einen Spieler: Verdeckte Figuren bleiben für den Spieler unbekannt." />
+</p>
+<p align="center"><em>Derselbe Graph für den Spielleiter und für einen Spieler: Verdeckte Figuren bleiben für den Spieler unbekannt.</em></p>
 
 Den ganzen Graphen mit allen Positionen, Fraktionen und Einstellungen kannst du als Datei sichern
 und wieder einlesen. Zwei Designs, Fantasy und Cyberpunk, lassen sich live umschalten, und FANG
@@ -249,17 +248,15 @@ Monitor ein. Du legst fest, welches Konto euer Gruppenbildschirm ist, und schick
 einem Klick als Vollbild dorthin. Der Bildausschnitt bleibt dabei ruhig auf die Figuren
 gerichtet, die du als Zentrum markiert hast.
 
-<p align="center">
-  <img src=".github/screenshots/praesentation.webp" width="80%" alt="Gruppieren, den Graphen allen Spielern zeigen oder die eigene Kamera für alle mitlaufen lassen." />
-</p>
-<p align="center"><em>Gruppieren, den Graphen allen Spielern zeigen oder die eigene Kamera für alle mitlaufen lassen.</em></p>
-
 ### FANG Premium
 
 FANG ist kostenlos, vollständig benutzbar und bleibt es auch. Wer mehr möchte, bekommt mit
-**FANG Premium** ein Zusatzmodul für Patrons. Sein größter Teil ist die **Orte-Ansicht**: eine
-Zeitleiste über eure Spieltage, die zeigt, welche Figur wann wo war, mit Reisen zu Fuß, zu Pferd,
-mit dem Schiff oder mit Magie, jeweils mit Dauer und Ankunft. Dazu wird das gemeinsame Arbeiten am
+**FANG Premium** ein Zusatzmodul für Patrons. Es bringt **Quests** mit Zielen, Belohnungen, die beim Abschluss verteilt
+werden, und einer eigenen Chronik, und persönliche Quests bleiben am Tisch verdeckt, bis ihr
+Spieler darauf tippt. Die **Orte-Ansicht** ist eine Zeitleiste über eure Spieltage, die zeigt,
+welche Figur wann wo war, mit Reisen zu Fuß, zu Pferd, mit dem Schiff oder mit Magie, jeweils mit
+Dauer und Ankunft, und eine getrennte Gruppe behält ihre eigene Uhr. Alle deine persönlichen
+Notizen stehen in einer Ansicht mit Suche. Dazu wird das gemeinsame Arbeiten am
 Graphen deutlich angenehmer: Du siehst, wer gerade woran arbeitet, eine Figur, die jemand zieht,
 bewegt sich bei allen mit, was ein Spieler speichert, wartet auf einen Spielleiter, statt verloren
 zu gehen, und stoßen zwei Fassungen desselben Textes aufeinander, entscheidest du. Ein
@@ -269,12 +266,7 @@ eigene Hintergrundbild frei.
 
 Wie du an FANG Premium kommst und was die Stufen kosten, steht auf der
 [Premium-Seite](https://ninjos-forge.web.app/premium).
-
-<p align="center">
-  <img src=".github/screenshots/orte.webp" width="49%" alt="FANG Premium: die Orte-Ansicht, jede Figur als farbige Linie von Ort zu Ort" />
-  <img src=".github/screenshots/aenderungen.webp" width="49%" alt="das Änderungsprotokoll, Schritt für Schritt zurück" />
-</p>
-<p align="center"><em>FANG Premium: die Orte-Ansicht, jede Figur als farbige Linie von Ort zu Ort, und das Änderungsprotokoll, Schritt für Schritt zurück.</em></p>
+Bilder von FANG Premium gibt es auf [seiner Seite in Ninjo's Forge](https://ninjos-forge.web.app/modules/fang-premium).
 
 ### Installation
 
@@ -298,12 +290,6 @@ Deine Spieler öffnen FANG ebenfalls über den Journaleintrag oder mit `Shift + 
 Graphen nur einmal selbst geöffnet haben, damit er angelegt ist. Ändern Spieler etwas, läuft das
 über dich. Bist du gerade nicht online, sagt FANG das deutlich, statt stillschweigend nichts zu
 tun.
-
-<p align="center">
-  <img src=".github/screenshots/menue.webp" width="49%" alt="Ein Rechtsklick öffnet alles, was mit einer Figur geht" />
-  <img src=".github/screenshots/anleitung.webp" width="49%" alt="beim ersten Öffnen erklärt sich FANG selbst" />
-</p>
-<p align="center"><em>Ein Rechtsklick öffnet alles, was mit einer Figur geht, und beim ersten Öffnen erklärt sich FANG selbst.</em></p>
 
 ### Zusammen mit anderen Modulen
 
