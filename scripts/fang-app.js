@@ -2758,6 +2758,12 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
             const refs = editingEntry ? (editingEntry.refs ?? []).map(ref => ({ ...ref })) : (baseNode?.id ? [{ type: "node", id: baseNode.id }] : []);
             const refsBefore = JSON.stringify(refs);
             Hooks.callAll("fang.historyEntrySaving", this, extraPayload, panel, { node, editingEntry, refs });
+            // Ein Zusatz darf das Datum „heute“ eines neuen Eintrags ersetzen, etwa durch die Uhr
+            // einer Teilgruppe (FANG Premium). Ein von Hand gewähltes Datum bleibt.
+            const dateOverride = extraPayload.gameDateOverride;
+            delete extraPayload.gameDateOverride;
+            const pickedEarlier = panel.querySelector('.fang-history-when button[data-when="earlier"]')?.classList.contains("active");
+            if (!editingEntry && !dateReadonly && !pickedEarlier && dateOverride?.label) patch.gameDate = { ...dateOverride };
             if (Object.keys(extraPayload).length) patch.payload = extraPayload;
             if (JSON.stringify(refs) !== refsBefore) patch.refs = refs;
             if (!isGM && editingEntry) {
