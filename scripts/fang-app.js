@@ -11056,7 +11056,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 host.appendChild(editor);
             },
             buttons: [
-                { action: "save", label: t("Save", "Save note"), icon: "fas fa-save", default: true,
+                { action: "keepNote", label: t("Save", "Save note"), icon: "fas fa-save", default: true,
                     callback: (event, button) => {
                         const form = button.form ?? button.closest("form");
                         const editor = form?.querySelector("prose-mirror");
