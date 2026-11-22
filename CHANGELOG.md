@@ -3,6 +3,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Module versions follow the Foundry-targeted `<foundry-major>.<YYMM>.<patch>` release scheme documented in `AGENTS.md`.
 
+## [14.2611.2] - 2026-11-22
+
+### Fixed
+- **Players are listed by their character.** The chronicle named the login of whoever entered an entry, and so did "Entered by", the players' notes the GM may read and the list of who is editing along. They now show the assigned character first, with the login small behind it. An account without a character, such as a monitor, keeps its name.
+- **A minimized window stays minimized.** FANG set a height on every redraw, also on a minimized window, which then grew into half a window in a corner of the screen. The title bar and the resize handles can now also be dragged with a finger on a tablet.
+
 ## [14.2611.1] - 2026-11-22
 
 ### Added
