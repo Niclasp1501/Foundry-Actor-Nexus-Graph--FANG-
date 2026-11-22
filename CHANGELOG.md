@@ -3,7 +3,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Module versions follow the Foundry-targeted `<foundry-major>.<YYMM>.<patch>` release scheme documented in `AGENTS.md`.
 
-## [Unreleased]
+## [14.2611.1] - 2026-11-22
 
 ### Added
 - **Personal notes on any character.** Everyone can keep a note of their own on a character, such as a suspicion about an NPC or a thought on another player's character, written in Foundry's rich text editor with lists and links. It sits in the character's info card, shown to its author alone; a world setting lets the GM read along, off by default. FANG never shows it to other players, though anyone using the browser console can still read it.
