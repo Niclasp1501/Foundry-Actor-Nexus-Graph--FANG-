@@ -10743,7 +10743,6 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 }
 
                 overlay.classList.remove("hidden");
-                this._renderPersonalNotes(overlay, options.personalNode ?? null).catch(err => console.error("FANG | personal notes", err));
             }
         }, 1000);
 
@@ -10959,6 +10958,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 }
 
                 overlay.classList.remove("hidden");
+                // Die persönliche Notiz nur in der eigenen Infokarte; ein Spotlight für alle räumt sie weg.
+                this._renderPersonalNotes(overlay, options.personalNode ?? null).catch(err => console.error("FANG | personal notes", err));
             }
         }, 1000);
 
