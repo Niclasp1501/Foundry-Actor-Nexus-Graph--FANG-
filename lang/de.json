@@ -484,6 +484,17 @@
                 "FactionAssignedText": "{name} wird mit {faction} in Verbindung gebracht."
             }
         },
+        "PersonalNotes": {
+            "Title": "Meine Notiz",
+            "Empty": "Noch keine Notiz. Schreib dir auf, was du über diese Figur vermutest oder weißt.",
+            "Write": "Notiz schreiben",
+            "Edit": "Notiz bearbeiten",
+            "EditorTitle": "Meine Notiz zu {name}",
+            "Save": "Notiz speichern",
+            "Hint": "Diese Notiz siehst in FANG nur du. Andere Spieler sehen sie nie.",
+            "HintWithGm": "Diese Notiz siehst in FANG nur du und die Spielleitung. Andere Spieler sehen sie nie.",
+            "Others": "Notizen der Spieler"
+        },
         "Settings": {
             "TokenSize": {
                 "Name": "Token-Größe",
@@ -504,6 +515,10 @@
             "PlayerPlaces": {
                 "Name": "Spieler dürfen Orte anlegen",
                 "Hint": "Neue Orte anlegen und bestehende bearbeiten, direkt aus dem Ortsfeld. Nur zusammen mit Spieler-Bearbeitung."
+            },
+            "PersonalNotesGM": {
+                "Name": "Spielleitung liest persönliche Notizen mit",
+                "Hint": "Spieler können sich zu jeder Figur eine eigene Notiz schreiben. Aus zeigt FANG sie nur dem Verfasser, an auch der Spielleitung. Anderen Spielern zeigt FANG sie nie; wer die Konsole des Browsers bedient, kann sie trotzdem lesen."
             },
             "PlayerChronicle": {
                 "Name": "Spieler dürfen Chronik-Einträge schreiben",

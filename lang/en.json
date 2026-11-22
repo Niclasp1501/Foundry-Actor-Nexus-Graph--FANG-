@@ -484,6 +484,17 @@
                 "FactionAssignedText": "{name} is associated with {faction}."
             }
         },
+        "PersonalNotes": {
+            "Title": "My note",
+            "Empty": "No note yet. Write down what you suspect or know about this character.",
+            "Write": "Write a note",
+            "Edit": "Edit note",
+            "EditorTitle": "My note on {name}",
+            "Save": "Save note",
+            "Hint": "Only you see this note in FANG. Other players never do.",
+            "HintWithGm": "Only you and the GM see this note in FANG. Other players never do.",
+            "Others": "Notes of the players"
+        },
         "Settings": {
             "TokenSize": {
                 "Name": "Token Size",
@@ -504,6 +515,10 @@
             "PlayerPlaces": {
                 "Name": "Players may create places",
                 "Hint": "Create new places and edit existing ones, right from the place field. Only together with player editing."
+            },
+            "PersonalNotesGM": {
+                "Name": "GM reads players' personal notes",
+                "Hint": "Players can write a note of their own on any character. Off, FANG shows it to its author alone; on, the GM sees it too. Either way it stays out of other players' view in FANG; anyone using the browser console can still read it."
             },
             "PlayerChronicle": {
                 "Name": "Players may write chronicle entries",

@@ -484,6 +484,17 @@
                 "FactionAssignedText": "{name} est associé à {faction}."
             }
         },
+        "PersonalNotes": {
+            "Title": "Ma note",
+            "Empty": "Pas encore de note. Note ce que tu soupçonnes ou sais de ce personnage.",
+            "Write": "Écrire une note",
+            "Edit": "Modifier la note",
+            "EditorTitle": "Ma note sur {name}",
+            "Save": "Enregistrer la note",
+            "Hint": "Toi seul vois cette note dans FANG. Les autres joueurs jamais.",
+            "HintWithGm": "Seuls toi et le MJ voyez cette note dans FANG. Les autres joueurs jamais.",
+            "Others": "Notes des joueurs"
+        },
         "Settings": {
             "TokenSize": {
                 "Name": "Taille des jetons",
@@ -504,6 +515,10 @@
             "PlayerPlaces": {
                 "Name": "Les joueurs peuvent créer des lieux",
                 "Hint": "Créer de nouveaux lieux et modifier les existants, directement depuis le champ de lieu. Uniquement avec la modification par les joueurs."
+            },
+            "PersonalNotesGM": {
+                "Name": "Le MJ lit les notes personnelles",
+                "Hint": "Les joueurs peuvent écrire leur propre note sur chaque personnage. Désactivé, FANG ne la montre qu'à son auteur ; activé, le MJ la voit aussi. FANG ne la montre jamais aux autres joueurs ; qui utilise la console du navigateur peut quand même la lire."
             },
             "PlayerChronicle": {
                 "Name": "Les joueurs peuvent écrire dans la chronique",

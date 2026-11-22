@@ -484,6 +484,17 @@
                 "FactionAssignedText": "{name} patří k {faction}."
             }
         },
+        "PersonalNotes": {
+            "Title": "Moje poznámka",
+            "Empty": "Zatím žádná poznámka. Zapiš si, co o této postavě tušíš nebo víš.",
+            "Write": "Napsat poznámku",
+            "Edit": "Upravit poznámku",
+            "EditorTitle": "Moje poznámka k postavě {name}",
+            "Save": "Uložit poznámku",
+            "Hint": "Tuto poznámku vidíš ve FANGu jen ty. Ostatní hráči ji nikdy neuvidí.",
+            "HintWithGm": "Tuto poznámku vidíš ve FANGu jen ty a vypravěč. Ostatní hráči ji nikdy neuvidí.",
+            "Others": "Poznámky hráčů"
+        },
         "Settings": {
             "TokenSize": {
                 "Name": "Velikost žetonů",
@@ -504,6 +515,10 @@
             "PlayerPlaces": {
                 "Name": "Hráči smí vytvářet místa",
                 "Hint": "Vytvářet nová místa a upravovat stávající, přímo z pole místa. Jen společně s úpravami hráči."
+            },
+            "PersonalNotesGM": {
+                "Name": "Vypravěč čte osobní poznámky hráčů",
+                "Hint": "Hráči si mohou ke každé postavě napsat vlastní poznámku. Vypnuto: FANG ji ukáže jen autorovi; zapnuto: vidí ji i vypravěč. Ostatním hráčům ji FANG nikdy neukáže; kdo ovládá konzoli prohlížeče, ji přesto přečte."
             },
             "PlayerChronicle": {
                 "Name": "Hráči smí psát do kroniky",

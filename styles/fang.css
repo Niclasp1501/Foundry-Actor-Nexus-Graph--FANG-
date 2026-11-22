@@ -5700,3 +5700,17 @@ body.fang-theme-cyberpunk .background-config-container .premium-notice p {
 .fang-app-container .fang-set-slot label {
     font-weight: 700;
 }
+
+/* Persönliche Notiz in der Infokarte einer Figur: nur für den Verfasser (22.11.2026). */
+.fang-app-container .fang-personal-notes { margin-top: 14px; padding-top: 10px; border-top: 1px solid rgba(139, 0, 0, 0.2); text-align: left; }
+.fang-app-container .fang-personal-notes h4 { margin: 0 0 6px; color: var(--fang-primary-red, #8b0000); font-size: 0.85rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; }
+.fang-app-container .fang-personal-notes h4 i { color: var(--ninjo-akzent-text, #9a6f08); }
+.fang-app-container .fang-personal-notes h5 { margin: 12px 0 4px; font-size: 0.8rem; font-weight: 800; }
+.fang-app-container .fang-personal-note { max-height: 240px; overflow-y: auto; padding: 6px 10px; border-left: 3px solid var(--ninjo-akzent, #d4af37); border-radius: 6px; background: rgba(255, 255, 255, 0.55); line-height: 1.45; }
+.fang-app-container .fang-personal-note p { margin: 0 0 6px; }
+.fang-app-container .fang-personal-empty, .fang-app-container .fang-personal-hint { margin: 4px 0; color: var(--ninjo-text-blass, #6b5d4c); font-size: 0.82rem; }
+.fang-app-container .fang-personal-actions { display: flex; gap: 8px; margin-top: 8px; }
+.fang-app-container .fang-personal-edit { min-height: 36px; }
+.fang-app-container .fang-personal-others { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+.fang-personal-editor-dialog prose-mirror { display: block; min-height: 280px; }
+.fang-personal-editor-dialog .window-content { overflow-y: auto; }

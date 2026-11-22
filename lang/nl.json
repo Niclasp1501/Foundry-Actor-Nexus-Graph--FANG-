@@ -484,6 +484,17 @@
                 "FactionAssignedText": "{name} hoort bij {faction}."
             }
         },
+        "PersonalNotes": {
+            "Title": "Mijn notitie",
+            "Empty": "Nog geen notitie. Schrijf op wat je over dit personage vermoedt of weet.",
+            "Write": "Notitie schrijven",
+            "Edit": "Notitie bewerken",
+            "EditorTitle": "Mijn notitie over {name}",
+            "Save": "Notitie opslaan",
+            "Hint": "Alleen jij ziet deze notitie in FANG. Andere spelers nooit.",
+            "HintWithGm": "Alleen jij en de spelleider zien deze notitie in FANG. Andere spelers nooit.",
+            "Others": "Notities van de spelers"
+        },
         "Settings": {
             "TokenSize": {
                 "Name": "Token Grootte",
@@ -504,6 +515,10 @@
             "PlayerPlaces": {
                 "Name": "Spelers mogen plaatsen aanmaken",
                 "Hint": "Nieuwe plaatsen aanmaken en bestaande bewerken, direct vanuit het plaatsveld. Alleen samen met bewerken door spelers."
+            },
+            "PersonalNotesGM": {
+                "Name": "Spelleider leest persoonlijke notities",
+                "Hint": "Spelers kunnen bij elk personage een eigen notitie schrijven. Uit toont FANG die alleen aan de schrijver, aan ook aan de spelleider. Andere spelers toont FANG die nooit; wie de browserconsole gebruikt, kan hem toch lezen."
             },
             "PlayerChronicle": {
                 "Name": "Spelers mogen in de kroniek schrijven",

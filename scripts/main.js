@@ -570,6 +570,16 @@ Hooks.once("init", () => {
     type: Boolean,
     default: false
   });
+  // Ob die Spielleitung die persönlichen Notizen der Spieler mitliest. Vorgabe nein: Spieler
+  // sollen sich sicher fühlen (Ninjo, 22.11.2026).
+  game.settings.register("fang", "personalNotesGM", {
+    name: "FANG.Settings.PersonalNotesGM.Name",
+    hint: "FANG.Settings.PersonalNotesGM.Hint",
+    scope: "world",
+    config: true,
+    type: Boolean,
+    default: false
+  });
   game.settings.register("fang", "playerChronicle", {
     name: "FANG.Settings.PlayerChronicle.Name",
     hint: "FANG.Settings.PlayerChronicle.Hint",

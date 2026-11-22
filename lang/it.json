@@ -484,6 +484,17 @@
                 "FactionAssignedText": "{name} è associato a {faction}."
             }
         },
+        "PersonalNotes": {
+            "Title": "La mia nota",
+            "Empty": "Ancora nessuna nota. Annota cosa sospetti o sai di questo personaggio.",
+            "Write": "Scrivi una nota",
+            "Edit": "Modifica nota",
+            "EditorTitle": "La mia nota su {name}",
+            "Save": "Salva nota",
+            "Hint": "Solo tu vedi questa nota in FANG. Gli altri giocatori mai.",
+            "HintWithGm": "Solo tu e il master vedete questa nota in FANG. Gli altri giocatori mai.",
+            "Others": "Note dei giocatori"
+        },
         "Settings": {
             "TokenSize": {
                 "Name": "Dimensione Token",
@@ -504,6 +515,10 @@
             "PlayerPlaces": {
                 "Name": "I giocatori possono creare luoghi",
                 "Hint": "Creare nuovi luoghi e modificare quelli esistenti, direttamente dal campo del luogo. Solo insieme alla modifica da parte dei giocatori."
+            },
+            "PersonalNotesGM": {
+                "Name": "Il master legge le note personali",
+                "Hint": "I giocatori possono scrivere una nota propria su ogni personaggio. Spento, FANG la mostra solo all'autore; acceso, la vede anche il master. FANG non la mostra mai agli altri giocatori; chi usa la console del browser può comunque leggerla."
             },
             "PlayerChronicle": {
                 "Name": "I giocatori possono scrivere nella cronaca",

@@ -484,6 +484,17 @@
                 "FactionAssignedText": "{name} należy do {faction}."
             }
         },
+        "PersonalNotes": {
+            "Title": "Moja notatka",
+            "Empty": "Brak notatki. Zapisz, co podejrzewasz lub wiesz o tej postaci.",
+            "Write": "Napisz notatkę",
+            "Edit": "Edytuj notatkę",
+            "EditorTitle": "Moja notatka o {name}",
+            "Save": "Zapisz notatkę",
+            "Hint": "Tę notatkę widzisz w FANG tylko ty. Inni gracze nigdy.",
+            "HintWithGm": "Tę notatkę widzisz w FANG tylko ty i MG. Inni gracze nigdy.",
+            "Others": "Notatki graczy"
+        },
         "Settings": {
             "TokenSize": {
                 "Name": "Rozmiar tokena",
@@ -504,6 +515,10 @@
             "PlayerPlaces": {
                 "Name": "Gracze mogą tworzyć miejsca",
                 "Hint": "Tworzenie nowych miejsc i edycja istniejących, prosto z pola miejsca. Tylko razem z edycją przez graczy."
+            },
+            "PersonalNotesGM": {
+                "Name": "MG czyta osobiste notatki",
+                "Hint": "Gracze mogą napisać własną notatkę o każdej postaci. Wyłączone: FANG pokazuje ją tylko autorowi; włączone: widzi ją też MG. Innym graczom FANG nigdy jej nie pokazuje; kto używa konsoli przeglądarki, może ją jednak przeczytać."
             },
             "PlayerChronicle": {
                 "Name": "Gracze mogą pisać w kronice",

@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [Unreleased]
 
 ### Added
+- **Personal notes on any character.** Everyone can keep a note of their own on a character, such as a suspicion about an NPC or a thought on another player's character, written in Foundry's rich text editor with lists and links. It sits in the character's info card, shown to its author alone; a world setting lets the GM read along, off by default. FANG never shows it to other players, though anyone using the browser console can still read it.
 - **The GM can write an entry on behalf of a player.** The chronicle form has "Entered by" for the GM: pick a player, and the entry stands under their name, is released to the players and they can edit it, as if they had written it themselves. A recap written this way belongs to that player without popping up on their screen.
 - **Quests for other modules.** A quest module can now link its quests to characters in FANG, change their status and visibility, and remove them again, and it hears about every change made in FANG's own quest panel (`api.quests`, hook `fang.questChanged`, see API.md). `api.nodes.focus` opens FANG on a character. `extension.ensureApp()` gives an add-on FANG's one application instance, so it no longer builds a second one beside the window. A link can say what the character is to the quest, such as quest giver, target or enemy; the GM sees it in the quest panel, and only a quest giver gets the quest giver mark. The status list now starts with Rumor.
 

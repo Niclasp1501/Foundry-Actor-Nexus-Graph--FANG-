@@ -10743,6 +10743,7 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
                 }
 
                 overlay.classList.remove("hidden");
+                this._renderPersonalNotes(overlay, options.personalNode ?? null).catch(err => console.error("FANG | personal notes", err));
             }
         }, 1000);
 
@@ -10819,7 +10820,8 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
     async _openLocalNodeInfo(node) {
         if (!node || !this._canUseGraphAction("viewNode", node)) return;
         const payload = await this._buildNodeSpotlightPayload(node);
-        this.startSpotlight(payload, { broadcastQuests: false, notify: false });
+        // Nur die eigene Infokarte trägt die persönliche Notiz, nie ein Spotlight für alle.
+        this.startSpotlight(payload, { broadcastQuests: false, notify: false, personalNode: node });
     }
 
     async _onSpotlight(node) {
@@ -10961,6 +10963,113 @@ export class FangApplication extends HandlebarsApplicationMixin(ApplicationV2) {
         }, 1000);
 
         if (notify) ui.notifications.info(game.i18n.localize("FANG.Messages.SpotlightStarted").replace("{actor}", payload.name));
+    }
+
+    // --- Persönliche Notizen -----------------------------------------------------------------
+    //
+    // Jeder schreibt sich an eine Figur eine eigene Notiz, etwa eine Vermutung zu einem NSC
+    // (Ninjo, 22.11.2026). Sie liegt als Flag am eigenen Benutzer: Den darf jeder Spieler selbst
+    // beschreiben, auch ohne Spielleitung online. FANG zeigt sie nur dem Verfasser, der
+    // Spielleitung nur, wenn die Welt es erlaubt. Das ist eine Grenze der Oberfläche, keine der
+    // Daten: Foundry liefert jedem Client alle Benutzer samt Flags aus (geprüft mit 14.370), wer
+    // die Konsole bedient, liest sie. Ein Ort, den andere Clients nicht bekommen, gibt es in
+    // Foundry nicht, auch kein Journal mit Besitz nur für den Autor.
+
+    /** Die eigene Notiz zu einer Figur, als bereinigtes HTML, oder "". */
+    _getPersonalNote(nodeId, user = game.user) {
+        const raw = user?.getFlag?.("fang", "personalNotes")?.[nodeId]?.html;
+        return typeof raw === "string" ? raw : "";
+    }
+
+    /** Speichert die eigene Notiz; eine leere löscht sie. Bereinigt, damit nie Skript darin steht. */
+    async _savePersonalNote(nodeId, html) {
+        if (!nodeId) return false;
+        const clean = foundry.utils.cleanHTML(String(html ?? "")).trim();
+        const visible = clean.replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").trim();
+        if (!visible && !/<img|@UUID/i.test(clean)) {
+            if (this._getPersonalNote(nodeId)) await game.user.unsetFlag("fang", `personalNotes.${nodeId}`);
+            return true;
+        }
+        await game.user.setFlag("fang", `personalNotes.${nodeId}`, { html: clean, updated: Date.now() });
+        Hooks.callAll("fang.personalNoteSaved", this, { nodeId, user: game.user });
+        return true;
+    }
+
+    _personalNotesHidden() {
+        // Nie auf einem Bildschirm, den jemand anders steuert, und nie am Monitor des Tisches.
+        const monitorName = String(game.settings.get("fang", "monitorDisplayName") || "").trim().toLowerCase();
+        return !!this._openedRemotely || !!(monitorName && game.user.name.toLowerCase().includes(monitorName));
+    }
+
+    async _renderPersonalNotes(overlay, node) {
+        const content = overlay?.querySelector(".narrative-content");
+        content?.querySelector(".fang-personal-notes")?.remove();
+        if (!node || !content || this._personalNotesHidden()) return;
+        const t = (key, fallback) => this._localize(`FANG.PersonalNotes.${key}`, fallback);
+        const esc = (value) => this._escapeHtml(String(value ?? ""));
+        const TextEditor = foundry.applications.ux.TextEditor.implementation;
+        const enrich = (html) => TextEditor.enrichHTML(foundry.utils.cleanHTML(html), { secrets: false });
+        const mine = this._getPersonalNote(node.id);
+        let others = "";
+        if (game.user.isGM && game.settings.get("fang", "personalNotesGM")) {
+            const rows = [];
+            for (const user of game.users) {
+                if (user.id === game.user.id) continue;
+                const note = this._getPersonalNote(node.id, user);
+                if (note) rows.push(`<li><strong>${esc(user.name)}</strong><div class="fang-personal-note">${await enrich(note)}</div></li>`);
+            }
+            if (rows.length) others = `<h5>${esc(t("Others", "Notes of the players"))}</h5><ul class="fang-personal-others">${rows.join("")}</ul>`;
+        }
+        const section = document.createElement("section");
+        section.className = "fang-personal-notes";
+        section.setAttribute("aria-label", t("Title", "My note"));
+        section.innerHTML = `
+            <h4><i class="fas fa-feather-pointed" aria-hidden="true"></i> ${esc(t("Title", "My note"))}</h4>
+            ${mine ? `<div class="fang-personal-note">${await enrich(mine)}</div>` : `<p class="fang-personal-empty">${esc(t("Empty", "No note yet."))}</p>`}
+            <div class="fang-personal-actions">
+                <button type="button" class="fang-canvas-prompt-action fang-personal-edit"><i class="fas fa-pen" aria-hidden="true"></i> <span>${esc(mine ? t("Edit", "Edit note") : t("Write", "Write a note"))}</span></button>
+            </div>
+            <p class="fang-personal-hint">${esc(t(game.settings.get("fang", "personalNotesGM") ? "HintWithGm" : "Hint", "Only you see this note in FANG."))}</p>
+            ${others}`;
+        content.appendChild(section);
+        section.querySelector(".fang-personal-edit").addEventListener("click", () => this._editPersonalNote(node, overlay));
+    }
+
+    /** Die eigene Notiz im Editor von Foundry bearbeiten: Absätze, Listen, Verweise. */
+    async _editPersonalNote(node, overlay = null) {
+        if (!node) return false;
+        const t = (key, fallback) => this._localize(`FANG.PersonalNotes.${key}`, fallback);
+        const esc = (value) => this._escapeHtml(String(value ?? ""));
+        const PM = foundry.applications.elements.HTMLProseMirrorElement;
+        const current = this._getPersonalNote(node.id);
+        const name = this._getSafeNodeName(node);
+        const result = await foundry.applications.api.DialogV2.wait({
+            window: { title: t("EditorTitle", "My note on {name}").replace("{name}", name), icon: "fas fa-feather-pointed" },
+            classes: ["fang-dialog", "fang-personal-editor-dialog"],
+            position: { width: 680 },
+            content: `<p class="hint">${esc(t(game.settings.get("fang", "personalNotesGM") ? "HintWithGm" : "Hint", "Only you see this note in FANG."))}</p><div class="fang-personal-editor-host"></div>`,
+            render: (event, dialog) => {
+                const host = dialog.element.querySelector(".fang-personal-editor-host");
+                if (!host || host.querySelector("prose-mirror")) return;
+                const editor = PM.create({ name: "personalNote", value: current, toggled: false, collaborate: false, height: 280 });
+                editor.setAttribute("aria-label", t("Title", "My note"));
+                host.appendChild(editor);
+            },
+            buttons: [
+                { action: "save", label: t("Save", "Save note"), icon: "fas fa-save", default: true,
+                    callback: (event, button) => {
+                        const form = button.form ?? button.closest("form");
+                        const editor = form?.querySelector("prose-mirror");
+                        return typeof editor?.value === "string" ? editor.value : null;
+                    } },
+                { action: "cancel", label: this._localize("FANG.Dialogs.BtnCancel", "Cancel") }
+            ],
+            rejectClose: false
+        });
+        if (typeof result !== "string") return false;
+        await this._savePersonalNote(node.id, result);
+        if (overlay && !overlay.classList.contains("hidden")) await this._renderPersonalNotes(overlay, node);
+        return true;
     }
 
     stopSpotlight() {
