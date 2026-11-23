@@ -3,7 +3,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Module versions follow the Foundry-targeted `<foundry-major>.<YYMM>.<patch>` release scheme documented in `AGENTS.md`.
 
-## [Unreleased]
+## [14.2611.3] - 2026-11-23
 
 ### Added
 - **What another user sees, for companion apps.** `api.view.forUser(userId)` gives a GM-side program exactly what a player's own FANG shows, already filtered: hidden characters by their alias without picture or description, no GM text, no places the player does not know, only their own notes. The rules now live in one file shared by FANG's window and the api, with a test that searches a fixture full of marked secrets (see API.md, interface 2).
